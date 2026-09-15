@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F17192475C3C5E005FFA1934 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65622D107422099E4F60DE1E /* AppTheme.swift */; };
 		004406578DA6DEABB8614015 /* PrayHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D14D5C74E932FBB6FE0784F /* PrayHubView.swift */; };
 		05F066B261AA1E475873C6F3 /* MysteryCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */; };
 		082CF909021C6EBA3FBB2D68 /* FeastCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */; };
