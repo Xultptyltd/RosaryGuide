@@ -10,9 +10,10 @@ struct HowToPrayView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     Text("How to pray")
-                        .font(AppTheme.serif(36))
+                        .font(AppTheme.serif(36, opticalSize: 36))
+                        .foregroundStyle(palette.ink)
                     Text(HowToPrayContent.introduction.primary(for: settings.language))
-                        .font(AppTheme.serif(18))
+                        .font(AppTheme.serif(18, opticalSize: 16))
                         .foregroundStyle(palette.dim)
 
                     VStack(spacing: 0) {
@@ -67,10 +68,12 @@ struct HowToPrayView: View {
                     RosaryBeadMapView(locus: .decadeHail(1, 1))
                         .padding(.top, 4)
                 }
-                .padding(22)
+                .padding(AppTheme.gutter)
+                .padding(.bottom, 12)
             }
-            .background(palette.bg)
+            .guidePageChrome()
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 

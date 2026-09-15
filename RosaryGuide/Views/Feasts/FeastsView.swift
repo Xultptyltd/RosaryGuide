@@ -35,7 +35,7 @@ struct FeastsView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(palette.bg)
+            .guidePageChrome()
             .navigationTitle("Feasts")
             .safeAreaInset(edge: .top) {
                 Picker("Filter", selection: $filter) {
@@ -102,7 +102,8 @@ private struct FeastRow: View {
                     .foregroundStyle(palette.dim)
             }
             Text(item.feast.name.primary(for: language))
-                .font(AppTheme.serif(20))
+                .font(AppTheme.serif(20, opticalSize: 28))
+                .foregroundStyle(palette.ink)
             HStack(spacing: 8) {
                 Text(item.feast.rank.title)
                 if item.feast.isMarian {
@@ -168,6 +169,8 @@ struct FeastDetailView: View {
             .padding(20)
         }
         .background(palette.bg)
+        .toolbarBackground(palette.bg, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
     }
 }

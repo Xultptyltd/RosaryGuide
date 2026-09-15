@@ -4,7 +4,8 @@ import SwiftUI
 import UIKit
 #endif
 
-/// Paths match WebsiteReference/art.js, rooted at Art in the app bundle.
+/// Paths match WebsiteReference/art.js, rooted at `Art/` in the app bundle.
+/// Never ship a top-level `Resources/` folder — iOS codesign treats that as a macOS bundle.
 enum ArtCatalog {
     static func plateSlug(for mystery: Mystery) -> String { mystery.artSlug }
 
@@ -114,11 +115,19 @@ struct BundleRasterImage: View {
 
     static func load(directory: String, name: String, ext: String) -> UIImage? {
         #if canImport(UIKit)
-        let candidates = [
-            Bundle.main.url(forResource: name, withExtension: ext, subdirectory: directory),
-            Bundle.main.url(forResource: name, withExtension: ext, subdirectory: directory.replacingOccurrences(of: "Resources/", with: "")),
-            Bundle.main.url(forResource: name, withExtension: ext)
+        var directories = [
+            directory,
+            directory.replacingOccurrences(of: "Resources/", with: "")
         ]
+        if !directory.hasPrefix("Resources/") && !directory.hasPrefix("Art") {
+            directories.append("Art/\(directory)")
+        }
+        if directory.hasPrefix("Art/") {
+            directories.append("Resources/\(directory)")
+        }
+        let candidates = directories.flatMap { dir in
+            [Bundle.main.url(forResource: name, withExtension: ext, subdirectory: dir)]
+        } + [Bundle.main.url(forResource: name, withExtension: ext)]
         for url in candidates.compactMap({ $0 }) {
             if let image = UIImage(contentsOfFile: url.path) { return image }
         }

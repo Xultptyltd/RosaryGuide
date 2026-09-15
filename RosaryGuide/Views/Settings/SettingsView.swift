@@ -57,7 +57,7 @@ struct SettingsView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(palette.bg)
+            .guidePageChrome()
             .navigationTitle("Settings")
         }
     }

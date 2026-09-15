@@ -55,12 +55,13 @@ struct MysteryArtworkView: View {
     }
 
     private var plateScrim: some View {
-        LinearGradient(
+        let fade = kind == .plateWide ? palette.bg : palette.card
+        return LinearGradient(
             stops: [
-                .init(color: palette.prayBg.opacity(0.55), location: 0),
+                .init(color: fade.opacity(0.28), location: 0),
                 .init(color: .clear, location: 0.22),
-                .init(color: .clear, location: 0.78),
-                .init(color: palette.prayBg.opacity(0.72), location: 1)
+                .init(color: .clear, location: 0.62),
+                .init(color: fade.opacity(0.92), location: 1)
             ],
             startPoint: .top,
             endPoint: .bottom

@@ -4,7 +4,7 @@ Native SwiftUI iOS companion for the cream-and-ink Rosary prayer guide. Swift 5.
 
 Bundle ID: `com.shasasmith.RosaryGuide`
 
-The website is the design and content source of truth. This app matches its paintings, type, mystery texts, and pray flow.
+The website is the design and content source of truth. This app matches its paintings, type, mystery texts, and pray flow — including light (cream paper `#F4F1EB`) and dark (near-black `#0C0D0F`) themes.
 
 ## Open in Xcode
 
@@ -14,7 +14,7 @@ The website is the design and content source of truth. This app matches its pain
 4. Choose your Development Team under Signing & Capabilities if you are running on a device.
 5. Press **Run** (⌘R).
 
-Unit tests for Easter, seasons, mystery assignment, and rosary sequence: **Product → Test** (⌘U).
+Unit tests for Easter, seasons, mystery assignment, rosary sequence, and Home type/spacing tokens: **Product → Test** (⌘U).
 
 ## What you can do
 
@@ -23,6 +23,8 @@ Unit tests for Easter, seasons, mystery assignment, and rosary sequence: **Produ
 - **How to Pray** — accordion steps, weekday schedule, and a bead map.
 - **Feasts** — fixed Marian and liturgical days plus movable dates from Easter. Feasts suggest a set; they do not replace the weekday default.
 - **Settings** — language, appearance, text size, optional Saint Michael after Finis, haptics.
+
+Appearance follows the system unless you lock Light or Dark in Settings or with the Home glass control. Both modes use the website colour tokens, not stock iOS grouped backgrounds.
 
 ## Mystery calendar
 
@@ -43,20 +45,20 @@ A rosary already underway can be resumed only on the **same calendar day**.
 - Traditional prayer texts in English and Latin (Sign of the Cross, Apostles’ Creed, Our Father, Hail Mary, Glory Be, Fatima prayer, Hail Holy Queen, concluding collect, Prayer to Saint Michael).
 - All **20 mysteries** use **RSV-2CE** excerpts, titles, and fruits from `WebsiteReference/mysteries.js`.
 - Completion quotes from saints and Our Lady of Fatima.
-- **Instrument Sans** and **Newsreader** live in `RosaryGuide/Resources/Fonts/` (original `.woff2` plus iOS `.ttf`). They are registered at launch.
+- **Instrument Sans** and **Newsreader** live in `RosaryGuide/Fonts/` (original `.woff2` plus iOS `.ttf`). They are registered at launch and listed in `UIAppFonts`. Home type size, tracking, and line-height follow `WebsiteReference/app.css` (`h1.title` clamp, `--gut`, 1.02 display leading).
 
 ## Art
 
 Theme-aware paintings match `WebsiteReference/art.js`:
 
 ```
-RosaryGuide/Resources/Art/
+RosaryGuide/Art/
   light/  dark/     mystery plates and -wide cinema bands
   hero/             tall and wide set heroes
   crucifix.png
 ```
 
-Light and dark plates share composition; the theme only changes the marble ground. The Xcode project copies the `Resources` folder into the app bundle.
+Light and dark plates share composition; the theme only changes the marble ground. The Xcode project copies `Art/` and `Fonts/` to the **bundle root**. Do not put a top-level `Resources/` folder in the `.app` — iOS codesign treats that as an invalid macOS-style bundle (Info.plist unbound, device install fails).
 
 `WebsiteReference/` holds the website CSS/JS used as the native parity reference (`art.js`, `mysteries.js`, `prayers.js`, `theme.js`, `app.css`).
 
@@ -68,7 +70,7 @@ Settings and the in-progress rosary are stored in `UserDefaults` on the device. 
 
 ```
 RosaryGuide.xcodeproj
-RosaryGuide/                  App, models, catalogs, services, views, Resources
-RosaryGuideTests/             Calendar and sequence tests
+RosaryGuide/                  App, models, catalogs, services, views, Art, Fonts
+RosaryGuideTests/             Calendar, sequence, and theme-token tests
 WebsiteReference/             Website CSS/JS for parity
 ```

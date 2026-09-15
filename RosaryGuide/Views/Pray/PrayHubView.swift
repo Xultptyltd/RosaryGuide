@@ -15,7 +15,8 @@ struct PrayHubView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     Text("Pray")
-                        .font(AppTheme.serif(36))
+                        .font(AppTheme.serif(36, opticalSize: 36))
+                        .foregroundStyle(palette.ink)
                     Text("Choose a mystery set, or continue a rosary already underway today.")
                         .font(AppTheme.sans(15))
                         .foregroundStyle(palette.dim)
@@ -55,10 +56,12 @@ struct PrayHubView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(22)
+                .padding(AppTheme.gutter)
+                .padding(.bottom, 12)
             }
-            .background(palette.bg)
+            .guidePageChrome()
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 }

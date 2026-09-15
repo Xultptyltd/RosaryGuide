@@ -39,6 +39,7 @@
 		8F62025B36D09F46E23C493B /* ArtCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63A4454F491B38C212CC931 /* ArtCatalog.swift */; };
 		214885458E9A4307B45D76C0 /* Art in Resources */ = {isa = PBXBuildFile; fileRef = 7C08C1EC25164414B0A6381F /* Art */; };
 		EE5F4F6C5D5847F99D26F8BB /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = D9EF17A3557946A382A9BB17 /* Fonts */; };
+		A7C10007A1B2C3D4E5F60007 /* ThemeTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C10006A1B2C3D4E5F60006 /* ThemeTokenTests.swift */; };
 		F47D85D5383CB8F901559461 /* LiturgicalCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E6BD2027DE74F3262A8F28 /* LiturgicalCalendarTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -77,6 +78,7 @@
 		8589A7E167BB2CC661B8B1E9 /* PrayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayView.swift; sourceTree = "<group>"; };
 		991251FFFCB12E381DCA553A /* RosarySequenceBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosarySequenceBuilder.swift; sourceTree = "<group>"; };
 		B3E6BD2027DE74F3262A8F28 /* LiturgicalCalendarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiturgicalCalendarTests.swift; sourceTree = "<group>"; };
+		A7C10006A1B2C3D4E5F60006 /* ThemeTokenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeTokenTests.swift; sourceTree = "<group>"; };
 		B4D6BFA1CB98A02A8F760C6D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		BC9AAFD7E9E6EF192919BEC9 /* MysteryCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MysteryCalendar.swift; sourceTree = "<group>"; };
 		BD04A739CD276BFD692104B7 /* HowToPrayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToPrayView.swift; sourceTree = "<group>"; };
@@ -180,6 +182,7 @@
 			children = (
 				B3E6BD2027DE74F3262A8F28 /* LiturgicalCalendarTests.swift */,
 				DC7688092076D0FC5DE763D0 /* MysteryCalendarTests.swift */,
+				A7C10006A1B2C3D4E5F60006 /* ThemeTokenTests.swift */,
 			);
 			path = RosaryGuideTests;
 			sourceTree = "<group>";
@@ -367,6 +370,7 @@
 			files = (
 				F47D85D5383CB8F901559461 /* LiturgicalCalendarTests.swift in Sources */,
 				443FF4F01F38FE1DC8B240C1 /* MysteryCalendarTests.swift in Sources */,
+				A7C10007A1B2C3D4E5F60007 /* ThemeTokenTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
