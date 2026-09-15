@@ -1,0 +1,2030 @@
+/* Self-hosted variable faces; the stacks below still name the system fallbacks. */
+@font-face{
+  font-family:'Instrument Sans';
+  font-style:normal;
+  font-weight:400 600;
+  font-display:swap;
+  src:url('../fonts/instrument-sans.woff2') format('woff2')}
+@font-face{
+  font-family:'Newsreader';
+  font-style:normal;
+  font-weight:300 500;
+  font-display:swap;
+  src:url('../fonts/newsreader.woff2') format('woff2')}
+@font-face{
+  font-family:'Newsreader';
+  font-style:italic;
+  font-weight:300 500;
+  font-display:swap;
+  src:url('../fonts/newsreader-italic.woff2') format('woff2')}
+
+
+/* Colour tokens that can ease, so Light / Dark reads as dusk instead of a cut. */
+@property --bg { syntax: "<color>"; inherits: true; initial-value: #0C0D0F; }
+@property --sheet { syntax: "<color>"; inherits: true; initial-value: #0C0D0F; }
+@property --card { syntax: "<color>"; inherits: true; initial-value: #17181A; }
+@property --card-2 { syntax: "<color>"; inherits: true; initial-value: #1E2024; }
+@property --hair { syntax: "<color>"; inherits: true; initial-value: rgba(255,255,255,.075); }
+@property --frame { syntax: "<color>"; inherits: true; initial-value: rgba(236,240,245,.28); }
+@property --ui { syntax: "<color>"; inherits: true; initial-value: rgba(236,240,245,.34); }
+@property --text { syntax: "<color>"; inherits: true; initial-value: #EEF1F4; }
+@property --dim { syntax: "<color>"; inherits: true; initial-value: #8E939A; }
+@property --faint { syntax: "<color>"; inherits: true; initial-value: #7F848B; }
+@property --accent { syntax: "<color>"; inherits: true; initial-value: #DDE3EA; }
+@property --on-accent { syntax: "<color>"; inherits: true; initial-value: #121316; }
+@property --panel { syntax: "<color>"; inherits: true; initial-value: #17181A; }
+@property --hero-veil-top { syntax: "<color>"; inherits: true; initial-value: rgba(12,13,15,.34); }
+@property --hero-veil-mid { syntax: "<color>"; inherits: true; initial-value: rgba(12,13,15,0); }
+@property --hero-veil-low { syntax: "<color>"; inherits: true; initial-value: rgba(12,13,15,.55); }
+@property --veil-a { syntax: "<color>"; inherits: true; initial-value: rgba(12,13,15,.38); }
+@property --veil-b { syntax: "<color>"; inherits: true; initial-value: rgba(12,13,15,.86); }
+@property --plate-top { syntax: "<color>"; inherits: true; initial-value: rgba(10,11,13,.58); }
+@property --plate-mid { syntax: "<color>"; inherits: true; initial-value: rgba(12,13,15,.62); }
+@property --plate-end { syntax: "<color>"; inherits: true; initial-value: #0C0D0F; }
+
+:root{
+  --btn-h:3.3rem;
+  --bg:#0C0D0F;
+  --sheet:#0C0D0F;
+  --card:#17181A;
+  --card-2:#1E2024;
+  --hair:rgba(255,255,255,.075);
+  --frame:rgba(236,240,245,.28);
+  --ui:rgba(236,240,245,.52);
+  --text:#EEF1F4;
+  --chrome-text:#EEF1F4;
+  --chrome-dim:#8E939A;
+  --dim:#8E939A;
+  --faint:#7F848B;
+  --accent:#DDE3EA;
+  --on-accent:#121316;
+  --sans:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --serif:'Newsreader','Iowan Old Style',Georgia,serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --vt-ease:cubic-bezier(.16,1,.3,1);
+  --r:20px;
+  --r-panel:16px;
+  --r-nested:14px;
+  --r-feature:26px;
+  --r-pill:100px;
+  /* Figma Glass stand-in: frost 20, light -45° at 90%, depth 60. No real refraction. */
+  --glass-frost:blur(10px) saturate(1.4);
+  --glass-fill:rgba(255,255,255,.14);
+  --glass-sheen:rgba(255,255,255,.38);
+  --glass-edge:rgba(255,255,255,.36);
+  --glass-shade:rgba(12,13,15,.26);
+  --glass-ink:#EEF1F4;
+  --shadow:0 8px 40px rgba(0,0,0,.12);
+  --shadow-sm:0 4px 16px rgba(0,0,0,.10);
+  --glass-depth:inset .6px .6px 0 rgba(255,255,255,.5), inset -.6px -.6px 0 rgba(12,13,15,.22), var(--shadow-sm);
+  --panel:var(--card);
+  --lift:var(--shadow);
+  --hero-veil-top:rgba(12,13,15,.34);
+  --hero-veil-mid:rgba(12,13,15,0);
+  --hero-veil-low:rgba(12,13,15,.55);
+  --glass-on-chip:#191713;
+  --glass-card:rgba(12,13,15,.58);
+  color-scheme:dark;
+}
+html[data-theme="light"]{
+  --bg:#F4F1EB;
+  --sheet:#F4F1EB;
+  --card:#FFFEFA;
+  --card-2:#E8E2D8;
+  --hair:rgba(23,21,18,.11);
+  --frame:rgba(25,23,19,.42);
+  --ui:rgba(25,23,19,.52);
+  --text:#191713;
+  --chrome-text:#191713;
+  --chrome-dim:#635D54;
+  --dim:#635D54;
+  --faint:#6E675B;
+  --accent:#1B1917;
+  --on-accent:#FAF8F5;
+  /* a hair more edge so cream cards do not dissolve into the page */
+  --panel:color-mix(in srgb, #FFFEFA 28%, var(--bg));
+  --lift:var(--shadow);
+  --hero-veil-top:rgba(244,241,235,.18);
+  --hero-veil-mid:rgba(244,241,235,0);
+  --hero-veil-low:rgba(244,241,235,.55);
+  --glass-fill:rgba(255,255,255,.34);
+  --glass-sheen:rgba(255,255,255,.55);
+  --glass-edge:rgba(255,255,255,.5);
+  --glass-shade:rgba(23,21,18,.12);
+  --glass-ink:#171512;
+  --glass-on-chip:#191713;
+  --glass-card:rgba(255,255,255,.42);
+  --glass-depth:inset .6px .6px 0 rgba(255,255,255,.62), inset -.6px -.6px 0 rgba(23,21,18,.1), var(--shadow-sm);
+  color-scheme:light;
+}
+/* Soft surfaces for things you browse; week / feasts / how-to stay on hairlines. */
+.seg{box-shadow:var(--lift)}
+.mystery{box-shadow:none}
+html[data-theme="light"] .mystery{box-shadow:none}
+/* Match live v95: a 1px ring and a hair of lift, not the big Figma shadow. */
+.week,.feasts,.howto-card{box-shadow:none;border:none}
+html[data-theme="light"] .week,
+html[data-theme="light"] .feasts,
+html[data-theme="light"] .howto-card{
+  box-shadow:0 1px 2px rgba(23,21,18,.06), 0 0 0 1px rgba(23,21,18,.08)}
+
+/* Light / Dark: ease the tokens and the hero painting. Only while .theme-ease
+   is on, so the first paint and ordinary hover still cut cleanly. */
+html.theme-ease{
+  transition:
+    --bg .95s cubic-bezier(.4,.02,.2,1),
+    --sheet .95s cubic-bezier(.4,.02,.2,1),
+    --card .95s cubic-bezier(.4,.02,.2,1),
+    --card-2 .95s cubic-bezier(.4,.02,.2,1),
+    --hair .95s cubic-bezier(.4,.02,.2,1),
+    --frame .95s cubic-bezier(.4,.02,.2,1),
+    --ui .95s cubic-bezier(.4,.02,.2,1),
+    --text .4s cubic-bezier(.4,.02,.2,1),
+    --dim .4s cubic-bezier(.4,.02,.2,1),
+    --faint .4s cubic-bezier(.4,.02,.2,1),
+    --accent .4s cubic-bezier(.4,.02,.2,1),
+    --on-accent .4s cubic-bezier(.4,.02,.2,1),
+    --panel .95s cubic-bezier(.4,.02,.2,1),
+    --hero-veil-top .95s cubic-bezier(.4,.02,.2,1),
+    --hero-veil-mid .95s cubic-bezier(.4,.02,.2,1),
+    --hero-veil-low .95s cubic-bezier(.4,.02,.2,1),
+    --veil-a .95s cubic-bezier(.4,.02,.2,1),
+    --veil-b .95s cubic-bezier(.4,.02,.2,1),
+    --plate-top .95s cubic-bezier(.4,.02,.2,1),
+    --plate-mid .95s cubic-bezier(.4,.02,.2,1),
+    --plate-end .95s cubic-bezier(.4,.02,.2,1),
+    background-color .95s cubic-bezier(.4,.02,.2,1)}
+html.theme-ease body,html.theme-ease body::before,html.theme-ease .page{
+  transition:background-color .95s cubic-bezier(.4,.02,.2,1)}
+html.theme-ease .hero picture,
+html.theme-ease .brand img{
+  transition:opacity .95s cubic-bezier(.4,.02,.2,1)}
+html.theme-ease .glass{
+  transition:color .95s cubic-bezier(.4,.02,.2,1),background .95s cubic-bezier(.4,.02,.2,1),border-color .95s cubic-bezier(.4,.02,.2,1),box-shadow .95s cubic-bezier(.4,.02,.2,1),transform .16s var(--ease)}
+html.theme-ease #themeBtn svg,html.theme-ease #themeBtn span{
+  transition:opacity .8s cubic-bezier(.4,.02,.2,1)}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+html{background:var(--bg)}
+body{overflow-x:visible}
+body::before{content:"";position:fixed;left:0;right:0;bottom:0;
+  top:calc(0px - env(safe-area-inset-top,0px));background:var(--bg);z-index:-1}
+::selection{background:var(--accent);color:var(--on-accent)}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:var(--sans);font-size:17px;line-height:1.55;
+  font-weight:400;letter-spacing:-.006em;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;font-family:var(--serif);font-weight:400;letter-spacing:-.022em;line-height:1.06}
+p{margin:0}
+button{font-family:inherit;letter-spacing:inherit}
+
+/* Hold the first paint until the script below has built the carousel, week
+   and pips, so the page appears complete instead of the hero and Begin button
+   arriving before everything under them. The <html> class flips the instant
+   the build finishes; if the script never runs, the fallback keeps it visible. */
+.page{width:100%;background:var(--bg);min-height:100vh}
+html.booting .page{opacity:0}
+html.ready .page{opacity:1;transition:opacity .28s ease}
+:root{--gut:1.5rem;
+  --chrome-top:max(.85rem,env(safe-area-inset-top,0px))}
+/* Home-screen app: the status bar sits on the page. Don't pull the painting
+   above y=0, and park Light / Dark below the clock. */
+html.standalone{--chrome-top:calc(max(47px,env(safe-area-inset-top,0px)) + .75rem)}
+@media (display-mode: standalone), (display-mode: fullscreen){
+  :root{--chrome-top:calc(max(47px,env(safe-area-inset-top,0px)) + .75rem)}
+}
+.pad{padding-left:var(--gut);padding-right:var(--gut)}
+
+/* ---------------- hero ---------------- */
+.hero{position:relative;isolation:isolate;height:calc(clamp(24rem,64svh,38rem) + env(safe-area-inset-top,0px));
+  margin-top:calc(0px - env(safe-area-inset-top,0px));overflow:hidden;background:var(--card)}
+.hero picture{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%}
+.hero img{width:100%;height:100%;max-width:none;object-fit:cover;object-position:50% 28%;display:block;
+  animation:fade 1.2s var(--ease) both}
+@keyframes fade{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
+.hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    linear-gradient(to top,var(--bg) 0%,var(--bg) 14%,var(--hero-veil-low) 36%,transparent 64%),
+    linear-gradient(to bottom,var(--hero-veil-top) 0%,transparent 22%)}
+
+.hero-bar{position:absolute;top:0;right:0;left:auto;z-index:2;pointer-events:none;
+  padding:var(--chrome-top) max(1rem,env(safe-area-inset-right,0px)) 0 0}
+html.standalone .hero{margin-top:0}
+@media (display-mode: standalone), (display-mode: fullscreen){
+  .hero{margin-top:0}
+}
+.hero-bar>*{pointer-events:auto}
+/* one artwork per theme, so the sky behind her matches the page */
+.hero picture.on-light{opacity:0}
+html[data-theme="light"] .hero picture.on-dark{opacity:0}
+html[data-theme="light"] .hero picture.on-light{opacity:1}
+/* One family of round controls: same size, weight and press. Over a painting
+   they go translucent; on a solid page they take the soft surface fill. */
+.ctl,.glass,.round{width:2.5rem;height:2.5rem;border-radius:50%;border:none;cursor:pointer;
+  display:grid;place-items:center;flex:0 0 auto;
+  font-size:.75rem;font-weight:500;letter-spacing:-.01em;
+  color:var(--dim);background:var(--card-2);
+  transition:color .2s var(--ease),background .2s var(--ease),transform .16s var(--ease)}
+.ctl:hover,.glass:hover,.round:hover{color:var(--text)}
+.ctl:active,.glass:active,.round:active{transform:scale(.94)}
+.glass,
+.pray.is-plate .pbar .round{
+  color:var(--glass-ink);
+  background:var(--glass-fill);
+  backdrop-filter:var(--glass-frost);-webkit-backdrop-filter:var(--glass-frost);
+  border:1px solid var(--glass-edge);
+  box-shadow:var(--glass-depth)}
+html[data-theme="light"] .glass{color:var(--glass-ink)}
+#themeBtn{width:auto;height:2.5rem;border-radius:var(--r-pill);
+  display:inline-grid;grid-template-columns:auto auto;column-gap:.45rem;
+  align-items:center;justify-content:center;
+  padding:0 1rem 0 .8rem;
+  font:inherit;font-size:.8125rem;font-weight:500;letter-spacing:.01em}
+#themeBtn svg{grid-column:1;grid-row:1}
+#themeBtn span{grid-column:2;grid-row:1;white-space:nowrap}
+#themeBtn .sun,#themeBtn .to-light{opacity:0}
+html[data-theme="light"] #themeBtn .sun,
+html[data-theme="light"] #themeBtn .to-light{opacity:1}
+html[data-theme="light"] #themeBtn .moon,
+html[data-theme="light"] #themeBtn .to-dark{opacity:0}
+
+/* ---------------- sheet ---------------- */
+.sheet{position:relative;z-index:3;margin:-3.5rem auto 0;padding-top:.35rem;max-width:36rem}
+
+.today{font-size:.875rem;color:var(--dim);margin-bottom:.9rem}
+/* Newsreader carries an opsz axis from 6 to 72, and font-optical-sizing:auto
+   already tracks the pixel size. These take the display end further than the
+   size alone reaches, and hold the sturdier text cut for reading copy at the
+   larger Aa settings, where auto would drift toward display shapes. */
+h1.title{font-size:clamp(2.7rem,11.5vw,3.5rem);letter-spacing:-.022em;line-height:1.02;
+  font-variation-settings:'opsz' 72}
+.because{font-size:.9375rem;color:var(--dim);margin-top:1rem;line-height:1.5}
+.because button{background:none;border:none;padding:0;cursor:pointer;color:var(--text);
+  font-size:inherit;text-decoration:underline;text-underline-offset:3px;
+  text-decoration-color:var(--faint)}
+
+/* segmented control */
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-top:1.6rem;
+  padding:3px;background:var(--card);border-radius:var(--r-pill)}
+.seg button{border:none;background:none;cursor:pointer;padding:.92rem .2rem;border-radius:var(--r-pill);
+  font-size:.8125rem;font-weight:500;color:var(--dim);white-space:nowrap;
+  transition:background .22s var(--ease),color .22s var(--ease)}
+.seg button[aria-pressed="true"]{background:var(--card-2);color:#000}
+html[data-theme="light"] .seg{background:var(--card-2);box-shadow:none}
+html[data-theme="light"] .seg button[aria-pressed="true"]{
+  background:#fff;box-shadow:var(--shadow)}
+.seg button span{position:relative}
+.seg button.is-today span::after{content:"";position:absolute;top:-.34rem;left:50%;
+  transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--faint)}
+.seg button[aria-pressed="true"].is-today span::after{background:#000}
+
+.cta{width:100%;margin-top:1.25rem;padding:1.15rem;border:none;border-radius:var(--r-pill);cursor:pointer;
+  background:var(--accent);color:var(--on-accent);
+  font-family:var(--sans);font-size:1rem;font-weight:600;letter-spacing:-.01em;
+  transition:transform .16s var(--ease),opacity .2s var(--ease)}
+.cta:active{transform:scale(.985)}
+/* Restart stays available, but clearly secondary to Continue */
+.ghost{margin-top:.7rem}
+.cta-stack{display:flex;flex-direction:column;align-items:stretch}
+.cta-stack .go-alt{font-family:var(--sans);font-size:1rem;font-weight:500;
+  letter-spacing:-.01em;padding:calc(.85rem - 1px);
+  border-color:var(--ui);color:var(--dim)}
+.cta-stack .go-alt:hover{color:var(--text);border-color:var(--ui)}
+
+/* ---------------- sections: one title + sub + spacing recipe ---------------- */
+section{margin-top:4.5rem}
+#decades{margin-top:3.25rem}
+.sec-title{font-family:var(--sans);font-size:.75rem;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:.5rem}
+section > .sec-title:not(:has(+ .sec-sub)){margin-bottom:1.15rem}
+.sec-sub{font-size:.9375rem;color:var(--dim);margin-bottom:1.4rem;line-height:1.5}
+.pill{display:inline-block;margin-right:.6rem;padding:.16rem .58rem;
+  border-radius:var(--r-pill);background:var(--card-2);color:var(--text);
+  font-size:.75rem;font-weight:500;letter-spacing:.02em;
+  vertical-align:.08em;white-space:nowrap;
+  transition:background .2s var(--ease),color .2s var(--ease)}
+html[data-theme="light"] .pill{background:var(--card-2);color:var(--text)}
+.stage[open]>summary .pill{background:var(--accent);color:var(--on-accent)}
+
+/* ---------- mystery carousel ---------- */
+.rail{display:flex;gap:.8rem;justify-content:safe center;overflow-x:auto;overscroll-behavior-x:contain;
+  scroll-padding-inline:var(--gut);
+  scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;-ms-overflow-style:none;
+  margin-inline:calc(var(--gut) * -1);padding-inline:var(--gut);padding-block:.15rem}
+.rail::-webkit-scrollbar{display:none}
+.rail .mystery{border-radius:var(--r-feature);flex:0 0 min(86%,26rem);scroll-snap-align:start;scroll-snap-stop:always;
+  display:flex;flex-direction:column}
+.rail .m-body{flex:1;display:flex;flex-direction:column}
+.rail .fruit{margin-top:auto}
+.rail-bar{display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;margin-top:1.1rem;min-height:1.75rem}
+.pips{display:flex;gap:.42rem;align-items:center}
+/* the dot stays 6px; the target around it does not */
+.pip{width:.4rem;height:.4rem;border-radius:50%;background-color:var(--ui);border:none;
+  box-sizing:content-box;padding:1.2rem .78rem;margin:-1.2rem -.78rem;background-clip:content-box;
+  cursor:pointer;transition:background .25s var(--ease),width .25s var(--ease)}
+.pip.on{background-color:var(--accent);width:1.15rem;border-radius:var(--r-pill)}
+.arrows{display:none;gap:.4rem}
+.arrow{width:2.5rem;height:2.5rem;border-radius:50%;border:none;cursor:pointer;
+  background:var(--card-2);color:var(--dim);display:grid;place-items:center;
+  transition:color .2s var(--ease),opacity .2s var(--ease)}
+.arrow:hover{color:var(--text)}
+.arrow[disabled]{opacity:.3;cursor:default}
+@media (hover:hover) and (min-width:48rem){.arrows{display:flex}}
+.mystery{background:var(--card);border-radius:var(--r);overflow:hidden}
+.m-body{padding:1.35rem 1.4rem}
+.art{position:relative;display:block;width:100%;background:var(--card-2);overflow:hidden}
+.m-art{aspect-ratio:4/3}
+/* the image meets the card rather than ending at a ruled edge */
+.rail .m-art::after{content:"";position:absolute;inset:auto 0 -1px 0;height:40%;
+  pointer-events:none;background:linear-gradient(180deg,transparent,var(--card))}
+html:not([data-theme="light"]) .rail .m-art::after{
+  height:52%;
+  background:linear-gradient(180deg,
+    rgba(23,24,26,0) 0%,
+    rgba(23,24,26,.42) 48%,
+    #17181A 100%)}
+.art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.ph{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:.45rem;color:var(--faint)}
+.ph svg{opacity:.5}
+.ph em{font-style:normal;font-size:.75rem;letter-spacing:.01em}
+.mystery .n{font-size:.8125rem;color:var(--faint);margin-bottom:.55rem}
+.mystery h3{font-size:1.375rem;line-height:1.18;letter-spacing:-.008em;
+  font-variation-settings:'opsz' 34}
+.verse{font-family:var(--serif);font-size:1.0625rem;line-height:1.68;color:var(--dim);
+  margin-top:.85rem;font-style:normal;font-variation-settings:'opsz' 16}
+/* Home cards stay even; the mystery screen carries the full USCCB reading. */
+.rail .verse{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.ref{font-size:.8125rem;color:var(--faint);margin-top:.6rem}
+.rail .ref{font-size:.6875rem}
+.rail .fruit{font-size:.75rem}
+.rail .fruit em{font-size:.75rem}
+/* The fruit is the decade's intention, so the virtue itself is named in the serif
+   the way the mysteries and the per-bead lead are, a step above the running text.
+   The word "Fruit" stays a quiet sans tag: a label, not part of the phrase. */
+.fruit{display:flex;align-items:baseline;margin-top:1.1rem;
+  padding-top:.95rem;border-top:1px solid var(--hair);font-size:.9375rem;
+  flex-wrap:wrap}
+.fruit b{color:var(--faint);font-weight:400}
+.fruit em{font-style:normal;color:var(--text);
+  font-family:var(--serif);font-size:1.0625rem}
+.sep{display:inline-block;padding:0 .5em;font-weight:400;font-style:normal;
+  font-family:var(--sans)}
+.fruit .sep,.pfruit .sep{color:var(--faint);padding:0 .55em}
+/* announce fruit uses the same hairline recipe as the home cards */
+
+/* The path: one card, like feasts / This week. */
+.howto-card{background:var(--panel);
+  border-radius:var(--r-panel);padding:.2rem 1.15rem}
+.path-list{list-style:none;margin:0;padding:.2rem 0 .35rem}
+.path-list li{padding:1.05rem 0;font-size:.9375rem;color:var(--dim);line-height:1.5}
+.path-list li+li{box-shadow:inset 0 1px 0 var(--hair)}
+.path-list b{display:block;font-family:var(--serif);font-size:1.125rem;font-weight:500;
+  color:var(--text);margin-bottom:.28rem;letter-spacing:-.008em}
+.stage{background:none;border-radius:0;overflow:visible;box-shadow:none;
+  border-bottom:none}
+.stage+.stage{margin-top:0;box-shadow:inset 0 1px 0 var(--hair)}
+.stage>summary{display:flex;align-items:center;gap:0;padding:1.15rem 0;
+  font-size:1rem;cursor:pointer;list-style:none;background:none}
+.stage>summary::-webkit-details-marker{display:none}
+.stage>summary::after{content:"";margin-left:auto;width:.5rem;height:.5rem;
+  border-right:1.5px solid var(--dim);border-bottom:1.5px solid var(--dim);
+  transform:rotate(45deg);transition:transform .25s var(--ease)}
+.stage[open]>summary::after{transform:rotate(-135deg)}
+.stage .steps{
+  background:color-mix(in srgb, var(--card) 32%, var(--bg));
+  border-radius:var(--r-nested);box-shadow:none;
+  padding:.2rem 1.1rem;margin:0 0 1.05rem}
+html:not([data-theme="light"]) .stage .steps{background:var(--card-2)}
+.steps>details,.steps>.step-flat{background:none;border-radius:0;margin:0;box-shadow:none;
+  border:none}
+.steps>:not(:last-child){
+  background-image:linear-gradient(var(--hair),var(--hair));
+  background-size:calc(100% - 1.9rem) 1px;
+  background-position:1.9rem 100%;
+  background-repeat:no-repeat}
+.steps .step-flat{display:flex;gap:1rem;padding:.95rem 0;font-size:1rem}
+.steps summary{padding:.95rem 0;font-size:1rem;gap:1rem;align-items:flex-start}
+.steps summary>span:first-of-type{flex:1}
+.steps summary::marker,.steps summary::-webkit-details-marker{display:none;content:none}
+.steps summary::after{content:none!important}
+.steps summary svg{display:none!important}
+.steps summary .chev{margin-left:auto;flex:none;width:.42rem;height:.42rem;margin-top:.48rem;
+  border-right:1.5px solid var(--faint);border-bottom:1.5px solid var(--faint);
+  transform:rotate(45deg);transition:transform .25s var(--ease);opacity:.7}
+.steps details[open]>summary .chev{transform:rotate(-135deg)}
+.steps details .txt{padding:0 0 1.15rem 1.9rem;font-size:1rem;line-height:1.7}
+.steps i{font-style:normal;color:var(--faint);font-size:.8125rem;padding-top:.22rem;
+  min-width:.9rem;font-variant-numeric:tabular-nums}
+.steps small{display:block;color:var(--dim);font-size:.875rem;margin-top:.1rem}
+
+
+/* prayers */
+details{background:var(--card);border-radius:var(--r);overflow:hidden}
+details+details{margin-top:.5rem}
+summary{list-style:none;cursor:pointer;padding:1.15rem 1.4rem;display:flex;
+  align-items:center;justify-content:space-between;gap:1rem;font-size:1.0625rem}
+summary::-webkit-details-marker{display:none}
+summary svg{flex:0 0 auto;color:var(--faint);transition:transform .25s var(--ease)}
+details[open]>summary svg{transform:rotate(45deg)}
+details .txt{padding:0 1.4rem 1.4rem;font-family:var(--serif);font-size:1.0625rem;
+  line-height:1.72;color:var(--dim)}
+.vr{display:grid;grid-template-columns:1.6rem 1fr;gap:.2rem .3rem;font-family:var(--sans);font-size:.9375rem}
+.vr i{font-style:normal;color:var(--faint)}
+
+/* week table — same quiet card as Upcoming Marian feasts */
+.week{background:var(--panel);
+  border-radius:var(--r-panel);padding:.2rem 1.15rem}
+.week > div{display:flex;justify-content:space-between;gap:1rem;align-items:baseline;
+  padding:.95rem 0;border:none;background:none;
+  width:100%;margin:0;font:inherit;font-size:1rem;letter-spacing:inherit;
+  color:inherit;text-align:left}
+.week > div + div{box-shadow:inset 0 1px 0 var(--hair)}
+.week em{display:inline-flex;align-items:center;justify-content:flex-end;gap:.32rem;
+  font-style:normal;color:var(--dim);font-size:.9375rem;text-align:right}
+.week .crown{width:1.05rem;height:1.05rem;flex:none;color:#E2B75A}
+html[data-theme="light"] .week .crown{color:#C4922C}
+.week span{display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap}
+.week small{font-size:.8125rem;color:var(--faint)}
+.week b{font-size:.6875rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--on-accent);background:var(--accent);border-radius:var(--r-pill);padding:.16rem .48rem}
+.week .is-today em{color:var(--text)}
+.week .is-prayed em{color:var(--text)}
+.week .is-prayed .prayed{font-style:normal;font-size:.6875rem;font-weight:500;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--faint);border:1px solid var(--hair);
+  border-radius:var(--r-pill);padding:.14rem .48rem;background:none}
+
+
+html:not([data-theme="light"]) .week,
+html:not([data-theme="light"]) .feasts,
+html:not([data-theme="light"]) .howto-card,
+html:not([data-theme="light"]) .install-card{
+  background:var(--panel)}
+/* Marian feasts: a short calendar of accordions, like How to pray */
+.feasts{background:var(--panel);
+  border-radius:var(--r-panel);padding:.2rem 1.15rem}
+.feasts details{background:none;border-radius:0;overflow:visible;box-shadow:none;margin:0}
+.feasts details+details{margin-top:0;box-shadow:inset 0 1px 0 var(--hair)}
+.feasts summary{display:flex;align-items:center;gap:1.05rem;
+  padding:1.05rem 0;justify-content:flex-start;font-size:inherit}
+.feasts summary::-webkit-details-marker{display:none}
+.feasts summary::marker{content:none}
+.feasts summary::after{content:none}
+.feasts summary .chev{margin-left:auto;flex:none;width:.42rem;height:.42rem;
+  border-right:1.5px solid var(--faint);border-bottom:1.5px solid var(--faint);
+  transform:rotate(45deg);transition:transform .25s var(--ease);opacity:.7}
+.feasts details[open]>summary .chev{transform:rotate(-135deg)}
+.feasts summary svg{display:none}
+.feasts .when{display:flex;flex-direction:column;align-items:center;gap:.18rem;
+  flex:0 0 3.35rem}
+.feasts .d{font-family:var(--serif);font-size:1.55rem;line-height:1;
+  font-variation-settings:'opsz' 28;color:var(--text)}
+.feasts .m{font-size:.625rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--faint)}
+.feasts .who{display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap;min-width:0;flex:1}
+.feasts .nm{font-family:var(--serif);font-size:1.125rem;line-height:1.28;
+  font-variation-settings:'opsz' 28}
+.feasts b{font-size:.6875rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--on-accent);background:var(--accent);border-radius:var(--r-pill);padding:.16rem .48rem;
+  font-family:var(--sans)}
+.feasts .about{padding:0 0 1.15rem}
+.feasts .about p{margin:0;font-family:var(--serif);font-size:1rem;line-height:1.7;color:var(--dim)}
+.feasts summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px;
+  border-radius:4px}
+
+/* footer: same left edge as The path / This week; the R is a colophon. */
+footer{margin-top:2.5rem;padding:0 0 calc(3.75rem + env(safe-area-inset-bottom,0px))}
+.publisher{font-size:.8125rem;color:var(--dim);text-align:center;line-height:1.55;
+  max-width:22rem;margin:2.15rem auto 0}
+.install-invite{padding-top:0}
+.install-card{display:flex;flex-direction:column;align-items:center;gap:.9rem;
+  background:var(--panel);border-radius:var(--r-panel);
+  padding:1.1rem 1.2rem 1.15rem;text-align:center}
+html[data-theme="light"] .install-card{background:#fff}
+.install-card .sec-sub{margin:0;color:var(--text)}
+html[data-theme="light"] .install-card .sec-sub{color:#635D54}
+@media (min-width:40rem){
+  .install-card{flex-direction:row;align-items:center;justify-content:space-between;
+    gap:1rem;padding:.85rem 1.05rem .85rem 1.2rem;text-align:left}
+  .install-card .sec-sub{flex:1;min-width:0}
+}
+.brand{position:relative;width:2.35rem;margin:2.85rem auto 0;opacity:.78}
+.brand img{display:block;width:100%;height:auto}
+.brand .on-light{position:absolute;inset:0;opacity:0}
+html[data-theme="light"] .brand .on-dark{opacity:0}
+html[data-theme="light"] .brand .on-light{opacity:1}
+@media (min-width:40rem){
+  .brand{width:2.55rem}
+  footer{padding-bottom:3rem}
+}
+/* Home-screen app: keep the wordmark, with air above the home indicator. */
+html.standalone footer{padding-bottom:calc(4.25rem + env(safe-area-inset-bottom,0px))}
+@media (display-mode: standalone), (display-mode: fullscreen){
+  footer{padding-bottom:calc(4.25rem + env(safe-area-inset-bottom,0px))}
+}
+
+/* ---------- the how-to sheet ---------- */
+.sheet-wrap{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-end;
+  justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);
+  animation:fade .25s ease both}
+.sheet-wrap[hidden]{display:none}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet-card{width:100%;max-width:32rem;background:var(--card);color:var(--text);
+  border-radius:22px 22px 0 0;padding:1.6rem 1.5rem calc(2rem + env(safe-area-inset-bottom));
+  max-height:88vh;overflow-y:auto;animation:up .32s cubic-bezier(.2,.8,.3,1) both}
+@keyframes up{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+.sheet-head h2{font-size:1.375rem;line-height:1.2}
+.sheet-sub{color:var(--dim);font-size:.9375rem;margin-top:.6rem}
+.tabs{display:flex;gap:.3rem;background:var(--card-2);border-radius:var(--r-pill);
+  padding:.25rem;margin:1.3rem 0 1.4rem}
+.tabs button{flex:1;font:inherit;font-size:.875rem;padding:.5rem;border:none;cursor:pointer;
+  border-radius:var(--r-pill);background:none;color:var(--dim)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
+.howsteps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:1.15rem;
+  margin:0;padding:0}
+.howsteps[hidden]{display:none}
+.howsteps li{counter-increment:s;position:relative;padding-left:2.5rem;
+  font-size:.9375rem;color:var(--dim);line-height:1.55}
+.howsteps li::before{content:counter(s);position:absolute;left:0;top:.05rem;
+  font-size:.8125rem;color:var(--faint);
+  border:1px solid var(--hair);border-radius:50%;width:1.6rem;height:1.6rem;
+  display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.howsteps b{display:block;margin-bottom:.2rem}
+.howsteps b{color:var(--text);font-weight:500}
+@media (min-width:40rem){
+  .sheet-wrap{align-items:center}
+  .sheet-card{border-radius:20px;margin:1.5rem}
+}
+
+/* ================= pray ================= */
+.pray{--ps:1.3125rem;
+  position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--bg);isolation:isolate;
+  top:0;
+  display:none;flex-direction:column;
+  --pp:1.5rem;
+  --st:var(--chrome-top);
+  padding:var(--st) var(--pp) .4rem}
+.pray.is-plate{padding-top:0}
+html.standalone .pray{
+  padding-bottom:max(.65rem,env(safe-area-inset-bottom,0px))}
+@media (display-mode: standalone), (display-mode: fullscreen){
+  .pray{padding-bottom:max(.65rem,env(safe-area-inset-bottom,0px))}
+}
+.pray.on{display:flex}
+.pray-inner{position:relative;width:100%;max-width:36rem;margin:0 auto;
+  display:flex;flex-direction:column;flex:1;min-height:0}
+/* .copy is a ghost until a desktop mystery plate turns it into a
+   reading column. display:contents keeps Hail Mary / phone / finis
+   layouts on the same children they already use. */
+.copy{display:contents}
+/* ghost wrapper: prayer + beads stay one block on the phone, and still
+   fall out as grid children on desktop Hail Mary. */
+.read{display:contents}
+
+/* header + seven ticks sit on #pray, above the body, never inside a column */
+.pbar{position:relative;flex:none;width:100%;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+  padding-bottom:.85rem;background:var(--bg);z-index:7;pointer-events:none}
+.pbar > :not(.pnow){pointer-events:auto}
+/* .round inherits the shared .ctl family above */
+
+.track{position:relative;flex:none;width:100%;box-sizing:border-box;
+  display:flex;gap:4px;margin:0;padding-bottom:1.35rem;
+  background:var(--bg);z-index:6}
+/* ticks are the only edge — no second hairline. Hit target still 44px. */
+.track button{flex:1;border:none;background:none;padding:1.2rem 0;margin:-1.2rem 0;
+  cursor:pointer;position:relative;z-index:5}
+.track i{display:block;height:3px;border-radius:100px;background:rgba(236,240,245,.16);
+  transition:background .3s var(--ease)}
+.track button.done i{background:rgba(236,240,245,.30)}
+.track button.now i{background:var(--text)}
+html[data-theme="light"] .track i{background:rgba(25,23,19,.10)}
+html[data-theme="light"] .track button.done i{background:rgba(25,23,19,.20)}
+html[data-theme="light"] .track button.now i{background:var(--text)}
+
+.locus{margin-bottom:1.35rem}
+/* the intention for this bead: the one thing that changes across the three */
+.lead{font-family:var(--serif);font-style:italic;font-size:1.0625rem;color:var(--dim);
+  margin:0 0 1.15rem;padding-bottom:.95rem;border-bottom:1px solid var(--hair)}
+.lead b{font-weight:500;font-style:italic;color:var(--text);font-size:1.1875rem}
+.locus .k{font-size:.875rem;color:var(--faint);text-align:left}
+.pray:not(.is-plate):not(.is-finis) .locus h2,
+.pray:not(.is-plate):not(.is-finis) .locus-alt{text-align:left}
+.locus .k[hidden],.pray.is-plate .locus .k[hidden]{display:none}
+.locus-alt{margin:.35rem 0 0;font-family:var(--serif);font-style:italic;
+  font-size:1.0625rem;color:var(--dim);line-height:1.35}
+.locus-alt[hidden]{display:none}
+.locus h2{font-size:1.75rem;margin-top:.45rem;line-height:1.22;letter-spacing:-.012em;
+  font-variation-settings:'opsz' 44}
+
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;min-height:0;
+  display:flex;flex-direction:column;justify-content:flex-start;
+  padding-bottom:var(--foot,8rem);
+  -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 5rem),transparent);
+          mask-image:linear-gradient(180deg,#000 calc(100% - 5rem),transparent)}
+.scroll>*{flex:0 0 auto}
+/* the block must generate a box: a snapshot needs something to capture */
+.say{display:flex;flex-direction:column}
+/* beads sit under the prayer, above Next — a sibling of .scroll, so they stay
+   on screen while the words move */
+.rosary{padding:1.1rem 0 .4rem;width:100%;min-height:3.4rem;flex:0 0 auto}
+.rosary svg{display:block;width:100%;height:auto;overflow:visible}
+.scroll::before,.scroll::after{content:"";flex:1 1 0;min-height:0}
+.prayer{font-family:var(--serif);font-size:var(--ps);line-height:1.68;color:var(--text);
+  font-variation-settings:'opsz' 16;
+  letter-spacing:normal;font-kerning:normal;
+  font-variant-ligatures:common-ligatures;
+  font-feature-settings:"liga" 1}
+.prayer p+p{margin-top:1.15rem}
+.prayer .verse{font-family:var(--serif);font-style:normal;font-variation-settings:'opsz' 16;
+  color:var(--text);font-size:var(--ps);line-height:1.68;margin-top:0}
+.prayer .ref{font-family:var(--sans);margin-top:.9rem}
+.prayer .vr{font-size:calc(var(--ps) * .88)}
+/* ---------- the end: the painting returns, the interface falls away ---------- */
+.finis-art{position:absolute;left:0;right:0;top:0;height:min(62%,34rem);
+  opacity:0;pointer-events:none;transition:opacity 1.5s ease}
+.pray.is-finis .finis-art{opacity:1}
+.finis-art img{width:100%;height:100%;object-fit:cover;object-position:50% 32%;display:block}
+.finis-art::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,var(--veil-a) 0%,var(--veil-b) 50%,var(--bg) 100%)}
+:root{--veil-a:rgba(12,13,15,.38);--veil-b:rgba(12,13,15,.86);
+  --plate-top:rgba(10,11,13,.58);--plate-mid:rgba(12,13,15,.62);--plate-end:#0C0D0F;
+  --plate-shadow:0 1px 18px rgba(0,0,0,.75)}
+html[data-theme="light"]{--veil-a:rgba(255,255,255,.28);--veil-b:rgba(255,255,255,.88);
+  --plate-top:rgba(255,255,255,.40);--plate-mid:rgba(255,255,255,.78);--plate-end:#fff;
+  --plate-shadow:0 1px 16px rgba(255,255,255,.95)}
+
+/* everything but the words steps back — keep Close tappable */
+.pray .pbar,.pray .track{transition:opacity .9s ease}
+.pray.is-finis{padding-top:0;padding-bottom:max(2rem,env(safe-area-inset-bottom,0px))}
+.pray.is-finis .track{display:none}
+.pray.is-finis #size,
+.pray.is-finis .pnow{display:none}
+.pray.is-finis .pbar{
+  position:absolute;top:0;left:0;right:0;justify-content:flex-end;
+  background:none;padding:var(--chrome-top) var(--pp) 0;
+  pointer-events:none}
+.pray.is-finis .pbar .round{pointer-events:auto}
+.pray.is-finis .aux{display:none}
+.pray.is-finis .pfoot{background:none;padding-bottom:.25rem}
+.pray.is-finis .pray-inner{flex:1;min-height:0;height:100%}
+.pray.is-finis .scroll{
+  flex:1;min-height:0;height:100%;
+  display:flex;flex-direction:column;
+  -webkit-mask-image:none;mask-image:none;
+  padding-bottom:calc(var(--foot,8rem) + 1rem)}
+.pray.is-finis .scroll::before{content:"";display:block;flex:1.22 1 0;min-height:0}
+.pray.is-finis .scroll::after{content:"";display:block;flex:1 1 0;min-height:0}
+.pray.is-finis .locus,.pray.is-finis .prayer{animation:settle 1.6s ease both}
+@keyframes settle{from{opacity:.55}to{opacity:1}}
+/* the button waits a moment, so the silence is not tapped straight through */
+.pray.is-finis .go{animation:arrive 1.1s ease .4s both}
+@keyframes arrive{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .finis-art{transition:none}
+  .pray.is-finis .go,.pray.is-finis .locus,.pray.is-finis .prayer{animation:none}
+}
+/* ---------- the rosary beads (drawn in buildRosary) ---------- */
+/* Pearls sit as small spheres on the cord: a radial highlight up-left, mixed
+   toward the page so they never pop as white on black. Future beads are quiet;
+   the current one is a warmer pearl; prayed beads take the ink. --bead is still
+   the solid used by Glory Be / Fatima chain-space nodes. The cord is a warm
+   taupe behind the beads, not the cold hairline of the chrome. */
+:root{
+  --bead:color-mix(in srgb,#EEF1F4 36%,var(--bg));
+  --pearl-hi:color-mix(in srgb,var(--text) 48%,var(--bg));
+  --pearl:color-mix(in srgb,var(--text) 34%,var(--bg));
+  --pearl-lo:color-mix(in srgb,var(--text) 20%,var(--bg));
+  --pearl-now-hi:color-mix(in srgb,var(--text) 60%,var(--bg));
+  --pearl-now:color-mix(in srgb,var(--text) 48%,var(--bg));
+  --pearl-now-lo:color-mix(in srgb,var(--text) 32%,var(--bg));
+  --pearl-done-hi:color-mix(in srgb,var(--text) 86%,var(--bg));
+  --pearl-done:color-mix(in srgb,var(--text) 74%,var(--bg));
+  --pearl-done-lo:color-mix(in srgb,var(--text) 58%,var(--bg));
+  --cord:color-mix(in srgb,#A89880 24%,var(--bg));
+  --wood-hi:color-mix(in srgb,#C4A882 34%,var(--bg));
+  --wood:color-mix(in srgb,#A88860 32%,var(--bg));
+  --wood-lo:color-mix(in srgb,#6B542E 36%,var(--bg));
+  --wood-ink-hi:color-mix(in srgb,#D4BC98 50%,var(--bg));
+  --wood-ink:color-mix(in srgb,#A88860 46%,var(--bg));
+  --medal-hi:color-mix(in srgb,#E8E6E0 38%,var(--bg));
+  --medal:color-mix(in srgb,#C4C0B6 32%,var(--bg));
+  --medal-lo:color-mix(in srgb,#6A665C 40%,var(--bg));
+  --medal-rim:color-mix(in srgb,#D0CCC4 28%,var(--text));
+  --medal-field-hi:color-mix(in srgb,#4A4740 46%,var(--bg));
+  --medal-field:color-mix(in srgb,#2A2824 55%,var(--bg));
+  --medal-relief-hi:color-mix(in srgb,#F2F0EA 50%,var(--bg));
+  --medal-relief:color-mix(in srgb,#D4D0C8 42%,var(--bg));
+  --medal-ink-hi:color-mix(in srgb,var(--text) 48%,#C8C4BA);
+  --medal-ink:color-mix(in srgb,var(--text) 70%,#5A564E);
+}
+html[data-theme="light"]{
+  --bead:color-mix(in srgb,#191713 52%,var(--bg));
+  --pearl-hi:#FFFEF6;
+  --pearl:color-mix(in srgb,#EDE4D6 68%,var(--bg));
+  --pearl-lo:color-mix(in srgb,#C4B49A 52%,var(--bg));
+  --pearl-now-hi:#F0E0C8;
+  --pearl-now:color-mix(in srgb,#C9B48C 78%,var(--bg));
+  --pearl-now-lo:color-mix(in srgb,#8E7A5C 68%,var(--bg));
+  --pearl-done-hi:color-mix(in srgb,var(--text) 52%,#C4B49A);
+  --pearl-done:color-mix(in srgb,var(--text) 70%,var(--bg));
+  --pearl-done-lo:color-mix(in srgb,var(--text) 84%,#3F382E);
+  --cord:color-mix(in srgb,#7A6B58 38%,var(--bg));
+  --wood-hi:#D4BC98;
+  --wood:#C4A882;
+  --wood-lo:#A08058;
+  --wood-ink-hi:color-mix(in srgb,var(--text) 42%,#8B6914);
+  --wood-ink:color-mix(in srgb,var(--text) 58%,#5C4318);
+  --medal-hi:#EDEBE6;
+  --medal:#C8C4BA;
+  --medal-lo:#7A766C;
+  --medal-rim:#B8B4AA;
+  --medal-field-hi:#4A4640;
+  --medal-field:#2C2A26;
+  --medal-relief-hi:#F6F4EE;
+  --medal-relief:#DCD8D0;
+  --medal-ink-hi:color-mix(in srgb,var(--text) 30%,#D0CCC4);
+  --medal-ink:color-mix(in srgb,var(--text) 55%,#5A564E);
+}
+.rosary .cord{fill:none;stroke:var(--cord);stroke-width:1.15;stroke-linecap:round}
+/* Pearl and wood fills live in the SVG <style> (url(#id) from this file
+   would resolve against the stylesheet). Groups carry data-b; shine does not. */
+.rosary .b .body,.rosary .of .body{transition:fill .35s var(--ease)}
+.rosary .shine{fill:var(--pearl-hi);opacity:.38;pointer-events:none}
+html[data-theme="light"] .rosary .shine{opacity:.62}
+.rosary .now .shine,.rosary .done .shine{opacity:.22}
+html[data-theme="light"] .rosary .now .shine,
+html[data-theme="light"] .rosary .done .shine{opacity:.32}
+.rosary .cx{stroke:none}
+.rosary .cx image{opacity:.82;transition:opacity .35s var(--ease)}
+.rosary .cx.now image,.rosary .cx.done image{opacity:1}
+html[data-theme="light"] .rosary .cx image{opacity:.9}
+html[data-theme="light"] .rosary .cx.now image,
+html[data-theme="light"] .rosary .cx.done image{opacity:1}
+.rosary .medal-rim,.rosary .medal-field,.rosary .medal-relief{stroke:none}
+.rosary .medal-bezel,.rosary .medal-bail,.rosary .medal-m,.rosary .medal-cut{fill:none}
+.rosary .medal-face{pointer-events:none}
+/* Glory Be / Fatima: the chain link shows only on the current space.
+   Once passed, the node matches an ordinary small bead. Future spaces stay hidden. */
+.rosary .space{fill:none;stroke:var(--accent);stroke-width:2.6;stroke-linecap:round;
+  opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
+.rosary .space.now{opacity:1}
+.rosary .space-node{fill:var(--bead);opacity:0;
+  transition:fill .35s var(--ease),opacity .35s var(--ease)}
+.rosary .space-node.done,.rosary .space-node.now{opacity:1;fill:var(--text)}
+/* The lit and the finished beads are near neighbours in both palettes, so the
+   current one is found by tracing where the lit run stops. A ring leaving the
+   bead marks the place instead — slow enough to read as breathing, and gone
+   between beats so the diagram is still. */
+.rosary .pulse{--pulse-peak:.55;--pulse-end:4.6;
+  fill:none;stroke:var(--accent);stroke-width:.9;opacity:0;
+  transform-box:fill-box;transform-origin:center;
+  animation:beadPulse 2s var(--ease) infinite}
+.rosary .pulse.is-large{--pulse-end:2.55;stroke-width:1.15}
+html[data-theme="light"] .rosary .pulse{--pulse-peak:.75;
+  stroke:var(--text);stroke-width:1.3}
+html[data-theme="light"] .rosary .pulse.is-large{stroke-width:1.55}
+@keyframes beadPulse{
+  0%{transform:scale(1);opacity:var(--pulse-peak)}
+  70%{opacity:0}
+  100%{transform:scale(var(--pulse-end));opacity:0}
+}
+.rosary .pulse[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){
+  .rosary .pulse{opacity:.34;transform:scale(2);animation:none}
+  .rosary .pulse.is-large{transform:scale(1.45)}
+}
+.pray.is-plate .rosary,
+.pray.is-announce .rosary,
+.pray.is-finis .rosary{display:none}
+/* drawn over the whole panel while the closing page takes its place */
+.curtain{position:absolute;inset:0;z-index:20;background:var(--bg);
+  opacity:0;pointer-events:none;transition:opacity .28s ease}
+.curtain.up{opacity:1}
+.curtain.down{transition:opacity .75s ease}
+.pray.is-finis:not(.is-michael) .scroll{overflow:auto}
+.pray.is-finis .go{max-width:20rem;margin-inline:auto}
+.pray.is-finis .after{max-width:20rem;margin-inline:auto}
+
+/* Leaving a mystery: the painting dissolves into the paper, then the
+   decade’s first prayer arrives. Little motion, just a slow fade. */
+.pray.is-leaving-plate .plate{opacity:0;filter:saturate(.8);
+  transition:opacity .62s cubic-bezier(.16,1,.3,1), filter .62s cubic-bezier(.16,1,.3,1)}
+.pray.is-leaving-plate .copy{opacity:0;
+  transition:opacity .4s cubic-bezier(.16,1,.3,1)}
+.pray.is-entering-decade .say{animation:decadeIn .78s cubic-bezier(.16,1,.3,1) both}
+.pray.is-entering-decade .rosary{animation:decadeIn .86s .08s cubic-bezier(.16,1,.3,1) both}
+.pray.is-entering-decade .pfoot{animation:decadeIn .7s .1s cubic-bezier(.16,1,.3,1) both}
+@keyframes decadeIn{
+  from{opacity:0;transform:translateY(4px)}
+  to{opacity:1;transform:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .pray.is-leaving-plate .plate,
+  .pray.is-leaving-plate .copy{transition:none}
+  .pray.is-entering-decade .say,
+  .pray.is-entering-decade .rosary,
+  .pray.is-entering-decade .pfoot{animation:none}
+}
+
+/* ---------- paper: the surface takes its colour from the painting ----------
+   The paintings are cream, so the colour sampled from them is cream, and a card
+   or a screen carrying one stays light in both themes. That means the ink on it
+   has to be dark, drawn from the painting's own hue so it belongs to the
+   surface. In dark mode the card stops being a hole cut in the page and becomes
+   a lit panel resting on it. The tokens themselves are set from script, in
+   paperFrom() below; these rules only make the chrome follow them.
+
+   Paper screens still use the same control family and hairline fruit as the
+   rest of the product — only the page colour shifts. */
+.paper{background:var(--paper);color:var(--paper-ink)}
+.mystery.paper{--text:var(--paper-ink);--dim:var(--paper-dim);
+  --faint:var(--paper-faint);--hair:var(--paper-hair);--card:var(--paper);
+  --card-2:color-mix(in srgb,var(--paper-ink) 8%,var(--paper))}
+/* Home cards match This week / feasts so they read as a surface on the page. */
+html[data-theme="light"] .mystery.paper:not(.paper-dark){
+  --paper-page:var(--panel);
+  --card:var(--paper-page);
+  --card-2:color-mix(in srgb,var(--paper-ink) 8%,var(--paper-page));
+  background:var(--paper-page)}
+/* Dark-mode home cards: a lifted, cool black — not the brown sampled off the
+   canvas. #17181A sits a step above the page (#0C0D0F) so the card still reads
+   as a surface, without the warmth that turned the old --card into a stain.
+   Text and hairlines return to the theme, so nothing on the card inherits the
+   painting's hue. The artwork fade uses --card, so it dissolves into the same
+   black. */
+html:not([data-theme="light"]) .mystery.paper,
+.mystery.paper.paper-dark{
+  --text:#EEF1F4;--dim:#8E939A;--faint:#7F848B;
+  --hair:rgba(255,255,255,.075);
+  --card:#17181A;--card-2:#17181A;
+  background:#17181A;color:#EEF1F4}
+
+/* the announcement screen, when the page behind the painting is paper too */
+.pray.is-paper{--glass-ink:var(--paper-ink);
+  --text:var(--paper-ink);--dim:var(--paper-dim);--faint:var(--paper-faint);
+  /* theme hair, not the painting sample — mystery and prayer share one seam */
+  --frame:var(--paper-hair);
+  --plate-top:rgba(255,255,255,.34);   /* overridden below when the surface is dark */
+  --plate-mid:color-mix(in srgb,var(--paper) 72%,transparent);
+  --plate-end:var(--paper);
+  --plate-shadow:0 1px 16px rgba(255,255,255,.9);
+  --accent:var(--paper-ink);--on-accent:var(--paper);
+  --ui:var(--paper-dim);--bg:var(--paper);--card:var(--paper);
+  --card-2:color-mix(in srgb,var(--paper-ink) 10%,var(--paper));
+  background:var(--paper);color:var(--paper-ink)}
+/* rounds stay in the shared family — translucent ink on paper, not a third style */
+.pray.is-paper .round{background:color-mix(in srgb,var(--paper-ink) 10%,transparent);
+  color:var(--paper-dim)}
+/* On a dark surface the painting needs a dark scrim and a dark halo, not a light
+   one — and it should dissolve into the page's own black rather than the brown
+   sampled from the canvas: warmth that reads as depth on a lit card reads as a
+   stain behind a painting. The end colour has to be the page colour too, or the
+   plate stops at a seam instead of running out. */
+.pray.is-paper.paper-dark{--glass-ink:#EEF1F4;
+  --plate-top:rgba(0,0,0,.42);
+  --plate-mid:rgba(12,13,15,.72);
+  --plate-end:#0C0D0F;
+  --plate-shadow:0 1px 18px rgba(0,0,0,.75);
+  --bg:#0C0D0F;--card:#0C0D0F;--card-2:#17181A;
+  --hair:rgba(255,255,255,.075);
+  background:#0C0D0F}
+.pray.is-paper .round:hover{color:var(--paper-ink)}
+.pray.is-paper .go{background:var(--paper-ink);color:var(--paper)}
+.pray.is-paper.paper-dark .go{color:#0C0D0F}
+/* Light mode: sampled paper is a tint of the prayer cream, not a new wall. */
+html[data-theme="light"] .pray.is-paper:not(.paper-dark){
+  --paper-page:#fff;
+  --bg:#fff;--card:#fff;
+  --plate-mid:rgba(255,255,255,.78);
+  --plate-end:#fff;
+  --on-accent:#fff;
+  background:#fff}
+html[data-theme="light"] .pray.is-paper:not(.paper-dark) .go{color:#fff}
+/* Day-mode pray screens are white — home stays cream. */
+html[data-theme="light"] .pray{
+  --bg:#fff;
+  --sheet:#fff;
+  --card:#fff;
+  --card-2:#fff;
+  --hair:rgba(23,21,18,.11);
+  --paper-page:#fff;
+  --plate-top:rgba(255,255,255,.40);
+  --plate-mid:rgba(255,255,255,.78);
+  --plate-end:#fff;
+  --plate-shadow:0 1px 16px rgba(255,255,255,.95);
+  --veil-a:rgba(255,255,255,.28);
+  --veil-b:rgba(255,255,255,.88);
+  background:#fff}
+.pray.is-paper .go-alt{border-color:color-mix(in srgb,var(--paper-ink) 28%,transparent);
+  color:var(--paper-ink)}
+
+/* ---------- the mystery plate: the painting leads the screen ---------- */
+/* z-index:0 keeps the scrim below to this element. Without it the plate is a flex
+   item with z-index:auto, so it never opens a stacking context of its own and the
+   ::after scrim escapes into the scroller's — where it paints over the mystery's
+   name instead of behind it, and the name is scrubbed down to the scrim colour. */
+.plate{position:relative;z-index:0;overflow:hidden;flex:1 1 0;height:0;min-height:9rem;
+  margin:0;background:var(--card-2)}
+.plate[hidden]{display:none}
+.plate picture{display:block;width:100%;height:100%}
+.plate img{width:100%;height:100%;object-fit:cover;object-position:50% 32%;display:block;
+  will-change:transform}
+/* dark at the very top so the controls read, and at the foot so the name does */
+.plate::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:
+    linear-gradient(180deg,var(--plate-end) 0%,var(--plate-mid) 8%,transparent 22%),
+    linear-gradient(180deg,transparent 78%,var(--plate-mid) 92%,var(--plate-end) 100%)}
+
+/* painting sits in the body under the paper header, never with chrome on the art */
+.pray.is-plate .scroll{position:relative;z-index:3}
+
+/* The name sits on the paper below the painting (or in the text column on a
+   wide screen), so it takes ink rather than a halo on the canvas. */
+.pray.is-plate .locus{position:relative;z-index:3;margin-top:0;margin-bottom:1.4rem;
+  padding-inline:0;text-align:left}
+.pray.is-plate .locus h2,.pray.is-plate .locus-alt{text-align:left}
+.pray.is-plate .locus .k,
+.pray.is-plate .locus .k i,
+.pray.is-plate .locus .k span,
+.pray.is-plate .locus h2{
+  color:var(--text);
+  text-shadow:none}
+html[data-theme="light"] .pray.is-plate .locus .k,
+html[data-theme="light"] .pray.is-plate .locus .k i,
+html[data-theme="light"] .pray.is-plate .locus .k span,
+html[data-theme="light"] .pray.is-plate .locus h2{
+  color:var(--text);
+  text-shadow:none}
+/* The kicker is lifted off the name rather than tucked under it. The space is
+   added below the kicker and taken back off the locus's own top margin, so only
+   the kicker rises — the name, and the scripture under it, stay where they are. */
+.pray.is-plate .locus .k{display:flex;align-items:baseline;justify-content:flex-start;gap:.6rem;
+  font-family:var(--sans);
+  font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:1rem}
+/* the numeral only says which of the five, so it stays under the mystery's name —
+   below the title's clamp floor, not its ceiling, or it overtakes it on a small phone */
+.pray.is-plate .locus .k i{font-family:var(--serif);font-style:normal;font-size:1.375rem;
+  letter-spacing:0;line-height:1;opacity:.95}
+/* Announce: art first. Verse is a short coda under the title, not a second hero. */
+.pray.is-announce .plate{
+  flex:1.55 1 0;
+  min-height:clamp(13.5rem, 54svh, 34rem)}
+.pray.is-announce .locus{margin-top:0;margin-bottom:1.25rem}
+.pray.is-announce .locus h2{font-size:clamp(1.45rem, 5.2vw, 1.75rem);line-height:1.22}
+.pray.is-announce .scroll{overflow:auto;overflow-x:hidden}
+.pray.is-announce .scroll::before,.pray.is-announce .scroll::after{display:none}
+.pray.is-announce .prayer{display:flex;flex-direction:column}
+.pray.is-announce .verse,.pray.is-announce .ref{flex:0 0 auto}
+.pray.is-announce .verse{
+  font-family:var(--serif);font-style:normal;font-variation-settings:'opsz' 16;
+  font-size:var(--ps);line-height:1.68;color:var(--text);
+  max-width:36em}
+.pray.is-announce .ref{font-size:.75rem;margin-top:.7rem;opacity:.85}
+.pray.is-announce .pfruit{margin-top:1.2rem;padding-top:1.1rem}
+/* presence, not cinema: a barely-there drift while you stay with the mystery */
+.pray.is-announce .plate img{
+  animation:plateDrift 32s var(--ease) forwards;
+  transform-origin:center center}
+@keyframes plateDrift{
+  from{transform:scale(1)}
+  to{transform:scale(1.03)}
+}
+@media (prefers-reduced-motion:reduce){
+  .pray.is-announce .plate img{animation:none}
+}
+@media (max-height:44rem){
+  .plate{min-height:7rem}
+  .pray.is-announce .plate{min-height:clamp(11rem, 46svh, 22rem)}
+  .pray.is-plate .locus{margin-top:0;margin-bottom:.85rem}
+  .pray.is-announce .verse{font-size:var(--ps)}
+}
+@media (min-height:48rem){
+  .pray.is-announce .plate{min-height:clamp(16rem, 58svh, 38rem)}
+}
+/* Nothing hangs outside a gutter, so nothing can scroll sideways. */
+@media (max-width:39.99rem){
+  /* contained band: the whole painting, not a crop. Letterboxing is paper,
+     so a heavy foot scrim would only stain the cream. */
+  .pray.is-plate .pray-inner{
+    overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+    flex:1;min-height:0}
+  .pray.is-plate .plate,
+  .pray.is-announce .plate{
+    position:relative;inset:auto;z-index:0;flex:none;display:block;
+    height:min(100vw, 52svh, 28rem);
+    min-height:min(100vw, 18rem);
+    width:100%;max-width:none;margin:0;border-radius:0}
+  .pray.is-announce .plate{
+    height:min(100vw, 54svh, 30rem);
+    min-height:min(100vw, 18rem)}
+  .pray.is-plate .plate img,
+  .pray.is-announce .plate img{
+    width:100%;height:100%;max-width:none;
+    object-fit:cover;animation:none}
+  .pray.is-plate .plate::after{
+    background:
+      linear-gradient(180deg,var(--plate-end) 0%,var(--plate-mid) 8%,transparent 22%),
+      linear-gradient(180deg,transparent 78%,var(--plate-mid) 92%,var(--plate-end) 100%)}
+  .pray.is-plate .scroll{
+    position:relative;z-index:3;flex:none;overflow:visible;
+    -webkit-mask-image:none;mask-image:none}
+  .pray.is-plate .pfoot{
+    position:relative;left:auto;right:auto;bottom:auto;z-index:4;
+    background:none}
+  /* title sits on paper now, not the canvas — ink, no halo */
+  .pray.is-plate .locus .k,
+  .pray.is-plate .locus .k i,
+  .pray.is-plate .locus .k span,
+  .pray.is-plate .locus h2{
+    color:var(--text);text-shadow:none}
+  html[data-theme="light"] .pray.is-plate .locus .k,
+  html[data-theme="light"] .pray.is-plate .locus .k i,
+  html[data-theme="light"] .pray.is-plate .locus .k span,
+  html[data-theme="light"] .pray.is-plate .locus h2{
+    color:var(--text);text-shadow:none}
+}
+.pray.is-michael .finis-art{opacity:.30}
+.pray.is-michael .blessing{font-size:var(--ps);line-height:1.72;opacity:.95}
+.pray.is-michael .go,.pray.is-michael .aux{display:none}
+.pray.is-michael .pfoot{
+  display:flex;flex-direction:column;align-items:center;gap:.7rem}
+.pray.is-michael .lang{display:grid;grid-template-columns:repeat(3,1fr);align-items:stretch;margin:0 auto .1rem;width:13.25rem;max-width:100%}
+.pray.is-michael .after{width:100%;max-width:20rem;margin-inline:auto;padding-top:0}
+.pray.is-michael .prayer,.pray.is-michael .prayer p,.pray.is-michael .prayer .bi,.pray.is-michael .prayer .bi-en,.pray.is-michael .prayer .bi-la{text-align:center}
+
+/* ---------- the closing page ---------- */
+.pray.is-finis .locus,.pray.is-finis .prayer{text-align:center}
+.emblem{display:grid;place-items:center;margin-bottom:1.5rem}
+.emblem svg{width:4.25rem;height:auto;color:var(--accent);opacity:.9}
+.pray.is-finis #locusH{font-size:1.125rem;line-height:1.3;font-weight:500;letter-spacing:.01em;opacity:.88}
+.ornament{display:flex;align-items:center;gap:.9rem;margin:1.15rem auto 1.35rem;
+  max-width:19rem;color:var(--accent)}
+.ornament i{flex:1;height:1px;background:currentColor;opacity:.32}
+.ornament svg{flex:none;opacity:.75}
+.blessing{font-size:1.0625rem;line-height:1.6;color:var(--text);opacity:.88}
+.qotd{margin:0 auto;max-width:24rem;padding:0;border:0}
+.qotd p{font-family:var(--serif);font-size:1.5rem;font-style:italic;font-weight:400;
+  line-height:1.48;color:var(--text);opacity:.96;letter-spacing:-.014em;
+  font-variation-settings:'opsz' 28}
+.qotd cite{display:block;margin-top:.85rem;font-family:var(--sans);font-style:normal;
+  font-size:.8125rem;letter-spacing:.03em;color:var(--dim)}
+.after{padding-top:1.2rem}
+.after[hidden]{display:none}
+.after hr{border:none;border-top:1px solid var(--hair);margin:0}
+.after button{width:100%;background:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:.6rem;
+  border:1px solid var(--ui);border-radius:var(--r-pill);color:var(--text);
+  font-family:var(--sans);font-size:1rem;font-weight:500;letter-spacing:-.01em;line-height:normal;
+  padding:calc(1.15rem - 1px) .5rem;
+  transition:transform .16s var(--ease),border-color .2s var(--ease)}
+.after button:active{transform:scale(.985)}
+.after button svg{flex:none;opacity:.85}
+.after .arrow-r{margin-left:.1rem;opacity:.6}
+/* a short screen has no room for ceremony, so the page trims itself to fit */
+@media (max-height:44rem){
+  .emblem{margin-bottom:1rem}
+  .emblem svg{width:3.1rem}
+  .pray.is-finis #locusH{font-size:1.0625rem}
+  .ornament{margin:.85rem auto 1rem}
+  .qotd p{font-size:1.35rem}
+  .qotd{max-width:20.5rem}
+  .after{padding-top:.7rem}
+  .pray.is-finis .locus{margin-bottom:.9rem}
+  .pray.is-finis .pfoot{padding-top:2rem}
+  .pray.is-finis .scroll{padding-bottom:calc(var(--foot,8rem) + .25rem)}
+}
+/* On a very short screen the page genuinely cannot fit, so let it scroll
+   rather than clip the blessing. */
+@media (max-height:38rem){
+  .pray.is-finis:not(.is-michael) .scroll{overflow:auto}
+}
+.pfruit[hidden]{display:none}
+.pfruit{display:flex;align-items:baseline;margin-top:1.25rem;
+  padding-top:.95rem;border-top:1px solid var(--hair);font-size:.9375rem}
+.pfruit b{color:var(--faint);font-weight:400}
+.pfruit span{font-style:normal;color:var(--text);
+  font-family:var(--serif);font-size:1.0625rem;line-height:1.4}
+
+
+/* Eng / Lat / Both — same family as the home mystery-set pills, quieter than Next */
+.lang{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
+  padding:3px;background:var(--card);border-radius:var(--r-pill);
+  width:13.25rem;max-width:100%;margin:0 0 0 auto;flex:0 0 auto;order:3;
+  height:var(--btn-h);box-sizing:border-box;align-items:stretch}
+.lang[hidden]{display:none}
+.lang button{border:none;background:none;cursor:pointer;height:auto;min-height:0;
+  -webkit-appearance:none;appearance:none;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 .2rem;border-radius:var(--r-pill);font-family:var(--sans);
+  font-size:.8125rem;font-weight:500;line-height:1;
+  color:var(--dim);transition:background .22s var(--ease),color .22s var(--ease),border-color .22s var(--ease)}
+.lang button[aria-pressed="true"]{background:var(--card-2);color:var(--text)}
+html[data-theme="light"] .lang{background:var(--card-2);box-shadow:none}
+html[data-theme="light"] .lang button[aria-pressed="true"]{
+  background:#fff;box-shadow:var(--shadow)}
+.bi{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  column-gap:2.2rem;align-items:start;position:relative}
+.bi::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:0;
+  border-left:1px solid var(--hair);pointer-events:none}
+.bi-en,.bi-la{min-width:0;overflow-wrap:anywhere}
+.bi-en{grid-column:1}
+.bi-la{grid-column:2;font-style:italic;color:var(--dim)}
+.bi-la p,.bi-en p{margin:0}
+.bi-la p + p,.bi-en p + p{margin-top:.85rem}
+@media (max-width:21.5rem){
+  .lang{width:11.5rem}
+}
+.pfoot{position:absolute;left:0;right:0;bottom:0;padding-top:3rem;
+  pointer-events:none;
+  background:linear-gradient(180deg,transparent,var(--bg) 55%)}
+/* beads are a sibling now, so Next sits in the column instead of covering them */
+.pray:not(.is-plate):not(.is-finis) .pfoot{
+  position:relative;left:auto;right:auto;bottom:auto;
+  padding-top:1.1rem;background:var(--bg)}
+.pray:not(.is-plate):not(.is-finis) .scroll{
+  padding-bottom:.85rem;
+  -webkit-mask-image:none;mask-image:none}
+.pfoot>*{pointer-events:auto}
+.pbar-end{display:flex;align-items:center;gap:.5rem}
+.pnow{position:absolute;left:calc(2.5rem + 16px);right:calc(2.5rem + 16px);
+  top:1.05rem;transform:translateY(-50%);width:auto;max-width:none;
+  overflow:hidden;white-space:nowrap;text-align:center;
+  font-size:.8125rem;line-height:1.25;font-weight:500;
+  color:var(--chrome-text);pointer-events:none}
+.pnow-run{display:inline-block;vertical-align:middle}
+.pnow:not(.is-marquee) .pnow-txt[aria-hidden]{display:none}
+.pnow.is-marquee{text-align:left;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 12px),transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 12px),transparent)}
+.pnow.is-marquee .pnow-run{display:flex;width:max-content;
+  animation:pnow-marquee var(--pnow-ms,12s) linear infinite}
+.pnow.is-marquee .pnow-txt{flex:none;padding-right:2.5em}
+@keyframes pnow-marquee{
+  0%,10%{transform:translateX(0)}
+  100%{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){
+  .pnow.is-marquee{-webkit-mask-image:none;mask-image:none}
+  .pnow.is-marquee .pnow-run{animation:none;display:block;max-width:100%}
+  .pnow.is-marquee .pnow-txt{display:block;overflow:hidden;text-overflow:ellipsis;padding-right:0}
+  .pnow.is-marquee .pnow-txt[aria-hidden]{display:none}}
+@media (max-width:39.99rem){
+  .pnow{top:1.25rem}
+}
+@media (max-width:23.5rem){ .pnow{font-size:.75rem} }
+@media (max-width:21rem){ .pnow{font-size:.6875rem} }
+.pnow[hidden]{display:none}
+.pray.is-paper .pnow{color:var(--chrome-text)}
+.aux{display:block;margin-bottom:.55rem}
+.go{display:block;width:100%;padding:1.05rem;border:none;border-radius:var(--r-pill);cursor:pointer;
+  background:var(--accent);color:var(--on-accent);font-family:var(--sans);font-size:1rem;font-weight:600;
+  letter-spacing:-.01em;transition:transform .16s var(--ease)}
+.go:active{transform:scale(.985)}
+/* the secondary action takes the primary's shape with no fill, so the two read
+   as one class of control and the filled one still plainly wins. The padding
+   loses a pixel to the border, so both buttons stand the same height. */
+.go-alt{display:block;width:100%;border-radius:var(--r-pill);cursor:pointer;
+  background:none;border:1px solid var(--ui);color:var(--text);
+  font-family:var(--sans);font-size:1rem;font-weight:500;letter-spacing:-.01em;line-height:normal;
+  padding:calc(.95rem - 1px);
+  transition:transform .16s var(--ease),border-color .2s var(--ease)}
+.go-alt:active{transform:scale(.985)}
+.go-alt[hidden],.pray .aux .go-alt[hidden]{display:none}
+/* mid-decade skip stays quieter than Next */
+.pray .aux .go-alt{border-color:var(--ui);color:var(--dim);font-weight:500;
+  font-size:1rem;padding:calc(.75rem - 1px)}
+.pray .aux .go-alt:hover{color:var(--text);border-color:var(--ui)}
+
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* =======================================================
+   RESPONSIVE
+   ======================================================= */
+
+/* --- small phones (iPhone SE / mini) --- */
+@media (max-width:23.5rem){
+  body{font-size:16px}
+  :root{--gut:1.15rem}
+  h1.title{font-size:2.4rem}
+  .seg button{font-size:.72rem;padding:1.05rem .05rem}
+  .m-body{padding:1.15rem 1.1rem}
+  .pray{--pp:1.15rem}
+}
+
+/* --- large phones & tablets: one column, more air --- */
+/* --- the decades band runs the full width of the window --- */
+@media (min-width:40rem){
+  /* the band spans the window, but its heading and controls stay inside a
+     comfortable measure; only the cards run off the right-hand edge */
+  :root{--band: max(var(--gut), calc((100vw - 78rem) / 2))}
+  #decades{width:100vw;margin-inline:calc(50% - 50vw);padding-inline:var(--band)}
+  #decades .rail{
+    margin-left:calc(var(--gut) * -1);
+    margin-right:calc(-1 * max(var(--gut), (100vw - 78rem) / 2));
+    padding-inline:var(--gut);
+  }
+  /* cards grow with the window so five of them always run past its edge */
+  #decades .mystery{flex:0 0 clamp(21rem, 21vw, 32rem)}
+}
+
+/* --- on a wide screen: five rows, picture beside the words, easy to scan --- */
+@media (min-width:60rem){
+  /* back inside the shared column, so every section starts on the same line */
+  #decades{width:auto;margin-inline:0;padding-inline:0}
+  #decades .rail{
+    display:flex;flex-direction:column;gap:.7rem;
+    overflow:visible;scroll-snap-type:none;
+    max-width:none;margin-inline:0;padding-inline:0}
+  #decades .rail .mystery{
+    flex:none;width:auto;display:grid;grid-template-columns:11.5rem 1fr;align-items:stretch}
+  #decades .rail .m-art{aspect-ratio:auto;height:100%;min-height:9.5rem}
+  #decades .rail .m-body{padding:1.3rem 1.5rem;display:flex;flex-direction:column}
+  /* centre the rule between the reference above and the fruit below,
+     allowing for the leading that sits inside each line box */
+  #decades .rail .fruit{margin-top:.45rem;padding-top:.5rem}
+  #decades .rail h3{font-size:1.25rem}
+  #decades .rail .verse{font-size:1rem;margin-top:.6rem}
+  .rail-bar{display:none}
+  /* in a wide card, a name flung to the far right is hard to pair with its day,
+     so the mysteries take a fixed column instead */
+  .week > div{display:grid;grid-template-columns:minmax(0,1fr) 11rem;align-items:baseline}
+  .week em{text-align:left}
+}
+
+@media (min-width:40rem) and (max-width:59.99rem){
+  .hero{height:calc(clamp(24rem,50svh,34rem) + env(safe-area-inset-top,0px))}
+  .sheet{margin-top:-2.25rem;max-width:40rem}
+  :root{--gut:2.75rem}
+  h1.title{font-size:3.5rem}
+  section{margin-top:4.25rem}
+  .pray{--pp:2.75rem}
+}
+
+/* --- desktop: hero runs the full width of the window --- */
+@media (min-width:60rem){
+  /* leave room under the painting for date, title, set picker, and Pray */
+  .hero{height:max(22rem, calc(100svh - 20rem))}
+  .hero img{object-position:50% 32%}
+  .hero[data-set="joyful"] img,
+  .hero[data-set="luminous"] img,
+  .hero[data-set="sorrowful"] img,
+  .hero[data-set="glorious"] img{object-position:50% 32%}
+  /* hold the fade back so the face clears the headline; less of a floating sheet */
+  :root{--hero-veil-top:rgba(12,13,15,.28);--hero-veil-mid:rgba(12,13,15,0);--hero-veil-low:rgba(12,13,15,.35)}
+  html[data-theme="light"]{--hero-veil-top:rgba(244,241,235,.14);--hero-veil-mid:rgba(244,241,235,0);--hero-veil-low:rgba(244,241,235,.4)}
+  .hero::after{background:linear-gradient(180deg,var(--bg) 0%,var(--bg) 12%,color-mix(in srgb,var(--bg) 50%,transparent) 20%,transparent 30%,transparent 70%,var(--hero-veil-low) 88%,var(--bg) 100%)}
+  /* align the header with the reading column rather than the window corners */
+  /* page, not card stack: the sheet rests on the hero instead of climbing it */
+  .sheet{margin-top:-1.75rem;max-width:48rem}
+  :root{--gut:2.5rem}
+  h1.title{font-size:3.75rem}
+  .today{font-size:.9375rem}
+  section{margin-top:5rem}
+  footer{margin-top:3rem;padding-bottom:3rem}
+  .m-body{padding:1.6rem 1.75rem}
+  .cta{display:block;width:100%;max-width:none;margin-top:1.6rem}
+  .ghost{margin-top:.85rem}
+}
+
+/* Desktop/tablet pray: from 40rem, the same breakpoint as the rest of the page. */
+@media (min-width:40rem){
+  .pray{--ps:1.5rem;--pp:2.5rem;padding:0 0 max(0px,env(safe-area-inset-bottom,0px));justify-content:stretch;overflow:hidden}
+  .pray-inner{max-width:none;flex:1;margin:0;height:auto;width:100%;min-height:0}
+  .pray .go,.pray .aux .go-alt{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:auto;min-width:7.5rem;max-width:14rem;margin-inline:auto;
+    font-size:1rem;font-weight:600;line-height:1.2;padding:.75rem 1.25rem}
+  .pray .aux .go-alt{font-weight:500;padding:calc(.75rem - 1px) 1.25rem}
+  .pray .aux .go-alt[hidden]{display:none}
+  .pray .after{max-width:14rem;margin-inline:auto}
+
+  /* header ribbon: full window, same inset as back/close, paper on every screen */
+  .pbar{
+    width:100%;max-width:none;margin:0;
+    padding:max(1.35rem,env(safe-area-inset-top,0px)) var(--pp) .85rem;box-sizing:border-box;
+    align-items:center}
+  .pnow,
+  .pray.is-plate .pnow,
+  .pray.is-paper .pnow{
+    top:calc(max(1.35rem,env(safe-area-inset-top,0px)) + 1.25rem);
+    transform:translateY(-50%);
+    color:var(--chrome-dim);text-shadow:none}
+  .pbar-end,
+  .pbar > .round{
+    align-self:center}
+  .pbar .round{
+    line-height:1;padding:0}
+  .track{
+    width:100%;max-width:none;margin:0;
+    padding:0 var(--pp) 1.45rem;box-sizing:border-box;gap:4px}
+
+  /* Hail Marys, Our Father, opening: no painting */
+  .pray:not(.is-plate):not(.is-finis) .scroll{
+    width:100%;max-width:none;margin:0;
+    padding-inline:2.5rem;box-sizing:border-box}
+  .pray:not(.is-plate):not(.is-finis) .say{
+    max-width:42rem;width:100%;margin-inline:auto}
+  .pray:not(.is-plate):not(.is-finis) .rosary{
+    max-width:42rem;width:100%;margin-inline:auto;margin-top:0;
+    padding-inline:2.5rem;box-sizing:border-box}
+  .pray:not(.is-plate):not(.is-finis) .pfoot{
+    left:0;right:0;width:100%;max-width:calc(42rem + 5rem);margin-inline:auto;
+    padding-left:2.5rem;padding-right:2.5rem;box-sizing:border-box;
+    display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;
+    justify-content:flex-start;gap:.6rem .75rem}
+  .pray:not(.is-plate):not(.is-finis) .lang{order:3;flex:1 0 100%;margin:0;width:13.25rem;max-width:13.25rem;justify-self:start}
+  .pray:not(.is-plate):not(.is-finis) .aux{display:flex;margin:0;order:2;align-items:center}
+  .pray:not(.is-plate):not(.is-finis) .aux:has(#skip[hidden]){display:none}
+  .pray:not(.is-plate):not(.is-finis) .go{
+    order:1;margin:0;width:auto;flex:0 0 auto;height:var(--btn-h);min-height:var(--btn-h)}
+  .pray:not(.is-plate):not(.is-finis) .aux .go-alt{
+    order:2;margin:0;width:auto;flex:0 0 auto;
+    height:var(--btn-h);min-height:var(--btn-h);box-sizing:border-box;
+    font-size:.9375rem;font-weight:500;line-height:1.2;letter-spacing:-.01em;
+    padding:0 1.25rem;border-color:var(--ui);color:var(--dim)}
+  .pray:not(.is-plate):not(.is-finis) .after{order:4;margin:0;max-width:none}
+
+  .pray.is-finis .scroll{max-width:38rem;margin-inline:auto}
+  .pray.is-finis #locusH{font-size:1.25rem}
+  .pray.is-finis .qotd p{font-size:1.65rem;line-height:1.42}
+  .pray.is-finis .qotd{max-width:28rem}
+  .pray.is-finis .finis-art{height:100%}
+  /* Crucifixion: show the top of the cross instead of sitting on the beam */
+  .pray.is-finis .finis-art img[data-art^="sorrowful"]{object-position:50% 0%}
+  .pray.is-finis .pbar{padding:max(1rem,env(safe-area-inset-top,0px)) var(--pp) 0}
+  /* Done is a block control, stacked and centered with St Michael — not a
+     shrink-wrapped pill in the corner (the general .pray .go rule above). */
+  .pray.is-finis .pfoot{
+    display:flex;flex-direction:column;align-items:center;
+    left:0;right:0;width:100%;max-width:none;margin:0;
+    padding-left:2.5rem;padding-right:2.5rem;box-sizing:border-box}
+  .pray.is-finis .go{
+    display:block;width:100%;max-width:20rem;min-width:0;margin-inline:auto}
+  .pray.is-finis .after{width:100%;max-width:20rem;margin-inline:auto}
+  .emblem svg{width:4.75rem}
+
+  /* stacked plate until the split: contain so a 40rem iPad is not cropped */
+  @media (max-width:55.99rem){
+    .pray.is-plate .pray-inner{
+      overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+      flex:1;min-height:0;height:auto}
+
+    .pray.is-plate .plate,
+    .pray.is-announce .plate{
+      position:relative;inset:auto;z-index:0;flex:none;display:block;
+      height:40svh;min-height:40svh;
+      width:100%;max-width:none;margin:0;border-radius:0}
+    .pray.is-plate .plate picture,
+    .pray.is-announce .plate picture{
+      position:absolute;inset:0;display:block;width:100%;height:100%}
+    .pray.is-plate .plate img,
+    .pray.is-announce .plate img{
+      position:absolute;inset:0;
+      width:100%;height:100%;max-width:none;
+      object-fit:cover;animation:none}
+    /* lighter foot wash — contain letterboxes, so a heavy scrim only stains empty paper */
+    .pray.is-plate .plate::after{
+      background:
+        linear-gradient(180deg,var(--plate-top) 0%,transparent 18%),
+        linear-gradient(180deg,transparent 78%,var(--plate-mid) 92%,var(--plate-end) 100%)}
+
+    .pray.is-plate .scroll{
+      position:relative;z-index:3;flex:none;overflow:visible;
+      width:100%;max-width:42rem;margin:0 auto;
+      padding:0;box-sizing:border-box;
+      display:flex;flex-direction:column;
+      -webkit-mask-image:none;mask-image:none}
+    .pray.is-plate .scroll::before,
+    .pray.is-plate .scroll::after{display:none}
+
+    .pray.is-plate .pfoot{
+      position:relative;left:auto;right:auto;bottom:auto;z-index:4;
+      width:100%;max-width:42rem;margin:0 auto;
+      padding:1.1rem 0 2.25rem;background:none}
+    .pray.is-plate .go{margin-inline:0}
+  }
+
+  .pray.is-plate .locus{
+    margin-top:0;margin-bottom:1.2rem;padding-inline:0}
+  .pray.is-announce .locus{margin-top:0;margin-bottom:1.5rem}
+  .pray.is-announce .locus h2{
+    font-size:clamp(2.5rem,4.2vw,3.5rem);line-height:1.2;
+    font-variation-settings:'opsz' 72}
+  .pray.is-announce .verse{font-size:var(--ps);line-height:1.68;max-width:34em}
+  .pray.is-announce .pfruit{margin-left:0;margin-right:0}
+  .pray.is-plate .locus .k i{font-size:1.85rem}
+}
+
+
+/* Desktop mystery plate: one reading block left, painting fills the right.
+   56rem so a 40rem iPad-portrait stays stacked; only desks with real
+   room split. .copy becomes a real column here; Hail Mary keeps
+   display:contents so its own grid is unchanged. */
+@media (min-width:56rem){
+  .pray .track{
+    border-bottom:1px solid var(--hair)}
+  .pray.is-plate .pray-inner{
+    display:grid;
+    grid-template-columns:minmax(20rem,38%) minmax(0,1fr);
+    grid-template-rows:minmax(0,1fr);
+    grid-template-areas:"copy art";
+    flex:1;min-height:0;height:auto;overflow:hidden}
+  /* paper behind the words; 1px seam is this border, not a gutter on the art */
+  .pray.is-plate .pray-inner::before{
+    content:"";grid-area:copy;
+    background:var(--bg);border-right:1px solid var(--hair);
+    z-index:1;pointer-events:none}
+
+  .pray.is-plate .copy{
+    display:flex;flex-direction:column;justify-content:flex-start;
+    grid-area:copy;position:relative;z-index:3;
+    min-height:0;overflow:hidden;
+    padding:2.5rem;box-sizing:border-box;align-self:stretch}
+  .pray.is-plate .read{
+    display:flex;flex-direction:column;justify-content:flex-start;
+    flex:1 1 auto;min-height:0;
+    overflow-y:auto;overflow-x:hidden}
+  .pray.is-plate .read::before,
+  .pray.is-plate .read::after{content:"";flex:1 1 0;min-height:0}
+
+  .pray.is-plate .plate,
+  .pray.is-announce .plate{
+    grid-area:art;position:relative;inset:auto;z-index:0;
+    flex:none;display:block;
+    width:100%;height:100%;min-height:0;max-width:none;max-height:none;
+    margin:0;border-radius:0;padding:0;
+    background:transparent;overflow:hidden;align-self:stretch;justify-self:stretch}
+  .pray.is-plate .plate picture,
+  .pray.is-announce .plate picture{
+    position:absolute;inset:0;display:block;
+    width:100%;height:100%}
+  .pray.is-plate .plate img,
+  .pray.is-announce .plate img{
+    position:absolute;inset:0;
+    width:100%;height:100%;max-width:none;max-height:none;
+    object-fit:cover;
+    animation:none;transform:none}
+  /* painting's left edge is the seam; no fade, frame, or paper margin */
+  .pray.is-plate .plate::after{content:none;display:none}
+
+  .pray.is-plate .scroll{
+    position:relative;z-index:3;
+    flex:0 0 auto;overflow:visible;min-height:0;
+    width:auto;max-width:none;margin:0;padding:0;
+    display:block;
+    -webkit-mask-image:none;mask-image:none;background:none}
+  .pray.is-announce .scroll{overflow:visible}
+
+  .pray.is-plate .pfoot{
+    position:relative;left:auto;right:auto;bottom:auto;z-index:4;
+    flex:0 0 auto;width:auto;max-width:none;margin:0;
+    padding:1.25rem 0 0;background:none}
+  .pray.is-plate .go{margin-inline:0}
+  .pray.is-plate .aux:has(#skip[hidden]){display:none}
+
+  /* words sit on paper, so drop the scrim halo */
+  .pray.is-plate .locus .k,
+  .pray.is-plate .locus .k i,
+  .pray.is-plate .locus .k span,
+  .pray.is-plate .locus h2{
+    color:var(--text);text-shadow:none}
+  html[data-theme="light"] .pray.is-plate .locus .k,
+  html[data-theme="light"] .pray.is-plate .locus .k i,
+  html[data-theme="light"] .pray.is-plate .locus .k span,
+  html[data-theme="light"] .pray.is-plate .locus h2{
+    color:var(--text);text-shadow:none}
+}
+
+
+
+/* Phone / tablet Hail Mary: prayer + beads sit in the middle of the window.
+   Next stays pinned to the bottom, with room above the home indicator. */
+@media (max-width:55.99rem){
+  .pray:not(.is-plate):not(.is-finis) .copy{
+    display:flex;flex-direction:column;flex:1;min-height:0}
+  .pray:not(.is-plate):not(.is-finis) .read{
+    display:flex;flex-direction:column;justify-content:flex-start;
+    flex:1 1 auto;min-height:0;
+    overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+  .pray:not(.is-plate):not(.is-finis) .read::before,
+  .pray:not(.is-plate):not(.is-finis) .read::after{
+    content:"";flex:1 1 0;min-height:0}
+  .pray:not(.is-plate):not(.is-finis) .scroll::before,
+  .pray:not(.is-plate):not(.is-finis) .scroll::after{display:none}
+  .pray:not(.is-plate):not(.is-finis) .scroll{
+    flex:0 0 auto;min-height:0;padding-bottom:.5rem}
+  .pray:not(.is-plate):not(.is-finis) .rosary{
+    flex:0 0 auto;
+    padding-top:1.15rem;padding-bottom:.2rem;box-sizing:border-box;overflow:hidden}
+  .pray:not(.is-plate):not(.is-finis) .rosary svg{overflow:hidden}
+  .pray:not(.is-plate):not(.is-finis) .pfoot{
+    flex:0 0 auto;
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-areas:"go skip" "lang lang";
+    align-items:stretch;column-gap:.55rem;row-gap:.55rem;
+    padding-top:1rem;padding-bottom:.35rem}
+  .pray:not(.is-plate):not(.is-finis) .pfoot:has(#skip[hidden]){
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"go" "lang"}
+  .pray:not(.is-plate):not(.is-finis) .aux{
+    grid-area:skip;order:0;display:flex;margin:0;width:100%;min-width:0}
+  .pray:not(.is-plate):not(.is-finis) .aux:has(#skip[hidden]){display:none}
+  .pray:not(.is-plate):not(.is-finis) .aux .go-alt{
+    display:flex;align-items:center;justify-content:center;
+    width:100%;margin:0;min-width:0;max-width:none;
+    height:var(--btn-h);min-height:var(--btn-h);box-sizing:border-box;
+    padding:0 .85rem;font-size:.9375rem;white-space:nowrap;
+    -webkit-appearance:none;appearance:none}
+  .pray:not(.is-plate):not(.is-finis) .go{
+    grid-area:go;order:0;display:flex;align-items:center;justify-content:center;
+    width:100%;min-width:0;max-width:none;margin:0;
+    height:var(--btn-h);min-height:var(--btn-h);
+    -webkit-appearance:none;appearance:none}
+  .pray:not(.is-plate):not(.is-finis) .lang{
+    grid-area:lang;order:0;justify-self:start;margin:0;width:13.25rem;max-width:100%}
+  @media (max-width:23.5rem){
+    .pray:not(.is-plate):not(.is-finis) .pfoot{
+      grid-template-columns:minmax(0,1fr);
+      grid-template-areas:"skip" "go" "lang";
+      column-gap:0}
+    .pray:not(.is-plate):not(.is-finis) .pfoot:has(#skip[hidden]){
+      grid-template-areas:"go" "lang"}
+  }
+
+  /* Mystery: painting full-bleed to the top, header over it, text in the rest.
+     Safari's toolbar already sits outside the visual viewport, so the foot
+     only needs a hair of air, not a second home-indicator pad. */
+  .pray.is-plate{
+    --art-h:min(100vw, 52svh, 28rem);
+    padding:0 0 .65rem}
+  .pray.is-plate .pbar{
+    position:absolute;top:0;left:0;right:0;z-index:7;background:none;
+    padding:var(--chrome-top) var(--pp) .4rem}
+  .pray.is-plate .track{
+    position:absolute;left:0;right:0;z-index:6;background:none;
+    top:calc(var(--chrome-top) + 3.3rem);
+    padding:0 var(--pp) .85rem}
+  .pray.is-plate .pnow{
+    top:calc(var(--chrome-top) + 1.25rem)}
+  .pray.is-plate .pray-inner{
+    position:static;display:flex;flex-direction:column;
+    flex:1;min-height:0;overflow:hidden;max-width:none;width:100%}
+  .pray.is-plate .plate,
+  .pray.is-announce .plate{
+    position:relative;top:auto;left:auto;right:auto;z-index:0;
+    flex:none;width:100%;max-width:none;border-radius:0;
+    height:calc(var(--art-h) + env(safe-area-inset-top,0px));min-height:0;
+    margin:0}
+  .pray.is-plate .plate img,
+  .pray.is-announce .plate img{
+    width:100%;height:100%;max-width:none;
+    object-fit:cover;animation:none}
+  .pray.is-plate .plate::after{
+    background:
+      linear-gradient(180deg,var(--plate-top) 0%,transparent 34%),
+      linear-gradient(180deg,transparent 58%,var(--plate-mid) 82%,var(--plate-end) 100%)}
+  .pray.is-plate .copy{
+    display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;
+    margin-top:0;padding-left:0;padding-right:0;
+    box-sizing:border-box}
+  .pray.is-plate .read{
+    display:flex;flex-direction:column;justify-content:flex-start;
+    flex:1 1 auto;min-height:0;
+    overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+  .pray.is-plate .read::before,
+  .pray.is-plate .read::after{content:none;flex:none}
+  .pray.is-plate .scroll{
+    flex:0 0 auto;min-height:0;padding:.35rem var(--pp) .5rem;
+    -webkit-mask-image:none;mask-image:none}
+  .pray.is-plate .pfoot{
+    flex:0 0 auto;margin-top:auto;
+    display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;
+    justify-content:flex-start;gap:.6rem;
+    padding-top:.75rem;padding-bottom:.15rem;padding-left:var(--pp);padding-right:var(--pp);
+    position:relative;left:auto;right:auto;bottom:auto;background:none}
+  .pray.is-plate .aux{display:none}
+  .pray.is-plate .go{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:auto;margin:0;flex:0 0 auto;min-width:6.5rem}
+}
+
+/* iPad portrait: stepper on the page, painting below it. */
+@media (min-width:40rem) and (max-width:55.99rem){
+  .pray.is-plate{--art-h:min(72vw, 50svh);padding-top:0}
+  .pray.is-plate .pbar,
+  .pray.is-plate .track{
+    position:relative;top:auto;left:auto;right:auto;
+    background:var(--bg)}
+  .pray.is-plate .pbar{
+    padding:max(1.35rem,env(safe-area-inset-top,0px)) var(--pp) .85rem}
+  .pray.is-plate .track{
+    padding:0 var(--pp) 2.25rem}
+  .pray.is-plate .pnow{
+    top:calc(max(1.35rem,env(safe-area-inset-top,0px)) + 1.25rem)}
+  .pray.is-plate .plate,
+  .pray.is-announce .plate{
+    height:var(--art-h);min-height:var(--art-h);margin-top:.35rem}
+  .pray.is-plate .plate picture,
+  .pray.is-announce .plate picture{
+    position:absolute;inset:0;display:block;width:100%;height:100%}
+  .pray.is-plate .plate img,
+  .pray.is-announce .plate img{
+    position:absolute;inset:0;width:100%;height:100%}
+  .pray.is-plate .plate::after{
+    background:
+      linear-gradient(180deg,var(--plate-end) 0%,var(--plate-mid) 8%,transparent 22%),
+      linear-gradient(180deg,transparent 78%,var(--plate-mid) 92%,var(--plate-end) 100%)}
+  .pray.is-plate .read::before,
+  .pray.is-plate .read::after{
+    content:"";flex:1 1 0;min-height:0}
+  .pray:not(.is-plate):not(.is-finis) .pfoot,
+  .pray.is-plate .pfoot{
+    padding-bottom:max(2rem, env(safe-area-inset-bottom, 0px))}
+}
+
+/* iPhone: stepper on the page, painting near-square so heads stay in frame. */
+@media (max-width:39.99rem){
+  .pray.is-plate{
+    --art-h:min(100vw, 52svh, 28rem);
+    padding-top:0;
+    padding-bottom:0}
+  .pray.is-plate .pbar,
+  .pray.is-plate .track{
+    position:relative;top:auto;left:auto;right:auto;
+    background:var(--bg)}
+  .pray.is-plate .pbar{
+    padding:var(--chrome-top) var(--pp) .85rem}
+  .pray.is-plate .track{
+    padding:0 var(--pp) 1.15rem}
+  .pray.is-plate .pnow{
+    top:calc(var(--chrome-top) + 1.25rem)}
+  .pray.is-plate .plate,
+  .pray.is-announce .plate{
+    height:var(--art-h);min-height:min(100vw, 16rem);margin-top:.2rem}
+  .pray.is-plate .plate picture,
+  .pray.is-announce .plate picture{
+    position:absolute;inset:0;display:block;width:100%;height:100%}
+  .pray.is-plate .plate img,
+  .pray.is-announce .plate img{
+    position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .pray.is-plate .plate::after{
+    background:
+      linear-gradient(180deg,var(--plate-end) 0%,var(--plate-mid) 8%,transparent 22%),
+      linear-gradient(180deg,transparent 78%,var(--plate-mid) 92%,var(--plate-end) 100%)}
+  .pray.is-plate .read::before,
+  .pray.is-plate .read::after{
+    content:"";flex:1 1 0;min-height:0}
+  .pray.is-plate .pfoot,
+  .pray:not(.is-plate):not(.is-finis) .pfoot{
+    padding-bottom:max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + .85rem))}
+}
+
+/* Desktop Hail Mary: prayer left, beads right (cross at the bottom).
+   Same 56rem as the mystery spread; does not touch is-plate. */
+@media (min-width:56rem){
+  .pray:not(.is-plate):not(.is-finis) .pray-inner{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(14rem, 22rem);
+    grid-template-rows:minmax(0,1fr) auto;
+    grid-template-areas:
+      "scroll rosary"
+      "foot   rosary";
+    flex:1;min-height:0;height:auto;overflow:hidden}
+  /* paper column behind the beads; hairline on the column's left edge */
+  .pray:not(.is-plate):not(.is-finis) .pray-inner::before{
+    content:"";grid-column:2;grid-row:1/-1;
+    background:var(--bg);border-left:1px solid var(--hair);
+    z-index:1;pointer-events:none}
+
+  .pray:not(.is-plate):not(.is-finis) .scroll{
+    grid-area:scroll;position:relative;z-index:2;
+    min-height:0;width:auto;max-width:none}
+  .pray:not(.is-plate):not(.is-finis) .say{
+    margin-inline:0;max-width:none}
+  .pray:not(.is-plate):not(.is-finis) .pfoot{
+    grid-area:foot;position:relative;left:auto;right:auto;bottom:auto;z-index:2;
+    width:auto;max-width:none;margin:0;
+    padding:1rem 2.5rem 1.75rem;background:none;
+    display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:.75rem}
+  .pray:not(.is-plate):not(.is-finis) .aux{flex:0 0 auto;order:2;margin:0;align-items:center;width:auto}
+  .pray:not(.is-plate):not(.is-finis) .go{order:1;margin:0;width:auto;flex:0 0 auto;
+    height:var(--btn-h);min-height:var(--btn-h)}
+  .pray:not(.is-plate):not(.is-finis) .lang{
+    order:3;flex:0 0 auto;margin:0 0 0 auto;justify-self:auto;width:13.25rem;max-width:13.25rem}
+  .pray:not(.is-plate):not(.is-finis) .aux .go-alt{
+    width:auto;height:var(--btn-h);min-height:var(--btn-h);box-sizing:border-box}
+  .pray:not(.is-plate):not(.is-finis) .rosary{
+    grid-area:rosary;position:relative;z-index:2;
+    container-type:size;
+    overflow:hidden;min-height:0;
+    width:auto;max-width:none;margin:0;padding:0}
+  .pray:not(.is-plate):not(.is-finis) .rosary svg{
+    position:absolute;left:50%;top:50%;
+    width:90cqh;
+    height:64cqw;
+    max-width:none;
+    transform:translate(-50%,-50%) rotate(-90deg)}
+}
+
+@media (min-width:60rem){
+  .cta:hover,.go:hover{filter:brightness(1.06)}
+  html[data-theme="light"] .cta:hover,html[data-theme="light"] .go:hover{filter:brightness(.96)}
+  .go-alt:hover,.after button:hover{border-color:var(--text);color:var(--text)}
+  /* desktop mystery rows: flat cards, no ring or lift */
+  #decades .rail .mystery{box-shadow:none;border:none;border-radius:18px}
+  html[data-theme="light"] #decades .rail .mystery{
+    box-shadow:none;border:none;background:var(--card)}
+}
+
+/* --- very wide: taller hero, roomier plate column --- */
+@media (min-width:90rem){
+  .hero{height:max(24rem, calc(100svh - 21rem))}
+  .hero img{object-position:50% 32%}
+  .hero[data-set="joyful"] img,
+  .hero[data-set="luminous"] img,
+  .hero[data-set="sorrowful"] img,
+  .hero[data-set="glorious"] img{object-position:50% 32%}
+  .sheet{max-width:50rem}
+  h1.title{font-size:4.25rem}
+}
+@media (min-width:90rem){
+  .pray{--ps:1.5625rem}
+  .pray.is-plate .pray-inner{grid-template-columns:minmax(24rem,38%) minmax(0,1fr)}
+  .pray:not(.is-plate):not(.is-finis) .pray-inner{grid-template-columns:minmax(0,1fr) minmax(16rem, 26rem)}
+  .pray.is-plate .copy{padding:2.75rem}
+  .pray.is-announce .locus h2{font-size:clamp(2.9rem,3.6vw,4rem)}
+  .pray.is-finis #locusH{font-size:2.85rem}
+}
+
+/* --- short landscape phones --- */
+@media (max-width:59.99rem) and (max-height:30rem) and (orientation:landscape){
+  .hero{height:70svh}
+}
+
+/* --- pointer devices get hover affordances; touch does not --- */
+@media (hover:hover){
+  /* a hair of ink, not a lift — the week list is hairlines */
+  summary:hover{color:var(--text)}
+  .track button:hover i{background:rgba(236,240,245,.28)}
+  .track button.done:hover i{background:rgba(236,240,245,.40)}
+  .track button.now:hover i{background:var(--text)}
+  html[data-theme="light"] .track button:hover i{background:rgba(25,23,19,.16)}
+  html[data-theme="light"] .track button.done:hover i{background:rgba(25,23,19,.28)}
+  html[data-theme="light"] .track button.now:hover i{background:var(--text)}
+  .round:hover,.ctl:hover{background:color-mix(in srgb,var(--text) 10%,var(--card-2))}
+  .glass:hover,
+  .pray.is-plate .pbar .round:hover,
+  .pray.is-finis #close:hover{
+    background:color-mix(in srgb,var(--glass-fill) 55%,white)}
+  html[data-theme="light"] .glass:hover,
+  html[data-theme="light"] .pray.is-plate .pbar .round:hover,
+  html[data-theme="light"] .pray.is-finis #close:hover{
+    background:color-mix(in srgb,var(--glass-fill) 70%,white)}
+
+}
+img{max-width:100%}
+h1,h2,h3,p{overflow-wrap:break-word}
+/* ---------- moving between prayers ----------
+   The words are captured as one block. Naming the heading and the body
+   separately let two prayers of different lengths overlap line on line, which
+   read as a smear; as a single image they hand over cleanly.
+
+   The old goes before the new arrives — no crossfade. A held beat of empty
+   page is the right feeling here and it keeps the type legible throughout.
+
+   The chrome, the progress track and the beads stay in the root, and the root
+   is told to swap outright, so a bead lighting up reads as feedback rather
+   than as something dissolving. */
+@media not (prefers-reduced-motion: reduce){
+  ::view-transition-old(root){display:none}
+  ::view-transition-new(root){animation:none;mix-blend-mode:normal}
+
+  /* Header label is its own snapshot so an old mystery name cannot
+     sit on the new one while the prayer type fades. */
+  .pnow{view-transition-name:v-now}
+  ::view-transition-old(v-now){display:none}
+  ::view-transition-new(v-now){animation:none;mix-blend-mode:normal}
+  ::view-transition-group(v-now){animation:none}
+
+  .say{view-transition-name:v-say}
+  /* beads are named so they sit outside the fading prayer image, then
+     swapped in place like the chrome — no dissolve, no jump */
+  .rosary{view-transition-name:v-rosary}
+  ::view-transition-old(v-rosary){display:none}
+  ::view-transition-new(v-rosary){animation:none;mix-blend-mode:normal}
+  ::view-transition-group(v-rosary){animation:none}
+
+  /* Keep Next / language on their own layer so the fading prayer image
+     cannot paint through them for a frame. */
+  .pray:not(.is-plate):not(.is-finis) .pfoot{view-transition-name:v-foot}
+  ::view-transition-old(v-foot){display:none}
+  ::view-transition-new(v-foot){animation:none;mix-blend-mode:normal}
+  ::view-transition-group(v-foot){animation:none;z-index:8}
+
+  /* prayers differ in length: pin each image to its own size rather than
+     stretching one into the shape of the other */
+  ::view-transition-old(v-say),::view-transition-new(v-say){
+    width:100%;height:100%;object-fit:none;object-position:top left}
+  ::view-transition-group(v-say){animation-duration:.46s;
+    animation-timing-function:var(--ease)}
+
+  ::view-transition-old(v-say){animation:vtOut .22s var(--ease) both}
+  ::view-transition-new(v-say){animation:vtIn .34s .12s var(--ease) both}
+
+  html[data-vt="back"] ::view-transition-old(v-say){animation-name:vtOutBack}
+  html[data-vt="back"] ::view-transition-new(v-say){animation-name:vtInBack}
+
+
+  @keyframes vtOut{to{opacity:0;transform:translateY(-.28rem)}}
+  @keyframes vtIn{from{opacity:0;transform:translateY(.32rem)}}
+  @keyframes vtOutBack{to{opacity:0;transform:translateY(.28rem)}}
+  @keyframes vtInBack{from{opacity:0;transform:translateY(-.32rem)}}
+}
+
+/* every pill is one height: filled, outlined, home, pray, last screen */
+.cta,.go,.go-alt,.after button,
+.pray .go,.pray .aux .go-alt,.cta-stack .go-alt,.install-invite .go-alt,.pray.is-finis .go{
+  box-sizing:border-box;height:var(--btn-h);min-height:var(--btn-h);
+  padding-top:0;padding-bottom:0;line-height:1.2;
+  align-items:center;justify-content:center;
+  -webkit-appearance:none;appearance:none}
+.cta,.go,.go-alt{display:flex}
+
+/* St Michael: later finis/desktop rules were putting Done back.
+   Language pill lives under the prayer (moved in JS), Back stays in the foot. */
+.pray.is-michael .go,
+.pray.is-michael .go[hidden],
+.pray.is-michael .aux{display:none !important}
+.pray.is-michael .pfoot{
+  display:flex;flex-direction:column;align-items:center;gap:.7rem}
+.pray.is-michael .after{width:100%;max-width:20rem;margin-inline:auto;padding-top:0}
+.pray.is-michael .prayer{max-width:36rem;margin-inline:auto;text-align:center}
+.pray.is-michael .prayer:has(.bi){max-width:44rem}
+.pray.is-michael .prayer p,
+.pray.is-michael .prayer .blessing,
+.pray.is-michael .prayer .bi,
+.pray.is-michael .prayer .bi-en,
+.pray.is-michael .prayer .bi-la{text-align:center}
+.pray.is-michael .pray-inner{flex:1;min-height:0;height:100%}
+.pray.is-michael .scroll{
+  flex:1;min-height:0;height:100%;
+  display:flex;flex-direction:column;
+  padding-bottom:var(--foot,5.5rem);
+  -webkit-mask-image:none;mask-image:none}
+/* equal leftover above and below, between the top of the screen and Back */
+.pray.is-michael .scroll::before,
+.pray.is-michael .scroll::after{content:"";display:block;flex:1 1 0;min-height:0}
+.pray.is-michael .pfoot{
+  padding-top:.75rem;padding-bottom:max(.35rem,env(safe-area-inset-bottom,0px));
+  background:var(--bg);z-index:4}
+.pray.is-michael .after button{background:var(--bg)}
+.pray.is-michael .lang{
+  order:0;display:grid;grid-template-columns:repeat(3,1fr);align-items:stretch;
+  margin:1.5rem auto 0;width:13.25rem;max-width:100%;
+  height:var(--btn-h);
+  /* sit on page colour so frost does not pick up the painting behind */
+  background:linear-gradient(var(--glass-fill),var(--glass-fill)),var(--bg)}
+.pray.is-michael .say .lang{flex:0 0 auto}
+/* phone: flex padding-bottom does not scroll, so the toggle sat under Back */
+@media (max-width:39.99rem){
+  .pray.is-michael .lang{margin-bottom:calc(var(--foot,5.5rem) + .35rem)}
+}
+
+/* Last screen close: glass circle over the painting, same recipe as Light/Dark. */
+.pray.is-finis #close{
+  width:2.9rem;height:2.9rem;
+  color:var(--glass-ink);
+  background:var(--glass-fill);
+  backdrop-filter:var(--glass-frost);-webkit-backdrop-filter:var(--glass-frost);
+  border:1px solid var(--glass-edge);
+  box-shadow:var(--glass-depth);
+  opacity:1}
+.pray.is-finis #close svg{width:18px;height:18px}
+
+/* ---- glass on chrome; Pray / Next / Done stay solid ink ---- */
+.glass,.round,.ctl,.arrow,
+.seg,.lang,.tabs,
+.pray.is-paper .round,
+.pray.is-finis #close,
+.pray.is-plate .pbar .round,
+html[data-theme="light"] .seg,
+html[data-theme="light"] .lang,
+html[data-theme="light"] .tabs,
+html[data-theme="light"] .glass{
+  color:var(--glass-ink);
+  background:var(--glass-fill);
+  backdrop-filter:var(--glass-frost);-webkit-backdrop-filter:var(--glass-frost);
+  border:1px solid var(--glass-edge);
+  box-shadow:var(--glass-depth)}
+.seg,.lang,.tabs,
+html[data-theme="light"] .seg,
+html[data-theme="light"] .lang,
+html[data-theme="light"] .tabs{
+  color:var(--glass-ink);
+  background:var(--glass-fill);
+  backdrop-filter:var(--glass-frost);-webkit-backdrop-filter:var(--glass-frost);
+  border:1px solid var(--glass-edge);
+  box-shadow:var(--glass-depth)}
+.cta,.go,
+.pray.is-paper .go,
+.pray.is-paper.paper-dark .go,
+html[data-theme="light"] .pray.is-paper:not(.paper-dark) .go,
+.pray.is-finis .go{
+  background:var(--accent);color:var(--on-accent);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  border:none;box-shadow:none}
+.pray.is-paper .go{background:var(--paper-ink);color:var(--paper)}
+.pray.is-paper.paper-dark .go{color:#0C0D0F}
+html[data-theme="light"] .pray.is-paper:not(.paper-dark) .go{color:var(--paper-page)}
+.seg button,.lang button,.tabs button{
+  background:none;border:none;box-shadow:none;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  color:var(--dim)}
+.lang button{border:1px solid transparent}
+.seg button[aria-pressed="true"],
+.lang button[aria-pressed="true"],
+.tabs button[aria-selected="true"],
+html[data-theme="light"] .seg button[aria-pressed="true"],
+html[data-theme="light"] .lang button[aria-pressed="true"],
+html[data-theme="light"] .tabs button[aria-selected="true"]{
+  color:var(--glass-on-chip);
+  background:color-mix(in srgb,var(--glass-fill) 40%,white);
+  backdrop-filter:var(--glass-frost);-webkit-backdrop-filter:var(--glass-frost);
+  border:1px solid var(--glass-edge);
+  box-shadow:var(--glass-depth)}
+.seg button[aria-pressed="true"],
+.lang button[aria-pressed="true"],
+html[data-theme="light"] .seg button[aria-pressed="true"],
+html[data-theme="light"] .lang button[aria-pressed="true"]{color:#000}
+/* Light: same well and chip as the home mystery-set pills. Pray screens
+   lock --card-2 to white, so this uses the home cream the glass sits on. */
+html[data-theme="light"] .lang{
+  background:#F8F5F2;
+  border:1px solid rgba(255,255,255,.5);
+  box-shadow:var(--glass-depth);
+  backdrop-filter:var(--glass-frost);-webkit-backdrop-filter:var(--glass-frost)}
+html[data-theme="light"] .lang button[aria-pressed="true"]{
+  color:#000;
+  background:#fff;
+  border:1px solid rgba(255,255,255,.5);
+  box-shadow:var(--glass-depth);
+  backdrop-filter:var(--glass-frost);-webkit-backdrop-filter:var(--glass-frost)}
+.seg button[aria-pressed="true"].is-today span::after{background:#000}
+@media (hover:hover){
+  .round:hover,.ctl:hover,.arrow:hover,.glass:hover,
+  .pray.is-plate .pbar .round:hover,.pray.is-finis #close:hover{
+    filter:none;
+    color:var(--glass-ink);
+    background:color-mix(in srgb,var(--glass-fill) 55%,white)}
+  html[data-theme="light"] .glass:hover{
+    filter:none;
+    background:color-mix(in srgb,var(--glass-fill) 70%,white)}
+}
+@media (min-width:60rem){
+  .cta:hover,.go:hover{filter:brightness(1.06)}
+  html[data-theme="light"] .cta:hover,html[data-theme="light"] .go:hover{filter:brightness(.96)}
+}
+.pill,html[data-theme="light"] .pill{
+  color:var(--text);
+  background:var(--card-2);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  border:none;box-shadow:none}
+.stage[open]>summary .pill{background:var(--accent);color:var(--on-accent);
+  backdrop-filter:none;-webkit-backdrop-filter:none;border:none;box-shadow:none}
+.week .is-prayed .prayed{
+  color:var(--faint);background:none;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  border:1px solid var(--hair);box-shadow:none}
+
+/* Outline pills: no glass. Start from beginning, Back, Add to home, skip. */
+.go-alt,.cta-stack .go-alt,.install-invite .go-alt,.after button,.pray.is-paper .go-alt{
+  color:var(--text);
+  background:none;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  border:1px solid var(--ui);
+  box-shadow:none}
+.cta-stack .go-alt{border-color:var(--ui);color:var(--dim)}
+.pray .aux .go-alt{border-color:var(--ui);color:var(--dim)}
+.install-invite .go-alt{width:auto;flex:none;display:inline-flex;margin:0;
+  padding-left:1.15rem;padding-right:1.15rem;font-weight:500;
+  color:#EEF1F4;border-color:rgba(236,240,245,.42);background:none}
+.install-invite .go-alt:hover{color:#fff;border-color:rgba(236,240,245,.62)}
+html[data-theme="light"] .install-invite .go-alt{
+  color:#635D54;border-color:rgba(25,23,19,.42)}
+html[data-theme="light"] .install-invite .go-alt:hover{
+  color:#191713;border-color:rgba(25,23,19,.55)}
+.pray.is-michael .after button{
+  color:var(--text);
+  background:var(--bg);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  border:1px solid var(--ui);
+  box-shadow:none}
+.pray.is-paper .go-alt{border-color:color-mix(in srgb,var(--paper-ink) 28%,transparent);
+  color:var(--paper-ink)}

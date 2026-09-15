@@ -7,35 +7,35 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		9CE94D3DD8CD7F743E61E83A /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B45CCA2BDAA20E92DEB2807 /* RootView.swift */; };
-		33C9C8A63321FD903306F010 /* RosaryGuideApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDB06CBDA53DED71FAAB4CC3 /* RosaryGuideApp.swift */; };
-		082CF909021C6EBA3FBB2D68 /* FeastCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */; };
-		28C9577CEB49FB4EFCC102BF /* HowToPrayContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B7278C515BF0D95EE40796 /* HowToPrayContent.swift */; };
-		05F066B261AA1E475873C6F3 /* MysteryCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */; };
-		662E38C7C39EF8E4296FAAD4 /* PrayerCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4019C8E56EEFC74D6BD9D92D /* PrayerCatalog.swift */; };
-		102BDCEE6E375BFD7717A7AE /* QuoteCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3314BC1EFCF756D53AF17 /* QuoteCatalog.swift */; };
-		1AF43ABEC4EAC017BF3CF88C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FBA0DE58E6AF3D6198CDC09 /* Models.swift */; };
-		18EA7A7CED25189ABB22C229 /* RosaryStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25608D422A64031222D47189 /* RosaryStep.swift */; };
-		7522C3875650AD15B90F7C80 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1EFCA22FB596D08D814D6C /* HapticService.swift */; };
-		A637113F6A3490A31C8197DA /* LiturgicalCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49068D79F0B6F85C616BB1E5 /* LiturgicalCalendar.swift */; };
-		C11CA0B6D6FA034966F4B455 /* MysteryCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9AAFD7E9E6EF192919BEC9 /* MysteryCalendar.swift */; };
-		94514832BFC69572CD2AC5CD /* RosarySequenceBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 991251FFFCB12E381DCA553A /* RosarySequenceBuilder.swift */; };
-		5BEDC4E1A8748517C5BC54EB /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7D77BDA7A9A0D515ADDDF0D /* SessionStore.swift */; };
-		BFB2E57A65DA2E74CFB07CD0 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59BD70A010546ABDA29CC560 /* SettingsStore.swift */; };
-		F17192475C3C5E005FFA1934 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65622D107422099E4F60DE1E /* AppTheme.swift */; };
-		92CDCB58703677D509CA6491 /* MysteryArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29555CF3A426924297A6D05 /* MysteryArtworkView.swift */; };
-		98170303FFF360ECF63D9EEC /* FeastsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF863537C38D8D4053DADC66 /* FeastsView.swift */; };
-		780D2F681F67657B70F8EF92 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D6BFA1CB98A02A8F760C6D /* HomeView.swift */; };
-		A21E8071973B2454C07D064D /* HowToPrayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD04A739CD276BFD692104B7 /* HowToPrayView.swift */; };
-		BE13802B23DF384111053919 /* BeadRailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD36BF90207B9099879DC954 /* BeadRailView.swift */; };
-		BC96C621E125FD05CB52BE42 /* CompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F839B24D2EBDDA7A625663F3 /* CompletionView.swift */; };
 		004406578DA6DEABB8614015 /* PrayHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D14D5C74E932FBB6FE0784F /* PrayHubView.swift */; };
-		7165D260E520AAAB913AEBEC /* PrayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8589A7E167BB2CC661B8B1E9 /* PrayView.swift */; };
-		C4E6091F6E846D2945504B42 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70497BEC59AAFC851AFB4046 /* SettingsView.swift */; };
+		05F066B261AA1E475873C6F3 /* MysteryCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */; };
+		082CF909021C6EBA3FBB2D68 /* FeastCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */; };
+		102BDCEE6E375BFD7717A7AE /* QuoteCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3314BC1EFCF756D53AF17 /* QuoteCatalog.swift */; };
+		18EA7A7CED25189ABB22C229 /* RosaryStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25608D422A64031222D47189 /* RosaryStep.swift */; };
+		1AF43ABEC4EAC017BF3CF88C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FBA0DE58E6AF3D6198CDC09 /* Models.swift */; };
+		28C9577CEB49FB4EFCC102BF /* HowToPrayContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B7278C515BF0D95EE40796 /* HowToPrayContent.swift */; };
+		33C9C8A63321FD903306F010 /* RosaryGuideApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDB06CBDA53DED71FAAB4CC3 /* RosaryGuideApp.swift */; };
+		443FF4F01F38FE1DC8B240C1 /* MysteryCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC7688092076D0FC5DE763D0 /* MysteryCalendarTests.swift */; };
+		5BEDC4E1A8748517C5BC54EB /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7D77BDA7A9A0D515ADDDF0D /* SessionStore.swift */; };
+		662E38C7C39EF8E4296FAAD4 /* PrayerCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4019C8E56EEFC74D6BD9D92D /* PrayerCatalog.swift */; };
 		68FAC2550EF5E8F91919F963 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1564EB2EAFA031721C2527CA /* Assets.xcassets */; };
 		69AB1C253F476ED63D9F71F1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 34466A78C6540AD21AB52567 /* PrivacyInfo.xcprivacy */; };
+		7165D260E520AAAB913AEBEC /* PrayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8589A7E167BB2CC661B8B1E9 /* PrayView.swift */; };
+		7522C3875650AD15B90F7C80 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1EFCA22FB596D08D814D6C /* HapticService.swift */; };
+		780D2F681F67657B70F8EF92 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D6BFA1CB98A02A8F760C6D /* HomeView.swift */; };
+		92CDCB58703677D509CA6491 /* MysteryArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29555CF3A426924297A6D05 /* MysteryArtworkView.swift */; };
+		94514832BFC69572CD2AC5CD /* RosarySequenceBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 991251FFFCB12E381DCA553A /* RosarySequenceBuilder.swift */; };
+		98170303FFF360ECF63D9EEC /* FeastsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF863537C38D8D4053DADC66 /* FeastsView.swift */; };
+		9CE94D3DD8CD7F743E61E83A /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B45CCA2BDAA20E92DEB2807 /* RootView.swift */; };
+		A21E8071973B2454C07D064D /* HowToPrayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD04A739CD276BFD692104B7 /* HowToPrayView.swift */; };
+		A637113F6A3490A31C8197DA /* LiturgicalCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49068D79F0B6F85C616BB1E5 /* LiturgicalCalendar.swift */; };
+		BC96C621E125FD05CB52BE42 /* CompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F839B24D2EBDDA7A625663F3 /* CompletionView.swift */; };
+		BE13802B23DF384111053919 /* BeadRailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD36BF90207B9099879DC954 /* BeadRailView.swift */; };
+		BFB2E57A65DA2E74CFB07CD0 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59BD70A010546ABDA29CC560 /* SettingsStore.swift */; };
+		C11CA0B6D6FA034966F4B455 /* MysteryCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9AAFD7E9E6EF192919BEC9 /* MysteryCalendar.swift */; };
+		C4E6091F6E846D2945504B42 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70497BEC59AAFC851AFB4046 /* SettingsView.swift */; };
+		F17192475C3C5E005FFA1934 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65622D107422099E4F60DE1E /* AppTheme.swift */; };
 		F47D85D5383CB8F901559461 /* LiturgicalCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E6BD2027DE74F3262A8F28 /* LiturgicalCalendarTests.swift */; };
-		443FF4F01F38FE1DC8B240C1 /* MysteryCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC7688092076D0FC5DE763D0 /* MysteryCalendarTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,49 +49,49 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		F91288DB192297DC903FE08C /* RosaryGuide.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RosaryGuide.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		2DBAFB5B71D685FEA27E4316 /* RosaryGuideTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RosaryGuideTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		2B45CCA2BDAA20E92DEB2807 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		DDB06CBDA53DED71FAAB4CC3 /* RosaryGuideApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosaryGuideApp.swift; sourceTree = "<group>"; };
-		5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeastCatalog.swift; sourceTree = "<group>"; };
-		34B7278C515BF0D95EE40796 /* HowToPrayContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToPrayContent.swift; sourceTree = "<group>"; };
-		F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MysteryCatalog.swift; sourceTree = "<group>"; };
-		4019C8E56EEFC74D6BD9D92D /* PrayerCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerCatalog.swift; sourceTree = "<group>"; };
 		08B3314BC1EFCF756D53AF17 /* QuoteCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuoteCatalog.swift; sourceTree = "<group>"; };
-		5FBA0DE58E6AF3D6198CDC09 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		0D14D5C74E932FBB6FE0784F /* PrayHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayHubView.swift; sourceTree = "<group>"; };
+		1564EB2EAFA031721C2527CA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		25608D422A64031222D47189 /* RosaryStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosaryStep.swift; sourceTree = "<group>"; };
-		6A1EFCA22FB596D08D814D6C /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
+		2B45CCA2BDAA20E92DEB2807 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		2DBAFB5B71D685FEA27E4316 /* RosaryGuideTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RosaryGuideTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		34466A78C6540AD21AB52567 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		34B7278C515BF0D95EE40796 /* HowToPrayContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToPrayContent.swift; sourceTree = "<group>"; };
+		4019C8E56EEFC74D6BD9D92D /* PrayerCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerCatalog.swift; sourceTree = "<group>"; };
 		49068D79F0B6F85C616BB1E5 /* LiturgicalCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiturgicalCalendar.swift; sourceTree = "<group>"; };
-		BC9AAFD7E9E6EF192919BEC9 /* MysteryCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MysteryCalendar.swift; sourceTree = "<group>"; };
-		991251FFFCB12E381DCA553A /* RosarySequenceBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosarySequenceBuilder.swift; sourceTree = "<group>"; };
-		D7D77BDA7A9A0D515ADDDF0D /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
+		4D28807626934D4A00A54B2E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		59BD70A010546ABDA29CC560 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeastCatalog.swift; sourceTree = "<group>"; };
+		5FBA0DE58E6AF3D6198CDC09 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		65622D107422099E4F60DE1E /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
-		C29555CF3A426924297A6D05 /* MysteryArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MysteryArtworkView.swift; sourceTree = "<group>"; };
-		EF863537C38D8D4053DADC66 /* FeastsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeastsView.swift; sourceTree = "<group>"; };
+		6A1EFCA22FB596D08D814D6C /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
+		70497BEC59AAFC851AFB4046 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		8589A7E167BB2CC661B8B1E9 /* PrayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayView.swift; sourceTree = "<group>"; };
+		991251FFFCB12E381DCA553A /* RosarySequenceBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosarySequenceBuilder.swift; sourceTree = "<group>"; };
+		B3E6BD2027DE74F3262A8F28 /* LiturgicalCalendarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiturgicalCalendarTests.swift; sourceTree = "<group>"; };
 		B4D6BFA1CB98A02A8F760C6D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		BC9AAFD7E9E6EF192919BEC9 /* MysteryCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MysteryCalendar.swift; sourceTree = "<group>"; };
 		BD04A739CD276BFD692104B7 /* HowToPrayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToPrayView.swift; sourceTree = "<group>"; };
 		BD36BF90207B9099879DC954 /* BeadRailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadRailView.swift; sourceTree = "<group>"; };
-		F839B24D2EBDDA7A625663F3 /* CompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionView.swift; sourceTree = "<group>"; };
-		0D14D5C74E932FBB6FE0784F /* PrayHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayHubView.swift; sourceTree = "<group>"; };
-		8589A7E167BB2CC661B8B1E9 /* PrayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayView.swift; sourceTree = "<group>"; };
-		70497BEC59AAFC851AFB4046 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		1564EB2EAFA031721C2527CA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		34466A78C6540AD21AB52567 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		4D28807626934D4A00A54B2E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		B3E6BD2027DE74F3262A8F28 /* LiturgicalCalendarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiturgicalCalendarTests.swift; sourceTree = "<group>"; };
+		C29555CF3A426924297A6D05 /* MysteryArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MysteryArtworkView.swift; sourceTree = "<group>"; };
+		D7D77BDA7A9A0D515ADDDF0D /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		DC7688092076D0FC5DE763D0 /* MysteryCalendarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MysteryCalendarTests.swift; sourceTree = "<group>"; };
+		DDB06CBDA53DED71FAAB4CC3 /* RosaryGuideApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosaryGuideApp.swift; sourceTree = "<group>"; };
+		EF863537C38D8D4053DADC66 /* FeastsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeastsView.swift; sourceTree = "<group>"; };
+		F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MysteryCatalog.swift; sourceTree = "<group>"; };
+		F839B24D2EBDDA7A625663F3 /* CompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionView.swift; sourceTree = "<group>"; };
+		F91288DB192297DC903FE08C /* RosaryGuide.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RosaryGuide.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		D9A74782EE38B5A7A5F97DBD /* Frameworks */ = {
+		392F3212A1EAC4B1FD7FE5E7 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		392F3212A1EAC4B1FD7FE5E7 /* Frameworks */ = {
+		D9A74782EE38B5A7A5F97DBD /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -101,7 +101,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0BF809BD56B5D91BF6950DA4 /*  */ = {
+		043DCDB88244212A91C8656B /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				6A1EFCA22FB596D08D814D6C /* HapticService.swift */,
+				49068D79F0B6F85C616BB1E5 /* LiturgicalCalendar.swift */,
+				BC9AAFD7E9E6EF192919BEC9 /* MysteryCalendar.swift */,
+				991251FFFCB12E381DCA553A /* RosarySequenceBuilder.swift */,
+				D7D77BDA7A9A0D515ADDDF0D /* SessionStore.swift */,
+				59BD70A010546ABDA29CC560 /* SettingsStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		0BF809BD56B5D91BF6950DA4 = {
 			isa = PBXGroup;
 			children = (
 				D36540CDAA07DF7F5828251E /* RosaryGuide */,
@@ -117,6 +130,100 @@
 				2DBAFB5B71D685FEA27E4316 /* RosaryGuideTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		2AB370A6342B58B8C414851C /* Pray */ = {
+			isa = PBXGroup;
+			children = (
+				BD36BF90207B9099879DC954 /* BeadRailView.swift */,
+				F839B24D2EBDDA7A625663F3 /* CompletionView.swift */,
+				0D14D5C74E932FBB6FE0784F /* PrayHubView.swift */,
+				8589A7E167BB2CC661B8B1E9 /* PrayView.swift */,
+			);
+			path = Pray;
+			sourceTree = "<group>";
+		};
+		3AC51308FACC1B77F49A61A9 /* Feasts */ = {
+			isa = PBXGroup;
+			children = (
+				EF863537C38D8D4053DADC66 /* FeastsView.swift */,
+			);
+			path = Feasts;
+			sourceTree = "<group>";
+		};
+		7B6E4971D1F70DFAF731CCCA /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				70497BEC59AAFC851AFB4046 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		91AA2BA5A974021042D632E2 /* HowToPray */ = {
+			isa = PBXGroup;
+			children = (
+				BD04A739CD276BFD692104B7 /* HowToPrayView.swift */,
+			);
+			path = HowToPray;
+			sourceTree = "<group>";
+		};
+		A917D4D14E1517E067A3727C /* RosaryGuideTests */ = {
+			isa = PBXGroup;
+			children = (
+				B3E6BD2027DE74F3262A8F28 /* LiturgicalCalendarTests.swift */,
+				DC7688092076D0FC5DE763D0 /* MysteryCalendarTests.swift */,
+			);
+			path = RosaryGuideTests;
+			sourceTree = "<group>";
+		};
+		B414B1B18AFFA61DFB32BE8B /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				65622D107422099E4F60DE1E /* AppTheme.swift */,
+				C29555CF3A426924297A6D05 /* MysteryArtworkView.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		B85829E991B2EE2A00985945 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				B4D6BFA1CB98A02A8F760C6D /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		B9B11CE8AA72703FC008EDB0 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */,
+				34B7278C515BF0D95EE40796 /* HowToPrayContent.swift */,
+				F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */,
+				4019C8E56EEFC74D6BD9D92D /* PrayerCatalog.swift */,
+				08B3314BC1EFCF756D53AF17 /* QuoteCatalog.swift */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		BABD34C8F0C41328026A0293 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				2B45CCA2BDAA20E92DEB2807 /* RootView.swift */,
+				DDB06CBDA53DED71FAAB4CC3 /* RosaryGuideApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		BB2E319437D17E296638CD06 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				3AC51308FACC1B77F49A61A9 /* Feasts */,
+				B85829E991B2EE2A00985945 /* Home */,
+				91AA2BA5A974021042D632E2 /* HowToPray */,
+				2AB370A6342B58B8C414851C /* Pray */,
+				7B6E4971D1F70DFAF731CCCA /* Settings */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 		D36540CDAA07DF7F5828251E /* RosaryGuide */ = {
@@ -135,35 +242,6 @@
 			path = RosaryGuide;
 			sourceTree = "<group>";
 		};
-		EF9404A057D2BFA4ABE2F620 /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				4D28807626934D4A00A54B2E /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
-			sourceTree = "<group>";
-		};
-		BABD34C8F0C41328026A0293 /* App */ = {
-			isa = PBXGroup;
-			children = (
-				2B45CCA2BDAA20E92DEB2807 /* RootView.swift */,
-				DDB06CBDA53DED71FAAB4CC3 /* RosaryGuideApp.swift */,
-			);
-			path = App;
-			sourceTree = "<group>";
-		};
-		B9B11CE8AA72703FC008EDB0 /* Data */ = {
-			isa = PBXGroup;
-			children = (
-				5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */,
-				34B7278C515BF0D95EE40796 /* HowToPrayContent.swift */,
-				F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */,
-				4019C8E56EEFC74D6BD9D92D /* PrayerCatalog.swift */,
-				08B3314BC1EFCF756D53AF17 /* QuoteCatalog.swift */,
-			);
-			path = Data;
-			sourceTree = "<group>";
-		};
 		D55A496049941E64FEC6E2C6 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -173,90 +251,12 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		043DCDB88244212A91C8656B /* Services */ = {
+		EF9404A057D2BFA4ABE2F620 /* Preview Content */ = {
 			isa = PBXGroup;
 			children = (
-				6A1EFCA22FB596D08D814D6C /* HapticService.swift */,
-				49068D79F0B6F85C616BB1E5 /* LiturgicalCalendar.swift */,
-				BC9AAFD7E9E6EF192919BEC9 /* MysteryCalendar.swift */,
-				991251FFFCB12E381DCA553A /* RosarySequenceBuilder.swift */,
-				D7D77BDA7A9A0D515ADDDF0D /* SessionStore.swift */,
-				59BD70A010546ABDA29CC560 /* SettingsStore.swift */,
+				4D28807626934D4A00A54B2E /* Preview Assets.xcassets */,
 			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		B414B1B18AFFA61DFB32BE8B /* Theme */ = {
-			isa = PBXGroup;
-			children = (
-				65622D107422099E4F60DE1E /* AppTheme.swift */,
-				C29555CF3A426924297A6D05 /* MysteryArtworkView.swift */,
-			);
-			path = Theme;
-			sourceTree = "<group>";
-		};
-		BB2E319437D17E296638CD06 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				3AC51308FACC1B77F49A61A9 /* Feasts */,
-				B85829E991B2EE2A00985945 /* Home */,
-				91AA2BA5A974021042D632E2 /* HowToPray */,
-				2AB370A6342B58B8C414851C /* Pray */,
-				7B6E4971D1F70DFAF731CCCA /* Settings */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		3AC51308FACC1B77F49A61A9 /* Feasts */ = {
-			isa = PBXGroup;
-			children = (
-				EF863537C38D8D4053DADC66 /* FeastsView.swift */,
-			);
-			path = Feasts;
-			sourceTree = "<group>";
-		};
-		B85829E991B2EE2A00985945 /* Home */ = {
-			isa = PBXGroup;
-			children = (
-				B4D6BFA1CB98A02A8F760C6D /* HomeView.swift */,
-			);
-			path = Home;
-			sourceTree = "<group>";
-		};
-		91AA2BA5A974021042D632E2 /* HowToPray */ = {
-			isa = PBXGroup;
-			children = (
-				BD04A739CD276BFD692104B7 /* HowToPrayView.swift */,
-			);
-			path = HowToPray;
-			sourceTree = "<group>";
-		};
-		2AB370A6342B58B8C414851C /* Pray */ = {
-			isa = PBXGroup;
-			children = (
-				BD36BF90207B9099879DC954 /* BeadRailView.swift */,
-				F839B24D2EBDDA7A625663F3 /* CompletionView.swift */,
-				0D14D5C74E932FBB6FE0784F /* PrayHubView.swift */,
-				8589A7E167BB2CC661B8B1E9 /* PrayView.swift */,
-			);
-			path = Pray;
-			sourceTree = "<group>";
-		};
-		7B6E4971D1F70DFAF731CCCA /* Settings */ = {
-			isa = PBXGroup;
-			children = (
-				70497BEC59AAFC851AFB4046 /* SettingsView.swift */,
-			);
-			path = Settings;
-			sourceTree = "<group>";
-		};
-		A917D4D14E1517E067A3727C /* RosaryGuideTests */ = {
-			isa = PBXGroup;
-			children = (
-				B3E6BD2027DE74F3262A8F28 /* LiturgicalCalendarTests.swift */,
-				DC7688092076D0FC5DE763D0 /* MysteryCalendarTests.swift */,
-			);
-			path = RosaryGuideTests;
+			path = "Preview Content";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -347,6 +347,15 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		5B8780E5FFBAD4D06F20DF07 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F47D85D5383CB8F901559461 /* LiturgicalCalendarTests.swift in Sources */,
+				443FF4F01F38FE1DC8B240C1 /* MysteryCalendarTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8DC05BF196D2D89FE59A7C8B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -379,15 +388,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5B8780E5FFBAD4D06F20DF07 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				F47D85D5383CB8F901559461 /* LiturgicalCalendarTests.swift in Sources */,
-				443FF4F01F38FE1DC8B240C1 /* MysteryCalendarTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -399,6 +399,167 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		0CE043285A9CB32661C3317B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shasasmith.RosaryGuideTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RosaryGuide.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RosaryGuide";
+			};
+			name = Release;
+		};
+		14ADAE885DB53A4B73BAA090 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 72VH98LBZA;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Rosary Guide";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.reference";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shasasmith.RosaryGuide;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		60D684F7398B95CC245B18C5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 72VH98LBZA;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Rosary Guide";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.reference";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shasasmith.RosaryGuide;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6140277857CD9BBAD25D73BD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shasasmith.RosaryGuideTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RosaryGuide.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RosaryGuide";
+			};
+			name = Debug;
+		};
+		7DEAC68F2AB1D6A9ED5688FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.9;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		C18C42856B8EAD25030A3725 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -463,175 +624,14 @@
 			};
 			name = Debug;
 		};
-		7DEAC68F2AB1D6A9ED5688FC /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_FAST_MATH = YES;
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.9;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		60D684F7398B95CC245B18C5 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "RosaryGuide/Preview Content";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_CFBundleDisplayName = "Rosary Guide";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.reference";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.shasasmith.RosaryGuide;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_STRICT_CONCURRENCY = targeted;
-				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		14ADAE885DB53A4B73BAA090 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "RosaryGuide/Preview Content";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_CFBundleDisplayName = "Rosary Guide";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.reference";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.shasasmith.RosaryGuide;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_STRICT_CONCURRENCY = targeted;
-				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		6140277857CD9BBAD25D73BD /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.shasasmith.RosaryGuideTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RosaryGuide.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RosaryGuide";
-			};
-			name = Debug;
-		};
-		0CE043285A9CB32661C3317B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.shasasmith.RosaryGuideTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RosaryGuide.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RosaryGuide";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		EEAE7E6228993AFE55AD9DC4 /* Build configuration list for PBXProject "RosaryGuide" */ = {
+		2E9F5A0B6DFFA54C1FD977E7 /* Build configuration list for PBXNativeTarget "RosaryGuideTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C18C42856B8EAD25030A3725 /* Debug */,
-				7DEAC68F2AB1D6A9ED5688FC /* Release */,
+				6140277857CD9BBAD25D73BD /* Debug */,
+				0CE043285A9CB32661C3317B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -645,11 +645,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		2E9F5A0B6DFFA54C1FD977E7 /* Build configuration list for PBXNativeTarget "RosaryGuideTests" */ = {
+		EEAE7E6228993AFE55AD9DC4 /* Build configuration list for PBXProject "RosaryGuide" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				6140277857CD9BBAD25D73BD /* Debug */,
-				0CE043285A9CB32661C3317B /* Release */,
+				C18C42856B8EAD25030A3725 /* Debug */,
+				7DEAC68F2AB1D6A9ED5688FC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

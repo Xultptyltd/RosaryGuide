@@ -1,0 +1,80 @@
+/* Brief RSV-2CE readings for each mystery (one image to hold through the decade).
+   Scripture: Revised Standard Version, Second Catholic Edition.
+   Format: [ title, scripture, fruit of the mystery, reference ] */
+const SETS = {
+  joyful:{name:"Joyful",days:"Mondays and Saturdays",
+    daysIn:{Advent:"Mondays, Saturdays and Sundays in Advent",
+            Christmas:"Mondays, Saturdays and Sundays in Christmastide"},m:[
+    ["The Annunciation",
+     "In the sixth month the angel Gabriel was sent from God to a city of Galilee named Nazareth, to a virgin betrothed to a man whose name was Joseph, of the house of David; and the virgin’s name was Mary.",
+     "Humility","Luke 1:26-27"],
+    ["The Visitation",
+     "And when Elizabeth heard the greeting of Mary, the baby leaped in her womb; and Elizabeth was filled with the Holy Spirit and she exclaimed with a loud cry, “Blessed are you among women, and blessed is the fruit of your womb!”",
+     "Love of Neighbor","Luke 1:41-42"],
+    ["The Nativity",
+     "And she gave birth to her first-born son and wrapped him in swaddling cloths, and laid him in a manger, because there was no place for them in the inn.",
+     "Poverty","Luke 2:7"],
+    ["The Presentation in the Temple",
+     "And when the time came for their purification according to the law of Moses, they brought him up to Jerusalem to present him to the Lord.",
+     "Purity of Heart and Body","Luke 2:22"],
+    ["The Finding in the Temple",
+     "After three days they found him in the temple, sitting among the teachers, listening to them and asking them questions.",
+     "Devotion to Jesus","Luke 2:46"]]},
+
+  luminous:{name:"Luminous",days:"Thursdays",m:[
+    ["The Baptism in the Jordan",
+     "And when Jesus was baptized, he went up immediately from the water, and behold, the heavens were opened and he saw the Spirit of God descending like a dove, and alighting on him; and behold, a voice from heaven, saying, “This is my beloved Son, with whom I am well pleased.”",
+     "Openness to the Holy Spirit","Matthew 3:16-17"],
+    ["The Wedding at Cana",
+     "When the wine failed, the mother of Jesus said to him, “They have no wine.” His mother said to the servants, “Do whatever he tells you.”",
+     "To Jesus through Mary","John 2:3, 5"],
+    ["The Proclamation of the Kingdom",
+     "The time is fulfilled, and the kingdom of God is at hand; repent, and believe in the gospel.",
+     "Conversion","Mark 1:15"],
+    ["The Transfiguration",
+     "And after six days Jesus took with him Peter and James and John his brother, and led them up a high mountain apart. And he was transfigured before them, and his face shone like the sun, and his garments became white as light.",
+     "Desire for holiness","Matthew 17:1-2"],
+    ["The Institution of the Eucharist",
+     "Now as they were eating, Jesus took bread, and blessed, and broke it, and gave it to the disciples and said, “Take, eat; this is my body.”",
+     "Adoration","Matthew 26:26"]]},
+
+  sorrowful:{name:"Sorrowful",days:"Tuesdays and Fridays",
+    daysIn:{Lent:"Tuesdays, Fridays and Sundays in Lent"},m:[
+    ["The Agony in the Garden",
+     "Then he said to them, “My soul is very sorrowful, even to death; remain here, and watch with me.” And going a little farther he fell on his face and prayed, “My Father, if it be possible, let this chalice pass from me; nevertheless, not as I will, but as you will.”",
+     "Obedience to God’s Will","Matthew 26:38-39"],
+    ["The Scourging at the Pillar",
+     "Then he released for them Barabbas, and having scourged Jesus, delivered him to be crucified.",
+     "Mortification","Matthew 27:26"],
+    ["The Crowning with Thorns",
+     "And plaiting a crown of thorns they put it on his head, and put a reed in his right hand. And kneeling before him they mocked him, saying, “Hail, King of the Jews!”",
+     "Courage","Matthew 27:29"],
+    ["The Carrying of the Cross",
+     "And they compelled a passer-by, Simon of Cyrene, who was coming in from the country, the father of Alexander and Rufus, to carry his cross. And they brought him to the place called Golgotha (which means the place of a skull).",
+     "Patience","Mark 15:21-22"],
+    ["The Crucifixion",
+     "And when they came to the place which is called The Skull, there they crucified him, and the criminals, one on the right and one on the left. Then Jesus, crying with a loud voice, said, “Father, into your hands I commit my spirit!” And having said this he breathed his last.",
+     "Sorrow for our Sins","Luke 23:33, 46"]]},
+
+  glorious:{name:"Glorious",days:"Wednesdays and Sundays",
+    daysIn:{Advent:"Wednesdays, and Sundays outside Advent",
+            Christmas:"Wednesdays, and Sundays outside Christmastide",
+            Lent:"Wednesdays, and Sundays outside Lent"},m:[
+    ["The Resurrection",
+     "Why do you seek the living among the dead? He is not here, but has risen.",
+     "Faith","Luke 24:5"],
+    ["The Ascension",
+     "So then the Lord Jesus, after he had spoken to them, was taken up into heaven, and sat down at the right hand of God.",
+     "Hope","Mark 16:19"],
+    ["The Descent of the Holy Spirit",
+     "And there appeared to them tongues as of fire, distributed and resting on each one of them. And they were all filled with the Holy Spirit and began to speak in other tongues, as the Spirit gave them utterance.",
+     "Wisdom","Acts 2:3-4"],
+    ["The Assumption",
+     "For behold, henceforth all generations will call me blessed; for he who is mighty has done great things for me, and holy is his name.",
+     "Devotion to Mary","Luke 1:48-49"],
+    ["The Coronation of Mary",
+     "And a great portent appeared in heaven, a woman clothed with the sun, with the moon under her feet, and on her head a crown of twelve stars.",
+     "Grace of a happy death","Revelation 12:1"]]}
+};
+const ORD=["First","Second","Third","Fourth","Fifth"];
+const ROMAN={First:"I",Second:"II",Third:"III",Fourth:"IV",Fifth:"V"};
