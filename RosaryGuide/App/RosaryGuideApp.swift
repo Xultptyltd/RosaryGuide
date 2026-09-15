@@ -14,6 +14,7 @@ struct RosaryGuideApp: App {
             ThemedRoot {
                 RootView()
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .environment(settings)
             .environment(session)
             .preferredColorScheme(settings.appearance.colorScheme)

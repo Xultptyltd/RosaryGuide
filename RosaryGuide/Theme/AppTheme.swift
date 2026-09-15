@@ -126,6 +126,7 @@ struct ThemedRoot<Content: View>: View {
         content()
             .environment(\.palette, palette)
             .tint(palette.accent)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(palette.bg.ignoresSafeArea())
             .onAppear {
                 FontRegistrar.register()
