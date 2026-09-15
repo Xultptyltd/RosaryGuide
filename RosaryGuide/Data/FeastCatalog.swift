@@ -32,16 +32,39 @@ enum FeastCatalog {
     private static let fixed: [Feast] = [
         fixedFeast("mary-mother-of-god", "Mary, Mother of God", "Sancta María, Dei Génitrix", 1, 1, .solemnity, marian: true, set: .joyful,
                    "The octave of Christmas honors Mary as Theotokos, Mother of God."),
-        fixedFeast("epiphany", "Epiphany of the Lord", "Epiphanía Dómini", 1, 6, .solemnity, set: .joyful,
-                   "Christ is revealed to the nations. In many places this solemnity is transferred to Sunday."),
+        Feast(
+            id: "epiphany",
+            name: BilingualText(english: "Epiphany of the Lord", latin: "Epiphanía Dómini"),
+            summary: "Christ is revealed to the nations. In the United States this solemnity is observed on the Sunday after January 1.",
+            suggestedMysterySet: .joyful,
+            isMarian: false,
+            rank: .solemnity,
+            dateProvider: { year in
+                guard let jan2 = LiturgicalCalendar.date(year: year, month: 1, day: 2) else { return nil }
+                return LiturgicalCalendar.sundayOnOrAfter(jan2)
+            }
+        ),
         fixedFeast("presentation", "Presentation of the Lord", "Præsentátio Dómini", 2, 2, .feast, marian: true, set: .joyful,
                    "Candlemas: Jesus is presented in the Temple; Simeon and Anna confess the Light."),
         fixedFeast("lourdes", "Our Lady of Lourdes", "Beáta María Virgo de Lúrdibus", 2, 11, .optionalMemorial, marian: true, set: .joyful,
                    "The Immaculate Virgin appears to St. Bernadette. World Day of the Sick."),
         fixedFeast("joseph", "Saint Joseph, Spouse of the Blessed Virgin Mary", "Sanctus Ioseph", 3, 19, .solemnity, set: .joyful,
                    "Guardian of the Redeemer and chaste spouse of Mary."),
-        fixedFeast("annunciation", "The Annunciation of the Lord", "Annuntiátio Dómini", 3, 25, .solemnity, marian: true, set: .joyful,
-                   "The Word becomes flesh in the womb of the Virgin. If March 25 falls in Holy Week or the Octave of Easter, the Annunciation is transferred."),
+        Feast(
+            id: "annunciation",
+            name: BilingualText(english: "The Annunciation of the Lord", latin: "Annuntiátio Dómini"),
+            summary: "The Word becomes flesh in the womb of the Virgin. If March 25 falls in Holy Week or the Octave of Easter, the Annunciation is transferred to the Monday after Divine Mercy Sunday.",
+            suggestedMysterySet: .joyful,
+            isMarian: true,
+            rank: .solemnity,
+            dateProvider: { year in
+                guard let mar25 = LiturgicalCalendar.date(year: year, month: 3, day: 25) else { return nil }
+                if LiturgicalCalendar.isInHolyWeekOrEasterOctave(mar25, year: year) {
+                    return LiturgicalCalendar.mondayAfterDivineMercy(year: year)
+                }
+                return mar25
+            }
+        ),
         fixedFeast("fatima", "Our Lady of Fatima", "Beáta María Virgo de Fátima", 5, 13, .optionalMemorial, marian: true, set: .joyful,
                    "Mary asks for daily Rosary and conversion of heart."),
         fixedFeast("visitation", "The Visitation of the Blessed Virgin Mary", "Visitátio Beátæ Maríæ Vírginis", 5, 31, .feast, marian: true, set: .joyful,
@@ -161,12 +184,13 @@ enum FeastCatalog {
         Feast(
             id: "ascension",
             name: BilingualText(english: "The Ascension of the Lord", latin: "Ascénsio Dómini"),
-            summary: "Forty days after Easter (Thursday), or the following Sunday where transferred. The second Glorious Mystery.",
+            summary: "In the United States this solemnity is commonly observed on the Sunday after the traditional Thursday (forty days after Easter). The second Glorious Mystery.",
             suggestedMysterySet: .glorious,
             isMarian: false,
             rank: .solemnity,
             dateProvider: { year in
-                LiturgicalCalendar.easter(year: year).flatMap { LiturgicalCalendar.addingDays(39, to: $0) }
+                // US: many dioceses transfer Ascension to the following Sunday (+42).
+                LiturgicalCalendar.easter(year: year).flatMap { LiturgicalCalendar.addingDays(42, to: $0) }
             }
         ),
         Feast(
@@ -194,12 +218,13 @@ enum FeastCatalog {
         Feast(
             id: "corpus-christi",
             name: BilingualText(english: "The Most Holy Body and Blood of Christ", latin: "Sanctíssimum Corpus et Sanguis Christi"),
-            summary: "Thursday after Trinity Sunday, or the following Sunday where transferred. The fifth Luminous Mystery.",
+            summary: "In the United States this solemnity is commonly observed on the Sunday after Trinity Sunday. The fifth Luminous Mystery.",
             suggestedMysterySet: .luminous,
             isMarian: false,
             rank: .solemnity,
             dateProvider: { year in
-                LiturgicalCalendar.easter(year: year).flatMap { LiturgicalCalendar.addingDays(60, to: $0) }
+                // US: typically the Sunday after Trinity (+63 from Easter) rather than Thursday (+60).
+                LiturgicalCalendar.easter(year: year).flatMap { LiturgicalCalendar.addingDays(63, to: $0) }
             }
         ),
         Feast(

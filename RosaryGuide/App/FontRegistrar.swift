@@ -55,23 +55,25 @@ enum FontRegistrar {
     }
 
     #if canImport(UIKit)
-    static func sansUI(_ size: CGFloat, weight: Font.Weight = .regular) -> UIFont {
-        variableFont(
+    static func sansUI(_ size: CGFloat, weight: Font.Weight = .regular, textStyle: UIFont.TextStyle = .body) -> UIFont {
+        let base = variableFont(
             names: sansCandidates,
             size: size,
             variations: ["wght": axisWeight(weight)],
             serifFallback: false
         )
+        return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
     }
 
-    static func serifUI(_ size: CGFloat, italic: Bool = false, opticalSize: CGFloat? = nil) -> UIFont {
+    static func serifUI(_ size: CGFloat, italic: Bool = false, opticalSize: CGFloat? = nil, textStyle: UIFont.TextStyle = .body) -> UIFont {
         let opsz = min(max(opticalSize ?? size, 6), 72)
-        return variableFont(
+        let base = variableFont(
             names: italic ? serifItalicCandidates : serifCandidates,
             size: size,
             variations: ["wght": 400, "opsz": opsz],
             serifFallback: true
         )
+        return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
     }
 
     private static func axisWeight(_ weight: Font.Weight) -> CGFloat {

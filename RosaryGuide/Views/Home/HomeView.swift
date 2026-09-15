@@ -325,6 +325,12 @@ struct HomeView: View {
                                         .padding(.vertical, 3)
                                         .background(palette.accent, in: Capsule())
                                 }
+                                if session.prayed(on: day) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(palette.dim)
+                                        .accessibilityLabel("Prayed")
+                                }
                             }
                             Spacer(minLength: 8)
                             Text(dayAssignment.set.shortName)

@@ -113,4 +113,25 @@ enum LiturgicalCalendar {
         formatter.dateFormat = "EEEE"
         return formatter.string(from: date)
     }
+
+    /// US-style: solemnity observed on the Sunday on or after `date` (if not already Sunday).
+    static func sundayOnOrAfter(_ date: Date, calendar: Calendar = gregorian) -> Date {
+        let weekday = calendar.component(.weekday, from: date) // 1 = Sunday
+        if weekday == 1 { return calendar.startOfDay(for: date) }
+        return addingDays(8 - weekday, to: date, calendar: calendar) ?? calendar.startOfDay(for: date)
+    }
+
+    /// Monday after Divine Mercy Sunday (octave of Easter) — typical Annunciation transfer landing.
+    static func mondayAfterDivineMercy(year: Int, calendar: Calendar = gregorian) -> Date? {
+        easter(year: year, calendar: calendar).flatMap { addingDays(8, to: $0, calendar: calendar) }
+    }
+
+    static func isInHolyWeekOrEasterOctave(_ date: Date, year: Int, calendar: Calendar = gregorian) -> Bool {
+        guard let easter = easter(year: year, calendar: calendar),
+              let palm = addingDays(-7, to: easter, calendar: calendar),
+              let octaveEnd = addingDays(7, to: easter, calendar: calendar) else { return false }
+        let day = calendar.startOfDay(for: date)
+        return day >= calendar.startOfDay(for: palm) && day <= calendar.startOfDay(for: octaveEnd)
+    }
+
 }

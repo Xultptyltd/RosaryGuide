@@ -16,7 +16,11 @@ enum MysteryCalendar {
     static func assignment(on date: Date, calendar: Calendar = LiturgicalCalendar.gregorian) -> MysteryAssignment {
         let season = LiturgicalCalendar.season(on: date, calendar: calendar)
         let weekday = calendar.component(.weekday, from: date)
-        let feast = FeastCatalog.feasts(on: date, calendar: calendar).first
+        let feast = FeastCatalog.feasts(on: date, calendar: calendar)
+            .sorted { lhs, rhs in
+                rankScore(lhs.feast.rank) > rankScore(rhs.feast.rank)
+            }
+            .first
 
         let set: MysterySetKind
         let reason: String
@@ -69,6 +73,16 @@ enum MysteryCalendar {
         return (0..<7).compactMap { offset in
             guard let day = calendar.date(byAdding: .day, value: offset, to: start) else { return nil }
             return (day, assignment(on: day, calendar: calendar))
+        }
+    }
+
+    private static func rankScore(_ rank: FeastRank) -> Int {
+        switch rank {
+        case .solemnity: return 5
+        case .feast: return 4
+        case .memorial: return 3
+        case .optionalMemorial: return 2
+        case .seasonal: return 1
         }
     }
 }

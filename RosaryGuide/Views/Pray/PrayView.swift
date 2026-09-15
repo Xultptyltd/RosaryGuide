@@ -130,20 +130,23 @@ struct PrayView: View {
         ZStack {
             HStack {
                 roundControl(system: "xmark") { confirmLeave = true }
+                    .accessibilityLabel("Close")
                 Spacer()
                 roundControl(label: "Aa") {
                     settings.textSize = settings.textSize.next
                 }
+                .accessibilityLabel("Text size")
             }
             Text(step.progressLabel)
                 .font(AppTheme.sans(13, weight: .medium))
                 .foregroundStyle(palette.ink)
                 .lineLimit(1)
-                .padding(.horizontal, 48)
+                .minimumScaleFactor(0.8)
+                .padding(.horizontal, 52)
         }
         .padding(.horizontal, 16)
-        .padding(.top, 8)
-            .safeAreaPadding(.top)
+        .padding(.top, 4)
+        .padding(.bottom, 4)
     }
 
     private func locus(_ step: RosaryStep) -> some View {
@@ -200,7 +203,6 @@ struct PrayView: View {
                         .font(AppTheme.serif(17))
                 }
                 .padding(.top, 8)
-            .safeAreaPadding(.top)
                 .overlay(alignment: .top) { Hairline() }
             }
         }
@@ -208,18 +210,18 @@ struct PrayView: View {
 
     private func footer(_ step: RosaryStep) -> some View {
         VStack(spacing: 10) {
-            if step.kind == .hailMary, step.decadeNumber != nil {
-                Button("Skip remaining Hail Marys") {
-                    skipDecadeHailMarys()
+            HStack(alignment: .center, spacing: 12) {
+                if step.kind == .hailMary, step.decadeNumber != nil {
+                    Button("Skip Hail Marys") {
+                        skipDecadeHailMarys()
+                    }
+                    .font(AppTheme.sans(14, weight: .medium))
+                    .foregroundStyle(palette.dim)
                 }
-                .font(AppTheme.sans(15, weight: .medium))
-                .foregroundStyle(palette.dim)
-            }
-            PillButton(title: step.nextLabel, filled: true, action: advance)
-            HStack {
-                Spacer()
+                Spacer(minLength: 0)
                 languageChips
             }
+            PillButton(title: step.nextLabel, filled: true, action: advance)
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 16)
@@ -296,9 +298,11 @@ struct PrayView: View {
                         sessionStore.complete()
                         dismiss()
                     }
+                    .accessibilityLabel("Close")
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.top, 4)
+                .safeAreaPadding(.top)
                 Spacer()
                 VStack(spacing: 14) {
                     Text("Finis")
