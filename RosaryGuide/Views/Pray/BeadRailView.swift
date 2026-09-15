@@ -8,6 +8,18 @@ struct RosaryBeadMapView: View {
     var locus: BeadLocus?
     @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private static let crucifixImage: UIImage? = {
+        #if canImport(UIKit)
+        BundleRasterImage.load(
+            directory: ArtCatalog.crucifix.directory,
+            name: ArtCatalog.crucifix.name,
+            ext: ArtCatalog.crucifix.ext,
+            maxPixel: 256
+        )
+        #else
+        nil
+        #endif
+    }()
 
     var body: some View {
         Canvas { context, size in
@@ -135,7 +147,7 @@ struct RosaryBeadMapView: View {
 
     private func drawCrucifix(_ context: inout GraphicsContext, at p: CGPoint, state: BeadState) {
         let rect = CGRect(x: p.x - 8, y: p.y - 16, width: 16, height: 22)
-        if let ui = BundleRasterImage.load(directory: ArtCatalog.crucifix.directory, name: ArtCatalog.crucifix.name, ext: ArtCatalog.crucifix.ext) {
+        if let ui = Self.crucifixImage {
             context.opacity = state == .future ? 0.38 : 1
             context.draw(Image(uiImage: ui), in: rect)
             context.opacity = 1

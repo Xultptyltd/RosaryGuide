@@ -1,5 +1,7 @@
 import Foundation
 import SwiftUI
+import ImageIO
+import UIKit
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -113,25 +115,49 @@ struct BundleRasterImage: View {
         }
     }
 
-    static func load(directory: String, name: String, ext: String) -> UIImage? {
+    private static let cache = NSCache<NSString, UIImage>()
+
+    static func load(directory: String, name: String, ext: String, maxPixel: CGFloat = 1600) -> UIImage? {
         #if canImport(UIKit)
-        var directories = [
-            directory,
-            directory.replacingOccurrences(of: "Resources/", with: "")
-        ]
-        if !directory.hasPrefix("Resources/") && !directory.hasPrefix("Art") {
+        let key = "\(directory)/\(name).\(ext)#\(Int(maxPixel))" as NSString
+        if let cached = cache.object(forKey: key) { return cached }
+
+        var directories = [directory]
+        if !directory.hasPrefix("Art") {
             directories.append("Art/\(directory)")
         }
-        if directory.hasPrefix("Art/") {
-            directories.append("Resources/\(directory)")
-        }
-        let candidates = directories.flatMap { dir in
-            [Bundle.main.url(forResource: name, withExtension: ext, subdirectory: dir)]
-        } + [Bundle.main.url(forResource: name, withExtension: ext)]
-        for url in candidates.compactMap({ $0 }) {
-            if let image = UIImage(contentsOfFile: url.path) { return image }
+        let candidates = directories.compactMap {
+            Bundle.main.url(forResource: name, withExtension: ext, subdirectory: $0)
+        } + [Bundle.main.url(forResource: name, withExtension: ext)].compactMap { $0 }
+
+        for url in candidates {
+            if let image = downsampled(url: url, maxPixel: maxPixel) {
+                cache.setObject(image, forKey: key)
+                return image
+            }
         }
         #endif
         return nil
     }
+
+    #if canImport(UIKit)
+    private static func downsampled(url: URL, maxPixel: CGFloat) -> UIImage? {
+        let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions) else {
+            return UIImage(contentsOfFile: url.path)
+        }
+        let scale = UIScreen.main.scale
+        let maxDim = max(maxPixel * scale, 1)
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxDim
+        ]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return UIImage(contentsOfFile: url.path)
+        }
+        return UIImage(cgImage: cg)
+    }
+    #endif
 }

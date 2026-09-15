@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct FeastsView: View {
+    @Binding var prayLaunch: PrayLaunch?
     @Environment(SettingsStore.self) private var settings
     @Environment(\.palette) private var palette
     @State private var filter: FeastFilter = .upcoming
@@ -16,10 +17,11 @@ struct FeastsView: View {
                     Section("Today") {
                         ForEach(todayFeasts) { item in
                             NavigationLink {
-                                FeastDetailView(item: item)
+                                FeastDetailView(prayLaunch: $prayLaunch, item: item)
                             } label: {
                                 FeastRow(item: item, language: settings.language, showsDate: false)
                             }
+                            .listRowBackground(palette.bg)
                         }
                     }
                 }
@@ -27,14 +29,17 @@ struct FeastsView: View {
                 Section(filter.sectionTitle) {
                     ForEach(filteredItems) { item in
                         NavigationLink {
-                            FeastDetailView(item: item)
+                            FeastDetailView(prayLaunch: $prayLaunch, item: item)
                         } label: {
                             FeastRow(item: item, language: settings.language, showsDate: true)
                         }
+                        .listRowBackground(palette.bg)
                     }
                 }
             }
             .scrollContentBackground(.hidden)
+            .listRowSeparatorTint(palette.hair)
+            .tint(palette.accent)
             .guidePageChrome()
             .navigationTitle("Feasts")
             .safeAreaInset(edge: .top) {
@@ -121,9 +126,10 @@ private struct FeastRow: View {
 }
 
 struct FeastDetailView: View {
+    @Binding var prayLaunch: PrayLaunch?
+    var item: DatedFeast
     @Environment(SettingsStore.self) private var settings
     @Environment(\.palette) private var palette
-    var item: DatedFeast
 
     var body: some View {
         ScrollView {
@@ -160,6 +166,9 @@ struct FeastDetailView: View {
                         Text("The weekday set stays the default. You can pray the \(set.shortName) Mysteries for this feast if you wish.")
                             .font(AppTheme.sans(14))
                             .foregroundStyle(palette.dim)
+                        PillButton(title: "Pray the \(set.shortName) Mysteries") {
+                            prayLaunch = .fresh(set)
+                        }
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)

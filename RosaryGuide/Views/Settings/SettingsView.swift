@@ -15,16 +15,19 @@ struct SettingsView: View {
                             Text(option.title).tag(option)
                         }
                     }
+                    .listRowBackground(palette.bg)
                     Picker("Appearance", selection: $settings.appearance) {
                         ForEach(AppearancePreference.allCases) { option in
                             Text(option.title).tag(option)
                         }
                     }
+                    .listRowBackground(palette.bg)
                     Picker("Text size", selection: $settings.textSize) {
                         Text("Small").tag(PrayerTextSize.small)
                         Text("Medium").tag(PrayerTextSize.medium)
                         Text("Large").tag(PrayerTextSize.large)
                     }
+                    .listRowBackground(palette.bg)
                 } header: {
                     Text("Display")
                 } footer: {
@@ -33,7 +36,9 @@ struct SettingsView: View {
 
                 Section {
                     Toggle("Prayer to Saint Michael after Finis", isOn: $settings.includeSaintMichael)
+                        .listRowBackground(palette.bg)
                     Toggle("Haptics while praying", isOn: $settings.hapticsEnabled)
+                        .listRowBackground(palette.bg)
                 } header: {
                     Text("Prayer")
                 } footer: {
@@ -45,18 +50,24 @@ struct SettingsView: View {
                         Button("Discard saved rosary", role: .destructive) {
                             session.discard()
                         }
+                        .listRowBackground(palette.bg)
                     }
                 }
 
                 Section("About") {
                     LabeledContent("App", value: "Rosary Guide")
+                        .listRowBackground(palette.bg)
                     LabeledContent("Bundle ID", value: "com.shasasmith.RosaryGuide")
+                        .listRowBackground(palette.bg)
                     Text("Cream and ink prayer guide with the website’s paintings, Instrument Sans, Newsreader, and RSV-2CE mystery readings. Everything stays on this device.")
                         .font(.footnote)
                         .foregroundStyle(palette.dim)
+                        .listRowBackground(palette.bg)
                 }
             }
             .scrollContentBackground(.hidden)
+            .listRowSeparatorTint(palette.hair)
+            .tint(palette.accent)
             .guidePageChrome()
             .navigationTitle("Settings")
         }

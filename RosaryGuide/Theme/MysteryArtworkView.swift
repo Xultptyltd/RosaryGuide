@@ -13,8 +13,7 @@ struct MysteryArtworkView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let wide = kind == .plateWide || kind == .heroWide || geo.size.width > geo.size.height * 1.15
-            bundleImage(wide: wide)
+            bundleImage()
                 .frame(width: geo.size.width, height: geo.size.height)
                 .clipped()
         }
@@ -29,23 +28,25 @@ struct MysteryArtworkView: View {
     }
 
     @ViewBuilder
-    private func bundleImage(wide: Bool) -> some View {
+    private func bundleImage() -> some View {
         switch kind {
         case .heroTall, .heroWide:
-            let path = ArtCatalog.heroPath(set: set, scheme: colorScheme, tall: kind == .heroTall || !wide)
+            let tall = kind == .heroTall
+            let path = ArtCatalog.heroPath(set: set, scheme: colorScheme, tall: tall)
             FocusedRasterImage(
                 directory: path.directory,
                 name: path.name,
-                focus: UnitPoint(x: 0.5, y: kind == .heroTall || !wide ? 0.28 : 0.42)
+                focus: UnitPoint(x: 0.5, y: tall ? 0.28 : 0.42)
             )
         case .plate, .plateWide:
             if let slug {
-                let path = ArtCatalog.platePath(set: set, slug: slug, scheme: colorScheme, wide: kind == .plateWide || wide)
+                let wide = kind == .plateWide
+                let path = ArtCatalog.platePath(set: set, slug: slug, scheme: colorScheme, wide: wide)
                 let number = mysteryNumber ?? 1
                 FocusedRasterImage(
                     directory: path.directory,
                     name: path.name,
-                    focus: (kind == .plateWide || wide) ? ArtCatalog.bandFocus(set: set, number: number) : ArtCatalog.focus(set: set, number: number)
+                    focus: wide ? ArtCatalog.bandFocus(set: set, number: number) : ArtCatalog.focus(set: set, number: number)
                 )
                 .overlay { plateScrim }
             } else {

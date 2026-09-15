@@ -163,24 +163,10 @@ enum GuideChrome {
         navBar.compactAppearance = nav
         navBar.tintColor = ink
 
-        let tab = UITabBarAppearance()
-        tab.configureWithOpaqueBackground()
-        tab.backgroundColor = bg
-        tab.shadowColor = UIColor(palette.hair)
-        let item = UITabBarItemAppearance()
-        item.normal.iconColor = dim
-        item.normal.titleTextAttributes = [.foregroundColor: dim]
-        item.selected.iconColor = ink
-        item.selected.titleTextAttributes = [.foregroundColor: ink]
-        tab.stackedLayoutAppearance = item
-        tab.inlineLayoutAppearance = item
-        tab.compactInlineLayoutAppearance = item
+        // Tint only — do not force opaque UITabBarAppearance (kills iOS 26 liquid glass).
         let tabBar = UITabBar.appearance()
-        tabBar.standardAppearance = tab
-        tabBar.scrollEdgeAppearance = tab
         tabBar.tintColor = ink
         tabBar.unselectedItemTintColor = dim
-        tabBar.isTranslucent = false
         #endif
     }
 }

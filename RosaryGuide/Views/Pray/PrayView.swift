@@ -16,8 +16,10 @@ struct PrayView: View {
     @State private var steps: [RosaryStep] = []
     @State private var index: Int = 0
     @State private var confirmLeave = false
+    @State private var confirmReplace = false
     @State private var didConfigure = false
     @State private var showingMichael = false
+    @State private var freshSetPending: MysterySetKind?
 
     private var language: PrayerLanguage { settings.language }
     private var current: RosaryStep? {
@@ -41,7 +43,12 @@ struct PrayView: View {
         .onAppear {
             guard !didConfigure else { return }
             didConfigure = true
-            configure()
+            if case .fresh(let set) = launch, sessionStore.resumableSession != nil {
+                freshSetPending = set
+                confirmReplace = true
+            } else {
+                configure()
+            }
             #if canImport(UIKit)
             UIApplication.shared.isIdleTimerDisabled = true
             #endif
@@ -67,6 +74,16 @@ struct PrayView: View {
             Button("Stay", role: .cancel) {}
         } message: {
             Text("Your place is kept for the rest of today.")
+        }
+        .alert("Start a new rosary?", isPresented: $confirmReplace) {
+            Button("Replace saved place", role: .destructive) {
+                configure()
+            }
+            Button("Cancel", role: .cancel) {
+                dismiss()
+            }
+        } message: {
+            Text("You already have a rosary in progress today. Starting fresh will replace it once you move past the first step.")
         }
     }
 
@@ -126,6 +143,7 @@ struct PrayView: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
+            .safeAreaPadding(.top)
     }
 
     private func locus(_ step: RosaryStep) -> some View {
@@ -182,6 +200,7 @@ struct PrayView: View {
                         .font(AppTheme.serif(17))
                 }
                 .padding(.top, 8)
+            .safeAreaPadding(.top)
                 .overlay(alignment: .top) { Hairline() }
             }
         }
@@ -362,10 +381,12 @@ struct PrayView: View {
     private func configure() {
         switch launch {
         case .fresh(let set):
-            sessionStore.start(set: set, language: settings.language)
+            // Do not persist yet — step 0 must not wipe a resumable session.
+            freshSetPending = set
             steps = RosarySequenceBuilder.build(set: set)
             index = 0
         case .resume(let session):
+            freshSetPending = nil
             steps = RosarySequenceBuilder.build(set: session.mysterySet)
             index = min(session.stepIndex, max(steps.count - 1, 0))
             settings.language = session.language
@@ -388,10 +409,16 @@ struct PrayView: View {
     }
 
     private func move(to next: Int) {
+        if let set = freshSetPending, next > 0 {
+            sessionStore.start(set: set, language: settings.language)
+            freshSetPending = nil
+        }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) {
             index = next
         }
-        sessionStore.updateStep(next)
+        if next > 0 {
+            sessionStore.updateStep(next)
+        }
         playHaptic()
     }
 

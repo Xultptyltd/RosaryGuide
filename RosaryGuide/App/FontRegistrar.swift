@@ -31,7 +31,6 @@ enum FontRegistrar {
             let name = (file as NSString).deletingPathExtension
             let ext = (file as NSString).pathExtension
             guard let url = Bundle.main.url(forResource: name, withExtension: ext, subdirectory: "Fonts")
-                    ?? Bundle.main.url(forResource: name, withExtension: ext, subdirectory: "Resources/Fonts")
                     ?? Bundle.main.url(forResource: name, withExtension: ext) else {
                 continue
             }
