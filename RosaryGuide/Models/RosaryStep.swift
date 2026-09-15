@@ -9,6 +9,7 @@ enum RosaryStepKind: Hashable, Codable {
     case fatima
     case mysteryAnnouncement
     case hailHolyQueen
+    case versicle
     case concludingPrayer
     case saintMichael
     case completion
@@ -25,18 +26,38 @@ struct RosaryStep: Identifiable, Hashable {
     var hailMaryNumber: Int?
     var intention: BilingualText?
     var haptic: HapticKind
-    var isOpening: Bool
-    var isClosing: Bool
+    var stage: PrayTrackStage
+    var bead: BeadLocus?
+    var scriptureReference: String?
+
+    var isOpening: Bool { stage == .opening }
+    var isClosing: Bool { stage == .closing || kind == .completion }
+    var isPlate: Bool { kind == .mysteryAnnouncement }
+    var isFinis: Bool { kind == .completion }
 
     var progressLabel: String {
-        if let decadeNumber, let hailMaryNumber {
-            return "Decade \(decadeNumber) · Hail Mary \(hailMaryNumber) of 10"
+        switch kind {
+        case .mysteryAnnouncement:
+            if let mystery { return "\(OrdinalWord.english(mystery.number)) \(mystery.set.shortName)" }
+            return "Mystery"
+        case .hailMary:
+            if let decadeNumber, let hailMaryNumber {
+                return "Decade \(decadeNumber) · Hail Mary \(hailMaryNumber)"
+            }
+            if let intention { return intention.english }
+            return "Hail Mary"
+        case .completion:
+            return "Finis"
+        default:
+            return title.english
         }
-        if let decadeNumber {
-            return "Decade \(decadeNumber) of 5"
+    }
+
+    var nextLabel: String {
+        switch kind {
+        case .mysteryAnnouncement: "Continue"
+        case .completion: "Amen"
+        default: "Next"
         }
-        if isOpening { return "Opening" }
-        if isClosing { return "Closing" }
-        return "Rosary"
     }
 }

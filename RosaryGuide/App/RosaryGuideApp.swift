@@ -5,12 +5,18 @@ struct RosaryGuideApp: App {
     @State private var settings = SettingsStore()
     @State private var session = SessionStore()
 
+    init() {
+        FontRegistrar.register()
+    }
+
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(settings)
-                .environment(session)
-                .preferredColorScheme(settings.appearance.colorScheme)
+            ThemedRoot {
+                RootView()
+            }
+            .environment(settings)
+            .environment(session)
+            .preferredColorScheme(settings.appearance.colorScheme)
         }
     }
 }

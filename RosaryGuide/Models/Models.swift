@@ -8,6 +8,14 @@ enum PrayerLanguage: String, CaseIterable, Codable, Identifiable {
 
     var id: String { rawValue }
 
+    var chip: String {
+        switch self {
+        case .english: "Eng"
+        case .latin: "Lat"
+        case .bilingual: "Both"
+        }
+    }
+
     var title: String {
         switch self {
         case .english: "English"
@@ -16,13 +24,7 @@ enum PrayerLanguage: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    var shortTitle: String {
-        switch self {
-        case .english: "EN"
-        case .latin: "LA"
-        case .bilingual: "EN/LA"
-        }
-    }
+    var shortTitle: String { chip }
 }
 
 enum AppearancePreference: String, CaseIterable, Codable, Identifiable {
@@ -47,6 +49,38 @@ enum AppearancePreference: String, CaseIterable, Codable, Identifiable {
         case .dark: .dark
         }
     }
+
+    func resolved(systemIsDark: Bool) -> ColorScheme {
+        switch self {
+        case .system: systemIsDark ? .dark : .light
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+}
+
+enum PrayerTextSize: String, CaseIterable, Codable, Identifiable {
+    case small
+    case medium
+    case large
+
+    var id: String { rawValue }
+
+    var scale: CGFloat {
+        switch self {
+        case .small: 1.0
+        case .medium: 1.18
+        case .large: 1.36
+        }
+    }
+
+    var next: PrayerTextSize {
+        switch self {
+        case .small: .medium
+        case .medium: .large
+        case .large: .small
+        }
+    }
 }
 
 struct BilingualText: Hashable, Codable, Sendable {
@@ -66,10 +100,7 @@ struct BilingualText: Hashable, Codable, Sendable {
     }
 
     func secondary(for language: PrayerLanguage) -> String? {
-        switch language {
-        case .english, .latin: nil
-        case .bilingual: latin
-        }
+        language == .bilingual ? latin : nil
     }
 }
 
@@ -81,6 +112,15 @@ enum MysterySetKind: String, CaseIterable, Codable, Identifiable {
 
     var id: String { rawValue }
 
+    var shortName: String {
+        switch self {
+        case .joyful: "Joyful"
+        case .sorrowful: "Sorrowful"
+        case .glorious: "Glorious"
+        case .luminous: "Luminous"
+        }
+    }
+
     var name: BilingualText {
         switch self {
         case .joyful: BilingualText(english: "Joyful Mysteries", latin: "Mysteria Gaudiosa")
@@ -90,12 +130,30 @@ enum MysterySetKind: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    var weekdayNames: String {
+    var weekdayNames: String { days(in: .ordinary) }
+
+    func days(in season: LiturgicalSeason) -> String {
         switch self {
-        case .joyful: "Mondays, Saturdays, and Sundays of Advent and Christmas"
-        case .sorrowful: "Tuesdays, Fridays, and Sundays of Lent"
-        case .glorious: "Wednesdays and Sundays of Ordinary Time and Easter"
-        case .luminous: "Thursdays"
+        case .joyful:
+            switch season {
+            case .advent: "Mondays, Saturdays and Sundays in Advent"
+            case .christmas: "Mondays, Saturdays and Sundays in Christmastide"
+            default: "Mondays and Saturdays"
+            }
+        case .luminous:
+            "Thursdays"
+        case .sorrowful:
+            switch season {
+            case .lent, .triduum: "Tuesdays, Fridays and Sundays in Lent"
+            default: "Tuesdays and Fridays"
+            }
+        case .glorious:
+            switch season {
+            case .advent: "Wednesdays, and Sundays outside Advent"
+            case .christmas: "Wednesdays, and Sundays outside Christmastide"
+            case .lent, .triduum: "Wednesdays, and Sundays outside Lent"
+            default: "Wednesdays and Sundays"
+            }
         }
     }
 
@@ -107,6 +165,8 @@ enum MysterySetKind: String, CaseIterable, Codable, Identifiable {
         case .luminous: BilingualText(english: "Luminous", latin: "Luminosum")
         }
     }
+
+    static var displayOrder: [MysterySetKind] { [.joyful, .luminous, .sorrowful, .glorious] }
 }
 
 enum LiturgicalSeason: String, Codable, CaseIterable, Identifiable {
@@ -148,7 +208,7 @@ struct Mystery: Identifiable, Hashable, Codable, Sendable {
     var fruit: BilingualText
     var scriptureReference: String
     var scriptureExcerpt: BilingualText
-    var meditation: BilingualText
+    var artSlug: String
 }
 
 struct Prayer: Identifiable, Hashable, Codable, Sendable {
@@ -209,8 +269,8 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
     var includeSaintMichael: Bool
     var language: PrayerLanguage
 
-    var isFresh: Bool {
-        Date().timeIntervalSince(updatedAt) < 36 * 60 * 60
+    var isSameCalendarDay: Bool {
+        Calendar.current.isDateInToday(startedAt)
     }
 }
 
@@ -236,4 +296,38 @@ enum OrdinalWord {
     static func latin(_ n: Int) -> String {
         ["Primum", "Secundum", "Tertium", "Quartum", "Quintum"][n - 1]
     }
+
+    static func roman(_ n: Int) -> String {
+        ["I", "II", "III", "IV", "V"][n - 1]
+    }
+}
+
+enum PrayTrackStage: Int, CaseIterable, Hashable, Codable {
+    case opening = 0
+    case first
+    case second
+    case third
+    case fourth
+    case fifth
+    case closing
+
+    var label: String {
+        ["Opening", "I", "II", "III", "IV", "V", "Close"][rawValue]
+    }
+
+    static func decade(_ n: Int) -> PrayTrackStage {
+        PrayTrackStage(rawValue: n) ?? .first
+    }
+}
+
+enum BeadLocus: Hashable, Codable {
+    case crucifix
+    case openingOurFather
+    case openingHail(Int)
+    case openingGlory
+    case decadeOurFather(Int)
+    case decadeHail(Int, Int)
+    case decadeGlory(Int)
+    case decadeFatima(Int)
+    case closing
 }

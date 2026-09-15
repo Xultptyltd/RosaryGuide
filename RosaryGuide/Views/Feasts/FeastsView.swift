@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FeastsView: View {
     @Environment(SettingsStore.self) private var settings
+    @Environment(\.palette) private var palette
     @State private var filter: FeastFilter = .upcoming
 
     private var todayFeasts: [DatedFeast] {
@@ -33,6 +34,8 @@ struct FeastsView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(palette.bg)
             .navigationTitle("Feasts")
             .safeAreaInset(edge: .top) {
                 Picker("Filter", selection: $filter) {
@@ -43,7 +46,7 @@ struct FeastsView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
-                .background(Color(.systemGroupedBackground))
+                .background(palette.bg)
             }
         }
     }
@@ -89,27 +92,28 @@ private struct FeastRow: View {
     var item: DatedFeast
     var language: PrayerLanguage
     var showsDate: Bool
+    @Environment(\.palette) private var palette
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             if showsDate {
                 Text(item.date.formatted(.dateTime.month(.abbreviated).day().weekday(.wide)))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppTheme.gold)
+                    .font(AppTheme.sans(12, weight: .medium))
+                    .foregroundStyle(palette.dim)
             }
             Text(item.feast.name.primary(for: language))
-                .font(.headline)
+                .font(AppTheme.serif(20))
             HStack(spacing: 8) {
                 Text(item.feast.rank.title)
                 if item.feast.isMarian {
                     Text("Marian")
                 }
                 if let set = item.feast.suggestedMysterySet {
-                    Text(set.ordinalAdjective.english)
+                    Text(set.shortName)
                 }
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            .font(AppTheme.sans(12))
+            .foregroundStyle(palette.faint)
         }
         .padding(.vertical, 4)
     }
@@ -117,18 +121,19 @@ private struct FeastRow: View {
 
 struct FeastDetailView: View {
     @Environment(SettingsStore.self) private var settings
+    @Environment(\.palette) private var palette
     var item: DatedFeast
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 Text(item.date.formatted(.dateTime.weekday(.wide).month(.wide).day().year()))
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppTheme.gold)
+                    .font(AppTheme.sans(14, weight: .medium))
+                    .foregroundStyle(palette.dim)
                 BilingualStack(
                     text: item.feast.name,
                     language: settings.language,
-                    font: .largeTitle.weight(.semibold)
+                    font: AppTheme.serif(34)
                 )
                 HStack {
                     Text(item.feast.rank.title)
@@ -136,30 +141,33 @@ struct FeastDetailView: View {
                         Text("· Marian")
                     }
                 }
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .font(AppTheme.sans(12, weight: .medium))
+                .foregroundStyle(palette.faint)
 
                 Text(item.feast.summary)
-                    .font(.body)
+                    .font(AppTheme.serif(18))
 
                 if let set = item.feast.suggestedMysterySet {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Suggested mysteries")
-                            .font(.headline)
+                            .font(AppTheme.sans(12, weight: .medium))
+                            .tracking(1.2)
+                            .textCase(.uppercase)
+                            .foregroundStyle(palette.faint)
                         Text(set.name.primary(for: settings.language))
-                            .font(.title3.weight(.medium))
-                        Text("The app uses this set automatically on major feasts such as Christmas, Easter, Good Friday, and the Assumption.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.serif(22))
+                        Text("The weekday set stays the default. You can pray the \(set.shortName) Mysteries for this feast if you wish.")
+                            .font(AppTheme.sans(14))
+                            .foregroundStyle(palette.dim)
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(set.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .background(palette.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
             .padding(20)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(palette.bg)
         .navigationBarTitleDisplayMode(.inline)
     }
 }

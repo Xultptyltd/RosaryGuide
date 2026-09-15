@@ -44,8 +44,8 @@ enum HowToPrayContent {
         ),
         HowToPrayStep(
             id: 8,
-            title: BilingualText(english: "Optional Saint Michael, then the Sign of the Cross", latin: "Sanctus Míchael, deínde Signum Crucis"),
-            body: "If enabled in Settings, pray the Prayer to Saint Michael. End as you began, in the name of the Father, and of the Son, and of the Holy Spirit."
+            title: BilingualText(english: "Optional Saint Michael after Finis", latin: "Sanctus Michael post finem"),
+            body: "When the rosary is finished, you may pray the Prayer to Saint Michael. Enable it in Settings to be offered after Amen."
         )
     ]
 

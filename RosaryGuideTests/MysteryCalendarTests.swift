@@ -3,34 +3,37 @@ import XCTest
 
 final class MysteryCalendarTests: XCTestCase {
     func testWeekdayAssignmentsInOrdinaryTime() {
-        XCTAssertEqual(setOn(2026, 9, 14), .joyful)    // Monday
-        XCTAssertEqual(setOn(2026, 9, 15), .sorrowful) // Tuesday
-        XCTAssertEqual(setOn(2026, 9, 16), .glorious)  // Wednesday
-        XCTAssertEqual(setOn(2026, 9, 17), .luminous)  // Thursday
-        XCTAssertEqual(setOn(2026, 9, 18), .sorrowful) // Friday
-        XCTAssertEqual(setOn(2026, 9, 19), .joyful)    // Saturday
-        XCTAssertEqual(setOn(2026, 9, 20), .glorious)  // Sunday Ordinary Time
+        XCTAssertEqual(setOn(2026, 9, 14), .joyful)
+        XCTAssertEqual(setOn(2026, 9, 15), .sorrowful)
+        XCTAssertEqual(setOn(2026, 9, 16), .glorious)
+        XCTAssertEqual(setOn(2026, 9, 17), .luminous)
+        XCTAssertEqual(setOn(2026, 9, 18), .sorrowful)
+        XCTAssertEqual(setOn(2026, 9, 19), .joyful)
+        XCTAssertEqual(setOn(2026, 9, 20), .glorious)
     }
 
     func testSeasonalSundays() {
-        XCTAssertEqual(setOn(2026, 11, 29), .joyful)    // First Sunday of Advent
-        XCTAssertEqual(setOn(2026, 12, 27), .joyful)    // Sunday in Christmas
-        XCTAssertEqual(setOn(2026, 3, 1), .sorrowful)   // Sunday of Lent
-        XCTAssertEqual(setOn(2026, 4, 12), .glorious)   // Sunday of Easter
+        XCTAssertEqual(setOn(2026, 11, 29), .joyful)
+        XCTAssertEqual(setOn(2026, 12, 27), .joyful)
+        XCTAssertEqual(setOn(2026, 3, 1), .sorrowful)
+        XCTAssertEqual(setOn(2026, 4, 12), .glorious)
     }
 
-    func testMajorFeastOverrides() {
-        XCTAssertEqual(setOn(2026, 4, 5), .glorious)    // Easter
-        XCTAssertEqual(setOn(2026, 4, 3), .sorrowful)   // Good Friday
-        XCTAssertEqual(setOn(2026, 12, 25), .joyful)    // Christmas
-        XCTAssertEqual(setOn(2026, 8, 15), .glorious)   // Assumption
-        XCTAssertEqual(setOn(2026, 10, 7), .glorious)   // Our Lady of the Rosary
+    func testFeastsDoNotOverrideWeekdaySet() {
+        XCTAssertEqual(setOn(2026, 12, 25), .sorrowful) // Friday Christmas
+        XCTAssertEqual(setOn(2026, 8, 15), .joyful)     // Saturday Assumption
+        let christmas = MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: 2026, month: 12, day: 25)!)
+        XCTAssertEqual(christmas.feastSuggestion, .joyful)
+        let assumption = MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: 2026, month: 8, day: 15)!)
+        XCTAssertEqual(assumption.feastSuggestion, .glorious)
     }
 
-    func testCatalogHasTwentyMysteries() {
+    func testCatalogHasTwentyMysteriesWithArtSlugs() {
         XCTAssertEqual(MysteryCatalog.all.count, 20)
         for set in MysterySetKind.allCases {
-            XCTAssertEqual(MysteryCatalog.mysteries(for: set).count, 5)
+            let items = MysteryCatalog.mysteries(for: set)
+            XCTAssertEqual(items.count, 5)
+            XCTAssertTrue(items.allSatisfy { !$0.artSlug.isEmpty })
         }
     }
 
@@ -41,20 +44,19 @@ final class MysteryCalendarTests: XCTestCase {
 }
 
 final class RosarySequenceTests: XCTestCase {
-    func testStepCountsIncludeSaintMichael() {
-        let withMichael = RosarySequenceBuilder.build(set: .joyful, includeSaintMichael: true)
-        let without = RosarySequenceBuilder.build(set: .sorrowful, includeSaintMichael: false)
-        XCTAssertEqual(withMichael.count, without.count + 1)
-        XCTAssertTrue(withMichael.contains { $0.kind == .saintMichael })
-        XCTAssertFalse(without.contains { $0.kind == .saintMichael })
-        XCTAssertEqual(withMichael.filter { $0.kind == .hailMary }.count, 53)
-        XCTAssertEqual(withMichael.filter { $0.kind == .mysteryAnnouncement }.count, 5)
-        XCTAssertEqual(withMichael.last?.kind, .completion)
+    func testSevenStageSequenceOmitsSaintMichael() {
+        let steps = RosarySequenceBuilder.build(set: .joyful)
+        XCTAssertFalse(steps.contains { $0.kind == .saintMichael })
+        XCTAssertEqual(steps.filter { $0.kind == .hailMary }.count, 53)
+        XCTAssertEqual(steps.filter { $0.kind == .mysteryAnnouncement }.count, 5)
+        XCTAssertEqual(steps.last?.kind, .completion)
+        XCTAssertEqual(Set(steps.map(\.stage)).count, 7)
+        XCTAssertEqual(MysteryCatalog.joyful.first?.scriptureReference, "Luke 1:26-27")
     }
 
     func testAllSetsBuild() {
         for set in MysterySetKind.allCases {
-            let steps = RosarySequenceBuilder.build(set: set, includeSaintMichael: true)
+            let steps = RosarySequenceBuilder.build(set: set)
             XCTAssertGreaterThan(steps.count, 70)
             XCTAssertEqual(steps.first?.kind, .signOfTheCross)
         }

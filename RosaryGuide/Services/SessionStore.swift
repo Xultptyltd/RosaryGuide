@@ -10,25 +10,25 @@ final class SessionStore {
     }
 
     var resumableSession: PrayerSession? {
-        guard let session, session.isFresh, session.stepIndex > 0 else { return nil }
+        guard let session, session.isSameCalendarDay, session.stepIndex > 0 else { return nil }
         return session
     }
 
     init() {
         session = Self.load(key: key)
-        if let session, !session.isFresh {
+        if let session, !session.isSameCalendarDay {
             self.session = nil
         }
     }
 
-    func start(set: MysterySetKind, includeSaintMichael: Bool, language: PrayerLanguage) {
+    func start(set: MysterySetKind, language: PrayerLanguage) {
         let now = Date()
         session = PrayerSession(
             mysterySet: set,
             stepIndex: 0,
             startedAt: now,
             updatedAt: now,
-            includeSaintMichael: includeSaintMichael,
+            includeSaintMichael: false,
             language: language
         )
     }

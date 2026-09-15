@@ -1,7 +1,7 @@
 import Foundation
 
 enum RosarySequenceBuilder {
-    static func build(set: MysterySetKind, includeSaintMichael: Bool) -> [RosaryStep] {
+    static func build(set: MysterySetKind) -> [RosaryStep] {
         var steps: [RosaryStep] = []
         var id = 0
 
@@ -15,8 +15,9 @@ enum RosarySequenceBuilder {
             hailMary: Int? = nil,
             intention: BilingualText? = nil,
             haptic: HapticKind,
-            opening: Bool = false,
-            closing: Bool = false
+            stage: PrayTrackStage,
+            bead: BeadLocus? = nil,
+            scriptureReference: String? = nil
         ) {
             let prayer = PrayerCatalog.prayer(for: kind)
             steps.append(
@@ -31,17 +32,17 @@ enum RosarySequenceBuilder {
                     hailMaryNumber: hailMary,
                     intention: intention,
                     haptic: haptic,
-                    isOpening: opening,
-                    isClosing: closing
+                    stage: stage,
+                    bead: bead,
+                    scriptureReference: scriptureReference
                 )
             )
             id += 1
         }
 
-        append(.signOfTheCross, haptic: .medium, opening: true)
-        append(.creed, haptic: .medium, opening: true)
-        append(.ourFather, haptic: .medium, opening: true)
-
+        append(.signOfTheCross, haptic: .medium, stage: .opening, bead: .crucifix)
+        append(.creed, haptic: .medium, stage: .opening, bead: .crucifix)
+        append(.ourFather, haptic: .medium, stage: .opening, bead: .openingOurFather)
         for (index, intention) in PrayerCatalog.openingIntentions.enumerated() {
             append(
                 .hailMary,
@@ -49,86 +50,55 @@ enum RosarySequenceBuilder {
                 hailMary: index + 1,
                 intention: intention,
                 haptic: .light,
-                opening: true
+                stage: .opening,
+                bead: .openingHail(index + 1)
             )
         }
+        append(.gloryBe, haptic: .medium, stage: .opening, bead: .openingGlory)
 
-        append(.gloryBe, haptic: .medium, opening: true)
-
-        let mysteries = MysteryCatalog.mysteries(for: set)
-        for mystery in mysteries {
+        for mystery in MysteryCatalog.mysteries(for: set) {
             let decade = mystery.number
-            let ordinal = BilingualText(
-                english: "\(OrdinalWord.english(decade)) \(mystery.set.ordinalAdjective.english) Mystery",
-                latin: "\(OrdinalWord.latin(decade)) Mystérium \(mystery.set.ordinalAdjective.latin)"
-            )
-
+            let stage = PrayTrackStage.decade(decade)
             append(
                 .mysteryAnnouncement,
                 title: mystery.title,
-                body: BilingualText(
-                    english: """
-                    \(ordinal.english)
-
-                    Fruit: \(mystery.fruit.english)
-                    \(mystery.scriptureReference)
-
-                    \(mystery.scriptureExcerpt.english)
-
-                    \(mystery.meditation.english)
-                    """,
-                    latin: """
-                    \(ordinal.latin)
-
-                    Fructus: \(mystery.fruit.latin)
-                    \(mystery.scriptureReference)
-
-                    \(mystery.scriptureExcerpt.latin)
-
-                    \(mystery.meditation.latin)
-                    """
-                ),
+                body: mystery.scriptureExcerpt,
                 subtitle: mystery.fruit,
                 mystery: mystery,
                 decade: decade,
-                haptic: .heavy
+                haptic: .heavy,
+                stage: stage,
+                bead: .decadeOurFather(decade),
+                scriptureReference: mystery.scriptureReference
             )
-
-            append(.ourFather, mystery: mystery, decade: decade, haptic: .medium)
-
+            append(.ourFather, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeOurFather(decade))
             for bead in 1...10 {
                 append(
                     .hailMary,
                     mystery: mystery,
                     decade: decade,
                     hailMary: bead,
-                    haptic: .light
+                    haptic: .light,
+                    stage: stage,
+                    bead: .decadeHail(decade, bead)
                 )
             }
-
-            append(.gloryBe, mystery: mystery, decade: decade, haptic: .medium)
-            append(.fatima, mystery: mystery, decade: decade, haptic: .medium)
+            append(.gloryBe, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeGlory(decade))
+            append(.fatima, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeFatima(decade))
         }
 
-        append(.hailHolyQueen, haptic: .medium, closing: true)
-        append(.concludingPrayer, haptic: .medium, closing: true)
-
-        if includeSaintMichael {
-            append(.saintMichael, haptic: .medium, closing: true)
-        }
-
-        append(.signOfTheCross, haptic: .medium, closing: true)
+        append(.hailHolyQueen, haptic: .medium, stage: .closing, bead: .closing)
+        append(.versicle, haptic: .medium, stage: .closing, bead: .closing)
+        append(.concludingPrayer, haptic: .medium, stage: .closing, bead: .closing)
 
         let quote = QuoteCatalog.quote()
         append(
             .completion,
-            title: BilingualText(english: "Rosary complete", latin: "Rosárium complétum"),
-            body: BilingualText(
-                english: "“\(quote.text)”\n\n— \(quote.attribution)",
-                latin: "“\(quote.text)”\n\n— \(quote.attribution)"
-            ),
+            title: BilingualText(english: "The Rosary is finished.", latin: "Rosarium completum est."),
+            body: BilingualText(english: quote.text, latin: quote.text),
+            subtitle: BilingualText(english: quote.attribution, latin: quote.attribution),
             haptic: .success,
-            closing: true
+            stage: .closing
         )
 
         return steps

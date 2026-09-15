@@ -7,6 +7,8 @@ struct PrayView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(SessionStore.self) private var sessionStore
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.palette) private var palette
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var launch: PrayLaunch
@@ -15,6 +17,7 @@ struct PrayView: View {
     @State private var index: Int = 0
     @State private var confirmLeave = false
     @State private var didConfigure = false
+    @State private var showingMichael = false
 
     private var language: PrayerLanguage { settings.language }
     private var current: RosaryStep? {
@@ -22,198 +25,348 @@ struct PrayView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if let current {
-                    content(for: current)
+        ZStack {
+            palette.prayBg.ignoresSafeArea()
+            if showingMichael {
+                michaelLayer
+            } else if let current {
+                if current.isFinis {
+                    finisLayer(current)
                 } else {
-                    ContentUnavailableView("Unable to load this rosary", systemImage: "exclamationmark.triangle")
+                    prayLayer(current)
                 }
-            }
-            .background(Color(.systemBackground))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { confirmLeave = true }
-                }
-                ToolbarItem(placement: .principal) {
-                    VStack(spacing: 0) {
-                        Text(launch.mysterySet.name.primary(for: language))
-                            .font(.headline)
-                        if let current {
-                            Text(current.progressLabel)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    languageMenu
-                }
-            }
-            .safeAreaInset(edge: .bottom) {
-                if current?.kind != .completion {
-                    controls
-                }
-            }
-            .alert("Leave this rosary?", isPresented: $confirmLeave) {
-                Button("Keep session") { dismiss() }
-                Button("Discard session", role: .destructive) {
-                    sessionStore.discard()
-                    dismiss()
-                }
-                Button("Stay", role: .cancel) {}
-            } message: {
-                Text("Your place is saved on this device so you can resume later.")
             }
         }
+        .foregroundStyle(palette.ink)
         .onAppear {
             guard !didConfigure else { return }
             didConfigure = true
             configure()
+            #if canImport(UIKit)
+            UIApplication.shared.isIdleTimerDisabled = true
+            #endif
         }
         .onDisappear {
             #if canImport(UIKit)
             UIApplication.shared.isIdleTimerDisabled = false
             #endif
         }
-        .gesture(swipe)
-    }
-
-    private var swipe: some Gesture {
-        DragGesture(minimumDistance: 40).onEnded { value in
-            if value.translation.width < -50 { advance() }
-            if value.translation.width > 50 { retreat() }
+        .gesture(
+            DragGesture(minimumDistance: 50).onEnded { value in
+                if showingMichael || current?.isFinis == true { return }
+                if value.translation.width < -40 { advance() }
+                if value.translation.width > 40 { retreat() }
+            }
+        )
+        .alert("Leave this rosary?", isPresented: $confirmLeave) {
+            Button("Keep place") { dismiss() }
+            Button("Discard", role: .destructive) {
+                sessionStore.discard()
+                dismiss()
+            }
+            Button("Stay", role: .cancel) {}
+        } message: {
+            Text("Your place is kept for the rest of today.")
         }
     }
 
-    private var languageMenu: some View {
-        Menu {
+    // MARK: - Main pray column
+
+    private func prayLayer(_ step: RosaryStep) -> some View {
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                header(step)
+                SevenStageTrack(current: step.stage) { jump(to: $0) }
+                if step.isPlate, let mystery = step.mystery {
+                    PlateArtView(mystery: mystery, wide: true)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: min(geo.size.width, geo.size.height * 0.42, 480))
+                        .clipped()
+                        .padding(.bottom, 8)
+                }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        locus(step)
+                        if !step.isPlate {
+                            BilingualStack(
+                                text: step.body,
+                                language: language,
+                                font: AppTheme.serif(21 * settings.textSize.scale)
+                            )
+                        } else {
+                            announceBody(step)
+                        }
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, 12)
+                }
+                if shouldShowBeads(step), let bead = step.bead {
+                    RosaryBeadMapView(locus: bead)
+                        .padding(.horizontal, 12)
+                }
+                footer(step)
+            }
+        }
+    }
+
+    private func header(_ step: RosaryStep) -> some View {
+        ZStack {
+            HStack {
+                roundControl(system: "xmark") { confirmLeave = true }
+                Spacer()
+                roundControl(label: "Aa") {
+                    settings.textSize = settings.textSize.next
+                }
+            }
+            Text(step.progressLabel)
+                .font(AppTheme.sans(13, weight: .medium))
+                .foregroundStyle(palette.ink)
+                .lineLimit(1)
+                .padding(.horizontal, 48)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    private func locus(_ step: RosaryStep) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if step.isPlate, let mystery = step.mystery {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(OrdinalWord.roman(mystery.number))
+                        .font(AppTheme.serif(22))
+                    Text("\(OrdinalWord.english(mystery.number)) \(mystery.set.shortName)")
+                        .font(AppTheme.sans(12, weight: .medium))
+                        .tracking(1.6)
+                        .textCase(.uppercase)
+                        .foregroundStyle(palette.faint)
+                }
+            }
+            Text(step.title.primary(for: language))
+                .font(AppTheme.serif(step.isPlate ? 28 : 28))
+                .foregroundStyle(palette.ink)
+            if language == .bilingual {
+                Text(step.title.latin)
+                    .font(AppTheme.serif(18, italic: true))
+                    .foregroundStyle(palette.dim)
+            }
+            if let intention = step.intention {
+                Text(intention.primary(for: language))
+                    .font(AppTheme.serif(17, italic: true))
+                    .foregroundStyle(palette.dim)
+                    .padding(.bottom, 4)
+                    .overlay(alignment: .bottom) { Hairline() }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 4)
+    }
+
+    private func announceBody(_ step: RosaryStep) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            BilingualStack(
+                text: step.body,
+                language: .english,
+                font: AppTheme.serif(21 * settings.textSize.scale)
+            )
+            if let ref = step.scriptureReference {
+                Text(ref)
+                    .font(AppTheme.sans(12))
+                    .foregroundStyle(palette.faint)
+            }
+            if let fruit = step.subtitle {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("Fruit")
+                        .font(AppTheme.sans(14))
+                        .foregroundStyle(palette.faint)
+                    Text(fruit.primary(for: language))
+                        .font(AppTheme.serif(17))
+                }
+                .padding(.top, 8)
+                .overlay(alignment: .top) { Hairline() }
+            }
+        }
+    }
+
+    private func footer(_ step: RosaryStep) -> some View {
+        VStack(spacing: 10) {
+            if step.kind == .hailMary, step.decadeNumber != nil {
+                Button("Skip remaining Hail Marys") {
+                    skipDecadeHailMarys()
+                }
+                .font(AppTheme.sans(15, weight: .medium))
+                .foregroundStyle(palette.dim)
+            }
+            PillButton(title: step.nextLabel, filled: true, action: advance)
+            HStack {
+                Spacer()
+                languageChips
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 16)
+        .padding(.top, 8)
+        .background(palette.prayBg)
+    }
+
+    private var languageChips: some View {
+        HStack(spacing: 2) {
             ForEach(PrayerLanguage.allCases) { option in
-                Button(option.title) {
+                Button {
                     settings.language = option
                     if var current = sessionStore.session {
                         current.language = option
                         sessionStore.session = current
                     }
+                } label: {
+                    Text(option.chip)
+                        .font(AppTheme.sans(13, weight: .medium))
+                        .foregroundStyle(settings.language == option ? palette.ink : palette.dim)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(settings.language == option ? palette.card : Color.clear, in: Capsule())
                 }
+                .buttonStyle(.plain)
             }
-        } label: {
-            Text(language.shortTitle)
-                .font(.caption.weight(.bold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(AppTheme.gold.opacity(0.2), in: Capsule())
         }
-        .accessibilityLabel("Prayer language")
+        .padding(3)
+        .frame(width: 148, height: 52)
+        .background(palette.card2, in: Capsule())
     }
 
-    @ViewBuilder
-    private func content(for step: RosaryStep) -> some View {
-        if step.kind == .completion {
-            CompletionView(
-                set: launch.mysterySet,
-                quote: step.body.english,
-                language: language
-            ) {
-                sessionStore.complete()
-                dismiss()
+    private func roundControl(system: String? = nil, label: String? = nil, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Group {
+                if let system {
+                    Image(systemName: system)
+                        .font(.system(size: 13, weight: .semibold))
+                } else if let label {
+                    Text(label)
+                        .font(AppTheme.sans(13, weight: .medium))
+                }
             }
-        } else {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    progressBar
-                    if let mystery = step.mystery {
-                        MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number)
-                        HStack {
-                            Text(mystery.title.primary(for: language))
-                                .font(.subheadline.weight(.semibold))
-                            Spacer()
-                            Text(mystery.fruit.primary(for: language))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    } else {
-                        MysteryArtworkView(set: launch.mysterySet, mysteryNumber: nil)
-                    }
+            .foregroundStyle(palette.ink)
+            .frame(width: 40, height: 40)
+            .background(.ultraThinMaterial, in: Circle())
+        }
+        .buttonStyle(.plain)
+    }
 
-                    BilingualStack(
-                        text: step.title,
-                        language: language,
-                        font: .title.weight(.semibold)
-                    )
+    private func shouldShowBeads(_ step: RosaryStep) -> Bool {
+        !step.isPlate && !step.isFinis && step.kind != .completion
+    }
 
-                    if let intention = step.intention {
-                        Text(intention.primary(for: language))
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(AppTheme.gold)
-                    }
+    // MARK: - Finis
 
-                    BilingualStack(
-                        text: step.body,
-                        language: language,
-                        font: step.kind == .mysteryAnnouncement ? .body : .title3
-                    )
-
-                    if step.kind == .hailMary, let count = step.hailMaryNumber, step.decadeNumber != nil {
-                        BeadRailView(filled: count, total: 10, tint: launch.mysterySet.tint)
-                            .padding(.top, 8)
+    private func finisLayer(_ step: RosaryStep) -> some View {
+        ZStack {
+            MysteryArtworkView(set: launch.mysterySet, mysteryNumber: 5, slug: MysteryCatalog.mysteries(for: launch.mysterySet).last?.artSlug, kind: .heroTall)
+                .ignoresSafeArea()
+            LinearGradient(
+                colors: [
+                    palette.prayBg.opacity(0.2),
+                    palette.prayBg.opacity(0.72),
+                    palette.prayBg
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            VStack {
+                HStack {
+                    Spacer()
+                    roundControl(system: "xmark") {
+                        sessionStore.complete()
+                        dismiss()
                     }
                 }
-                .padding(20)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                Spacer()
+                VStack(spacing: 14) {
+                    Text("Finis")
+                        .font(AppTheme.sans(16, weight: .medium))
+                        .foregroundStyle(palette.dim)
+                    Text(step.body.english)
+                        .font(AppTheme.serif(26, italic: true))
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(palette.ink)
+                    if let by = step.subtitle {
+                        Text(by.english)
+                            .font(AppTheme.sans(13, weight: .medium))
+                            .foregroundStyle(palette.dim)
+                    }
+                }
+                .padding(.horizontal, 28)
+                Spacer()
+                VStack(spacing: 10) {
+                    PillButton(title: "Amen") {
+                        if settings.includeSaintMichael {
+                            showingMichael = true
+                            HapticService.play(.medium, enabled: settings.hapticsEnabled)
+                        } else {
+                            sessionStore.complete()
+                            dismiss()
+                        }
+                    }
+                    Button("Saint Michael the Archangel") {
+                        showingMichael = true
+                    }
+                    .font(AppTheme.sans(16, weight: .medium))
+                    .foregroundStyle(palette.dim)
+                }
+                .padding(.horizontal, 28)
                 .padding(.bottom, 24)
             }
         }
     }
 
-    private var progressBar: some View {
-        ProgressView(value: Double(index + 1), total: Double(max(steps.count, 1)))
-            .tint(launch.mysterySet.tint)
-            .accessibilityLabel("Rosary progress")
-            .accessibilityValue("Step \(index + 1) of \(steps.count)")
-    }
-
-    private var controls: some View {
-        HStack(spacing: 12) {
-            Button {
-                retreat()
-            } label: {
-                Label("Back", systemImage: "chevron.left")
-                    .frame(maxWidth: .infinity)
+    private var michaelLayer: some View {
+        VStack(spacing: 0) {
+            HStack {
+                roundControl(system: "xmark") {
+                    sessionStore.complete()
+                    dismiss()
+                }
+                Spacer()
             }
-            .buttonStyle(.bordered)
-            .disabled(index == 0)
-
-            Button {
-                advance()
-            } label: {
-                Label(index >= steps.count - 2 ? "Finish" : "Next", systemImage: "chevron.right")
-                    .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            Spacer()
+            VStack(spacing: 16) {
+                Text(PrayerCatalog.saintMichael.title.primary(for: language))
+                    .font(AppTheme.serif(26))
+                    .multilineTextAlignment(.center)
+                BilingualStack(
+                    text: PrayerCatalog.saintMichael.text,
+                    language: language,
+                    font: AppTheme.serif(21 * settings.textSize.scale),
+                    alignment: .center
+                )
             }
-            .buttonStyle(.borderedProminent)
-            .tint(AppTheme.marianBlue)
+            .padding(.horizontal, 24)
+            Spacer()
+            VStack(spacing: 12) {
+                languageChips
+                PillButton(title: "Amen") {
+                    sessionStore.complete()
+                    dismiss()
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(.bar)
+        .background(palette.prayBg.ignoresSafeArea())
     }
+
+    // MARK: - Navigation
 
     private func configure() {
-        #if canImport(UIKit)
-        UIApplication.shared.isIdleTimerDisabled = true
-        #endif
-
         switch launch {
         case .fresh(let set):
-            sessionStore.start(
-                set: set,
-                includeSaintMichael: settings.includeSaintMichael,
-                language: settings.language
-            )
-            steps = RosarySequenceBuilder.build(set: set, includeSaintMichael: settings.includeSaintMichael)
+            sessionStore.start(set: set, language: settings.language)
+            steps = RosarySequenceBuilder.build(set: set)
             index = 0
         case .resume(let session):
-            steps = RosarySequenceBuilder.build(set: session.mysterySet, includeSaintMichael: session.includeSaintMichael)
+            steps = RosarySequenceBuilder.build(set: session.mysterySet)
             index = min(session.stepIndex, max(steps.count - 1, 0))
             settings.language = session.language
         }
@@ -226,7 +379,15 @@ struct PrayView: View {
             dismiss()
             return
         }
-        let next = index + 1
+        move(to: index + 1)
+    }
+
+    private func retreat() {
+        guard index > 0 else { return }
+        move(to: index - 1)
+    }
+
+    private func move(to next: Int) {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) {
             index = next
         }
@@ -234,14 +395,17 @@ struct PrayView: View {
         playHaptic()
     }
 
-    private func retreat() {
-        guard index > 0 else { return }
-        let previous = index - 1
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) {
-            index = previous
+    private func jump(to stage: PrayTrackStage) {
+        if let target = steps.firstIndex(where: { $0.stage == stage }) {
+            move(to: target)
         }
-        sessionStore.updateStep(previous)
-        HapticService.play(.light, enabled: settings.hapticsEnabled)
+    }
+
+    private func skipDecadeHailMarys() {
+        guard let step = current, let decade = step.decadeNumber else { return }
+        if let target = steps.firstIndex(where: { $0.decadeNumber == decade && $0.kind == .gloryBe && $0.id > step.id }) {
+            move(to: target)
+        }
     }
 
     private func playHaptic() {

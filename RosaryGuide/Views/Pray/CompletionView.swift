@@ -3,36 +3,33 @@ import SwiftUI
 struct CompletionView: View {
     var set: MysterySetKind
     var quote: String
+    var attribution: String
     var language: PrayerLanguage
-    var onDone: () -> Void
+    var onAmen: () -> Void
+    var onMichael: (() -> Void)?
+
+    @Environment(\.palette) private var palette
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 18) {
             Spacer()
-            MysteryArtworkView(set: set, mysteryNumber: 5)
-                .padding(.horizontal, 24)
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(AppTheme.gold)
-            Text(language == .latin ? "Rosárium complétum" : "Rosary complete")
-                .font(.largeTitle.weight(.semibold))
-                .multilineTextAlignment(.center)
+            Text("Finis")
+                .font(AppTheme.sans(16, weight: .medium))
+                .foregroundStyle(palette.dim)
             Text(quote)
-                .font(.title3)
+                .font(AppTheme.serif(26, italic: true))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 24)
+            Text(attribution)
+                .font(AppTheme.sans(13, weight: .medium))
+                .foregroundStyle(palette.dim)
             Spacer()
-            Button(action: onDone) {
-                Text("Amen")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+            PillButton(title: "Amen", action: onAmen)
+            if let onMichael {
+                Button("Saint Michael the Archangel", action: onMichael)
+                    .font(AppTheme.sans(16, weight: .medium))
+                    .foregroundStyle(palette.dim)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(AppTheme.marianBlue)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 24)
         }
+        .padding(24)
     }
 }

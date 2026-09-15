@@ -22,37 +22,43 @@ enum PrayLaunch: Identifiable, Hashable {
 struct RootView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(SessionStore.self) private var session
+    @Environment(\.palette) private var palette
     @State private var prayLaunch: PrayLaunch?
 
     var body: some View {
         TabView {
             HomeView(prayLaunch: $prayLaunch)
-                .tabItem { Label("Home", systemImage: "house.fill") }
+                .tabItem { Label("Home", systemImage: "house") }
 
             PrayHubView(prayLaunch: $prayLaunch)
-                .tabItem { Label("Pray", systemImage: "hands.sparkles.fill") }
+                .tabItem { Label("Pray", systemImage: "hands.sparkles") }
 
             HowToPrayView()
-                .tabItem { Label("How to Pray", systemImage: "list.number") }
+                .tabItem { Label("How to Pray", systemImage: "list.bullet") }
 
             FeastsView()
                 .tabItem { Label("Feasts", systemImage: "calendar") }
 
             SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+                .tabItem { Label("Settings", systemImage: "gearshape") }
         }
-        .tint(AppTheme.gold)
+        .toolbarBackground(palette.bg, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
         .fullScreenCover(item: $prayLaunch) { launch in
-            PrayView(launch: launch)
-                .environment(settings)
-                .environment(session)
-                .preferredColorScheme(settings.appearance.colorScheme)
+            ThemedRoot {
+                PrayView(launch: launch)
+            }
+            .environment(settings)
+            .environment(session)
+            .preferredColorScheme(settings.appearance.colorScheme)
         }
     }
 }
 
 #Preview {
-    RootView()
-        .environment(SettingsStore())
-        .environment(SessionStore())
+    ThemedRoot {
+        RootView()
+    }
+    .environment(SettingsStore())
+    .environment(SessionStore())
 }

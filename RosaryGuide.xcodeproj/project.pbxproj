@@ -34,7 +34,9 @@
 		BFB2E57A65DA2E74CFB07CD0 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59BD70A010546ABDA29CC560 /* SettingsStore.swift */; };
 		C11CA0B6D6FA034966F4B455 /* MysteryCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9AAFD7E9E6EF192919BEC9 /* MysteryCalendar.swift */; };
 		C4E6091F6E846D2945504B42 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70497BEC59AAFC851AFB4046 /* SettingsView.swift */; };
-		F17192475C3C5E005FFA1934 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65622D107422099E4F60DE1E /* AppTheme.swift */; };
+		7FB73805AFCDD7E3B54D3AAE /* FontRegistrar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AB74929A62F4D728D0F4F5 /* FontRegistrar.swift */; };
+		8F62025B36D09F46E23C493B /* ArtCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63A4454F491B38C212CC931 /* ArtCatalog.swift */; };
+		EBF211E54DBBAD735EA607F2 /* Resources in Resources */ = {isa = PBXBuildFile; fileRef = C654DB1425850D1BAC960D87 /* Resources */; };
 		F47D85D5383CB8F901559461 /* LiturgicalCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E6BD2027DE74F3262A8F28 /* LiturgicalCalendarTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -64,6 +66,9 @@
 		5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeastCatalog.swift; sourceTree = "<group>"; };
 		5FBA0DE58E6AF3D6198CDC09 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		65622D107422099E4F60DE1E /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		84AB74929A62F4D728D0F4F5 /* FontRegistrar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontRegistrar.swift; sourceTree = "<group>"; };
+		C654DB1425850D1BAC960D87 /* Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Resources; sourceTree = "<group>"; };
+		F63A4454F491B38C212CC931 /* ArtCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtCatalog.swift; sourceTree = "<group>"; };
 		6A1EFCA22FB596D08D814D6C /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
 		70497BEC59AAFC851AFB4046 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		8589A7E167BB2CC661B8B1E9 /* PrayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayView.swift; sourceTree = "<group>"; };
@@ -180,6 +185,7 @@
 			isa = PBXGroup;
 			children = (
 				65622D107422099E4F60DE1E /* AppTheme.swift */,
+				F63A4454F491B38C212CC931 /* ArtCatalog.swift */,
 				C29555CF3A426924297A6D05 /* MysteryArtworkView.swift */,
 			);
 			path = Theme;
@@ -210,6 +216,7 @@
 			children = (
 				2B45CCA2BDAA20E92DEB2807 /* RootView.swift */,
 				DDB06CBDA53DED71FAAB4CC3 /* RosaryGuideApp.swift */,
+				84AB74929A62F4D728D0F4F5 /* FontRegistrar.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -237,6 +244,7 @@
 				BB2E319437D17E296638CD06 /* Views */,
 				1564EB2EAFA031721C2527CA /* Assets.xcassets */,
 				34466A78C6540AD21AB52567 /* PrivacyInfo.xcprivacy */,
+				C654DB1425850D1BAC960D87 /* Resources */,
 				EF9404A057D2BFA4ABE2F620 /* Preview Content */,
 			);
 			path = RosaryGuide;
@@ -341,6 +349,7 @@
 			files = (
 				68FAC2550EF5E8F91919F963 /* Assets.xcassets in Resources */,
 				69AB1C253F476ED63D9F71F1 /* PrivacyInfo.xcprivacy in Resources */,
+				EBF211E54DBBAD735EA607F2 /* Resources in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -362,6 +371,7 @@
 			files = (
 				9CE94D3DD8CD7F743E61E83A /* RootView.swift in Sources */,
 				33C9C8A63321FD903306F010 /* RosaryGuideApp.swift in Sources */,
+				7FB73805AFCDD7E3B54D3AAE /* FontRegistrar.swift in Sources */,
 				082CF909021C6EBA3FBB2D68 /* FeastCatalog.swift in Sources */,
 				28C9577CEB49FB4EFCC102BF /* HowToPrayContent.swift in Sources */,
 				05F066B261AA1E475873C6F3 /* MysteryCatalog.swift in Sources */,
@@ -385,6 +395,7 @@
 				004406578DA6DEABB8614015 /* PrayHubView.swift in Sources */,
 				7165D260E520AAAB913AEBEC /* PrayView.swift in Sources */,
 				C4E6091F6E846D2945504B42 /* SettingsView.swift in Sources */,
+				8F62025B36D09F46E23C493B /* ArtCatalog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
