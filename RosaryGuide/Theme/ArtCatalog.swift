@@ -4,24 +4,24 @@ import SwiftUI
 import UIKit
 #endif
 
-/// Paths match WebsiteReference/art.js, rooted at Resources/Art in the app bundle.
+/// Paths match WebsiteReference/art.js, rooted at Art in the app bundle.
 enum ArtCatalog {
     static func plateSlug(for mystery: Mystery) -> String { mystery.artSlug }
 
     static func platePath(set: MysterySetKind, slug: String, scheme: ColorScheme, wide: Bool) -> (directory: String, name: String) {
         let theme = scheme == .dark ? "dark" : "light"
         let file = wide ? "\(slug)-wide" : slug
-        return ("Resources/Art/\(theme)/\(set.rawValue)", file)
+        return ("Art/\(theme)/\(set.rawValue)", file)
     }
 
     static func heroPath(set: MysterySetKind, scheme: ColorScheme, tall: Bool) -> (directory: String, name: String) {
         let theme = scheme == .dark ? "dark" : "light"
         let shape = tall ? "tall" : "wide"
-        return ("Resources/Art/hero", "\(set.rawValue)-\(theme)-\(shape)")
+        return ("Art/hero", "\(set.rawValue)-\(theme)-\(shape)")
     }
 
     static var crucifix: (directory: String, name: String, ext: String) {
-        ("Resources/Art", "crucifix", "png")
+        ("Art", "crucifix", "png")
     }
 
     /// CSS object-position from art.js FOCUS (tall/square plate).
