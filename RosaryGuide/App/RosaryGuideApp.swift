@@ -4,6 +4,7 @@ import SwiftUI
 struct RosaryGuideApp: App {
     @State private var settings = SettingsStore()
     @State private var session = SessionStore()
+    @State private var offer = OfferStore()
 
     init() {
         FontRegistrar.register()
@@ -17,6 +18,7 @@ struct RosaryGuideApp: App {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .environment(settings)
             .environment(session)
+            .environment(offer)
             .preferredColorScheme(settings.appearance.colorScheme)
         }
     }

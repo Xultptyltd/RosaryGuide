@@ -38,23 +38,39 @@ enum FontRegistrar {
         }
     }
 
-    static func sans(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
+    static func sans(_ size: CGFloat, weight: Font.Weight = .regular, relativeTo textStyle: Font.TextStyle = .body) -> Font {
         #if canImport(UIKit)
-        Font(sansUI(size, weight: weight))
+        Font(sansUI(size, weight: weight, textStyle: uiTextStyle(textStyle)))
         #else
-        Font.custom("InstrumentSans-Regular", size: size)
+        Font.custom("InstrumentSans-Regular", size: size, relativeTo: textStyle)
         #endif
     }
 
-    static func serif(_ size: CGFloat, italic: Bool = false, opticalSize: CGFloat? = nil) -> Font {
+    static func serif(_ size: CGFloat, italic: Bool = false, opticalSize: CGFloat? = nil, relativeTo textStyle: Font.TextStyle = .body) -> Font {
         #if canImport(UIKit)
-        Font(serifUI(size, italic: italic, opticalSize: opticalSize))
+        Font(serifUI(size, italic: italic, opticalSize: opticalSize, textStyle: uiTextStyle(textStyle)))
         #else
-        Font.custom(italic ? "Newsreader16pt-Italic" : "Newsreader16pt-Regular", size: size)
+        Font.custom(italic ? "Newsreader16pt-Italic" : "Newsreader16pt-Regular", size: size, relativeTo: textStyle)
         #endif
     }
 
     #if canImport(UIKit)
+    static func uiTextStyle(_ textStyle: Font.TextStyle) -> UIFont.TextStyle {
+        switch textStyle {
+        case .largeTitle: return .largeTitle
+        case .title: return .title1
+        case .title2: return .title2
+        case .title3: return .title3
+        case .headline: return .headline
+        case .subheadline: return .subheadline
+        case .callout: return .callout
+        case .caption: return .caption1
+        case .caption2: return .caption2
+        case .footnote: return .footnote
+        default: return .body
+        }
+    }
+
     static func sansUI(_ size: CGFloat, weight: Font.Weight = .regular, textStyle: UIFont.TextStyle = .body) -> UIFont {
         let base = variableFont(
             names: sansCandidates,

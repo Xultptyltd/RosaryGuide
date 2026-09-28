@@ -1,56 +1,64 @@
 import SwiftUI
 
 enum PrayLaunch: Identifiable, Hashable {
-    case fresh(MysterySetKind)
+    case fresh(MysterySetKind, intentionId: UUID? = nil)
     case resume(PrayerSession)
 
     var id: String {
         switch self {
-        case .fresh(let set): "fresh-\(set.rawValue)"
-        case .resume: "resume"
+        case .fresh(let set, let intentionId):
+            let suffix = intentionId?.uuidString ?? "none"
+            return "fresh-\(set.rawValue)-\(suffix)"
+        case .resume:
+            return "resume"
         }
     }
 
     var mysterySet: MysterySetKind {
         switch self {
-        case .fresh(let set): set
+        case .fresh(let set, _): set
         case .resume(let session): session.mysterySet
+        }
+    }
+
+    var intentionId: UUID? {
+        switch self {
+        case .fresh(_, let intentionId): intentionId
+        case .resume(let session): session.intentionId
         }
     }
 }
 
+
 private enum AppTab: String, CaseIterable, Identifiable, Hashable {
-    case home, pray, how, feasts, settings
+    case today, pray, calendar, intentions
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .home: "Home"
-        case .pray: "Pray"
-        case .how: "How to"
-        case .feasts: "Feasts"
-        case .settings: "Settings"
+        case .today: "Today"
+        case .pray: "Learn"
+        case .calendar: "Feasts"
+        case .intentions: "Intentions"
         }
     }
 
     var icon: String {
         switch self {
-        case .home: "house"
-        case .pray: "hands.sparkles"
-        case .how: "book.closed"
-        case .feasts: "calendar"
-        case .settings: "gearshape"
+        case .today: "sun.max"
+        case .pray: "book.closed"
+        case .calendar: "calendar"
+        case .intentions: "heart.text.square"
         }
     }
 
     var selectedIcon: String {
         switch self {
-        case .home: "house.fill"
-        case .pray: "hands.sparkles"
-        case .how: "book.closed.fill"
-        case .feasts: "calendar"
-        case .settings: "gearshape.fill"
+        case .today: "sun.max.fill"
+        case .pray: "book.closed.fill"
+        case .calendar: "calendar"
+        case .intentions: "heart.text.square.fill"
         }
     }
 }
@@ -58,39 +66,38 @@ private enum AppTab: String, CaseIterable, Identifiable, Hashable {
 struct RootView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(SessionStore.self) private var session
+    @Environment(OfferStore.self) private var offer
     @Environment(\.palette) private var palette
     @State private var prayLaunch: PrayLaunch?
-    @State private var tab: AppTab = .home
+    @State private var tab: AppTab = .today
 
     var body: some View {
         TabView(selection: $tab) {
             HomeView(prayLaunch: $prayLaunch)
-                .tabItem { Label(AppTab.home.title, systemImage: AppTab.home.icon) }
-                .tag(AppTab.home)
+                .tabItem { Label(AppTab.today.title, systemImage: tab == .today ? AppTab.today.selectedIcon : AppTab.today.icon) }
+                .tag(AppTab.today)
 
             PrayHubView(prayLaunch: $prayLaunch)
-                .tabItem { Label(AppTab.pray.title, systemImage: AppTab.pray.icon) }
+                .tabItem { Label(AppTab.pray.title, systemImage: tab == .pray ? AppTab.pray.selectedIcon : AppTab.pray.icon) }
                 .tag(AppTab.pray)
 
-            HowToPrayView()
-                .tabItem { Label(AppTab.how.title, systemImage: AppTab.how.icon) }
-                .tag(AppTab.how)
-
             FeastsView(prayLaunch: $prayLaunch)
-                .tabItem { Label(AppTab.feasts.title, systemImage: AppTab.feasts.icon) }
-                .tag(AppTab.feasts)
+                .tabItem { Label(AppTab.calendar.title, systemImage: AppTab.calendar.icon) }
+                .tag(AppTab.calendar)
 
-            SettingsView()
-                .tabItem { Label(AppTab.settings.title, systemImage: AppTab.settings.icon) }
-                .tag(AppTab.settings)
+            OfferView(prayLaunch: $prayLaunch)
+                .tabItem { Label(AppTab.intentions.title, systemImage: tab == .intentions ? AppTab.intentions.selectedIcon : AppTab.intentions.icon) }
+                .tag(AppTab.intentions)
+
         }
-        .tint(palette.ink)
+        .tint(palette.accent)
         .fullScreenCover(item: $prayLaunch) { launch in
             ThemedRoot {
                 PrayView(launch: launch)
             }
             .environment(settings)
             .environment(session)
+            .environment(offer)
             .preferredColorScheme(settings.appearance.colorScheme)
         }
     }
@@ -102,4 +109,5 @@ struct RootView: View {
     }
     .environment(SettingsStore())
     .environment(SessionStore())
+    .environment(OfferStore())
 }

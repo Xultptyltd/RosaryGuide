@@ -6,70 +6,114 @@ struct SettingsView: View {
     @Environment(\.palette) private var palette
 
     var body: some View {
-        NavigationStack {
-            @Bindable var settings = settings
-            List {
-                Section {
-                    Picker("Prayer language", selection: $settings.language) {
-                        ForEach(PrayerLanguage.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
+        @Bindable var settings = settings
+
+        Form {
+            Section("Prayer") {
+                Picker(selection: $settings.language) {
+                    ForEach(PrayerLanguage.allCases) { option in
+                        Text(option.title).tag(option)
                     }
-                    .listRowBackground(palette.bg)
-                    Picker("Appearance", selection: $settings.appearance) {
-                        ForEach(AppearancePreference.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-                    .listRowBackground(palette.bg)
-                    Picker("Text size", selection: $settings.textSize) {
-                        Text("Small").tag(PrayerTextSize.small)
-                        Text("Medium").tag(PrayerTextSize.medium)
-                        Text("Large").tag(PrayerTextSize.large)
-                    }
-                    .listRowBackground(palette.bg)
-                } header: {
-                    Text("Display")
-                } footer: {
-                    Text("English, Latin, or both. Appearance follows the system unless you lock Light or Dark.")
+                } label: {
+                    SettingsLabel(icon: "text.book.closed", title: "Prayer language")
                 }
 
-                Section {
-                    Toggle("Prayer to Saint Michael after Finis", isOn: $settings.includeSaintMichael)
-                        .listRowBackground(palette.bg)
-                    Toggle("Haptics while praying", isOn: $settings.hapticsEnabled)
-                        .listRowBackground(palette.bg)
-                } header: {
-                    Text("Prayer")
-                } footer: {
-                    Text("Saint Michael is offered after the rosary is finished. He is never inserted into the seven-stage sequence.")
-                }
-
-                if session.resumableSession != nil {
-                    Section("Session") {
-                        Button("Discard saved rosary", role: .destructive) {
-                            session.discard()
-                        }
-                        .listRowBackground(palette.bg)
+                Picker(selection: $settings.textSize) {
+                    ForEach(PrayerTextSize.allCases) { option in
+                        Text(option.title).tag(option)
                     }
+                } label: {
+                    SettingsLabel(icon: "textformat.size", title: "Text size")
                 }
 
-                Section("About") {
-                    LabeledContent("App", value: "Rosary Guide")
-                        .listRowBackground(palette.bg)
-                    LabeledContent("Bundle ID", value: "com.shasasmith.RosaryGuide")
-                        .listRowBackground(palette.bg)
-                    Text("Cream and ink prayer guide with the website’s paintings, Instrument Sans, Newsreader, and RSV-2CE mystery readings. Everything stays on this device.")
-                        .font(.footnote)
-                        .foregroundStyle(palette.dim)
-                        .listRowBackground(palette.bg)
+                Toggle(isOn: $settings.hapticsEnabled) {
+                    SettingsLabel(icon: "hand.tap", title: "Haptics")
+                }
+
+                Toggle(isOn: $settings.includeSaintMichael) {
+                    SettingsLabel(icon: "shield", title: "Saint Michael prayer")
                 }
             }
-            .scrollContentBackground(.hidden)
-            .listRowSeparatorTint(palette.hair)
-            .tint(palette.accent)
-            .guidePageChrome()
-            .navigationTitle("Settings")
+
+            Section("Appearance") {
+                Picker(selection: $settings.appearance) {
+                    ForEach(AppearancePreference.allCases) { option in
+                        Text(option.title).tag(option)
+                    }
+                } label: {
+                    SettingsLabel(icon: "circle.lefthalf.filled", title: "Theme")
+                }
+            }
+
+            if session.resumableSession != nil {
+                Section("Session") {
+                    Button(role: .destructive) {
+                        session.discard()
+                    } label: {
+                        SettingsLabel(icon: "trash", title: "Discard saved Rosary", tint: .red)
+                    }
+                }
+            }
+
+            Section("About") {
+                LabeledContent {
+                    Text("Rosary Guide")
+                        .foregroundStyle(palette.dim)
+                } label: {
+                    SettingsLabel(icon: "app", title: "App")
+                }
+
+                LabeledContent {
+                    Text("com.shasasmith.RosaryGuide")
+                        .foregroundStyle(palette.dim)
+                        .textSelection(.enabled)
+                } label: {
+                    SettingsLabel(icon: "number", title: "Bundle ID")
+                }
+
+                Text("A private prayer guide for learning and praying the Rosary. Everything stays on this device.")
+                    .font(AppTheme.TypeRole.bodySmall)
+                    .foregroundStyle(palette.dim)
+                    .lineSpacing(5)
+            }
+        }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(palette.bg)
+        .tint(palette.accent)
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(palette.bg, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+    }
+}
+
+private struct SettingsLabel: View {
+    @Environment(\.palette) private var palette
+    let icon: String
+    let title: String
+    var tint: Color?
+
+    var body: some View {
+        Label {
+            Text(title)
+                .font(AppTheme.TypeRole.body)
+                .foregroundStyle(tint ?? palette.ink)
+        } icon: {
+            Image(systemName: icon)
+                .guideSymbol(size: 20, weight: .regular)
+                .foregroundStyle(tint ?? palette.ink)
+                .frame(width: 28, alignment: .center)
+        }
+    }
+}
+
+private extension PrayerTextSize {
+    var title: String {
+        switch self {
+        case .small: "Small"
+        case .medium: "Medium"
+        case .large: "Large"
         }
     }
 }

@@ -66,11 +66,12 @@ enum PrayerTextSize: String, CaseIterable, Codable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Medium matches site `--ps: 1.3125rem` (~21pt). Small/Large step ±~10–15%.
     var scale: CGFloat {
         switch self {
-        case .small: 1.0
-        case .medium: 1.18
-        case .large: 1.36
+        case .small: 0.9
+        case .medium: 1.0
+        case .large: 1.15
         }
     }
 
@@ -118,6 +119,16 @@ enum MysterySetKind: String, CaseIterable, Codable, Identifiable {
         case .sorrowful: "Sorrowful"
         case .glorious: "Glorious"
         case .luminous: "Luminous"
+        }
+    }
+
+    /// One-line theme for Home (and similar) under today's mystery set.
+    var themeSummary: String {
+        switch self {
+        case .joyful: "The Incarnation and hidden life of Jesus."
+        case .luminous: "The public ministry of Christ."
+        case .sorrowful: "The Passion and sacrifice of Jesus."
+        case .glorious: "The Resurrection and heavenly glory."
         }
     }
 
@@ -227,6 +238,31 @@ struct Feast: Identifiable, Hashable, Sendable {
     var rank: FeastRank
     var dateProvider: @Sendable (Int) -> Date?
 
+    /// Compact list label (matches rosaryguide.app home wording).
+    var shortTitle: String {
+        switch id {
+        case "mary-mother-of-god": "Mary, Mother of God"
+        case "presentation": "Presentation of the Lord"
+        case "lourdes": "Our Lady of Lourdes"
+        case "annunciation": "Annunciation"
+        case "fatima": "Our Lady of Fatima"
+        case "visitation": "Visitation"
+        case "carmel": "Our Lady of Mount Carmel"
+        case "assumption": "Assumption"
+        case "queenship": "Queenship of Mary"
+        case "nativity-mary": "Nativity of Mary"
+        case "holy-name-mary": "Holy Name of Mary"
+        case "sorrows": "Our Lady of Sorrows"
+        case "rosary": "Our Lady of the Rosary"
+        case "presentation-mary": "Presentation of Mary"
+        case "immaculate-conception": "Immaculate Conception"
+        case "immaculate-heart": "Immaculate Heart of Mary"
+        case "guadalupe": "Our Lady of Guadalupe"
+        case "christmas": "Christmas"
+        default: name.english
+        }
+    }
+
     static func == (lhs: Feast, rhs: Feast) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
@@ -268,6 +304,17 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
     var updatedAt: Date
     var includeSaintMichael: Bool
     var language: PrayerLanguage
+    var intentionId: UUID?
+    var intentionTitle: String?
+
+    var continueCTATitle: String {
+        let steps = RosarySequenceBuilder.build(set: mysterySet)
+        let idx = min(max(stepIndex, 0), max(steps.count - 1, 0))
+        if steps.indices.contains(idx) {
+            return "Continue — \(steps[idx].stage.continuePhrase)"
+        }
+        return "Continue"
+    }
 
     var isSameCalendarDay: Bool {
         Calendar.current.isDateInToday(startedAt)
@@ -313,6 +360,19 @@ enum PrayTrackStage: Int, CaseIterable, Hashable, Codable {
 
     var label: String {
         ["Opening", "I", "II", "III", "IV", "V", "Close"][rawValue]
+    }
+
+    /// Web-style resume phrase: "Continue — first mystery"
+    var continuePhrase: String {
+        [
+            "the opening prayers",
+            "first mystery",
+            "second mystery",
+            "third mystery",
+            "fourth mystery",
+            "fifth mystery",
+            "the closing prayers",
+        ][rawValue]
     }
 
     static func decade(_ n: Int) -> PrayTrackStage {

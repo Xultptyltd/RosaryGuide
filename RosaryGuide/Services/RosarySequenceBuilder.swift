@@ -40,7 +40,16 @@ enum RosarySequenceBuilder {
             id += 1
         }
 
-        append(.signOfTheCross, haptic: .medium, stage: .opening, bead: .crucifix)
+        append(
+            .signOfTheCross,
+            intention: BilingualText(
+                english: "Offer this Rosary for your intention",
+                latin: "Offer this Rosary for your intention"
+            ),
+            haptic: .medium,
+            stage: .opening,
+            bead: .crucifix
+        )
         append(.creed, haptic: .medium, stage: .opening, bead: .crucifix)
         append(.ourFather, haptic: .medium, stage: .opening, bead: .openingOurFather)
         for (index, intention) in PrayerCatalog.openingIntentions.enumerated() {

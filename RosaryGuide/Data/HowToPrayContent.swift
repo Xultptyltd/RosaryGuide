@@ -45,7 +45,7 @@ enum HowToPrayContent {
         HowToPrayStep(
             id: 8,
             title: BilingualText(english: "Optional Saint Michael after Finis", latin: "Sanctus Michael post finem"),
-            body: "When the rosary is finished, you may pray the Prayer to Saint Michael. Enable it in Settings to be offered after Amen."
+            body: "When the rosary is finished, you may pray the Prayer to Saint Michael from the Finis screen."
         )
     ]
 

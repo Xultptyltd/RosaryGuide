@@ -27,7 +27,7 @@ final class SessionStore {
         pruneHistory()
     }
 
-    func start(set: MysterySetKind, language: PrayerLanguage) {
+    func start(set: MysterySetKind, language: PrayerLanguage, intentionId: UUID? = nil, intentionTitle: String? = nil) {
         let now = Date()
         session = PrayerSession(
             mysterySet: set,
@@ -35,8 +35,18 @@ final class SessionStore {
             startedAt: now,
             updatedAt: now,
             includeSaintMichael: false,
-            language: language
+            language: language,
+            intentionId: intentionId,
+            intentionTitle: intentionTitle
         )
+    }
+
+    func updateIntention(id: UUID?, title: String?) {
+        guard var current = session else { return }
+        current.intentionId = id
+        current.intentionTitle = title
+        current.updatedAt = Date()
+        session = current
     }
 
     func updateStep(_ index: Int) {

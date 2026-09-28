@@ -1,10 +1,15 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct MysteryArtworkView: View {
     var set: MysterySetKind
     var mysteryNumber: Int?
     var slug: String?
     var kind: Kind = .plate
+    /// Soft bottom dissolve into the surrounding card. Off for a hard image/body edge.
+    var bottomFade: Bool = true
 
     enum Kind { case plate, plateWide, heroTall, heroWide }
 
@@ -57,17 +62,20 @@ struct MysteryArtworkView: View {
 
     private var plateScrim: some View {
         let fade = kind == .plateWide ? palette.bg : palette.card
-        return LinearGradient(
-            stops: [
+        let stops: [Gradient.Stop] = bottomFade
+            ? [
                 .init(color: fade.opacity(0.28), location: 0),
                 .init(color: .clear, location: 0.22),
                 .init(color: .clear, location: 0.62),
                 .init(color: fade.opacity(0.92), location: 1)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .allowsHitTesting(false)
+            ]
+            : [
+                .init(color: fade.opacity(0.22), location: 0),
+                .init(color: .clear, location: 0.28),
+                .init(color: .clear, location: 1)
+            ]
+        return LinearGradient(stops: stops, startPoint: .top, endPoint: .bottom)
+            .allowsHitTesting(false)
     }
 }
 
@@ -90,14 +98,13 @@ struct PlateArtView: View {
             focus: wide ? ArtCatalog.bandFocus(set: mystery.set, number: mystery.number) : ArtCatalog.focus(set: mystery.set, number: mystery.number)
         )
             .overlay {
+                // Top vignette only — bottom dissolve is owned by the pray hero so fills match.
                 LinearGradient(
                     stops: [
                         .init(color: scrim.opacity(0.55), location: 0),
-                        .init(color: scrim.opacity(0.12), location: 0.08),
-                        .init(color: .clear, location: 0.22),
-                        .init(color: .clear, location: 0.78),
-                        .init(color: scrim.opacity(0.55), location: 0.92),
-                        .init(color: scrim, location: 1)
+                        .init(color: scrim.opacity(0.12), location: 0.1),
+                        .init(color: .clear, location: 0.28),
+                        .init(color: .clear, location: 1)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -107,7 +114,7 @@ struct PlateArtView: View {
     }
 
     private var scrim: Color {
-        colorScheme == .light ? .white : AppTheme.darkBg
+        Color(uiColor: .systemBackground)
     }
 }
 
@@ -120,7 +127,7 @@ struct SeasonBadge: View {
         HStack(spacing: 8) {
             Circle()
                 .fill(AppTheme.color(for: season))
-                .frame(width: 8, height: 8)
+                .frame(width: 7, height: 7)
             Text(season.name.primary(for: language))
                 .font(AppTheme.sans(13, weight: .medium))
             Text(season.liturgicalColorName)
@@ -128,42 +135,68 @@ struct SeasonBadge: View {
                 .foregroundStyle(palette.dim)
         }
         .foregroundStyle(palette.ink)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(palette.card2.opacity(0.55), in: Capsule())
     }
 }
 
 struct BilingualStack: View {
     var text: BilingualText
     var language: PrayerLanguage
-    var font: Font = AppTheme.serif(21)
+    var font: Font = AppTheme.sans(21)
+    /// Point size used when targeting CSS line-height 1.85.
+    var pointSize: CGFloat = 21
     var alignment: TextAlignment = .leading
     @Environment(\.palette) private var palette
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// Generous prayer reading line height using the app sans text system.
+    private var lineExtra: CGFloat {
+        #if canImport(UIKit)
+        let ui = FontRegistrar.sansUI(pointSize)
+        let scale = ui.pointSize > 0.1 ? (pointSize / ui.pointSize) : 1
+        let native = ui.lineHeight * scale
+        return max(0, pointSize * 1.65 - native)
+        #else
+        return max(0, pointSize * 0.45)
+        #endif
+    }
 
     var body: some View {
         if language == .bilingual {
-            HStack(alignment: .top, spacing: 22) {
-                Text(text.english)
-                    .font(font)
-                    .foregroundStyle(palette.ink)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Text(text.latin)
-                    .font(font)
-                    .italic()
-                    .foregroundStyle(palette.dim)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: alignment == .center ? .center : .leading, spacing: AppTheme.Space.xl) {
+                    prayerColumn(text.english, color: palette.ink, italic: false)
+                    prayerColumn(text.latin, color: palette.dim, italic: false)
+                }
+            } else {
+                HStack(alignment: .top, spacing: 22) {
+                    prayerColumn(text.english, color: palette.ink, italic: false)
+                    prayerColumn(text.latin, color: palette.dim, italic: false)
+                }
             }
         } else if language == .latin {
-            Text(text.latin)
-                .font(font)
-                .italic()
-                .foregroundStyle(palette.ink)
-                .multilineTextAlignment(alignment)
-                .frame(maxWidth: .infinity, alignment: alignment == .center ? .center : .leading)
+            prayerColumn(text.latin, color: palette.ink, italic: false)
         } else {
-            Text(text.english)
-                .font(font)
-                .foregroundStyle(palette.ink)
-                .multilineTextAlignment(alignment)
-                .frame(maxWidth: .infinity, alignment: alignment == .center ? .center : .leading)
+            prayerColumn(text.english, color: palette.ink, italic: false)
+        }
+    }
+
+    @ViewBuilder
+    private func prayerColumn(_ raw: String, color: Color, italic: Bool) -> some View {
+        let paras = raw.components(separatedBy: "\n\n").filter { !$0.isEmpty }
+        VStack(alignment: alignment == .center ? .center : .leading, spacing: 32) { // prayer paragraph gap
+            ForEach(Array(paras.enumerated()), id: \.offset) { _, para in
+                Text(para.replacingOccurrences(of: "\n", with: " "))
+                    .font(font)
+                    .italic(italic)
+                    .foregroundStyle(color)
+                    .lineSpacing(lineExtra)
+                    .multilineTextAlignment(alignment)
+                    .frame(maxWidth: .infinity, alignment: alignment == .center ? .center : .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }
@@ -174,6 +207,7 @@ struct Hairline: View {
         Rectangle()
             .fill(palette.hair)
             .frame(height: 1)
+            .frame(maxWidth: .infinity)
     }
 }
 
@@ -182,19 +216,31 @@ struct PillButton: View {
     var filled: Bool = true
     var action: () -> Void
     @Environment(\.palette) private var palette
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(SettingsStore.self) private var settings
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            HapticService.play(.light, enabled: settings.hapticsEnabled)
+            action()
+        } label: {
             Text(title)
-                .font(AppTheme.sans(16, weight: filled ? .semibold : .medium))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(filled ? palette.accent : Color.clear, in: Capsule())
-                .overlay {
-                    Capsule().strokeBorder(filled ? Color.clear : palette.dim.opacity(0.45), lineWidth: 1)
-                }
+                .font(AppTheme.sans(16, weight: filled ? .semibold : .medium, relativeTo: .callout))
                 .foregroundStyle(filled ? palette.onAccent : palette.ink)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: AppTheme.Component.pillHeight)
+                .padding(.vertical, AppTheme.Space.xs)
+                .background(filled ? palette.accent : palette.card, in: Capsule())
+                .overlay {
+                    if !filled {
+                        Capsule().strokeBorder(palette.hair, lineWidth: 1)
+                    }
+                }
         }
         .buttonStyle(.plain)
+        .guidePressable()
     }
 }

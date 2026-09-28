@@ -35,21 +35,18 @@ struct RosaryStep: Identifiable, Hashable {
     var isPlate: Bool { kind == .mysteryAnnouncement }
     var isFinis: Bool { kind == .completion }
 
+    /// Matches website `#pnow`: Opening / Closing prayers, or `I · The Annunciation` in a decade.
     var progressLabel: String {
-        switch kind {
-        case .mysteryAnnouncement:
-            if let mystery { return "\(OrdinalWord.english(mystery.number)) \(mystery.set.shortName)" }
-            return "Mystery"
-        case .hailMary:
-            if let decadeNumber, let hailMaryNumber {
-                return "Decade \(decadeNumber) · Hail Mary \(hailMaryNumber)"
+        switch stage {
+        case .opening:
+            return "Opening prayers"
+        case .closing:
+            return "Closing prayers"
+        case .first, .second, .third, .fourth, .fifth:
+            if let mystery {
+                return "\(OrdinalWord.roman(mystery.number)) · \(mystery.title.english)"
             }
-            if let intention { return intention.english }
-            return "Hail Mary"
-        case .completion:
-            return "Finis"
-        default:
-            return title.english
+            return OrdinalWord.roman(stage.rawValue)
         }
     }
 

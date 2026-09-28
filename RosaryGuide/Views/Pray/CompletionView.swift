@@ -17,7 +17,8 @@ struct CompletionView: View {
                 .font(AppTheme.sans(16, weight: .medium))
                 .foregroundStyle(palette.dim)
             Text(quote)
-                .font(AppTheme.serif(26, italic: true))
+                .font(AppTheme.sans(22))
+                .lineSpacing(8)
                 .multilineTextAlignment(.center)
             Text(attribution)
                 .font(AppTheme.sans(13, weight: .medium))
@@ -27,7 +28,15 @@ struct CompletionView: View {
             if let onMichael {
                 Button("Saint Michael the Archangel", action: onMichael)
                     .font(AppTheme.sans(16, weight: .medium))
-                    .foregroundStyle(palette.dim)
+                    .foregroundStyle(palette.ink)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: AppTheme.Component.pillHeight)
+                    .background(palette.card, in: Capsule())
+                    .overlay {
+                        Capsule().strokeBorder(palette.hair, lineWidth: 1)
+                    }
+                    .buttonStyle(.plain)
+                    .guidePressable()
             }
         }
         .padding(24)

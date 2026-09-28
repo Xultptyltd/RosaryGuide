@@ -15,12 +15,16 @@ enum PrayerCatalog {
         title: BilingualText(english: "Apostles' Creed", latin: "Symbolum Apostolorum"),
         text: BilingualText(
             english: """
-            I believe in God, the Father almighty, Creator of heaven and earth, and in Jesus Christ, his only Son, our Lord, who was conceived by the Holy Spirit, born of the Virgin Mary, suffered under Pontius Pilate, was crucified, died and was buried; he descended into hell; on the third day he rose again from the dead; he ascended into heaven, and is seated at the right hand of God the Father almighty; from there he will come to judge the living and the dead.
+            I believe in God, the Father almighty, Creator of heaven and earth, and in Jesus Christ, his only Son, our Lord,
+
+            who was conceived by the Holy Spirit, born of the Virgin Mary, suffered under Pontius Pilate, was crucified, died and was buried; he descended into hell; on the third day he rose again from the dead; he ascended into heaven, and is seated at the right hand of God the Father almighty; from there he will come to judge the living and the dead.
 
             I believe in the Holy Spirit, the holy catholic Church, the communion of saints, the forgiveness of sins, the resurrection of the body, and life everlasting. Amen.
             """,
             latin: """
-            Credo in Deum Patrem omnipotentem, Creatorem caeli et terrae. Et in Iesum Christum, Filium eius unicum, Dominum nostrum, qui conceptus est de Spiritu Sancto, natus ex Maria Virgine, passus sub Pontio Pilato, crucifixus, mortuus, et sepultus; descendit ad inferos; tertia die resurrexit a mortuis; ascendit ad caelos, sedet ad dexteram Dei Patris omnipotentis; inde venturus est iudicare vivos et mortuos.
+            Credo in Deum Patrem omnipotentem, Creatorem caeli et terrae. Et in Iesum Christum, Filium eius unicum, Dominum nostrum,
+
+            qui conceptus est de Spiritu Sancto, natus ex Maria Virgine, passus sub Pontio Pilato, crucifixus, mortuus, et sepultus; descendit ad inferos; tertia die resurrexit a mortuis; ascendit ad caelos, sedet ad dexteram Dei Patris omnipotentis; inde venturus est iudicare vivos et mortuos.
 
             Credo in Spiritum Sanctum, sanctam Ecclesiam catholicam, sanctorum communionem, remissionem peccatorum, carnis resurrectionem, vitam aeternam. Amen.
             """
@@ -149,9 +153,9 @@ enum PrayerCatalog {
         )
     )
 
-    static let faith = BilingualText(english: "For an increase of Faith", latin: "Ad fidei incrementum")
-    static let hope = BilingualText(english: "For an increase of Hope", latin: "Ad spei incrementum")
-    static let charity = BilingualText(english: "For an increase of Charity", latin: "Ad caritatis incrementum")
+    static let faith = BilingualText(english: "For an increase in faith", latin: "Ad fidei incrementum")
+    static let hope = BilingualText(english: "For an increase in hope", latin: "Ad spei incrementum")
+    static let charity = BilingualText(english: "For an increase in charity", latin: "Ad caritatis incrementum")
     static let openingIntentions = [faith, hope, charity]
 
     static func prayer(for kind: RosaryStepKind) -> Prayer? {

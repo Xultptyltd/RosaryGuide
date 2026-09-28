@@ -23,50 +23,37 @@ enum MysteryCalendar {
             .first
 
         let set: MysterySetKind
-        let reason: String
-
         switch weekday {
         case 1:
             switch season {
             case .advent, .christmas:
                 set = .joyful
-                reason = "Sundays of \(season.name.english) take the Joyful Mysteries."
             case .lent, .triduum:
                 set = .sorrowful
-                reason = "Sundays of Lent take the Sorrowful Mysteries."
-            case .easter:
+            case .easter, .ordinary:
                 set = .glorious
-                reason = "Sundays of Easter take the Glorious Mysteries."
-            case .ordinary:
-                set = .glorious
-                reason = "Sundays of Ordinary Time take the Glorious Mysteries."
             }
         case 2:
             set = .joyful
-            reason = "Mondays take the Joyful Mysteries."
         case 3:
             set = .sorrowful
-            reason = "Tuesdays take the Sorrowful Mysteries."
         case 4:
             set = .glorious
-            reason = "Wednesdays take the Glorious Mysteries."
         case 5:
             set = .luminous
-            reason = "Thursdays take the Luminous Mysteries."
         case 6:
             set = .sorrowful
-            reason = "Fridays take the Sorrowful Mysteries."
         default:
             set = .joyful
-            reason = "Saturdays take the Joyful Mysteries."
         }
 
-        return MysteryAssignment(set: set, reason: reason, season: season, feast: feast)
+        return MysteryAssignment(set: set, reason: set.themeSummary, season: season, feast: feast)
     }
 
+    /// Monday–Sunday week strip, matching the website home calendar.
     static func week(containing date: Date, calendar: Calendar = LiturgicalCalendar.gregorian) -> [(Date, MysteryAssignment)] {
-        let weekday = calendar.component(.weekday, from: date)
-        let startOffset = 1 - weekday
+        let weekday = calendar.component(.weekday, from: date) // 1 = Sunday … 7 = Saturday
+        let startOffset = weekday == 1 ? -6 : (2 - weekday)
         guard let start = calendar.date(byAdding: .day, value: startOffset, to: calendar.startOfDay(for: date)) else {
             return [(date, assignment(on: date, calendar: calendar))]
         }
