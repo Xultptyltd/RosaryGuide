@@ -44,7 +44,7 @@ final class OfferStore {
         expiresAt: Date? = nil,
         sourceId: String? = nil,
         category: IntentionCategory = .personal,
-        accent: IntentionAccent = .blue,
+        accent: IntentionAccent = .skyBlue,
         emoji: String? = nil,
         suggestOn: [MysterySetKind] = []
     ) -> OfferIntention {

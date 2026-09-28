@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(SettingsStore.self) private var settings
+    @Environment(AppIconService.self) private var appIcon
     @Environment(SessionStore.self) private var session
     @Environment(OfferStore.self) private var offer
     @Environment(\.palette) private var palette
@@ -20,6 +21,7 @@ struct HomeView: View {
     @State private var openFeastID: String?
     @State private var weekFeastInfo: DatedFeast?
     @State private var scrollToTopRequest = 0
+    @State private var showSettingsDrawer = false
     @State private var navigationPath = NavigationPath()
     @Namespace private var pickerNamespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -125,6 +127,15 @@ struct HomeView: View {
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(AppTheme.containerRadius)
         }
+        .fullScreenCover(isPresented: $showSettingsDrawer) {
+            HomeSettingsDrawer(isPresented: $showSettingsDrawer)
+                .environment(settings)
+                .environment(session)
+                .environment(offer)
+                .environment(appIcon)
+                .environment(\.palette, palette)
+                .preferredColorScheme(settings.appearance.colorScheme)
+        }
     }
 
     private func captureMetrics(_ geo: GeometryProxy) {
@@ -133,7 +144,7 @@ struct HomeView: View {
     }
 
     private func hero(topInset: CGFloat, viewport: CGFloat) -> some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack(alignment: .top) {
             MysteryArtworkView(set: currentSet, kind: .heroTall)
                 .frame(height: AppTheme.heroHeight(viewport: viewport) + topInset)
                 .clipped()
@@ -151,11 +162,35 @@ struct HomeView: View {
                     )
                 }
             HStack(spacing: 10) {
+                menuButton
+                Spacer(minLength: 0)
                 glassTheme
             }
             .padding(.top, topInset + 12)
-            .padding(.trailing, 16)
+            .padding(.horizontal, 16)
         }
+    }
+
+    private var menuButton: some View {
+        Button {
+            HapticService.play(.light, enabled: settings.hapticsEnabled)
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                showSettingsDrawer = true
+            }
+        } label: {
+            Image(systemName: "line.3.horizontal")
+                .guideSymbol(size: 17, weight: .medium)
+                .foregroundStyle(palette.ink)
+                .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                .background(palette.panel.opacity(0.94), in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .guidePressable()
+        .accessibilityLabel("Menu")
+        .accessibilityHint("Opens settings")
     }
 
     private var glassTheme: some View {
@@ -193,9 +228,7 @@ struct HomeView: View {
             .animation(reduceMotion ? nil : MotionTokens.selection, value: currentSet)
 
             Text(currentSet.themeSummary)
-                .font(AppTheme.sans(15))
-                .foregroundStyle(palette.dim)
-                .lineSpacing(5)
+                .guideThemeSummaryStyle()
                 .padding(.top, AppTheme.Space.md)
                 .contentTransition(reduceMotion ? .identity : .opacity)
                 .animation(reduceMotion ? nil : MotionTokens.selection, value: currentSet)
@@ -215,9 +248,6 @@ struct HomeView: View {
 
             mysteryRail(gutter: gutter)
                 .padding(.top, AppTheme.decadesGap)
-
-            todayIntentionSection
-                .padding(.top, 22)
 
             comingUpSection
                 .padding(.top, AppTheme.sectionGap)
@@ -357,10 +387,11 @@ struct HomeView: View {
                 VStack(spacing: AppTheme.Space.md) {
                     HStack(alignment: .center, spacing: AppTheme.Space.md) {
                         ZStack {
-                            Circle()
-                                .fill(palette.accentTint)
-                            Text(currentIntention?.displayEmoji ?? "🙏")
-                                .font(.system(size: 22))
+                            IntentionIconView(
+                                accent: currentIntention?.accent ?? .mintGreen,
+                                emoji: currentIntention?.displayEmoji ?? "🙏",
+                                size: 52
+                            )
                         }
                         .frame(width: 52, height: 52)
 
@@ -432,7 +463,18 @@ struct HomeView: View {
                 FeastDetailView(prayLaunch: $prayLaunch, item: featured)
             } label: {
                 ZStack(alignment: .bottomLeading) {
-                    MysteryArtworkView(set: featured.feast.suggestedMysterySet ?? .glorious, mysteryNumber: 5, kind: .plateWide)
+                    Group {
+                        if let path = ArtCatalog.feastHeroPath(feastId: featured.feast.id, scheme: colorScheme) {
+                            FocusedRasterImage(
+                                directory: path.directory,
+                                name: path.name,
+                                ext: path.ext,
+                                focus: UnitPoint(x: 0.5, y: 0.42)
+                            )
+                        } else {
+                            MysteryArtworkView(set: featured.feast.suggestedMysterySet ?? .glorious, mysteryNumber: 5, kind: .plateWide)
+                        }
+                    }
                         .frame(height: 176)
                         .clipped()
                         .overlay {

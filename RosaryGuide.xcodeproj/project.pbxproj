@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2B1F0975A78C45248878D4B4 /* FeastNarratives.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73615B296B0C41CFA92F7797 /* FeastNarratives.swift */; };
+		E5AB2D35F6C141C0A12E229F /* FeastScriptures.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8200BBF10943DA9B385CE9 /* FeastScriptures.swift */; };
 		F17192475C3C5E005FFA1934 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65622D107422099E4F60DE1E /* AppTheme.swift */; };
 		004406578DA6DEABB8614015 /* PrayHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D14D5C74E932FBB6FE0784F /* PrayHubView.swift */; };
 		05F066B261AA1E475873C6F3 /* MysteryCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */; };
@@ -49,6 +50,14 @@
 		8F878F57D693A3DE796BB485 /* IntentionSuggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C5E677CA4145DB823FC9DA /* IntentionSuggestions.swift */; };
 		6F8CB8CC4E4DD5082870CD73 /* PopeIntentionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E29D3303E3C2BF17A182A233 /* PopeIntentionStore.swift */; };
 		2ECA4A85B436EA08CA5456DC /* PopeIntentions.json in Resources */ = {isa = PBXBuildFile; fileRef = FC2132B969E266BCD4A50F87 /* PopeIntentions.json */; };
+		A1C00101A1B2C3D4E5F60102 /* AppIconService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60101 /* AppIconService.swift */; };
+		A1C00101A1B2C3D4E5F60121 /* AppIconWhite@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60111 /* AppIconWhite@2x.png */; };
+		A1C00101A1B2C3D4E5F60122 /* AppIconWhite@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60112 /* AppIconWhite@3x.png */; };
+		A1C00101A1B2C3D4E5F60123 /* AppIconBlue@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60113 /* AppIconBlue@2x.png */; };
+		A1C00101A1B2C3D4E5F60124 /* AppIconBlue@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60114 /* AppIconBlue@3x.png */; };
+		A1C00101A1B2C3D4E5F60125 /* AppIconWhite.png in Resources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60115 /* AppIconWhite.png */; };
+		A1C00101A1B2C3D4E5F60126 /* AppIconBlue.png in Resources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60116 /* AppIconBlue.png */; };
+		B2C3D4E5F60718293A4B5C6D /* HomeSettingsDrawer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* HomeSettingsDrawer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,6 +85,7 @@
 		59BD70A010546ABDA29CC560 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeastCatalog.swift; sourceTree = "<group>"; };
 		73615B296B0C41CFA92F7797 /* FeastNarratives.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeastNarratives.swift; sourceTree = "<group>"; };
+		AA8200BBF10943DA9B385CE9 /* FeastScriptures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeastScriptures.swift; sourceTree = "<group>"; };
 		5FBA0DE58E6AF3D6198CDC09 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		65622D107422099E4F60DE1E /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		84AB74929A62F4D728D0F4F5 /* FontRegistrar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontRegistrar.swift; sourceTree = "<group>"; };
@@ -107,6 +117,14 @@
 		66C5E677CA4145DB823FC9DA /* IntentionSuggestions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentionSuggestions.swift; sourceTree = "<group>"; };
 		E29D3303E3C2BF17A182A233 /* PopeIntentionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopeIntentionStore.swift; sourceTree = "<group>"; };
 		FC2132B969E266BCD4A50F87 /* PopeIntentions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = PopeIntentions.json; sourceTree = "<group>"; };
+		A1C00101A1B2C3D4E5F60101 /* AppIconService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconService.swift; sourceTree = "<group>"; };
+		A1C00101A1B2C3D4E5F60111 /* AppIconWhite@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconWhite@2x.png"; sourceTree = "<group>"; };
+		A1C00101A1B2C3D4E5F60112 /* AppIconWhite@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconWhite@3x.png"; sourceTree = "<group>"; };
+		A1C00101A1B2C3D4E5F60113 /* AppIconBlue@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconBlue@2x.png"; sourceTree = "<group>"; };
+		A1C00101A1B2C3D4E5F60114 /* AppIconBlue@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconBlue@3x.png"; sourceTree = "<group>"; };
+		A1C00101A1B2C3D4E5F60115 /* AppIconWhite.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconWhite.png"; sourceTree = "<group>"; };
+		A1C00101A1B2C3D4E5F60116 /* AppIconBlue.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconBlue.png"; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5C /* HomeSettingsDrawer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSettingsDrawer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -139,6 +157,7 @@
 				991251FFFCB12E381DCA553A /* RosarySequenceBuilder.swift */,
 				D7D77BDA7A9A0D515ADDDF0D /* SessionStore.swift */,
 				59BD70A010546ABDA29CC560 /* SettingsStore.swift */,
+				A1C00101A1B2C3D4E5F60101 /* AppIconService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -221,6 +240,7 @@
 			isa = PBXGroup;
 			children = (
 				B4D6BFA1CB98A02A8F760C6D /* HomeView.swift */,
+				A1B2C3D4E5F60718293A4B5C /* HomeSettingsDrawer.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -231,6 +251,7 @@
 				FC2132B969E266BCD4A50F87 /* PopeIntentions.json */,
 				5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */,
 				73615B296B0C41CFA92F7797 /* FeastNarratives.swift */,
+				AA8200BBF10943DA9B385CE9 /* FeastScriptures.swift */,
 				34B7278C515BF0D95EE40796 /* HowToPrayContent.swift */,
 				F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */,
 				4019C8E56EEFC74D6BD9D92D /* PrayerCatalog.swift */,
@@ -276,6 +297,12 @@
 				7C08C1EC25164414B0A6381F /* Art */,
 				D9EF17A3557946A382A9BB17 /* Fonts */,
 				EF9404A057D2BFA4ABE2F620 /* Preview Content */,
+				A1C00101A1B2C3D4E5F60111 /* AppIconWhite@2x.png */,
+				A1C00101A1B2C3D4E5F60112 /* AppIconWhite@3x.png */,
+				A1C00101A1B2C3D4E5F60113 /* AppIconBlue@2x.png */,
+				A1C00101A1B2C3D4E5F60114 /* AppIconBlue@3x.png */,
+				A1C00101A1B2C3D4E5F60115 /* AppIconWhite.png */,
+				A1C00101A1B2C3D4E5F60116 /* AppIconBlue.png */,
 			);
 			path = RosaryGuide;
 			sourceTree = "<group>";
@@ -391,6 +418,12 @@
 				69AB1C253F476ED63D9F71F1 /* PrivacyInfo.xcprivacy in Resources */,
 				214885458E9A4307B45D76C0 /* Art in Resources */,
 				EE5F4F6C5D5847F99D26F8BB /* Fonts in Resources */,
+				A1C00101A1B2C3D4E5F60121 /* AppIconWhite@2x.png in Resources */,
+				A1C00101A1B2C3D4E5F60122 /* AppIconWhite@3x.png in Resources */,
+				A1C00101A1B2C3D4E5F60123 /* AppIconBlue@2x.png in Resources */,
+				A1C00101A1B2C3D4E5F60124 /* AppIconBlue@3x.png in Resources */,
+				A1C00101A1B2C3D4E5F60125 /* AppIconWhite.png in Resources */,
+				A1C00101A1B2C3D4E5F60126 /* AppIconBlue.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -422,6 +455,7 @@
 				7FB73805AFCDD7E3B54D3AAE /* FontRegistrar.swift in Sources */,
 				082CF909021C6EBA3FBB2D68 /* FeastCatalog.swift in Sources */,
 				2B1F0975A78C45248878D4B4 /* FeastNarratives.swift in Sources */,
+				E5AB2D35F6C141C0A12E229F /* FeastScriptures.swift in Sources */,
 				28C9577CEB49FB4EFCC102BF /* HowToPrayContent.swift in Sources */,
 				05F066B261AA1E475873C6F3 /* MysteryCatalog.swift in Sources */,
 				662E38C7C39EF8E4296FAAD4 /* PrayerCatalog.swift in Sources */,
@@ -435,9 +469,11 @@
 				5BEDC4E1A8748517C5BC54EB /* SessionStore.swift in Sources */,
 				BFB2E57A65DA2E74CFB07CD0 /* SettingsStore.swift in Sources */,
 				F17192475C3C5E005FFA1934 /* AppTheme.swift in Sources */,
+				A1C00101A1B2C3D4E5F60102 /* AppIconService.swift in Sources */,
 				92CDCB58703677D509CA6491 /* MysteryArtworkView.swift in Sources */,
 				98170303FFF360ECF63D9EEC /* FeastsView.swift in Sources */,
 				780D2F681F67657B70F8EF92 /* HomeView.swift in Sources */,
+				B2C3D4E5F60718293A4B5C6D /* HomeSettingsDrawer.swift in Sources */,
 				A21E8071973B2454C07D064D /* HowToPrayView.swift in Sources */,
 				BE13802B23DF384111053919 /* BeadRailView.swift in Sources */,
 				BC96C621E125FD05CB52BE42 /* CompletionView.swift in Sources */,

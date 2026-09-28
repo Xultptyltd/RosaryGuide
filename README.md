@@ -1,6 +1,6 @@
 # Rosary Guide
 
-Native SwiftUI iOS companion for the cream-and-ink Rosary prayer guide. Swift 5.9, iOS 17+. No WebView, no backend, no account. Everything lives on the device.
+Native SwiftUI iOS companion for the cream-and-ink Rosary prayer guide. Swift 5.9, iOS 17+. No WebView and no account. Prayer progress and settings live on the device; the Holy Father’s monthly intention can refresh from a static JSON feed.
 
 Bundle ID: `com.shasasmith.RosaryGuide`
 
@@ -64,7 +64,11 @@ Light and dark plates share composition; the theme only changes the marble groun
 
 ## Privacy
 
-Settings and the in-progress rosary are stored in `UserDefaults` on the device. The app does not track, network, or collect data. See `RosaryGuide/PrivacyInfo.xcprivacy`.
+Settings and the in-progress rosary are stored in `UserDefaults` on the device. The app does not track or collect data. It may fetch `RosaryGuide/Data/PopeIntentions.json` from the public GitHub raw feed to refresh the Holy Father’s monthly intention, then caches the last valid feed locally. See `RosaryGuide/PrivacyInfo.xcprivacy`.
+
+## Holy Father intention feed
+
+`RosaryGuide/Data/PopeIntentions.json` is the stable app-facing feed. A scheduled GitHub Action runs `scripts/update_pope_intentions.py` daily, checks official public Vatican / Pope’s Prayer sources for the current month, validates the required fields, and commits the JSON only when it changes. The iOS app ships with the bundled JSON and quietly keeps using the bundled or cached version if the remote fetch fails.
 
 ## Project layout
 

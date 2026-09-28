@@ -12,7 +12,9 @@ struct PrayIntentionSheet: View {
     /// Mystery set for the Rosary being prayed — drives the Suggested section for this Rosary.
     var mysterySet: MysterySetKind
 
-    private var suggestions: [SuggestedIntention] { IntentionSuggestions.forDay() }
+    @State private var popeStore = PopeIntentionStore.shared
+
+    private var suggestions: [SuggestedIntention] { IntentionSuggestions.forDay(popeStore: popeStore) }
 
     private var papalSuggestions: [SuggestedIntention] {
         suggestions.filter {
@@ -80,7 +82,7 @@ struct PrayIntentionSheet: View {
                 .environment(\.palette, palette)
             }
             .task {
-                await PopeIntentionStore.shared.refreshIfNeeded()
+                await popeStore.refreshIfNeeded()
             }
         }
     }
@@ -336,7 +338,7 @@ struct PrayIntentionSheet: View {
                 note: item.note,
                 sourceId: papal ? item.id : nil,
                 category: papal ? .world : .personal,
-                accent: papal ? .gold : .gray,
+                accent: papal ? .teal : .mintGreen,
                 emoji: papal ? "✝️" : nil
             )
             chosenId = created.id

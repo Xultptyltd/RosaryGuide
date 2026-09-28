@@ -586,6 +586,24 @@ struct GuideSectionLabel: View {
     }
 }
 
+/// Shared secondary copy style for Home mystery themes and papal intention captions.
+struct GuideThemeSummaryStyle: ViewModifier {
+    @Environment(\.palette) private var palette
+
+    func body(content: Content) -> some View {
+        content
+            .font(AppTheme.TypeRole.themeSummary)
+            .foregroundStyle(palette.dim)
+            .lineSpacing(5)
+    }
+}
+
+extension View {
+    func guideThemeSummaryStyle() -> some View {
+        modifier(GuideThemeSummaryStyle())
+    }
+}
+
 
 // MARK: - Motion (SmoothUI / Amicro-inspired, native SwiftUI)
 
@@ -690,7 +708,22 @@ struct GuideRowGroupChrome: ViewModifier {
     }
 }
 
+/// Shared segmented-picker chrome used by the prayer language selector and Feasts scope filter.
+struct GuideSegmentedControl: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .pickerStyle(.segmented)
+            .controlSize(.large)
+            .frame(height: AppTheme.Component.segmentedControlHeight)
+            .labelsHidden()
+    }
+}
+
 extension View {
+    func guideSegmentedControl() -> some View {
+        modifier(GuideSegmentedControl())
+    }
+
     func guidePressable() -> some View {
         buttonStyle(GuidePressStyle())
     }
@@ -751,6 +784,7 @@ extension AppTheme {
         static var titleSmall: Font { AppTheme.sans(24, weight: .semibold, relativeTo: .title3) }
         static var body: Font { AppTheme.sans(19, relativeTo: .body) }
         static var bodySmall: Font { AppTheme.sans(17, relativeTo: .body) }
+        static var themeSummary: Font { AppTheme.sans(15, relativeTo: .body) }
         static var callout: Font { AppTheme.sans(16, relativeTo: .callout) }
         static var label: Font { AppTheme.sans(13, weight: .medium, relativeTo: .subheadline) }
         static var caption: Font { AppTheme.sans(12, weight: .regular, relativeTo: .caption) }
@@ -765,6 +799,8 @@ extension AppTheme {
         static let chipPaddingH: CGFloat = Space.md
         static let panelStrokeWidth: CGFloat = 1
         static let panelStrokeOpacity: Double = 0.11
+        /// Shared height for compact segmented controls.
+        static let segmentedControlHeight: CGFloat = 40
         /// Matches `GuideSectionLabel` tracking.
         static let sectionLabelTracking: CGFloat = 0
         static let hairline: CGFloat = 1 / 3

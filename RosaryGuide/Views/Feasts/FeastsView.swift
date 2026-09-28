@@ -93,7 +93,8 @@ struct FeastsView: View {
                                 Text(option.title).tag(option)
                             }
                         }
-                        .pickerStyle(.segmented)
+                        .guideSegmentedControl()
+                        .frame(maxWidth: .infinity)
                     }
 
                     FeastMonthCalendar(
@@ -643,14 +644,14 @@ struct FeastDetailView: View {
             }
         }
         .padding(.horizontal, AppTheme.Space.lg)
-        .guideRowGroup()
+        .guideCard(radius: AppTheme.containerRadius, fill: palette.panel, elevated: false)
     }
 
     private func quickFactRow(_ label: String, _ value: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 14) {
             Text(label)
-                .font(AppTheme.TypeRole.caption)
-                .foregroundStyle(palette.faint)
+                .font(AppTheme.TypeRole.sectionLabel)
+                .foregroundStyle(palette.dim)
                 .frame(width: 86, alignment: .leading)
             Text(value)
                 .font(AppTheme.TypeRole.bodySmall)
@@ -662,27 +663,56 @@ struct FeastDetailView: View {
     }
 
     private var meaningSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            GuideSectionLabel(text: "What this day is", color: palette.faint)
-            guideTextCard(
-                eyebrow: "What we celebrate",
-                title: feast.shortTitle,
-                body: feast.aboutText
-            )
+        VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+            meaningParagraphBlock(body: feast.aboutText)
 
             if let history = feast.historyText {
-                guideTextCard(
-                    eyebrow: "Church tradition",
-                    title: traditionTitle,
-                    body: history
-                )
+                meaningParagraphBlock(body: history)
             }
         }
     }
 
+    /// Paragraph-only Learn prose with no eyebrow or subsection title.
+    private func meaningParagraphBlock(body: String) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+            ForEach(meaningParagraphs(from: body), id: \.self) { paragraph in
+                Text(paragraph)
+                    .font(AppTheme.TypeRole.bodySmall)
+                    .foregroundStyle(palette.ink)
+                    .multilineTextAlignment(.leading)
+                    .lineSpacing(7)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func meaningParagraphs(from body: String) -> [String] {
+        let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+        let byBlank = trimmed
+            .components(separatedBy: "\n\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        if byBlank.count > 1 { return byBlank }
+
+        // Split a single dense block into at most two short paragraphs on sentence boundaries.
+        let sentences = trimmed
+            .split(separator: ".", omittingEmptySubsequences: true)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .map { $0.hasSuffix("?") || $0.hasSuffix("!") ? $0 : $0 + "." }
+        guard sentences.count >= 2 else { return [trimmed] }
+        let mid = sentences.count / 2
+        let first = sentences[..<mid].joined(separator: " ")
+        let second = sentences[mid...].joined(separator: " ")
+        return [first, second]
+    }
+
     private var keepTheDaySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GuideSectionLabel(text: "Keep the day", color: palette.faint)
+            GuideSectionLabel(text: "Keep the day", color: palette.dim)
             VStack(spacing: 0) {
                 ForEach(Array(dayPractices.enumerated()), id: \.offset) { index, practice in
                     VStack(alignment: .leading, spacing: 5) {
@@ -690,7 +720,7 @@ struct FeastDetailView: View {
                             .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
                             .foregroundStyle(palette.ink)
                         Text(practice.body)
-                            .font(AppTheme.sans(15))
+                            .font(AppTheme.TypeRole.themeSummary)
                             .foregroundStyle(palette.dim)
                             .lineSpacing(5)
                             .fixedSize(horizontal: false, vertical: true)
@@ -710,7 +740,7 @@ struct FeastDetailView: View {
 
     private var prayersForDaySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GuideSectionLabel(text: "Prayers for this day", color: palette.faint)
+            GuideSectionLabel(text: "Prayers for this day", color: palette.dim)
             ForEach(prayersForDay) { prayer in
                 prayerCard(prayer)
             }
@@ -719,10 +749,10 @@ struct FeastDetailView: View {
 
     private var scriptureRosarySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GuideSectionLabel(text: "Scripture and Rosary", color: palette.faint)
+            GuideSectionLabel(text: "Scripture and Rosary", color: palette.dim)
             rosaryConnectionCard
 
-            if scriptureMysteries.isEmpty {
+            if feastScriptures.isEmpty {
                 guideTextCard(
                     eyebrow: "Scripture",
                     title: "Held in the Church’s memory",
@@ -730,14 +760,14 @@ struct FeastDetailView: View {
                 )
             } else {
                 VStack(spacing: 0) {
-                    ForEach(Array(scriptureMysteries.prefix(3).enumerated()), id: \.element.id) { index, mystery in
+                    ForEach(Array(feastScriptures.prefix(3).enumerated()), id: \.element.id) { index, passage in
                         VStack(alignment: .leading, spacing: 7) {
-                            GuideSectionLabel(text: mystery.scriptureReference, color: palette.faint)
-                            Text(mystery.title.english)
+                            GuideSectionLabel(text: passage.reference, color: palette.dim)
+                            Text(passage.title)
                                 .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
                                 .foregroundStyle(palette.ink)
-                            Text(mystery.scriptureExcerpt.english)
-                                .font(AppTheme.sans(15))
+                            Text(passage.excerpt)
+                                .font(AppTheme.TypeRole.themeSummary)
                                 .foregroundStyle(palette.dim)
                                 .lineSpacing(5)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -745,7 +775,7 @@ struct FeastDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 15)
 
-                        if index < min(scriptureMysteries.count, 3) - 1 {
+                        if index < min(feastScriptures.count, 3) - 1 {
                             Hairline()
                         }
                     }
@@ -758,7 +788,7 @@ struct FeastDetailView: View {
 
     private func guideTextCard(eyebrow: String, title: String, body: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            GuideSectionLabel(text: eyebrow, color: palette.faint)
+            GuideSectionLabel(text: eyebrow, color: palette.dim)
             Text(title)
                 .font(AppTheme.TypeRole.titleSmall)
                 .foregroundStyle(palette.ink)
@@ -774,18 +804,8 @@ struct FeastDetailView: View {
         .guideCard(radius: AppTheme.containerRadius, fill: palette.panel, elevated: false)
     }
 
-    private var scriptureMysteries: [Mystery] {
-        guard let set = feast.suggestedMysterySet else { return [] }
-        return MysteryCatalog.mysteries(for: set)
-    }
-
-    private var traditionTitle: String {
-        switch feast.rank {
-        case .solemnity: "Why the Church keeps it solemnly"
-        case .feast: "How the Church remembers it"
-        case .memorial, .optionalMemorial: "Why the Church remembers it"
-        case .seasonal: "Where it sits in the year"
-        }
+    private var feastScriptures: [FeastScripturePassage] {
+        feast.scripturePassages
     }
 
     private var isLikelyHolyDayOfObligation: Bool {
@@ -861,9 +881,9 @@ struct FeastDetailView: View {
 
     private var devotionalMeditation: some View {
         VStack(alignment: .leading, spacing: 14) {
-            GuideSectionLabel(text: "Reflection", color: palette.faint)
+            GuideSectionLabel(text: "Reflection", color: palette.dim)
             Text(devotionalCopy)
-                .font(AppTheme.sans(19))
+                .font(AppTheme.TypeRole.body)
                 .foregroundStyle(palette.ink)
                 .lineSpacing(8)
                 .fixedSize(horizontal: false, vertical: true)
@@ -872,7 +892,7 @@ struct FeastDetailView: View {
                 .padding(.top, 2)
 
             Text(reflectionPrompt)
-                .font(AppTheme.sans(17))
+                .font(AppTheme.TypeRole.bodySmall)
                 .foregroundStyle(palette.dim)
                 .lineSpacing(8)
                 .fixedSize(horizontal: false, vertical: true)
@@ -953,14 +973,10 @@ struct FeastDetailView: View {
                 .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 4) {
-                GuideSectionLabel(text: "Today’s Rosary", color: palette.faint)
+                GuideSectionLabel(text: "Mystery set", color: palette.dim)
                 Text(set.name.english)
                     .font(AppTheme.sans(20, weight: .semibold))
                     .foregroundStyle(palette.ink)
-                Text("Pray this feast through the \(set.shortName.lowercased()) mysteries.")
-                    .font(AppTheme.sans(13))
-                    .foregroundStyle(palette.dim)
-                    .lineLimit(2)
             }
 
             Spacer(minLength: 6)
@@ -971,13 +987,13 @@ struct FeastDetailView: View {
 
     private func relatedPrayerPreview(_ prayer: FeastRelatedPrayer) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            GuideSectionLabel(text: "Related prayer", color: palette.faint)
+            GuideSectionLabel(text: "Related prayer", color: palette.dim)
             Text(prayer.title)
                 .font(AppTheme.sans(22, weight: .semibold))
                 .foregroundStyle(palette.ink)
 
             Text(prayerText(prayer))
-                .font(AppTheme.sans(17))
+                .font(AppTheme.TypeRole.bodySmall)
                 .foregroundStyle(palette.dim)
                 .lineSpacing(8)
                 .lineLimit(5)
@@ -1006,7 +1022,7 @@ struct FeastDetailView: View {
 
     private var supportingLinks: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GuideSectionLabel(text: "More for this feast", color: palette.faint)
+            GuideSectionLabel(text: "More for this feast", color: palette.dim)
             infoRows
                 .guideNavList(pageGutter: 22)
         }
@@ -1135,7 +1151,7 @@ struct FeastDetailView: View {
 
     private func narrativeSection(title: String, body: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            GuideSectionLabel(text: title, color: palette.faint)
+            GuideSectionLabel(text: title, color: palette.dim)
             Text(body)
                 .font(AppTheme.serif(19, opticalSize: 20))
                 .foregroundStyle(palette.ink)
@@ -1146,7 +1162,7 @@ struct FeastDetailView: View {
 
     private var prayersSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GuideSectionLabel(text: "Prayers for this day", color: palette.faint)
+            GuideSectionLabel(text: "Prayers for this day", color: palette.dim)
 
             ForEach(feast.relatedPrayersForDay) { prayer in
                 prayerCard(prayer)
@@ -1225,7 +1241,7 @@ struct FeastDetailView: View {
 
     private func mysteriesCard(_ set: MysterySetKind) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            GuideSectionLabel(text: "Suggested mysteries", color: palette.faint)
+            GuideSectionLabel(text: "Suggested mysteries", color: palette.dim)
 
             Text(set.name.english)
                 .font(AppTheme.serif(24, opticalSize: 32))
@@ -1420,7 +1436,7 @@ private struct FeastPatronagesView: View {
 
                 ForEach(patronages, id: \.self) { patronage in
                     VStack(alignment: .leading, spacing: 8) {
-                        GuideSectionLabel(text: "Patronage", color: Color(hex: 0x927B52))
+                        GuideSectionLabel(text: "Patronage", color: palette.faint)
                         Text(patronage)
                             .font(AppTheme.serif(24, opticalSize: 30))
                             .foregroundStyle(palette.ink)
@@ -1465,27 +1481,26 @@ private struct FeastScriptureView: View {
     var feast: Feast
     @Environment(\.palette) private var palette
 
-    private var mysteries: [Mystery] {
-        guard let set = feast.suggestedMysterySet else { return [] }
-        return MysteryCatalog.mysteries(for: set)
+    private var passages: [FeastScripturePassage] {
+        feast.scripturePassages
     }
 
     var body: some View {
         FeastSecondaryPage(title: "In Scripture", feast: feast) {
             VStack(alignment: .leading, spacing: 24) {
-                if mysteries.isEmpty {
+                if passages.isEmpty {
                     FeastTextPanel(
                         title: "Scripture",
                         text: "\(feast.shortTitle) is held within the Church's living memory of Scripture, prayer, and worship."
                     )
                 } else {
-                    ForEach(mysteries) { mystery in
+                    ForEach(passages) { passage in
                         VStack(alignment: .leading, spacing: 10) {
-                            GuideSectionLabel(text: mystery.scriptureReference, color: Color(hex: 0x927B52))
-                            Text(mystery.title.english)
+                            GuideSectionLabel(text: passage.reference, color: palette.faint)
+                            Text(passage.title)
                                 .font(AppTheme.serif(22, opticalSize: 28))
                                 .foregroundStyle(palette.ink)
-                            Text(mystery.scriptureExcerpt.english)
+                            Text(passage.excerpt)
                                 .font(AppTheme.serif(18, opticalSize: 20))
                                 .foregroundStyle(palette.dim)
                                 .lineSpacing(5)
@@ -1516,7 +1531,7 @@ private struct FeastSecondaryPage<Content: View>: View {
                     .padding(.top, -8)
                     .padding(.bottom, 22)
 
-                GuideSectionLabel(text: feast.rank.title, color: Color(hex: 0x927B52))
+                GuideSectionLabel(text: feast.rank.title, color: palette.dim)
 
                 Text(title)
                     .font(AppTheme.serif(38, opticalSize: 44))
@@ -1584,9 +1599,22 @@ private struct FeastHeroBanner: View {
         }
     }
 
+    private var feastArtPath: (directory: String, name: String, ext: String)? {
+        ArtCatalog.feastHeroPath(feastId: feast.id, scheme: colorScheme)
+    }
+
     var body: some View {
         ZStack {
-            if let set = feast.suggestedMysterySet {
+            if let path = feastArtPath {
+                FocusedRasterImage(
+                    directory: path.directory,
+                    name: path.name,
+                    ext: path.ext,
+                    focus: UnitPoint(x: 0.5, y: 0.42)
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+            } else if let set = feast.suggestedMysterySet {
                 MysteryArtworkView(set: set, kind: .heroWide)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .scaleEffect(1.04)
@@ -1614,7 +1642,7 @@ private struct FeastHeroBanner: View {
 
             palette.bg.opacity(colorScheme == .light ? 0.14 : 0.22)
 
-            if feast.suggestedMysterySet == nil {
+            if feastArtPath == nil, feast.suggestedMysterySet == nil {
                 Image(systemName: heroSymbol)
                     .guideSymbol(size: 36, weight: .light)
                     .foregroundStyle(palette.ink.opacity(0.28))
@@ -1623,10 +1651,6 @@ private struct FeastHeroBanner: View {
         .frame(height: height)
         .frame(maxWidth: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .strokeBorder(palette.hair.opacity(0.8), lineWidth: 1)
-        }
         .accessibilityLabel("Feast artwork for \(feast.shortTitle)")
     }
 }

@@ -23,6 +23,47 @@ enum ArtCatalog {
         return ("Art/hero", "\(set.rawValue)-\(theme)-\(shape)")
     }
 
+    /// Feast hero art: dedicated light/dark PNGs under `Art/feasts`, or a mapped mystery wide plate.
+    static func feastHeroPath(feastId: String, scheme: ColorScheme) -> (directory: String, name: String, ext: String)? {
+        if let plate = feastMysteryPlate(for: feastId) {
+            let theme = scheme == .dark ? "dark" : "light"
+            return ("Art/\(theme)/\(plate.set.rawValue)", "\(plate.slug)-wide", "jpg")
+        }
+        if dedicatedFeastHeroIDs.contains(feastId) {
+            let directory = scheme == .dark ? "Art/feasts/dark" : "Art/feasts"
+            return (directory, feastId, "png")
+        }
+        return nil
+    }
+
+    /// Feasts with dedicated PNGs under `Art/feasts/` and `Art/feasts/dark/`.
+    private static let dedicatedFeastHeroIDs: Set<String> = [
+        "advent-1", "all-saints", "all-souls", "ash-wednesday", "carmel", "christ-the-king",
+        "epiphany", "fatima", "guadalupe", "guardian-angels", "holy-name-mary", "holy-saturday",
+        "immaculate-conception", "immaculate-heart", "joseph", "lourdes", "mary-mother-of-god",
+        "michael", "nativity-mary", "palm-sunday", "peter-paul", "presentation-mary", "rosary",
+        "sacred-heart", "sorrows", "trinity"
+    ]
+
+    /// Feasts that reuse an existing mystery wide plate (light/dark via Art/{theme}/…).
+    private static func feastMysteryPlate(for feastId: String) -> (set: MysterySetKind, slug: String)? {
+        switch feastId {
+        case "annunciation": return (.joyful, "01-annunciation")
+        case "visitation": return (.joyful, "02-visitation")
+        case "christmas": return (.joyful, "03-birth-of-jesus")
+        case "presentation": return (.joyful, "04-presentation-of-the-baby-jesus")
+        case "baptism-movable": return (.luminous, "01-baptism-of-jesus-in-the-jordan")
+        case "holy-thursday", "corpus-christi": return (.luminous, "05-institution-of-the-holy-eucharist")
+        case "good-friday": return (.sorrowful, "05-crucifixion")
+        case "easter", "divine-mercy": return (.glorious, "01-resurrection")
+        case "ascension": return (.glorious, "02-ascension")
+        case "pentecost": return (.glorious, "03-descent-of-the-holy-spirit")
+        case "assumption": return (.glorious, "04-assumption")
+        case "queenship": return (.glorious, "05-coronation")
+        default: return nil
+        }
+    }
+
     static var crucifix: (directory: String, name: String, ext: String) {
         ("Art", "crucifix", "png")
     }

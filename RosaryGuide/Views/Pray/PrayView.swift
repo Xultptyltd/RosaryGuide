@@ -771,9 +771,8 @@ struct PrayView: View {
                 Text(option.chip).tag(option)
             }
         }
-        .pickerStyle(.segmented)
-        .controlSize(.large)
-        .frame(width: 220, height: 40)
+        .guideSegmentedControl()
+        .frame(width: 220)
         .frame(maxWidth: .infinity, alignment: .leading)
         .labelsHidden()
         .accessibilityLabel("Prayer language")

@@ -14,10 +14,10 @@ struct SuggestedIntention: Identifiable, Hashable, Sendable {
 
 enum IntentionSuggestions {
     /// Feast-aware + papal suggestions for a given day (defaults to today).
-    static func forDay(_ date: Date = Date()) -> [SuggestedIntention] {
+    static func forDay(_ date: Date = Date(), popeStore: PopeIntentionStore = .shared) -> [SuggestedIntention] {
         var items: [SuggestedIntention] = []
 
-        if let papal = PopeIntentionStore.shared.intention(for: date) {
+        if let papal = popeStore.intention(for: date) {
             items.append(
                 SuggestedIntention(
                     id: "pope-\(papal.yearMonth)",

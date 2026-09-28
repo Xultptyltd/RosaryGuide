@@ -2,44 +2,51 @@ import Foundation
 import SwiftUI
 
 enum IntentionAccent: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
-    case gray
-    case gold
-    case green
-    case blue
-    case violet
-    case rose
+    case skyBlue
+    case mintGreen
+    case teal
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .gray: "Grey"
-        case .gold: "Yellow"
-        case .green: "Mint"
-        case .blue: "Sky"
-        case .violet: "Lavender"
-        case .rose: "Pink"
+        case .skyBlue: "Soft sky blue"
+        case .mintGreen: "Soft mint green"
+        case .teal: "Soft teal"
         }
     }
 
-    /// Greys first (default), then the five pastel contact colours.
+    /// A deliberately small avatar palette: three soft blue/green tones with
+    /// enough hue separation to remain distinct at a glance.
     static var pickerOrder: [IntentionAccent] {
-        [.gray, .gold, .green, .blue, .violet, .rose]
+        [.skyBlue, .mintGreen, .teal]
     }
 
     var color: Color {
         switch self {
-        case .gray: Color(red: 0.78, green: 0.78, blue: 0.80)
-        case .gold: Color(red: 0.96, green: 0.82, blue: 0.28)
-        case .green: Color(red: 0.72, green: 0.90, blue: 0.78)
-        case .blue: Color(red: 0.70, green: 0.86, blue: 0.96)
-        case .violet: Color(red: 0.78, green: 0.76, blue: 0.94)
-        case .rose: Color(red: 0.96, green: 0.78, blue: 0.84)
+        case .skyBlue: Color(hex: 0x9BCBF0)
+        case .mintGreen: Color(hex: 0xA8E1B8)
+        case .teal: Color(hex: 0x70C8C6)
         }
     }
 
     var onColor: Color {
-        Color(red: 0.12, green: 0.12, blue: 0.12)
+        Color(red: 0.10, green: 0.20, blue: 0.22)
+    }
+
+    /// Keep existing saved intentions colourful without allowing legacy hues
+    /// to reappear in the avatar palette.
+    init(from decoder: Decoder) throws {
+        let value = try decoder.singleValueContainer().decode(String.self)
+        switch value {
+        // Migrate the former four-color palette without reintroducing any
+        // grey/yellow/rose hues into the current UI.
+        case "skyBlue", "paleBlue", "blue": self = .skyBlue
+        case "mintGreen", "paleGreen": self = .mintGreen
+        case "teal", "green": self = .teal
+        case "gray", "gold", "rose", "violet": self = .skyBlue
+        default: self = .skyBlue
+        }
     }
 }
 
@@ -60,8 +67,8 @@ enum IntentionCategory: String, Codable, CaseIterable, Identifiable, Hashable, S
 
     static func inferred(sourceId: String?, accent: IntentionAccent, emoji: String?) -> IntentionCategory {
         if sourceId?.hasPrefix("pope-") == true { return .world }
-        if emoji == "👥" || accent == .blue { return .someone }
-        if emoji == "🌍" || accent == .green { return .world }
+        if emoji == "👥" || accent == .skyBlue { return .someone }
+        if emoji == "🌍" || accent == .teal { return .world }
         return .personal
     }
 }
@@ -94,7 +101,7 @@ struct OfferIntention: Identifiable, Hashable, Sendable {
         expiresAt: Date? = nil,
         sourceId: String? = nil,
         category: IntentionCategory = .personal,
-        accent: IntentionAccent = .gray,
+        accent: IntentionAccent = .skyBlue,
         emoji: String? = nil,
         suggestOn: [MysterySetKind] = []
     ) {
@@ -194,7 +201,7 @@ extension OfferIntention: Codable {
         lastCarriedAt = try c.decodeIfPresent(Date.self, forKey: .lastCarriedAt)
         expiresAt = try c.decodeIfPresent(Date.self, forKey: .expiresAt)
         sourceId = try c.decodeIfPresent(String.self, forKey: .sourceId)
-        accent = try c.decodeIfPresent(IntentionAccent.self, forKey: .accent) ?? .gray
+        accent = try c.decodeIfPresent(IntentionAccent.self, forKey: .accent) ?? .skyBlue
         emoji = try c.decodeIfPresent(String.self, forKey: .emoji)
         category = try c.decodeIfPresent(IntentionCategory.self, forKey: .category)
             ?? IntentionCategory.inferred(sourceId: sourceId, accent: accent, emoji: emoji)

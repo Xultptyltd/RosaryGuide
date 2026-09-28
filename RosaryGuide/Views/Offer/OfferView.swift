@@ -9,9 +9,9 @@ struct OfferView: View {
     @State private var editor: EditorRoute?
     @State private var papalDetail: SuggestedIntention?
     @State private var titleScrollOffset: CGFloat = 0
-    @State private var sortMode: IntentionSortMode = .current
-    @State private var showingSortDialog = false
     @State private var navigationPath = NavigationPath()
+    @State private var popeStore = PopeIntentionStore.shared
+    @State private var intentionDetail: OfferIntention?
     private var todaySet: MysterySetKind {
         MysteryCalendar.assignment(on: Date()).set
     }
@@ -33,29 +33,7 @@ struct OfferView: View {
                 "Intentions",
                 scrollOffset: $titleScrollOffset,
                 morphEnabled: true
-            ) {
-                NavigationLink {
-                    SettingsView()
-                } label: {
-                    Image(systemName: "gearshape")
-                        .guideSymbol(size: 18, weight: .medium)
-                        .foregroundStyle(palette.ink)
-                        .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel("Settings")
-            } trailing: {
-                Button {
-                    editor = .create
-                } label: {
-                    Image(systemName: "plus")
-                        .guideSymbol(size: 18, weight: .semibold)
-                        .foregroundStyle(palette.ink)
-                        .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel("Add intention")
-            }
+            )
             .sheet(item: $editor) { route in
                 IntentionEditorSheet(route: route)
                     .environment(offer)
@@ -68,7 +46,17 @@ struct OfferView: View {
                     onAdd: { adoptSuggestion(item) }
                 )
             }
+            .navigationDestination(item: $intentionDetail) { item in
+                IntentionDetailView(
+                    intention: item,
+                    onPin: { offer.togglePin(id: item.id) },
+                    onEdit: { editor = .edit(item) },
+                    onDelete: { offer.delete(id: item.id) },
+                    onPray: { prayWith(item) }
+                )
+            }
             .onAppear { offer.pruneExpired() }
+            .task { await popeStore.refreshIfNeeded() }
         }
     }
 
@@ -79,12 +67,12 @@ struct OfferView: View {
             VStack(alignment: .leading, spacing: 0) {
                 CollapsingTitleSpacer()
 
-                // Full-bleed square: outside page gutter so container is edge-to-edge;
-                // PNG already has baked-in fade — scaledToFit, no crop/mask.
+                // Full-bleed illustration: outside page gutter so container is edge-to-edge;
+                // image is scaledToFit inside a taller canvas so no source edge is clipped.
                 emptyHandsIllustration
-                    .padding(.top, AppTheme.Space.lg)
+                    .padding(.top, AppTheme.Space.sm)
 
-                VStack(spacing: AppTheme.Space.xl) {
+                VStack(spacing: AppTheme.Space.lg) {
                     Text("Keep the people, needs and hopes you want to remember in your Rosary.")
                         .font(AppTheme.TypeRole.bodySmall)
                         .foregroundStyle(palette.dim)
@@ -93,23 +81,7 @@ struct OfferView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, AppTheme.Space.md)
 
-                    Button {
-                        editor = .create
-                    } label: {
-                        HStack(spacing: AppTheme.Space.sm) {
-                            Text("Add your first intention")
-                            Image(systemName: "arrow.right")
-                                .guideSymbol(size: 14, weight: .semibold)
-                        }
-                        .font(AppTheme.sans(16, weight: .semibold))
-                        .foregroundStyle(palette.onAccent)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: AppTheme.Component.pillHeight)
-                        .background(palette.accent, in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .guidePressable()
-                    .accessibilityLabel("Add your first intention")
+                    addIntentionButton(title: "Add your first intention")
 
                     emptyOrDivider
 
@@ -123,23 +95,48 @@ struct OfferView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, AppTheme.gutter)
-                .padding(.top, AppTheme.Space.xl)
+                .padding(.top, AppTheme.Space.lg)
             }
             .padding(.bottom, 108)
         }
     }
 
-    /// Square full-bleed container; image scaledToFit (no crop). Fade is baked into the PNG.
-    private var emptyHandsIllustration: some View {
-        Color.clear
-            .aspectRatio(1, contentMode: .fit)
-            .frame(maxWidth: .infinity)
-            .overlay {
-                Image("PrayingHandsEmpty")
-                    .renderingMode(.original)
-                    .resizable()
-                    .scaledToFit()
+    private func addIntentionButton(title: String, isPrimary: Bool = true) -> some View {
+        Button {
+            editor = .create
+        } label: {
+            HStack(spacing: AppTheme.Space.sm) {
+                Image(systemName: "plus")
+                    .guideSymbol(size: 15, weight: .semibold)
+                Text(title)
             }
+            .font(AppTheme.sans(16, weight: .semibold))
+            .foregroundStyle(isPrimary ? palette.onAccent : palette.accent)
+            .frame(maxWidth: .infinity)
+            .frame(height: AppTheme.Component.pillHeight)
+            .background {
+                if isPrimary {
+                    AppTheme.capsule.fill(palette.accent)
+                } else {
+                    AppTheme.capsule
+                        .strokeBorder(palette.accent.opacity(0.55), lineWidth: 1)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .guidePressable()
+        .accessibilityLabel(title)
+    }
+
+    /// Tall full-bleed container; image scaledToFit (no crop). Fade is baked into the PNG.
+    private var emptyHandsIllustration: some View {
+        Image("PrayingHandsEmpty")
+            .renderingMode(.original)
+            .resizable()
+            .scaledToFit()
+            .frame(maxWidth: .infinity)
+            .frame(height: 280)
+            .clipped(antialiased: false)
             .accessibilityHidden(true)
     }
 
@@ -156,13 +153,16 @@ struct OfferView: View {
     }
 
     private func papalEmptyMonthLine(for item: SuggestedIntention) -> String {
-        let month = item.monthLabel ?? currentMonthTitle
-        return "\(item.title) · \(month)"
+        item.monthLabel ?? currentMonthTitle
     }
 
-    private var suggestions: [SuggestedIntention] { IntentionSuggestions.forDay() }
+    private var suggestions: [SuggestedIntention] { IntentionSuggestions.forDay(popeStore: popeStore) }
     private var currentIntention: OfferIntention? {
         offer.sortedIntentions.first(where: \.isPinned) ?? offer.sortedIntentions.first
+    }
+    private var secondaryIntentions: [OfferIntention] {
+        guard let currentIntention else { return offer.sortedIntentions }
+        return offer.sortedIntentions.filter { $0.id != currentIntention.id }
     }
     private var papalSuggestion: SuggestedIntention? {
         suggestions.first(where: isPapalSuggestion)
@@ -170,66 +170,41 @@ struct OfferView: View {
     private var currentMonthTitle: String {
         Date().formatted(.dateTime.month(.wide).year())
     }
-    private var displayedIntentions: [OfferIntention] {
-        sortMode.sort(offer.sortedIntentions)
-    }
-
     private var intentionList: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 28) {
-                CollapsingTitleSpacer()
+            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                // Keep the papal card directly beneath the page title, like Feasts' control.
+                VStack(alignment: .leading, spacing: 0) {
+                    CollapsingTitleSpacer()
 
-                if let currentIntention {
-                    CurrentIntentionHero(
-                        intention: currentIntention,
-                        onPray: { prayWith(currentIntention) }
-                    )
-                }
-
-                if let papalSuggestion {
-                    VStack(alignment: .leading, spacing: 14) {
-                        HStack {
-                            GuideSectionLabel(text: "This month", color: palette.dim)
-                            Spacer()
-                            Text(currentMonthTitle)
-                                .font(AppTheme.sans(13))
-                                .foregroundStyle(palette.dim)
-                        }
+                    if let papalSuggestion {
                         PapalMonthCard(
                             item: papalSuggestion,
                             isAdded: hasAdoptedSuggestion(papalSuggestion),
                             onOpen: { papalDetail = papalSuggestion },
                             onAdd: { adoptSuggestion(papalSuggestion) }
                         )
+                        .guideNavList(pageGutter: AppTheme.gutter)
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        GuideSectionLabel(text: "All intentions", color: palette.dim)
-                        Spacer()
-                        Button {
-                            showingSortDialog = true
-                        } label: {
-                            Text("Sort: \(sortMode.buttonTitle)")
-                                .font(AppTheme.sans(13, weight: .medium))
-                                .foregroundStyle(palette.dim)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .confirmationDialog("Sort intentions", isPresented: $showingSortDialog, titleVisibility: .visible) {
-                        ForEach(IntentionSortMode.allCases) { mode in
-                            Button(mode.dialogTitle) {
-                                sortMode = mode
-                            }
-                        }
-                        Button("Cancel", role: .cancel) {}
-                    } message: {
-                        Text("Choose how your intentions are ordered.")
+                    GuideSectionLabel(text: "Your intentions", color: palette.dim)
+
+                    if let currentIntention {
+                        CurrentIntentionHero(
+                            intention: currentIntention,
+                            onOpen: { intentionDetail = currentIntention },
+                            onPray: { prayWith(currentIntention) }
+                        )
+                        .guideNavList(pageGutter: AppTheme.gutter)
                     }
 
+                    addIntentionButton(title: "Add an intention", isPrimary: false)
+                        .guideNavList(pageGutter: AppTheme.gutter)
+
                     VStack(spacing: 0) {
-                        ForEach(displayedIntentions) { item in
+                        ForEach(secondaryIntentions) { item in
                             NavigationLink {
                                 IntentionDetailView(
                                     intention: item,
@@ -248,7 +223,7 @@ struct OfferView: View {
                             }
                             .buttonStyle(.plain)
 
-                            if item.id != displayedIntentions.last?.id {
+                            if item.id != secondaryIntentions.last?.id {
                                 Hairline()
                                     .padding(.leading, 62)
                             }
@@ -258,6 +233,8 @@ struct OfferView: View {
                 }
             }
             .padding(.horizontal, AppTheme.gutter)
+            // Same top breathing room as FeastsView before its title/control block.
+            .padding(.top, AppTheme.Space.sm)
             .padding(.bottom, 108)
         }
     }
@@ -294,7 +271,7 @@ struct OfferView: View {
                 note: item.note,
                 sourceId: papal ? item.id : nil,
                 category: papal ? .world : .personal,
-                accent: papal ? .gold : .gray,
+                accent: papal ? .teal : .mintGreen,
                 emoji: papal ? "✝️" : "🙏"
             )
             // Papal: add quietly. Others: open editor so they can refine.
@@ -311,105 +288,49 @@ struct OfferView: View {
     }
 }
 
-private enum IntentionSortMode: String, CaseIterable, Identifiable {
-    case current
-    case recent
-    case alphabetical
-    case mostPrayed
-
-    var id: String { rawValue }
-
-    var buttonTitle: String {
-        switch self {
-        case .current: "Current"
-        case .recent: "Recent"
-        case .alphabetical: "A-Z"
-        case .mostPrayed: "Most prayed"
-        }
-    }
-
-    var menuTitle: String {
-        switch self {
-        case .current: "Current first"
-        case .recent: "Recently prayed"
-        case .alphabetical: "Alphabetical"
-        case .mostPrayed: "Most prayed"
-        }
-    }
-
-    var dialogTitle: String {
-        switch self {
-        case .current: "Current first"
-        case .recent: "Recently prayed"
-        case .alphabetical: "Alphabetical"
-        case .mostPrayed: "Most prayed"
-        }
-    }
-
-    func sort(_ intentions: [OfferIntention]) -> [OfferIntention] {
-        switch self {
-        case .current:
-            return intentions
-        case .recent:
-            return intentions.sorted {
-                ($0.lastCarriedAt ?? $0.createdAt) > ($1.lastCarriedAt ?? $1.createdAt)
-            }
-        case .alphabetical:
-            return intentions.sorted {
-                $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
-            }
-        case .mostPrayed:
-            return intentions.sorted {
-                if $0.timesCarried != $1.timesCarried {
-                    return $0.timesCarried > $1.timesCarried
-                }
-                return ($0.lastCarriedAt ?? $0.createdAt) > ($1.lastCarriedAt ?? $1.createdAt)
-            }
-        }
-    }
-}
-
 private struct CurrentIntentionHero: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
     let intention: OfferIntention
+    let onOpen: () -> Void
     let onPray: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .top, spacing: 14) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+            HStack(alignment: .center, spacing: AppTheme.Space.lg) {
                 IntentionIconView(
                     accent: intention.accent,
                     emoji: intention.displayEmoji,
-                    size: 54
+                    size: 64
                 )
 
-                VStack(alignment: .leading, spacing: 8) {
-                    GuideSectionLabel(text: "Current intention", color: palette.dim)
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     Text(intention.title)
-                        .font(AppTheme.sans(29, weight: .regular))
+                        .font(AppTheme.sans(20, weight: .semibold))
                         .foregroundStyle(palette.ink)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.84)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.88)
 
-                    HStack(spacing: 7) {
+                    HStack(spacing: AppTheme.Space.xs) {
                         Image(systemName: intention.isPapal ? "cross.fill" : "heart.fill")
-                            .guideSymbol(size: 12, weight: .semibold)
+                            .guideSymbol(size: 13, weight: .semibold)
                         Text(categoryLabel)
-                            .font(AppTheme.sans(13))
+                            .font(AppTheme.sans(15, weight: .medium))
                     }
                     .foregroundStyle(palette.accent)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-            }
 
-            HStack(spacing: 0) {
-                StatColumn(value: "\(intention.timesCarried)", label: rosaryStatLabel)
-                Divider().frame(height: 34)
-                StatColumn(value: lastPrayedValue, label: "Last prayed")
+                Button(action: onOpen) {
+                    Image(systemName: "chevron.right")
+                        .guideSymbol(size: 18, weight: .semibold)
+                        .foregroundStyle(palette.dim)
+                        .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open current intention")
             }
-            .padding(.vertical, 12)
-            .background(palette.card.opacity(0.62), in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
 
             Button(action: onPray) {
                 HStack(spacing: 8) {
@@ -417,14 +338,14 @@ private struct CurrentIntentionHero: View {
                     Image(systemName: "arrow.right")
                 }
                 .font(AppTheme.sans(16, weight: .semibold))
-                .foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
+                .foregroundStyle(palette.onAccent)
                 .frame(maxWidth: .infinity)
-                .frame(height: 54)
-                .background(palette.ink, in: Capsule())
+                .frame(height: 52)
+                .background(actionFill, in: Capsule())
             }
             .buttonStyle(.plain)
         }
-        .padding(20)
+        .padding(AppTheme.Space.lg)
         .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
@@ -437,32 +358,8 @@ private struct CurrentIntentionHero: View {
         intention.categoryTitle
     }
 
-    private var lastPrayedValue: String {
-        guard let last = intention.lastCarriedAt else { return "Not yet" }
-        return last.formatted(.dateTime.day().month(.abbreviated))
-    }
-
-    private var rosaryStatLabel: String {
-        if intention.timesCarried == 0 { return "Not yet prayed" }
-        return intention.timesCarried == 1 ? "Rosary" : "Rosaries"
-    }
-}
-
-private struct StatColumn: View {
-    @Environment(\.palette) private var palette
-    var value: String
-    var label: String
-
-    var body: some View {
-        VStack(spacing: 3) {
-            Text(value)
-                .font(AppTheme.sans(21, weight: .semibold))
-                .foregroundStyle(palette.ink)
-            Text(label)
-                .font(AppTheme.sans(11, weight: .medium))
-                .foregroundStyle(palette.dim)
-        }
-        .frame(maxWidth: .infinity)
+    private var actionFill: Color {
+        palette.accent
     }
 }
 
@@ -487,15 +384,14 @@ private struct EmptyPapalIntentionCard: View {
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    Text("Add the Holy Father’s intention")
+                    Text("Holy Father’s intention")
                         .font(AppTheme.sans(16, weight: .semibold))
                         .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(monthLine)
-                        .font(AppTheme.sans(13))
-                        .foregroundStyle(palette.dim)
+                        .guideThemeSummaryStyle()
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -511,7 +407,7 @@ private struct EmptyPapalIntentionCard: View {
         }
         .buttonStyle(.plain)
         .guidePressable()
-        .accessibilityLabel("Add the Holy Father’s intention, \(monthLine)")
+        .accessibilityLabel("Holy Father’s intention, \(monthLine)")
         .accessibilityHint("Opens the Pope’s intention")
     }
 }
@@ -526,50 +422,29 @@ private struct PapalMonthCard: View {
 
     var body: some View {
         Button(action: onOpen) {
-            VStack(alignment: .leading, spacing: 0) {
-                ZStack(alignment: .bottomTrailing) {
-                    GeometryReader { proxy in
-                        Image("PopeLeo")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: proxy.size.width, height: 220)
-                            .offset(y: 48)
-                            .accessibilityHidden(true)
-                    }
-                    .frame(height: 158)
+            HStack(spacing: AppTheme.Space.lg) {
+                Image("PopeLeo")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 96, height: 96)
                     .clipped()
+                    .accessibilityHidden(true)
 
-                    LinearGradient(
-                        colors: [.clear, palette.panel.opacity(0.10)],
-                        startPoint: .center,
-                        endPoint: .bottom
-                    )
-                    .allowsHitTesting(false)
-                }
-
-                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     Text(item.title)
-                        .font(AppTheme.sans(23, weight: .semibold))
+                        .font(AppTheme.sans(19, weight: .semibold))
                         .foregroundStyle(palette.ink)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.86)
+                        .minimumScaleFactor(0.88)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
-                    HStack(alignment: .center, spacing: AppTheme.Space.md) {
-                        Text("A monthly prayer intention from Pope Leo.")
-                            .font(AppTheme.sans(14))
-                            .foregroundStyle(palette.dim)
-                            .lineLimit(2)
-
-                        Spacer(minLength: AppTheme.Space.md)
-
-                        Image(systemName: "chevron.right")
-                            .guideSymbol(size: 12, weight: .semibold)
-                            .foregroundStyle(palette.faint)
-                    }
+                    Text(monthLabel)
+                        .guideThemeSummaryStyle()
+                        .lineLimit(2)
                 }
-                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(minHeight: 96)
             .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
@@ -593,7 +468,6 @@ private struct PapalMonthCard: View {
 
 private struct PapalIntentionDetailView: View {
     @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var colorScheme
     let item: SuggestedIntention
     let isAdded: Bool
     let onAdd: () -> Void
@@ -603,6 +477,7 @@ private struct PapalIntentionDetailView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                 hero
+                heroCopy
 
                 if let note = item.note {
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
@@ -610,17 +485,22 @@ private struct PapalIntentionDetailView: View {
                         Text(note)
                             .font(AppTheme.sans(20, weight: .regular))
                             .foregroundStyle(palette.ink)
+                            .multilineTextAlignment(.leading)
                             .lineSpacing(7)
                             .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 if let description = item.description {
                     Text(description)
                         .font(AppTheme.sans(15))
                         .foregroundStyle(palette.dim)
+                        .multilineTextAlignment(.leading)
                         .lineSpacing(4)
                         .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 if !added {
@@ -644,19 +524,23 @@ private struct PapalIntentionDetailView: View {
 
                 if let extract = item.extract, !extract.isEmpty {
                     VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                        Divider()
+                            .overlay(palette.hair)
                         GuideSectionLabel(text: "Vatican extract", color: palette.dim)
-                        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                        VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                             ForEach(extract, id: \.self) { paragraph in
                                 Text(paragraph)
                                     .font(AppTheme.sans(17))
                                     .foregroundStyle(palette.ink)
+                                    .multilineTextAlignment(.leading)
                                     .lineSpacing(7)
                                     .fixedSize(horizontal: false, vertical: true)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
-                        .padding(AppTheme.Space.lg)
-                        .guideCard(radius: AppTheme.containerRadius, fill: palette.panel, stroke: true, elevated: false)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 if let sourceTitle = item.sourceTitle {
@@ -665,18 +549,28 @@ private struct PapalIntentionDetailView: View {
                         Text(sourceTitle)
                             .font(AppTheme.sans(13))
                             .foregroundStyle(palette.dim)
+                            .multilineTextAlignment(.leading)
                             .lineSpacing(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         if let sourceURL = item.sourceURL {
                             Text(sourceURL)
                                 .font(AppTheme.sans(12))
                                 .foregroundStyle(palette.faint)
+                                .multilineTextAlignment(.leading)
                                 .lineLimit(3)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 Spacer(minLength: 80)
             }
+            // Cap content to the ScrollView's proposed width so no child
+            // (hero image ideal size, long unwrapped text) can widen the page.
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, 18)
             .padding(.bottom, 108)
@@ -686,45 +580,50 @@ private struct PapalIntentionDetailView: View {
     }
 
     private var hero: some View {
-        ZStack(alignment: .bottomLeading) {
-            Image("PopeLeo")
-                .resizable()
-                .scaledToFill()
-                .frame(maxWidth: .infinity)
-                .frame(height: 300)
-                .clipped()
-                .overlay {
-                    LinearGradient(
-                        colors: [
-                            palette.bg.opacity(0.02),
-                            palette.bg.opacity(0.28),
-                            palette.bg.opacity(colorScheme == .light ? 0.96 : 0.92)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-
-            VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                Text(monthLabel)
-                    .font(AppTheme.sans(12, weight: .medium))
-                    .tracking(AppTheme.Component.sectionLabelTracking)
-                    .textCase(.uppercase)
-                    .foregroundStyle(palette.dim)
-
-                Text(item.title)
-                    .font(AppTheme.sans(34, weight: .regular))
-                    .foregroundStyle(palette.ink)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.82)
+        // Keep the image wide and bounded by the page width so its intrinsic
+        // asset size cannot widen the scroll view.
+        Color.clear
+            .aspectRatio(1.3, contentMode: .fit)
+            .frame(maxWidth: .infinity)
+            .overlay {
+                Image("PopeLeoWide")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+                    .accessibilityHidden(true)
             }
-            .padding(AppTheme.Space.xl)
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+                    .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
+            }
+            .accessibilityHidden(true)
+    }
+
+    private var heroCopy: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+            Text(monthLabel)
+                .font(AppTheme.sans(12, weight: .medium))
+                .tracking(AppTheme.Component.sectionLabelTracking)
+                .textCase(.uppercase)
+                .foregroundStyle(palette.dim)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(item.title)
+                .font(AppTheme.sans(34, weight: .regular))
+                .foregroundStyle(palette.ink)
+                .multilineTextAlignment(.leading)
+                .lineLimit(3)
+                .minimumScaleFactor(0.82)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .clipShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
-        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(monthLabel), \(item.title)")
     }
 
     private var monthLabel: String {
@@ -792,14 +691,7 @@ private struct IntentionListRow: View {
     }
 
     private var metaLabel: String {
-        "\(intention.categoryTitle) · \(historyLabel)"
-    }
-
-    private var historyLabel: String {
-        if intention.timesCarried == 0 { return "Not yet prayed" }
-        let count = intention.timesCarried == 1 ? "1 Rosary offered" : "\(intention.timesCarried) Rosaries offered"
-        guard let last = intention.lastCarriedAt else { return count }
-        return "\(count) · Last prayed \(last.formatted(.dateTime.day().month(.abbreviated)))"
+        intention.categoryTitle
     }
 }
 
@@ -1247,28 +1139,61 @@ struct IntentionIconView: View {
     /// Shown in the picker when `emoji` is empty (e.g. "?"). List rows leave this nil.
     var emptyPlaceholder: String? = nil
 
-    private var glyphFontSize: CGFloat {
-        // Two-letter monograms need a bit less size than a single emoji.
-        size * (emoji.count >= 2 ? 0.34 : 0.42)
-    }
-
     var body: some View {
         ZStack {
             Circle()
                 .fill(accent.color)
             if !emoji.isEmpty {
-                Text(emoji)
-                    .font(.system(size: glyphFontSize, weight: emoji.count >= 2 ? .semibold : .regular))
-                    .minimumScaleFactor(0.5)
-                    .lineLimit(1)
+                Image(systemName: symbolName)
+                    .guideSymbol(size: symbolSize, weight: .semibold)
+                    .foregroundStyle(accent.onColor.opacity(0.88))
             } else if let emptyPlaceholder, !emptyPlaceholder.isEmpty {
-                Text(emptyPlaceholder)
-                    .font(.system(size: size * 0.42, weight: .medium))
-                    .foregroundStyle(accent.onColor.opacity(0.85))
+                Image(systemName: "plus")
+                    .guideSymbol(size: size * 0.26, weight: .semibold)
+                    .foregroundStyle(accent.onColor.opacity(0.78))
             }
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+
+    private var symbolName: String {
+        switch emoji {
+        case "✝️", "✝", "†":
+            "cross.fill"
+        case "👥":
+            "person.2.fill"
+        case "🌍", "🌎", "🌏":
+            "globe"
+        case "❤️", "❤", "♥️", "♥":
+            "heart.fill"
+        case "🕊️", "🕊":
+            "leaf.fill"
+        case "🙏":
+            "hands.sparkles.fill"
+        default:
+            fallbackSymbol
+        }
+    }
+
+    private var fallbackSymbol: String {
+        switch accent {
+        case .skyBlue:
+            "person.2.fill"
+        case .mintGreen, .teal:
+            "globe"
+        }
+    }
+
+    private var symbolSize: CGFloat {
+        switch symbolName {
+        case "globe":
+            size * 0.40
+        case "hands.sparkles.fill":
+            size * 0.38
+        default:
+            size * 0.42
+        }
     }
 }
 
@@ -1324,9 +1249,9 @@ private enum IntentionKindChoice: String, CaseIterable, Identifiable {
 
     var accent: IntentionAccent {
         switch self {
-        case .personal: .gold
-        case .someone: .blue
-        case .world: .green
+        case .personal: .mintGreen
+        case .someone: .skyBlue
+        case .world: .teal
         }
     }
 
@@ -1359,8 +1284,8 @@ private enum IntentionKindChoice: String, CaseIterable, Identifiable {
 struct IntentionEditorSheet: View {
     @Environment(OfferStore.self) private var offer
     @Environment(\.palette) private var palette
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dismiss) private var dismiss
 
     let route: EditorRoute
     /// When creating from a Rosary, pre-select that mystery.
@@ -1371,7 +1296,7 @@ struct IntentionEditorSheet: View {
     @State private var note = ""
     @State private var retention: RetentionChoice = .indefinitely
     @State private var endDate = Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date()
-    @State private var accent: IntentionAccent = .gold
+    @State private var accent: IntentionAccent = .mintGreen
     @State private var emoji: String = "🙏"
     @State private var suggestOn: Set<MysterySetKind> = []
     @State private var kind: IntentionKindChoice = .personal
@@ -1648,7 +1573,7 @@ struct IntentionEditorSheet: View {
             note = ""
             retention = .indefinitely
             endDate = Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date()
-            accent = .gray
+            accent = .mintGreen
             emoji = "🙏"
             kind = .personal
             makeCurrent = true
@@ -1714,13 +1639,13 @@ struct IntentionEditorSheet: View {
 /// Kept for a possible later restore — not presented while icons are hidden.
 private struct IntentionIconPickerSheet: View {
     @Environment(\.palette) private var palette
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dismiss) private var dismiss
 
     @Binding var accent: IntentionAccent
     @Binding var emoji: String
 
-    @State private var draftAccent: IntentionAccent = .gray
+    @State private var draftAccent: IntentionAccent = .mintGreen
     @State private var draftEmoji: String = ""
     /// Bumped to force the hidden UITextField to become first responder (shows keyboard).
     @State private var emojiFocusNonce: Int = 0
