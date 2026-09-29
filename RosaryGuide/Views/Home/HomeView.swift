@@ -686,8 +686,8 @@ struct HomeView: View {
                 }
             }
             .padding(.vertical, AppTheme.Space.sm)
-            // Unfilled outline so the page background shows through; stroke matches mystery-card chrome.
-            .guideCard(fill: Color.clear, stroke: true)
+            // Subtle surface fill + outline stroke (matches mystery/feast card chrome).
+            .guideCard(fill: palette.card.opacity(0.92), stroke: true)
         }
     }
 
