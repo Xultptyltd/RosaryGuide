@@ -1466,110 +1466,103 @@ struct IntentionEditorSheet: View {
     @State private var emoji: String = "🙏"
     @State private var suggestOn: Set<MysterySetKind> = []
     @State private var kind: IntentionKindChoice = .personal
-    @State private var makeCurrent = true
+    @State private var makeCurrent = false
     @State private var isPapalIntention = false
     @FocusState private var titleFieldFocused: Bool
 
     var body: some View {
         NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 22) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Intention")
-                            .font(AppTheme.sans(13, weight: .medium))
-                            .foregroundStyle(palette.dim)
-                        TextField("For...", text: $title, axis: .vertical)
-                            .font(AppTheme.sans(21, weight: .regular))
+                VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                    editorFieldSection(label: "Intention") {
+                        TextField("For…", text: $title, axis: .vertical)
+                            .font(AppTheme.sans(21, weight: .regular, relativeTo: .title3))
+                            .foregroundStyle(palette.ink)
                             .lineLimit(2...5)
                             .focused($titleFieldFocused)
-                            .padding(16)
                             .frame(maxWidth: .infinity, minHeight: 100, alignment: .topLeading)
-                            .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
-                                    .strokeBorder(palette.ink.opacity(0.10), lineWidth: 1)
-                            }
                     }
 
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Category")
-                            .font(AppTheme.sans(13, weight: .medium))
-                            .foregroundStyle(palette.dim)
+                    VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                        GuideSectionLabel(text: "Category", color: palette.dim)
                         Picker("Category", selection: $kind) {
                             ForEach(IntentionKindChoice.allCases) { option in
                                 Text(option.title).tag(option)
                             }
                         }
-                        .pickerStyle(.segmented)
-                        .controlSize(.large)
-                        .frame(height: 40)
+                        .guideSegmentedControl()
                         .onChange(of: kind) { _, option in
                             accent = option.accent
                             emoji = option.emoji
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Notes")
-                            .font(AppTheme.sans(13, weight: .medium))
-                            .foregroundStyle(palette.dim)
+                    editorFieldSection(label: "Notes") {
                         if isPapalIntention {
                             Text(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "No notes" : note)
-                                .font(AppTheme.sans(15))
-                                .foregroundStyle(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? palette.dim : palette.ink)
+                                .font(AppTheme.TypeRole.themeSummary)
+                                .foregroundStyle(
+                                    note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                        ? palette.dim
+                                        : palette.ink
+                                )
                                 .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
-                                .padding(16)
-                                .background(palette.panel.opacity(0.72), in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
-                                        .strokeBorder(palette.ink.opacity(0.08), lineWidth: 1)
-                                }
                                 .accessibilityLabel("Notes (read-only)")
                         } else {
                             TextField("Optional", text: $note, axis: .vertical)
-                                .font(AppTheme.sans(15))
+                                .font(AppTheme.TypeRole.themeSummary)
+                                .foregroundStyle(palette.ink)
                                 .lineLimit(3...6)
-                                .padding(16)
                                 .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
-                                .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
-                                        .strokeBorder(palette.ink.opacity(0.08), lineWidth: 1)
-                                }
                         }
                     }
 
                     Toggle(isOn: $makeCurrent) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Make Current")
-                                .font(AppTheme.sans(15, weight: .medium))
+                        VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                            Text("Make current")
+                                .font(AppTheme.sans(15, weight: .medium, relativeTo: .body))
                                 .foregroundStyle(palette.ink)
                             Text("Selected when you begin your next Rosary.")
-                                .font(AppTheme.sans(12))
+                                .font(AppTheme.TypeRole.caption)
                                 .foregroundStyle(palette.dim)
                         }
                     }
                     .tint(palette.accent)
-                    .padding(16)
-                    .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
-                            .strokeBorder(palette.ink.opacity(0.08), lineWidth: 1)
-                    }
+                    .padding(.horizontal, AppTheme.Space.lg)
+                    .padding(.vertical, AppTheme.Space.md)
+                    .guideCard(
+                        radius: AppTheme.containerRadius,
+                        fill: palette.panel,
+                        stroke: true,
+                        elevated: false
+                    )
+                    .accessibilityHint(
+                        makeCurrent
+                            ? "On. This intention will be selected for your next Rosary."
+                            : "Off. Leave your current intention unchanged."
+                    )
                 }
                 .padding(.horizontal, AppTheme.gutter)
-                .padding(.top, 24)
-                .padding(.bottom, 42)
+                .padding(.top, AppTheme.Space.xl)
+                .padding(.bottom, AppTheme.Space.xxl + AppTheme.Space.sm)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(palette.bg)
             .navigationTitle(routeTitle)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(palette.bg, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(palette.scheme, for: .navigationBar)
+            .tint(palette.accent)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .font(AppTheme.sans(16, weight: .regular, relativeTo: .body))
+                        .foregroundStyle(palette.dim)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
+                        .font(AppTheme.sans(16, weight: .semibold, relativeTo: .body))
                         .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
@@ -1581,6 +1574,27 @@ struct IntentionEditorSheet: View {
                     }
                 }
             }
+        }
+        .presentationDragIndicator(.visible)
+        .presentationBackground(palette.bg)
+    }
+
+    @ViewBuilder
+    private func editorFieldSection<Content: View>(
+        label: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+            GuideSectionLabel(text: label, color: palette.dim)
+            content()
+                .padding(AppTheme.Space.lg)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .guideCard(
+                    radius: AppTheme.containerRadius,
+                    fill: palette.panel,
+                    stroke: true,
+                    elevated: false
+                )
         }
     }
 
@@ -1757,7 +1771,8 @@ struct IntentionEditorSheet: View {
             accent = .mintGreen
             emoji = "🙏"
             kind = .personal
-            makeCurrent = true
+            // First intention → ON so it becomes Current; otherwise OFF.
+            makeCurrent = offer.sortedIntentions.isEmpty
             isPapalIntention = false
             suggestOn = Set(initialMystery.map { [$0] } ?? [])
         case .edit(let item):
