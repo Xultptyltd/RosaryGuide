@@ -895,19 +895,15 @@ private struct IntentionDetailView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 10) {
-                GuideSectionLabel(text: "Details", color: palette.dim)
-
-                VStack(spacing: 0) {
-                    detailRow("Category", value: intention.categoryTitle)
-                    Hairline().padding(.leading, 18)
-                    detailRow("Created", value: intention.createdAt.formatted(.dateTime.day().month(.abbreviated).year()))
-                }
-                .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                        .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
-                }
+            VStack(spacing: 0) {
+                detailRow("Category", value: intention.categoryTitle)
+                Hairline().padding(.leading, 18)
+                detailRow("Created", value: intention.createdAt.formatted(.dateTime.day().month(.abbreviated).year()))
+            }
+            .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+                    .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
             }
         }
     }
