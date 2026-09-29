@@ -53,7 +53,7 @@ struct PrayView: View {
                 michaelLayer
             } else if let current {
                 if current.isFinis {
-                    finisLayer(current)
+                    finisLayer
                 } else {
                     prayLayer(current)
                 }
@@ -817,18 +817,18 @@ struct PrayView: View {
 
     // MARK: - Finis
 
-    private func finisLayer(_ step: RosaryStep) -> some View {
+    private var finisLayer: some View {
         CompletionView(
             mysterySet: launch.mysterySet,
-            quote: step.body.english,
-            attribution: step.subtitle?.english ?? "",
             intentionTitle: chosenIntentionTitle.isEmpty ? nil : chosenIntentionTitle,
             onDone: { finishRosary() },
             onMichael: {
+                // Rosary is already marked complete on entering finis; Michael is optional continuation.
                 showingMichael = true
                 HapticService.play(.medium, enabled: settings.hapticsEnabled)
             }
         )
+        .onAppear { markRosaryCompletedIfNeeded() }
     }
 
     private var michaelLayer: some View {
@@ -870,12 +870,20 @@ struct PrayView: View {
 
     // MARK: - Navigation
 
-    private func finishRosary() {
+    private func markRosaryCompletedIfNeeded() {
+        // Record completion when the ceremonial screen appears so St Michael
+        // continuation cannot undo or re-trigger tracking.
         if !didRecordCarry, let id = chosenIntentionId {
             offer.recordCarry(id: id)
             didRecordCarry = true
         }
-        sessionStore.complete()
+        if sessionStore.session != nil {
+            sessionStore.complete()
+        }
+    }
+
+    private func finishRosary() {
+        markRosaryCompletedIfNeeded()
         dismiss()
     }
 

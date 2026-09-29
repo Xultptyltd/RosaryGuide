@@ -1,35 +1,68 @@
 import SwiftUI
 
-/// End-of-rosary screen: art → completion → what prayed → who for → quote → Done → optional St Michael.
+/// Ceremonial end-of-rosary screen: art → symbol → label → mystery title → date →
+/// optional intention → calm space → Done → optional St Michael link.
+/// No quote, stats, cards, or chrome — stillness as the emotional endpoint.
 struct CompletionView: View {
     var mysterySet: MysterySetKind
-    var quote: String
-    var attribution: String
     var intentionTitle: String?
     var onDone: () -> Void
     var onMichael: (() -> Void)?
 
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    private var completedDateLine: String {
-        // e.g. "Tuesday, 29 September" (day-first, matching AU locale preference)
-        Date().formatted(.dateTime.weekday(.wide).day().month(.wide))
+    @State private var contentPhase: ContentPhase = .hidden
+
+    private enum ContentPhase: Int, Comparable {
+        case hidden = 0
+        case symbol = 1
+        case title = 2
+        case rest = 3
+
+        static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
     }
 
-    private var mysteryLine: String {
-        mysterySet.name.english
+    /// Near-black page ground for this ceremonial screen (independent of light chrome elsewhere).
+    private var pageBg: Color { Color.black }
+
+    private var completedDateLine: String {
+        // e.g. "Tuesday 29 September" — day-first, matching AU locale preference.
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_AU")
+        formatter.setLocalizedDateFormatFromTemplate("EEEEdMMMM")
+        // Prefer explicit pattern so we never get a comma between weekday and day.
+        formatter.dateFormat = "EEEE d MMMM"
+        return formatter.string(from: Date())
+    }
+
+    /// Primary headline — adjective + "Mysteries" on two lines when natural.
+    private var mysteryHeadline: String {
+        "\(mysterySet.shortName)\nMysteries"
+    }
+
+    private var hasIntention: Bool {
+        guard let intentionTitle else { return false }
+        return !intentionTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var prefersCompactType: Bool {
+        dynamicTypeSize >= .accessibility1
     }
 
     var body: some View {
         GeometryReader { geo in
-            let artH = min(max(geo.size.height * 0.42, 180), geo.size.height * 0.45)
+            let artH = artHeight(for: geo.size.height)
             ZStack(alignment: .top) {
-                // Artwork ~40–45%, gentle fade into pray background
+                pageBg.ignoresSafeArea()
+
+                // 1. Hero artwork — full bleed, under status bar, soft fade into black.
                 MysteryArtworkView(
                     set: mysterySet,
-                    mysteryNumber: 5,
-                    slug: MysteryCatalog.mysteries(for: mysterySet).last?.artSlug,
+                    mysteryNumber: nil,
+                    slug: nil,
                     kind: .heroTall
                 )
                 .frame(height: artH)
@@ -38,121 +71,165 @@ struct CompletionView: View {
                 .overlay {
                     LinearGradient(
                         stops: [
-                            .init(color: palette.prayBg.opacity(colorScheme == .light ? 0.10 : 0.18), location: 0),
-                            .init(color: palette.prayBg.opacity(colorScheme == .light ? 0.42 : 0.48), location: 0.38),
-                            .init(color: palette.prayBg.opacity(colorScheme == .light ? 0.88 : 0.86), location: 0.72),
-                            .init(color: palette.prayBg, location: 1)
+                            .init(color: pageBg.opacity(0.12), location: 0),
+                            .init(color: pageBg.opacity(0.28), location: 0.35),
+                            .init(color: pageBg.opacity(0.72), location: 0.68),
+                            .init(color: pageBg.opacity(0.94), location: 0.88),
+                            .init(color: pageBg, location: 1)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 }
+                .ignoresSafeArea(edges: .top)
                 .accessibilityHidden(true)
 
                 VStack(spacing: 0) {
-                    // Pull content into the lower part of the art band
-                    Color.clear.frame(height: artH * 0.55)
+                    // Sit the emblem near the art → black transition.
+                    Color.clear.frame(height: max(artH * 0.58, 120))
 
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 0) {
+                            // 2. Completion symbol
                             FinisEmblem()
-                                .foregroundStyle(palette.accent.opacity(0.92))
-                                .padding(.bottom, 16)
+                                .foregroundStyle(palette.accent.opacity(0.95))
+                                .opacity(opacity(for: .symbol))
+                                .offset(y: offset(for: .symbol))
+                                .padding(.bottom, 18)
+                                .accessibilityHidden(true)
 
-                            Text("Rosary complete")
-                                .font(AppTheme.sans(22, weight: .semibold))
-                                .tracking(0.12)
-                                .foregroundStyle(palette.ink.opacity(0.94))
+                            // 3. Completion label (metadata, not headline)
+                            Text("ROSARY COMPLETE")
+                                .font(AppTheme.sans(prefersCompactType ? 12 : 11, weight: .medium, relativeTo: .caption))
+                                .tracking(1.6)
+                                .foregroundStyle(Color.white.opacity(0.48))
                                 .multilineTextAlignment(.center)
+                                .opacity(opacity(for: .title))
+                                .offset(y: offset(for: .title))
+                                .accessibilityAddTraits(.isHeader)
+                                .accessibilityLabel("Rosary complete")
 
-                            VStack(spacing: 4) {
-                                Text(mysteryLine)
-                                    .font(AppTheme.sans(15, weight: .medium))
-                                    .foregroundStyle(palette.ink.opacity(0.72))
+                            // 4 + 5. Mystery title + date (tight group)
+                            VStack(spacing: 6) {
+                                Text(mysteryHeadline)
+                                    .font(AppTheme.sans(prefersCompactType ? 34 : 40, weight: .regular, relativeTo: .largeTitle))
+                                    .foregroundStyle(Color.white.opacity(0.96))
+                                    .multilineTextAlignment(.center)
+                                    .lineSpacing(2)
+                                    .minimumScaleFactor(0.78)
+                                    .accessibilityLabel(mysterySet.name.english)
+
                                 Text(completedDateLine)
-                                    .font(AppTheme.sans(14, weight: .regular))
-                                    .foregroundStyle(palette.dim)
+                                    .font(AppTheme.sans(prefersCompactType ? 15 : 14, weight: .regular, relativeTo: .subheadline))
+                                    .foregroundStyle(Color.white.opacity(0.48))
+                                    .multilineTextAlignment(.center)
                             }
-                            .multilineTextAlignment(.center)
                             .padding(.top, 10)
+                            .opacity(opacity(for: .title))
+                            .offset(y: offset(for: .title))
 
-                            if let intentionTitle, !intentionTitle.isEmpty {
-                                VStack(spacing: 4) {
-                                    Text("Offered for")
-                                        .font(AppTheme.sans(12, weight: .medium))
-                                        .tracking(0.4)
-                                        .foregroundStyle(palette.dim.opacity(0.9))
+                            // 6. Intention (optional only — omit entirely when absent)
+                            if hasIntention, let intentionTitle {
+                                VStack(spacing: 6) {
+                                    Text("OFFERED FOR")
+                                        .font(AppTheme.sans(11, weight: .medium, relativeTo: .caption))
+                                        .tracking(1.4)
+                                        .foregroundStyle(Color.white.opacity(0.42))
                                         .textCase(.uppercase)
-                                    Text("For \(intentionTitle)")
-                                        .font(AppTheme.sans(15, weight: .medium))
-                                        .foregroundStyle(palette.ink.opacity(0.82))
+
+                                    // Exact stored title — never auto-prefix "For".
+                                    Text(intentionTitle)
+                                        .font(AppTheme.sans(prefersCompactType ? 18 : 17, weight: .regular, relativeTo: .body))
+                                        .foregroundStyle(Color.white.opacity(0.90))
                                         .multilineTextAlignment(.center)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
-                                .padding(.top, 14)
+                                .padding(.top, 28)
+                                .opacity(opacity(for: .rest))
                                 .accessibilityElement(children: .combine)
                                 .accessibilityLabel("Offered for \(intentionTitle)")
                             }
 
-                            FinisOrnament()
-                                .foregroundStyle(palette.accent.opacity(0.7))
-                                .padding(.top, 20)
-                                .padding(.bottom, 16)
-                                .frame(maxWidth: 280)
-
-                            Text("\u{201C}\(quote)\u{201D}")
-                                .font(AppTheme.sans(17))
-                                .lineSpacing(5)
-                                .multilineTextAlignment(.center)
-                                .foregroundStyle(palette.ink.opacity(0.92))
-                                .fixedSize(horizontal: false, vertical: true)
-                                .frame(maxWidth: 340)
-
-                            Text(attribution)
-                                .font(AppTheme.sans(12, weight: .regular))
-                                .tracking(0.28)
-                                .foregroundStyle(palette.dim)
-                                .multilineTextAlignment(.center)
-                                .padding(.top, 12)
-                                .padding(.bottom, 8)
+                            // 7. Intentional negative space before actions
+                            Spacer(minLength: prefersCompactType ? 28 : 44)
+                                .frame(height: prefersCompactType ? 28 : 52)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, AppTheme.gutter)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                    VStack(spacing: 12) {
+                    // 8 + 9. Actions — Done primary, St Michael optional text link
+                    VStack(spacing: 18) {
                         PillButton(title: "Done", action: onDone)
+                            .environment(\.colorScheme, .dark)
+                            .accessibilityLabel("Done")
 
                         if let onMichael {
                             Button(action: onMichael) {
-                                Text("† Continue with the Saint Michael Prayer")
-                                    .font(AppTheme.sans(14, weight: .medium))
-                                    .foregroundStyle(palette.dim)
+                                Text("Continue with the Saint Michael Prayer →")
+                                    .font(AppTheme.sans(15, weight: .medium, relativeTo: .callout))
+                                    .foregroundStyle(palette.accent)
                                     .multilineTextAlignment(.center)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 4)
+                                    .padding(.vertical, 8)
+                                    .frame(minHeight: AppTheme.Accessibility.minHitTarget)
+                                    .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .guidePressable()
                             .accessibilityLabel("Continue with the Saint Michael Prayer")
+                            .accessibilityAddTraits(.isButton)
                         }
                     }
-                    .frame(maxWidth: 320)
+                    .opacity(opacity(for: .rest))
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, AppTheme.gutter)
-                    .padding(.top, 8)
+                    .padding(.top, 4)
                     .padding(.bottom, AppTheme.Space.md)
                     .safeAreaPadding(.bottom)
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
-            .background(palette.prayBg.ignoresSafeArea())
+            .preferredColorScheme(.dark)
+        }
+        .onAppear { runEntrance() }
+    }
+
+    private func artHeight(for screenHeight: CGFloat) -> CGFloat {
+        // ~42–46% of screen; floor so small phones keep subjects visible.
+        let ratio: CGFloat = prefersCompactType ? 0.36 : 0.44
+        return min(max(screenHeight * ratio, 168), screenHeight * 0.46)
+    }
+
+    private func opacity(for phase: ContentPhase) -> Double {
+        contentPhase >= phase ? 1 : 0
+    }
+
+    private func offset(for phase: ContentPhase) -> CGFloat {
+        if reduceMotion { return 0 }
+        return contentPhase >= phase ? 0 : 8
+    }
+
+    private func runEntrance() {
+        guard !reduceMotion else {
+            contentPhase = .rest
+            return
+        }
+        contentPhase = .hidden
+        withAnimation(.easeOut(duration: 0.45).delay(0.12)) {
+            contentPhase = .symbol
+        }
+        withAnimation(.easeOut(duration: 0.50).delay(0.32)) {
+            contentPhase = .title
+        }
+        withAnimation(.easeOut(duration: 0.45).delay(0.52)) {
+            contentPhase = .rest
         }
     }
 }
 
-// MARK: - Finis chrome (completed rosary emblem + ornament)
+// MARK: - Finis chrome (completed rosary emblem)
 
 private struct FinisEmblem: View {
     var body: some View {
@@ -196,24 +273,7 @@ private struct FinisEmblem: View {
             cross.move(to: p(25.5, 60)); cross.addLine(to: p(34.5, 60))
             ctx.stroke(cross, with: .foreground, style: StrokeStyle(lineWidth: 1.6 * sx, lineCap: .round))
         }
-        .frame(width: 52, height: 60)
-        .accessibilityHidden(true)
-    }
-}
-
-private struct FinisOrnament: View {
-    var body: some View {
-        HStack(spacing: 14) {
-            Rectangle()
-                .fill(.primary.opacity(0.28))
-                .frame(height: 1)
-            Text("✦")
-                .font(.system(size: 11, weight: .regular))
-                .opacity(0.75)
-            Rectangle()
-                .fill(.primary.opacity(0.28))
-                .frame(height: 1)
-        }
+        .frame(width: 48, height: 56)
         .accessibilityHidden(true)
     }
 }
