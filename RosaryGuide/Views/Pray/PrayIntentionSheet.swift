@@ -167,13 +167,6 @@ struct PrayIntentionSheet: View {
                         .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
-                    if let note = item.note, !note.isEmpty {
-                        Text(note)
-                            .font(AppTheme.sans(13))
-                            .foregroundStyle(palette.dim)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(2)
-                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
