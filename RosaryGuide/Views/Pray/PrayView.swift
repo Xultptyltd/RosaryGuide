@@ -139,8 +139,8 @@ struct PrayView: View {
                             if showBeads, let bead = step.bead {
                                 RosaryBeadMapView(locus: bead)
                                     .padding(.horizontal, AppTheme.Space.md)
-                                    .padding(.top, 18)
-                                    .padding(.bottom, 4)
+                                    .padding(.top, AppTheme.Space.xl)
+                                    .padding(.bottom, AppTheme.Space.sm)
                                     .frame(maxWidth: .infinity)
                             }
                         }
@@ -589,8 +589,8 @@ struct PrayView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         // Website `.locus h2 { margin-top: .45rem }` after track — track already has bottom pad.
         .padding(.top, 2)
-        // Sign of the Cross keeps a tight gap before the quiet For: row; other steps keep web spacing.
-        .padding(.bottom, step.kind == .signOfTheCross ? 8 : 22)
+        // Sign of the Cross: Space.lg before the quiet For: row; other steps keep web spacing.
+        .padding(.bottom, step.kind == .signOfTheCross ? AppTheme.Space.lg : 22)
     }
 
 
@@ -673,7 +673,7 @@ struct PrayView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.bottom, AppTheme.Space.md)
+        .padding(.bottom, AppTheme.Space.xl)
     }
 
     private func clearChosenIntention() {
@@ -761,7 +761,7 @@ struct PrayView: View {
         }
         .padding(.horizontal, AppTheme.gutter)
         .padding(.bottom, AppTheme.Space.lg)
-        .padding(.top, AppTheme.Space.sm)
+        .padding(.top, AppTheme.Space.md)
         // Solid foot in document flow (web phone). No upward fade — that covered the rosary.
         .background(palette.prayBg)
     }
