@@ -602,6 +602,22 @@ struct HomeView: View {
                     }
                     .frame(height: 176)
                     .clipped()
+                    .overlay {
+                        if isToday {
+                            // Soft brand-blue glow on hero only: strongest at image bottom, clear by mid-image.
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .clear, location: 0),
+                                    .init(color: .clear, location: 0.50),
+                                    .init(color: palette.accent.opacity(colorScheme == .dark ? 0.14 : 0.08), location: 0.78),
+                                    .init(color: palette.accent.opacity(colorScheme == .dark ? 0.30 : 0.18), location: 1)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            .allowsHitTesting(false)
+                        }
+                    }
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                         Text(dateLine)
@@ -616,22 +632,6 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, AppTheme.Space.xl)
                     .padding(.vertical, AppTheme.Space.xl)
-                }
-                .overlay {
-                    if isToday {
-                        // Soft brand-blue glow: strongest at the bottom, clear by mid-card.
-                        LinearGradient(
-                            stops: [
-                                .init(color: .clear, location: 0),
-                                .init(color: .clear, location: 0.50),
-                                .init(color: palette.accent.opacity(colorScheme == .dark ? 0.14 : 0.08), location: 0.78),
-                                .init(color: palette.accent.opacity(colorScheme == .dark ? 0.30 : 0.18), location: 1)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .allowsHitTesting(false)
-                    }
                 }
             }
             .buttonStyle(.plain)
