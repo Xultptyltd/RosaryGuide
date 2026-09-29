@@ -1147,12 +1147,11 @@ private struct OverflowMenuButton: View {
             Button(role: .destructive) {
                 onDelete()
             } label: {
+                // Menu ignores SwiftUI icon colors; UIKit alwaysOriginal forces red trash.
                 Label {
                     Text("Delete")
                 } icon: {
-                    Image(systemName: "trash.fill")
-                        .symbolRenderingMode(.monochrome)
-                        .foregroundStyle(.red)
+                    Image(uiImage: OverflowMenuButton.destructiveTrashIcon)
                 }
             }
         } label: {
@@ -1163,6 +1162,13 @@ private struct OverflowMenuButton: View {
         }
         .accessibilityLabel("More options")
     }
+
+    /// UIMenu keeps template SF Symbols uncolored even with role .destructive;
+    /// an alwaysOriginal red UIImage is the reliable tint for Menu item icons.
+    private static let destructiveTrashIcon: UIImage = {
+        let base = UIImage(systemName: "trash.fill") ?? UIImage()
+        return base.withTintColor(.systemRed, renderingMode: .alwaysOriginal)
+    }()
 }
 
 
