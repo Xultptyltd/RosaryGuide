@@ -830,6 +830,7 @@ private struct IntentionDetailView: View {
     private var detailHeader: some View {
         // Avatar stacked above title; title spans full width. No card surface.
         // Cancel page gutter (24) so the block sits Space.lg (16pt) from screen edges.
+        // Category and Current chip live in bottom details / elsewhere — not in this header.
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             IntentionIconView(
                 accent: intention.accent,
@@ -838,26 +839,12 @@ private struct IntentionDetailView: View {
                 usesPopePortrait: intention.isPapal
             )
 
-            VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                Text(intention.title)
-                    .font(AppTheme.sans(30, weight: .regular))
-                    .foregroundStyle(palette.ink)
-                    .lineLimit(4)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                HStack(spacing: 7) {
-                    Text(intention.categoryTitle)
-                    if intention.isPinned {
-                        Text("·")
-                        Label("Current", systemImage: "pin.fill")
-                            .labelStyle(.titleAndIcon)
-                    }
-                }
-                .font(AppTheme.sans(14, weight: .medium))
-                .foregroundStyle(palette.accent)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text(intention.title)
+                .font(AppTheme.sans(30, weight: .regular))
+                .foregroundStyle(palette.ink)
+                .lineLimit(4)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .guideNavList(pageGutter: AppTheme.gutter)
