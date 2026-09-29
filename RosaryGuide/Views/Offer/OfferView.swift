@@ -336,14 +336,6 @@ private struct CurrentIntentionHero: View {
                             .foregroundStyle(palette.ink)
                             .lineLimit(2)
                             .minimumScaleFactor(0.88)
-
-                        HStack(spacing: AppTheme.Space.xs) {
-                            Image(systemName: intention.isPapal ? "cross.fill" : "heart.fill")
-                                .guideSymbol(size: 13, weight: .semibold)
-                            Text(categoryLabel)
-                                .font(AppTheme.sans(15, weight: .medium))
-                        }
-                        .foregroundStyle(palette.accent)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -406,10 +398,6 @@ private struct CurrentIntentionHero: View {
         } message: {
             Text("This will delete “\(intention.title)” from your intentions.")
         }
-    }
-
-    private var categoryLabel: String {
-        intention.categoryTitle
     }
 
     private var actionFill: Color {
