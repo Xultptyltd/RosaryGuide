@@ -128,9 +128,128 @@ enum LiturgicalVerseCatalog {
 
     // MARK: - Curated by feast id (short, real Mass-reading verses)
 
-    /// Particularly meaningful single verses for feast Mass readings.
-    /// Expand freely; unknown feast ids fall through to FeastScriptures.
+    /// Curated Home excerpts for every FeastCatalog id (Gospel preferred;
+    /// First Reading when that is the feast’s distinctive proper). Unknown
+    /// ids still fall through to FeastScriptures.
     private static let byFeastId: [String: LiturgicalVerse] = [
+        // MARK: Fixed calendar
+        "mary-mother-of-god": LiturgicalVerse(
+            id: "feast-mary-mother-of-god",
+            text: "And they went with haste, and found Mary and Joseph, and the babe lying in a manger. … But Mary kept all these things, pondering them in her heart.",
+            reference: "Luke 2:16, 19",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "But Mary kept all these things, pondering them in her heart."
+        ),
+        "epiphany": LiturgicalVerse(
+            id: "feast-epiphany",
+            text: "Behold, wise men from the East came to Jerusalem, saying, “Where is he who has been born king of the Jews? For we have seen his star in the East, and have come to worship him.” … and going into the house they saw the child with Mary his mother, and they fell down and worshiped him.",
+            reference: "Matthew 2:1-2, 11",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Where is he who has been born king of the Jews? For we have seen his star in the East, and have come to worship him."
+        ),
+        "presentation": LiturgicalVerse(
+            id: "feast-presentation",
+            text: "Lord, now let your servant depart in peace, according to your word; for my eyes have seen your salvation which you have prepared in the presence of all peoples, a light for revelation to the Gentiles, and for glory to your people Israel.",
+            reference: "Luke 2:29-32",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Lord, now let your servant depart in peace, according to your word; for my eyes have seen your salvation."
+        ),
+        "lourdes": LiturgicalVerse(
+            id: "feast-lourdes",
+            text: "And he came to her and said, “Hail, full of grace, the Lord is with you!”",
+            reference: "Luke 1:28",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy"
+        ),
+        "joseph": LiturgicalVerse(
+            id: "feast-joseph",
+            text: "Behold, an angel of the Lord appeared to him in a dream, saying, “Joseph, son of David, do not fear to take Mary your wife, for that which is conceived in her is of the Holy Spirit; she will bear a son, and you shall call his name Jesus, for he will save his people from their sins.”",
+            reference: "Matthew 1:20-21",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Joseph, son of David, do not fear to take Mary your wife, for that which is conceived in her is of the Holy Spirit."
+        ),
+        "annunciation": LiturgicalVerse(
+            id: "feast-annunciation",
+            text: "And Mary said, “Behold, I am the handmaid of the Lord; let it be to me according to your word.”",
+            reference: "Luke 1:38",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy"
+        ),
+        "fatima": LiturgicalVerse(
+            id: "feast-fatima",
+            text: "And Mary said, “Behold, I am the handmaid of the Lord; let it be to me according to your word.” And the angel departed from her.",
+            reference: "Luke 1:38",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Behold, I am the handmaid of the Lord; let it be to me according to your word."
+        ),
+        "visitation": LiturgicalVerse(
+            id: "feast-visitation",
+            text: "And when Elizabeth heard the greeting of Mary, the baby leaped in her womb; and Elizabeth was filled with the Holy Spirit and she exclaimed with a loud cry, “Blessed are you among women, and blessed is the fruit of your womb!”",
+            reference: "Luke 1:41-42",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Blessed are you among women, and blessed is the fruit of your womb!"
+        ),
+        "peter-paul": LiturgicalVerse(
+            id: "feast-peter-paul",
+            text: "Simon Peter replied, “You are the Christ, the Son of the living God.” And Jesus answered him, “Blessed are you, Simon Bar-Jona! For flesh and blood has not revealed this to you, but my Father who is in heaven. And I tell you, you are Peter, and on this rock I will build my Church, and the gates of Hades shall not prevail against it.”",
+            reference: "Matthew 16:16-18",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "You are Peter, and on this rock I will build my Church, and the gates of Hades shall not prevail against it."
+        ),
+        "carmel": LiturgicalVerse(
+            id: "feast-carmel",
+            text: "As he said this, a woman in the crowd raised her voice and said to him, “Blessed is the womb that bore you, and the breasts that you sucked!” But he said, “Blessed rather are those who hear the word of God and keep it!”",
+            reference: "Luke 11:27-28",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Blessed rather are those who hear the word of God and keep it!"
+        ),
+        "assumption": LiturgicalVerse(
+            id: "feast-assumption",
+            text: "And Mary said, “My soul magnifies the Lord, and my spirit rejoices in God my Savior, for he has regarded the low estate of his handmaiden. For behold, henceforth all generations will call me blessed.”",
+            reference: "Luke 1:46-48",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy"
+        ),
+        "queenship": LiturgicalVerse(
+            id: "feast-queenship",
+            text: "And the angel said to her, “Do not be afraid, Mary, for you have found favor with God. And behold, you will conceive in your womb and bear a son, and you shall call his name Jesus. He will be great, and will be called the Son of the Most High; and the Lord God will give to him the throne of his father David, and he will reign over the house of Jacob for ever; and of his kingdom there will be no end.”",
+            reference: "Luke 1:30-33",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "He will be great, and will be called the Son of the Most High; and of his kingdom there will be no end."
+        ),
+        "nativity-mary": LiturgicalVerse(
+            id: "feast-nativity-mary",
+            text: "And Jacob the father of Joseph the husband of Mary, of whom Jesus was born, who is called Christ. … Now the birth of Jesus Christ took place in this way. When his mother Mary had been betrothed to Joseph, before they came together she was found to be with child of the Holy Spirit.",
+            reference: "Matthew 1:16, 18",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Mary, of whom Jesus was born, who is called Christ."
+        ),
+        "holy-name-mary": LiturgicalVerse(
+            id: "feast-holy-name-mary",
+            text: "And the angel said to her, “Do not be afraid, Mary, for you have found favor with God. And behold, you will conceive in your womb and bear a son, and you shall call his name Jesus.”",
+            reference: "Luke 1:30-31",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Do not be afraid, Mary, for you have found favor with God."
+        ),
+        "sorrows": LiturgicalVerse(
+            id: "feast-sorrows",
+            text: "Standing by the cross of Jesus were his mother, and his mother’s sister, Mary the wife of Clopas, and Mary Magdalene. When Jesus saw his mother, and the disciple whom he loved standing near, he said to his mother, “Woman, behold, your son!” Then he said to the disciple, “Behold, your mother!”",
+            reference: "John 19:25-27",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "When Jesus saw his mother, and the disciple whom he loved standing near, he said to his mother, “Woman, behold, your son!”"
+        ),
         "michael": LiturgicalVerse(
             id: "feast-michael",
             text: "Now war arose in heaven, Michael and his angels fighting against the dragon; and the dragon and his angels fought, but they were defeated and there was no longer any place for them in heaven.",
@@ -160,17 +279,18 @@ enum LiturgicalVerseCatalog {
             readingLabel: "Gospel",
             sourceLabel: "From today’s liturgy"
         ),
-        "christmas": LiturgicalVerse(
-            id: "feast-christmas",
-            text: "And the angel said to them, “Be not afraid; for behold, I bring you good news of a great joy which will come to all the people; for to you is born this day in the city of David a Savior, who is Christ the Lord.”",
-            reference: "Luke 2:10-11",
+        "all-souls": LiturgicalVerse(
+            id: "feast-all-souls",
+            text: "All that the Father gives me will come to me; and him who comes to me I will not cast out. … For this is the will of my Father, that every one who sees the Son and believes in him should have eternal life; and I will raise him up at the last day.",
+            reference: "John 6:37, 40",
             readingLabel: "Gospel",
-            sourceLabel: "From today’s liturgy"
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Him who comes to me I will not cast out. … I will raise him up at the last day."
         ),
-        "assumption": LiturgicalVerse(
-            id: "feast-assumption",
-            text: "And Mary said, “My soul magnifies the Lord, and my spirit rejoices in God my Savior, for he has regarded the low estate of his handmaiden. For behold, henceforth all generations will call me blessed.”",
-            reference: "Luke 1:46-48",
+        "presentation-mary": LiturgicalVerse(
+            id: "feast-presentation-mary",
+            text: "For whoever does the will of my Father in heaven is my brother, and sister, and mother.",
+            reference: "Matthew 12:50",
             readingLabel: "Gospel",
             sourceLabel: "From today’s liturgy"
         ),
@@ -181,12 +301,61 @@ enum LiturgicalVerseCatalog {
             readingLabel: "Gospel",
             sourceLabel: "From today’s liturgy"
         ),
-        "annunciation": LiturgicalVerse(
-            id: "feast-annunciation",
-            text: "And Mary said, “Behold, I am the handmaid of the Lord; let it be to me according to your word.”",
-            reference: "Luke 1:38",
+        "guadalupe": LiturgicalVerse(
+            id: "feast-guadalupe",
+            text: "And why is this granted me, that the mother of my Lord should come to me? For behold, when the voice of your greeting came to my ears, the baby in my womb leaped for joy. And blessed is she who believed that there would be a fulfilment of what was spoken to her from the Lord.",
+            reference: "Luke 1:43-45",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "And why is this granted me, that the mother of my Lord should come to me?"
+        ),
+        "christmas": LiturgicalVerse(
+            id: "feast-christmas",
+            text: "And the angel said to them, “Be not afraid; for behold, I bring you good news of a great joy which will come to all the people; for to you is born this day in the city of David a Savior, who is Christ the Lord.”",
+            reference: "Luke 2:10-11",
             readingLabel: "Gospel",
             sourceLabel: "From today’s liturgy"
+        ),
+
+        // MARK: Movable (Easter / Advent cycle)
+        "ash-wednesday": LiturgicalVerse(
+            id: "feast-ash-wednesday",
+            text: "“Yet even now,” says the Lord, “return to me with all your heart, with fasting, with weeping, and with mourning; and rend your hearts and not your garments.” Return to the Lord, your God, for he is gracious and merciful, slow to anger, and abounding in steadfast love.",
+            reference: "Joel 2:12-13",
+            readingLabel: "First Reading",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Return to me with all your heart, with fasting, with weeping, and with mourning; and rend your hearts and not your garments."
+        ),
+        "palm-sunday": LiturgicalVerse(
+            id: "feast-palm-sunday",
+            text: "And the crowds that went before him and that followed him shouted, “Hosanna to the Son of David! Blessed is he who comes in the name of the Lord! Hosanna in the highest!”",
+            reference: "Matthew 21:9",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Hosanna to the Son of David! Blessed is he who comes in the name of the Lord!"
+        ),
+        "holy-thursday": LiturgicalVerse(
+            id: "feast-holy-thursday",
+            text: "If I then, your Lord and Teacher, have washed your feet, you also ought to wash one another’s feet. For I have given you an example, that you also should do as I have done to you.",
+            reference: "John 13:14-15",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy"
+        ),
+        "good-friday": LiturgicalVerse(
+            id: "feast-good-friday",
+            text: "When Jesus saw his mother, and the disciple whom he loved standing near, he said to his mother, “Woman, behold, your son!” Then he said to the disciple, “Behold, your mother!” … When Jesus had received the vinegar, he said, “It is finished”; and he bowed his head and gave up his spirit.",
+            reference: "John 19:26-27, 30",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "When Jesus had received the vinegar, he said, “It is finished”; and he bowed his head and gave up his spirit."
+        ),
+        "holy-saturday": LiturgicalVerse(
+            id: "feast-holy-saturday",
+            text: "But the angel said to the women, “Do not be afraid; for I know that you seek Jesus who was crucified. He is not here; for he has risen, as he said. Come, see the place where he lay.”",
+            reference: "Matthew 28:5-6",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "He is not here; for he has risen, as he said."
         ),
         "easter": LiturgicalVerse(
             id: "feast-easter",
@@ -195,14 +364,86 @@ enum LiturgicalVerseCatalog {
             readingLabel: "Gospel",
             sourceLabel: "From today’s liturgy"
         ),
+        "divine-mercy": LiturgicalVerse(
+            id: "feast-divine-mercy",
+            text: "On the evening of that day, the first day of the week, the doors being shut where the disciples were, for fear of the Jews, Jesus came and stood among them and said to them, “Peace be with you.” … Thomas answered him, “My Lord and my God!”",
+            reference: "John 20:19, 28",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Peace be with you. … Thomas answered him, “My Lord and my God!”"
+        ),
+        "ascension": LiturgicalVerse(
+            id: "feast-ascension",
+            text: "And when he had said this, as they were looking on, he was lifted up, and a cloud took him out of their sight. And while they were gazing into heaven as he went, behold, two men stood by them in white robes, and said, “Men of Galilee, why do you stand looking into heaven? This Jesus, who was taken up from you into heaven, will come in the same way as you saw him go into heaven.”",
+            reference: "Acts 1:9-11",
+            readingLabel: "First Reading",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "As they were looking on, he was lifted up, and a cloud took him out of their sight."
+        ),
         "pentecost": LiturgicalVerse(
             id: "feast-pentecost",
             text: "And they were all filled with the Holy Spirit and began to speak in other tongues, as the Spirit gave them utterance.",
             reference: "Acts 2:4",
             readingLabel: "First Reading",
             sourceLabel: "From today’s liturgy"
+        ),
+        "trinity": LiturgicalVerse(
+            id: "feast-trinity",
+            text: "Go therefore and make disciples of all nations, baptizing them in the name of the Father and of the Son and of the Holy Spirit, teaching them to observe all that I have commanded you; and behold, I am with you always, to the close of the age.",
+            reference: "Matthew 28:19-20",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Baptizing them in the name of the Father and of the Son and of the Holy Spirit. … I am with you always, to the close of the age."
+        ),
+        "corpus-christi": LiturgicalVerse(
+            id: "feast-corpus-christi",
+            text: "I am the living bread which came down from heaven; if any one eats of this bread, he will live for ever; and the bread which I shall give for the life of the world is my flesh.",
+            reference: "John 6:51",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy"
+        ),
+        "sacred-heart": LiturgicalVerse(
+            id: "feast-sacred-heart",
+            text: "But one of the soldiers pierced his side with a spear, and at once there came out blood and water. … And again another scripture says, “They shall look on him whom they have pierced.”",
+            reference: "John 19:34, 37",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "One of the soldiers pierced his side with a spear, and at once there came out blood and water."
+        ),
+        "immaculate-heart": LiturgicalVerse(
+            id: "feast-immaculate-heart",
+            text: "And he went down with them and came to Nazareth, and was obedient to them; and his mother kept all these things in her heart.",
+            reference: "Luke 2:51",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "And his mother kept all these things in her heart."
+        ),
+        "christ-the-king": LiturgicalVerse(
+            id: "feast-christ-the-king",
+            text: "Jesus answered, “My kingship is not of this world. … You say that I am a king. For this I was born, and for this I have come into the world, to bear witness to the truth. Every one who is of the truth hears my voice.”",
+            reference: "John 18:36-37",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "For this I was born, and for this I have come into the world, to bear witness to the truth."
+        ),
+        "advent-1": LiturgicalVerse(
+            id: "feast-advent-1",
+            text: "Watch therefore, for you do not know on what day your Lord is coming. … Therefore you also must be ready; for the Son of man is coming at an hour you do not expect.",
+            reference: "Matthew 24:42, 44",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "Watch therefore, for you do not know on what day your Lord is coming."
+        ),
+        "baptism-movable": LiturgicalVerse(
+            id: "feast-baptism-movable",
+            text: "And when Jesus was baptized, he went up immediately from the water, and behold, the heavens were opened and he saw the Spirit of God descending like a dove, and alighting on him; and behold, a voice from heaven, saying, “This is my beloved Son, with whom I am well pleased.”",
+            reference: "Matthew 3:16-17",
+            readingLabel: "Gospel",
+            sourceLabel: "From today’s liturgy",
+            homeExcerpt: "This is my beloved Son, with whom I am well pleased."
         )
     ]
+
 
     // MARK: - Verse of the day (ordinary / non-catalogued feast days)
 
