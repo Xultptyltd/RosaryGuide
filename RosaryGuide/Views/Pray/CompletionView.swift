@@ -164,8 +164,7 @@ struct CompletionView: View {
                 .opacity(opacity(for: .title))
                 .offset(y: offset(for: .title))
 
-            // Offered for — directly under the mystery headline so the fixed
-            // non-scrolling layout cannot bury it under Done / St Michael.
+            // Offered for — between the mystery title and quote surface.
             // Exact stored title only (never auto-prefix "For").
             if hasIntention, let intentionTitle {
                 VStack(spacing: 6) {
@@ -181,7 +180,7 @@ struct CompletionView: View {
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.top, compact ? 12 : 18)
+                .padding(.top, compact ? 20 : 28)
                 .layoutPriority(1)
                 .opacity(opacity(for: .rest))
                 .accessibilityElement(children: .combine)
@@ -206,13 +205,13 @@ struct CompletionView: View {
             .frame(maxWidth: .infinity)
             .padding(compact ? AppTheme.Space.md : AppTheme.Space.lg)
             .guideCard(fill: palette.panel, stroke: true)
-            .padding(.top, compact ? 14 : AppTheme.Space.xl)
+            .padding(.top, compact ? AppTheme.Space.xl : AppTheme.Space.xxl)
             .opacity(opacity(for: .rest))
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(completionQuote.text), \(completionQuote.attribution)")
 
             // Small breathing room before the pinned actions.
-            Color.clear.frame(height: compact ? 12 : 20)
+            Color.clear.frame(height: compact ? 16 : 24)
         }
     }
 
