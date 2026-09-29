@@ -804,10 +804,12 @@ private struct IntentionDetailView: View {
         }
         .background(palette.bg)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Edit", action: onEdit)
-                    .font(AppTheme.sans(15, weight: .medium))
-                    .foregroundStyle(palette.accent)
+            if !intention.isPapal {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Edit", action: onEdit)
+                        .font(AppTheme.sans(15, weight: .medium))
+                        .foregroundStyle(palette.accent)
+                }
             }
         }
         .navigationTitle(intention.title)
@@ -897,23 +899,12 @@ private struct IntentionDetailView: View {
 
     private var detailSection: some View {
         VStack(alignment: .leading, spacing: 22) {
-            VStack(alignment: .leading, spacing: 10) {
-                GuideSectionLabel(text: "Notes", color: palette.dim)
+            if intention.isPapal {
+                papalFullContent
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    GuideSectionLabel(text: "Notes", color: palette.dim)
 
-                if intention.isPapal {
-                    // Papal notes come from the Holy Father suggestion — display only.
-                    Text(hasNote ? (intention.note ?? "") : "No notes")
-                        .font(AppTheme.sans(15))
-                        .foregroundStyle(hasNote ? palette.ink : palette.dim)
-                        .lineSpacing(4)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(18)
-                        .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                                .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
-                        }
-                } else {
                     Button(action: onEdit) {
                         HStack(alignment: .top, spacing: 12) {
                             Text(noteText)
@@ -947,6 +938,87 @@ private struct IntentionDetailView: View {
                     .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
             }
         }
+    }
+
+    /// Same Holy Father copy as `PapalIntentionDetailView` / featured papal card source
+    /// (`PopeIntentionStore` → `PopeIntentions.json`), looked up by `sourceId`.
+    private var papalFullContent: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+            if let note = papalDisplayNote {
+                Text(note)
+                    .font(AppTheme.sans(20, weight: .regular))
+                    .foregroundStyle(palette.ink)
+                    .multilineTextAlignment(.leading)
+                    .lineSpacing(7)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            if let description = papalSource?.description, !description.isEmpty {
+                Text(description)
+                    .font(AppTheme.sans(15))
+                    .foregroundStyle(palette.dim)
+                    .multilineTextAlignment(.leading)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            if let extract = papalSource?.extract, !extract.isEmpty {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                    ForEach(extract, id: \.self) { paragraph in
+                        Text(paragraph)
+                            .font(AppTheme.sans(17))
+                            .foregroundStyle(palette.ink)
+                            .multilineTextAlignment(.leading)
+                            .lineSpacing(7)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            if let sourceTitle = papalSource?.sourceTitle, !sourceTitle.isEmpty {
+                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    Text(sourceTitle)
+                        .font(AppTheme.sans(13))
+                        .foregroundStyle(palette.dim)
+                        .multilineTextAlignment(.leading)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if let sourceURL = papalSource?.sourceURL, !sourceURL.isEmpty {
+                        Text(sourceURL)
+                            .font(AppTheme.sans(12))
+                            .foregroundStyle(palette.faint)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var papalSource: PopeMonthIntention? {
+        guard intention.isPapal,
+              let sourceId = intention.sourceId,
+              sourceId.hasPrefix("pope-")
+        else { return nil }
+        let yearMonth = String(sourceId.dropFirst("pope-".count))
+        return PopeIntentionStore.shared.intentions.first { $0.yearMonth == yearMonth }
+    }
+
+    private var papalDisplayNote: String? {
+        let fromStore = papalSource?.note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let fromStore, !fromStore.isEmpty { return fromStore }
+        let saved = intention.note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let saved, !saved.isEmpty { return saved }
+        return nil
     }
 
     private var hasNote: Bool {
