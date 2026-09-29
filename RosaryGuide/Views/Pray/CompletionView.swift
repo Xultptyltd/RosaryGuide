@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// Ceremonial end-of-rosary screen: art → symbol → label → mystery title → date →
-/// optional intention → calm space → Done → optional St Michael link.
-/// No quote, stats, cards, or chrome — stillness as the emotional endpoint.
+/// quote → optional intention → calm space → Done → optional St Michael prayer.
+/// No stats, X, or confetti — stillness as the emotional endpoint.
 struct CompletionView: View {
     var mysterySet: MysterySetKind
     var intentionTitle: String?
@@ -46,6 +46,10 @@ struct CompletionView: View {
     private var hasIntention: Bool {
         guard let intentionTitle else { return false }
         return !intentionTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var completionQuote: CompletionQuote {
+        QuoteCatalog.quote()
     }
 
     private var prefersCompactType: Bool {
@@ -128,7 +132,30 @@ struct CompletionView: View {
                             .opacity(opacity(for: .title))
                             .offset(y: offset(for: .title))
 
-                            // 6. Intention (optional only — omit entirely when absent)
+                            // 6. Short contemplative quote on the same surface treatment used elsewhere.
+                            VStack(spacing: 10) {
+                                Text("“\(completionQuote.text)”")
+                                    .font(AppTheme.serif(prefersCompactType ? 18 : 19, italic: true, relativeTo: .body))
+                                    .foregroundStyle(Color.white.opacity(0.84))
+                                    .multilineTextAlignment(.center)
+                                    .fixedSize(horizontal: false, vertical: true)
+
+                                Text(completionQuote.attribution.uppercased())
+                                    .font(AppTheme.sans(10, weight: .medium, relativeTo: .caption))
+                                    .tracking(1.3)
+                                    .foregroundStyle(Color.white.opacity(0.46))
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 18)
+                            .guideCard(fill: palette.panel, stroke: true, elevated: false)
+                            .padding(.top, 24)
+                            .opacity(opacity(for: .rest))
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("\(completionQuote.text), \(completionQuote.attribution)")
+
+                            // 7. Intention (optional only — omit entirely when absent)
                             if hasIntention, let intentionTitle {
                                 VStack(spacing: 6) {
                                     Text("OFFERED FOR")
@@ -150,7 +177,7 @@ struct CompletionView: View {
                                 .accessibilityLabel("Offered for \(intentionTitle)")
                             }
 
-                            // 7. Intentional negative space before actions
+                            // 8. Intentional negative space before actions
                             Spacer(minLength: prefersCompactType ? 28 : 44)
                                 .frame(height: prefersCompactType ? 28 : 52)
                         }
@@ -159,7 +186,7 @@ struct CompletionView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                    // 8 + 9. Actions — Done primary, St Michael optional text link
+                    // 9 + 10. Actions — Done primary, St Michael optional secondary CTA
                     VStack(spacing: 18) {
                         PillButton(title: "Done", action: onDone)
                             .environment(\.colorScheme, .dark)
@@ -167,18 +194,17 @@ struct CompletionView: View {
 
                         if let onMichael {
                             Button(action: onMichael) {
-                                Text("Continue with the Saint Michael Prayer →")
-                                    .font(AppTheme.sans(15, weight: .medium, relativeTo: .callout))
-                                    .foregroundStyle(palette.accent)
-                                    .multilineTextAlignment(.center)
+                                Text("Saint Michael Prayer")
+                                    .font(AppTheme.sans(16, weight: .semibold, relativeTo: .callout))
+                                    .foregroundStyle(palette.ink)
+                                    .padding(.horizontal, 28)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                                    .frame(minHeight: AppTheme.Accessibility.minHitTarget)
-                                    .contentShape(Rectangle())
+                                    .frame(height: 52)
+                                    .background(palette.panel, in: Capsule())
                             }
                             .buttonStyle(.plain)
                             .guidePressable()
-                            .accessibilityLabel("Continue with the Saint Michael Prayer")
+                            .accessibilityLabel("Saint Michael Prayer")
                             .accessibilityAddTraits(.isButton)
                         }
                     }
