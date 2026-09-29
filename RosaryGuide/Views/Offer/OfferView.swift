@@ -1798,17 +1798,25 @@ struct IntentionEditorSheet: View {
         let resolvedEmoji = glyph.isEmpty ? "🙏" : glyph
         switch route {
         case .create:
+            // Preserve whoever is Current before insert when Make current is OFF,
+            // so a newer unpinned row cannot steal the hero via sortedIntentions fallback.
+            let priorCurrentId: UUID? = makeCurrent
+                ? nil
+                : (offer.sortedIntentions.first(where: \.isPinned)?.id
+                    ?? offer.sortedIntentions.first?.id)
             let created = offer.add(
                 title: title,
                 note: note,
-                pin: false,
+                pin: makeCurrent,
                 expiresAt: expiry,
                 category: kind.category,
                 accent: accent,
                 emoji: resolvedEmoji,
                 suggestOn: Array(suggestOn).filter { MysterySetKind.displayOrder.contains($0) }
             )
-            if makeCurrent { makeOnlyCurrent(created.id) }
+            if let priorCurrentId {
+                offer.setCurrent(id: priorCurrentId)
+            }
             onSaved?(created)
         case .edit(var item):
             item.title = title
@@ -1823,16 +1831,12 @@ struct IntentionEditorSheet: View {
             item.suggestOn = Array(suggestOn).filter { MysterySetKind.displayOrder.contains($0) }
             item.isPinned = makeCurrent
             offer.update(item)
-            if makeCurrent { makeOnlyCurrent(item.id) }
+            if makeCurrent {
+                offer.setCurrent(id: item.id)
+            }
             onSaved?(item)
         }
         dismiss()
-    }
-
-    private func makeOnlyCurrent(_ id: UUID) {
-        for index in offer.intentions.indices {
-            offer.intentions[index].isPinned = offer.intentions[index].id == id
-        }
     }
 }
 

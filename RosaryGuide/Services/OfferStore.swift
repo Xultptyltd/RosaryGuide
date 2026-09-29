@@ -63,8 +63,29 @@ final class OfferStore {
             emoji: cleanEmoji,
             suggestOn: suggestOn
         )
-        intentions.append(intention)
+        if pin {
+            // Exclusive pin in one write: unpin everyone else, then append as current.
+            var next = intentions
+            for index in next.indices {
+                next[index].isPinned = false
+            }
+            next.append(intention)
+            intentions = next
+        } else {
+            // Leave existing current/pin untouched.
+            intentions.append(intention)
+        }
         return intention
+    }
+
+    /// Makes `id` the sole pinned/current intention. No-op if missing.
+    func setCurrent(id: UUID) {
+        guard intentions.contains(where: { $0.id == id }) else { return }
+        var next = intentions
+        for index in next.indices {
+            next[index].isPinned = next[index].id == id
+        }
+        intentions = next
     }
 
     func update(_ intention: OfferIntention) {
