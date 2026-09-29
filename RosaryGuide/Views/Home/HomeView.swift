@@ -650,8 +650,8 @@ struct HomeView: View {
                     FeastDetailView(prayLaunch: $prayLaunch, item: item)
                 } label: {
                     HStack(spacing: AppTheme.Space.md) {
-                        Text(item.date.formatted(.dateTime.day().month(.abbreviated)).uppercased())
-                            .font(AppTheme.sans(13, weight: .medium))
+                        Text(item.date.formatted(.dateTime.day().month(.abbreviated)))
+                            .font(AppTheme.sans(14))
                             .foregroundStyle(palette.dim)
                             .frame(width: 62, alignment: .leading)
                         Text(item.feast.shortTitle)
