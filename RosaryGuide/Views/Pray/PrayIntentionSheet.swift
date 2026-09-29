@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// Bottom sheet for choosing or creating a single Rosary intention.
+/// Selecting a row dismisses immediately — no Save/Done.
 struct PrayIntentionSheet: View {
     @Environment(OfferStore.self) private var offer
     @Environment(\.palette) private var palette
@@ -9,10 +10,11 @@ struct PrayIntentionSheet: View {
     @Binding var chosenId: UUID?
     @Binding var chosenTitle: String
     @Binding var chosenNote: String
-    /// Mystery set for the Rosary being prayed — drives the Suggested section for this Rosary.
+    /// Mystery set for the Rosary being prayed — drives ordering for this Rosary.
     var mysterySet: MysterySetKind
 
     @State private var popeStore = PopeIntentionStore.shared
+    @State private var editorRoute: EditorRoute?
 
     private var suggestions: [SuggestedIntention] { IntentionSuggestions.forDay(popeStore: popeStore) }
 
@@ -24,35 +26,49 @@ struct PrayIntentionSheet: View {
         }
     }
 
-    /// Your intentions tagged for this Rosary’s mystery set.
-    private var matchingIntentions: [OfferIntention] {
-        offer.sortedIntentions(for: mysterySet).filter { $0.isSuggested(on: mysterySet) }
-    }
-
-    /// Everything else you keep (not tagged for this set).
-    private var otherIntentions: [OfferIntention] {
-        offer.sortedIntentions(for: mysterySet).filter { !$0.isSuggested(on: mysterySet) }
-    }
-
-    private var hasSuggestedSection: Bool {
-        !papalSuggestions.isEmpty || !matchingIntentions.isEmpty
+    /// Your intentions: tagged for this set first, then the rest.
+    /// Drops titles already shown via an unadopted papal suggestion row.
+    private var listedIntentions: [OfferIntention] {
+        let matching = offer.sortedIntentions(for: mysterySet).filter { $0.isSuggested(on: mysterySet) }
+        let other = offer.sortedIntentions(for: mysterySet).filter { !$0.isSuggested(on: mysterySet) }
+        let papalTitles = Set(papalSuggestions.map { $0.title.lowercased() })
+        return (matching + other).filter { !papalTitles.contains($0.title.lowercased()) }
     }
 
     private var noneSelected: Bool { chosenId == nil && chosenTitle.isEmpty }
 
-    @State private var editorRoute: EditorRoute?
-
-    private let cardMinHeight: CGFloat = 76
+    private let cardMinHeight: CGFloat = 64
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    if hasSuggestedSection {
-                        suggestedSection
+                VStack(alignment: .leading, spacing: 10) {
+                    radioCard(
+                        title: "No specific intention",
+                        subtitle: nil,
+                        selected: noneSelected
+                    ) {
+                        chooseNone()
                     }
 
-                    yourIntentionsSection
+                    ForEach(papalSuggestions) { item in
+                        papalRadioCard(item)
+                    }
+
+                    ForEach(listedIntentions) { item in
+                        radioCard(
+                            title: item.title,
+                            subtitle: intentionSubtitle(item),
+                            selected: chosenId == item.id,
+                            showsPin: item.isPinned,
+                            showsNewBadge: item.isNew,
+                            leadingIcon: item
+                        ) {
+                            choose(item)
+                        }
+                    }
+
+                    addIntentionCard
                 }
                 .padding(.horizontal, AppTheme.gutter)
                 .padding(.top, 8)
@@ -60,13 +76,8 @@ struct PrayIntentionSheet: View {
             }
             .scrollIndicators(.hidden)
             .background(palette.bg)
-            .navigationTitle("Offer for…")
+            .navigationTitle("Offer this Rosary for")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
             .sheet(item: $editorRoute) { route in
                 IntentionEditorSheet(
                     route: route,
@@ -87,46 +98,7 @@ struct PrayIntentionSheet: View {
         }
     }
 
-    // MARK: - Your intentions
-
-    private var yourIntentionsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionLabel("All intentions")
-
-            radioCard(
-                title: "No intention",
-                subtitle: nil,
-                selected: noneSelected
-            ) {
-                chosenId = nil
-                chosenTitle = ""
-                chosenNote = ""
-                dismiss()
-            }
-
-            ForEach(otherIntentions) { item in
-                radioCard(
-                    title: item.title,
-                    subtitle: {
-                        var parts: [String] = []
-                        if !item.isNew, !item.carriedLabel.isEmpty { parts.append(item.carriedLabel) }
-                        if let note = item.note, !note.isEmpty { parts.append(note) }
-                        return parts.isEmpty ? nil : parts.joined(separator: " · ")
-                    }(),
-                    selected: chosenId == item.id,
-                    showsPin: item.isPinned,
-                    showsNewBadge: item.isNew
-                ) {
-                    chosenId = item.id
-                    chosenTitle = item.title
-                    chosenNote = item.note ?? ""
-                    dismiss()
-                }
-            }
-
-            addIntentionCard
-        }
-    }
+    // MARK: - Rows
 
     private var addIntentionCard: some View {
         Button {
@@ -142,7 +114,7 @@ struct PrayIntentionSheet: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 18)
+            .padding(.vertical, 16)
             .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
@@ -158,57 +130,34 @@ struct PrayIntentionSheet: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Add intention")
+        .padding(.top, 6)
     }
 
-        // MARK: - Suggested
+    private func papalRadioCard(_ item: SuggestedIntention) -> some View {
+        let existing = offer.sortedIntentions.first(where: {
+            $0.title.compare(item.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+        })
+        let selected = existing.map { chosenId == $0.id }
+            ?? (chosenTitle.compare(item.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame)
 
-    /// Holy Father first, then your intentions tagged for this mystery.
-    private var suggestedSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionLabel("Suggested")
-
-            ForEach(papalSuggestions) { item in
-                suggestionCard(item, showsPopeImage: true)
-            }
-
-            ForEach(matchingIntentions) { item in
-                radioCard(
-                    title: item.title,
-                    subtitle: {
-                        var parts: [String] = []
-                        if !item.isNew, !item.carriedLabel.isEmpty { parts.append(item.carriedLabel) }
-                        if let note = item.note, !note.isEmpty { parts.append(note) }
-                        return parts.isEmpty ? nil : parts.joined(separator: " · ")
-                    }(),
-                    selected: chosenId == item.id,
-                    showsPin: item.isPinned,
-                    showsNewBadge: item.isNew
-                ) {
-                    chosenId = item.id
-                    chosenTitle = item.title
-                    chosenNote = item.note ?? ""
-                    dismiss()
-                }
-            }
-        }
-    }
-
-    private func suggestionCard(_ item: SuggestedIntention, showsPopeImage: Bool) -> some View {
-        Button {
+        return Button {
             adoptSuggestion(item)
         } label: {
-            HStack(alignment: .top, spacing: 14) {
-                if showsPopeImage {
-                    Image("PopeLeo")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 64, height: 80)
-                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
-                        .accessibilityHidden(true)
-                }
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: selected ? "circle.inset.filled" : "circle")
+                    .guideSymbol(size: 22, weight: .regular)
+                    .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
+                    .frame(width: 24, height: 24)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.sourceLabel)
+                IntentionIconView(
+                    accent: .teal,
+                    emoji: "✝️",
+                    size: 36,
+                    usesPopePortrait: true
+                )
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Holy Father")
                         .font(AppTheme.sans(11, weight: .semibold))
                         .foregroundStyle(palette.accent)
                         .textCase(.uppercase)
@@ -223,28 +172,29 @@ struct PrayIntentionSheet: View {
                             .font(AppTheme.sans(13))
                             .foregroundStyle(palette.dim)
                             .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .lineLimit(2)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(14)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
             .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .fill(palette.card)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+                    .strokeBorder(
+                        selected ? palette.accent.opacity(0.45) : Color.clear,
+                        lineWidth: 1
+                    )
+            )
         }
         .buttonStyle(.plain)
-    }
-
-    // MARK: - Shared chrome
-
-    private func sectionLabel(_ text: String) -> some View {
-        Text(text)
-            .font(AppTheme.sans(13, weight: .medium))
-            .foregroundStyle(palette.dim)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityLabel("Holy Father: \(item.title)")
     }
 
     private func radioCard(
@@ -253,6 +203,7 @@ struct PrayIntentionSheet: View {
         selected: Bool,
         showsPin: Bool = false,
         showsNewBadge: Bool = false,
+        leadingIcon: OfferIntention? = nil,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -261,6 +212,15 @@ struct PrayIntentionSheet: View {
                     .guideSymbol(size: 22, weight: .regular)
                     .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
+
+                if let leadingIcon {
+                    IntentionIconView(
+                        accent: leadingIcon.accent,
+                        emoji: leadingIcon.displayEmoji,
+                        size: 36,
+                        usesPopePortrait: leadingIcon.isPapal
+                    )
+                }
 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
@@ -295,7 +255,7 @@ struct PrayIntentionSheet: View {
                 }
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 16)
+            .padding(.vertical, 14)
             .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
@@ -313,8 +273,29 @@ struct PrayIntentionSheet: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
-    // MARK: - Composer
+    // MARK: - Actions
 
+    private func intentionSubtitle(_ item: OfferIntention) -> String? {
+        var parts: [String] = []
+        if item.isPapal { parts.append("Holy Father") }
+        if !item.isNew, !item.carriedLabel.isEmpty { parts.append(item.carriedLabel) }
+        if let note = item.note, !note.isEmpty { parts.append(note) }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    private func chooseNone() {
+        chosenId = nil
+        chosenTitle = ""
+        chosenNote = ""
+        dismiss()
+    }
+
+    private func choose(_ item: OfferIntention) {
+        chosenId = item.id
+        chosenTitle = item.title
+        chosenNote = item.note ?? ""
+        dismiss()
+    }
 
     private func adoptSuggestion(_ item: SuggestedIntention) {
         let papal = item.id.hasPrefix("pope-")
@@ -347,5 +328,4 @@ struct PrayIntentionSheet: View {
         }
         dismiss()
     }
-
 }

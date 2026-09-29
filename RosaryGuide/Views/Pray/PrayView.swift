@@ -104,6 +104,8 @@ struct PrayView: View {
             )
             .environment(offer)
             .environment(\.palette, palette)
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
             .onDisappear {
                 sessionStore.updateIntention(
                     id: chosenIntentionId,
@@ -446,7 +448,6 @@ struct PrayView: View {
                             locus(step)
                             if step.kind == .signOfTheCross {
                                 signOfCrossIntentionBlock
-                                    .padding(.bottom, AppTheme.Space.xl)
                             }
                             BilingualStack(
                                 text: step.body,
@@ -588,15 +589,15 @@ struct PrayView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         // Website `.locus h2 { margin-top: .45rem }` after track — track already has bottom pad.
         .padding(.top, 2)
-        .padding(.bottom, 22) // web `.locus { margin-bottom: 1.35rem }` ≈ 22
+        // Sign of the Cross keeps a tight gap before the quiet For: row; other steps keep web spacing.
+        .padding(.bottom, step.kind == .signOfTheCross ? 8 : 22)
     }
 
 
 
 
-    /// Quiet intention strip on the combined Sign of the Cross opening —
-    /// labeled, avatar + title, change via sheet. Lives under the prayer title,
-    /// above the prayer text (not buried beneath it).
+    /// Quiet inline intention metadata under the Sign of the Cross title.
+    /// Optional — never blocks Next. Tap opens the picker; × clears.
     private var chosenOfferIntention: OfferIntention? {
         chosenIntentionId.flatMap { offer.intention(id: $0) }
     }
@@ -606,56 +607,80 @@ struct PrayView: View {
         let hasIntention = !chosenIntentionTitle.isEmpty
         let resolved = chosenOfferIntention
 
-        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-            Text("Intention")
-                .font(AppTheme.TypeRole.sectionLabel)
+        HStack(alignment: .center, spacing: 6) {
+            Text("For:")
+                .font(AppTheme.sans(15))
                 .foregroundStyle(palette.dim)
-                .textCase(.uppercase)
-                .tracking(AppTheme.Component.sectionLabelTracking)
-                .accessibilityAddTraits(.isHeader)
 
-            Button {
-                showIntentionSheet = true
-            } label: {
-                HStack(alignment: .center, spacing: AppTheme.Space.md) {
-                    IntentionIconView(
-                        accent: resolved?.accent ?? .skyBlue,
-                        emoji: resolved?.displayEmoji ?? (hasIntention ? "🙏" : ""),
-                        size: 44,
-                        emptyPlaceholder: hasIntention ? nil : "?",
-                        usesPopePortrait: resolved?.isPapal ?? false
-                    )
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(hasIntention ? chosenIntentionTitle : "Add an intention")
-                            .font(AppTheme.sans(17, weight: .semibold))
+            if hasIntention {
+                Button {
+                    showIntentionSheet = true
+                } label: {
+                    HStack(spacing: 6) {
+                        // Tiny avatar only when we have a known intention (papal portrait / glyph).
+                        if let resolved {
+                            IntentionIconView(
+                                accent: resolved.accent,
+                                emoji: resolved.displayEmoji,
+                                size: 18,
+                                usesPopePortrait: resolved.isPapal
+                            )
+                        }
+                        Text(chosenIntentionTitle)
+                            .font(AppTheme.sans(15, weight: .medium))
                             .foregroundStyle(palette.ink)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
                             .multilineTextAlignment(.leading)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.88)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        Text(hasIntention ? "Change" : "Who or what is this Rosary for?")
-                            .font(AppTheme.TypeRole.caption)
-                            .foregroundStyle(palette.dim)
-                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-
-                    Image(systemName: "chevron.right")
-                        .guideSymbol(size: 13, weight: .semibold)
-                        .foregroundStyle(palette.faint)
-                        .accessibilityHidden(true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
-                .padding(AppTheme.Space.lg)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .guideCard(fill: palette.panel, stroke: true)
-                .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+                .buttonStyle(.plain)
+                .accessibilityLabel("For: \(chosenIntentionTitle)")
+                .accessibilityHint("Opens intention picker")
+
+                Button {
+                    clearChosenIntention()
+                } label: {
+                    Image(systemName: "xmark")
+                        .guideSymbol(size: 11, weight: .semibold)
+                        .foregroundStyle(palette.faint)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear intention")
+            } else {
+                Button {
+                    showIntentionSheet = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Add an intention")
+                            .font(AppTheme.sans(15, weight: .medium))
+                            .foregroundStyle(palette.accent)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .guideSymbol(size: 12, weight: .semibold)
+                            .foregroundStyle(palette.accent.opacity(0.75))
+                            .accessibilityHidden(true)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("For: Add an intention")
+                .accessibilityHint("Opens intention picker")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(hasIntention ? "Intention: \(chosenIntentionTitle). Change." : "Add an intention")
-            .accessibilityHint("Opens intention picker")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, AppTheme.Space.md)
+    }
+
+    private func clearChosenIntention() {
+        chosenIntentionId = nil
+        chosenIntentionTitle = ""
+        chosenIntentionNote = ""
+        sessionStore.updateIntention(id: nil, title: nil)
     }
 
     /// Website `.lead`: italic dim, with the virtue / "your intention" in stronger ink.
