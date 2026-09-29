@@ -1036,8 +1036,10 @@ struct HomeView: View {
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, AppTheme.Space.sm)
+                        .padding(.horizontal, AppTheme.Space.xl)
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                        // Full-width under title (edge-to-edge inside the stroked card).
                         Hairline()
                         HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
                             Text("Fruit")
@@ -1048,11 +1050,11 @@ struct HomeView: View {
                                 .foregroundStyle(palette.ink)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+                        .padding(.horizontal, AppTheme.Space.xl)
                     }
                     .padding(.top, AppTheme.Space.lg)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                 }
-                .padding(.horizontal, AppTheme.Space.xl)
                 .padding(.top, AppTheme.Space.lg)
                 .padding(.bottom, AppTheme.Space.xl)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
