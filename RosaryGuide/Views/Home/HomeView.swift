@@ -53,12 +53,32 @@ struct HomeView: View {
             !Calendar.current.isDate($0.date, inSameDayAs: today)
         }
     }
+    /// Highest-ranked FeastCatalog entry for calendar today, if any.
+    private var todaysCatalogFeast: DatedFeast? {
+        FeastCatalog.feasts(on: today)
+            .sorted { feastRankScore($0.feast.rank) > feastRankScore($1.feast.rank) }
+            .first
+    }
+    /// Future feasts only (excludes today) for the secondary list under the featured card.
     private var upcomingPreviewFeasts: [DatedFeast] {
         Array(
             FeastCatalog.upcoming(from: today, limit: 16)
                 .filter { !Calendar.current.isDate($0.date, inSameDayAs: today) }
                 .prefix(3)
         )
+    }
+    /// Featured card: today's feast when present, otherwise the next upcoming feast.
+    private var feastDaysFeatured: DatedFeast? {
+        todaysCatalogFeast ?? upcomingPreviewFeasts.first ?? nextRelevantFeast
+    }
+    private func feastRankScore(_ rank: FeastRank) -> Int {
+        switch rank {
+        case .solemnity: return 5
+        case .feast: return 4
+        case .memorial: return 3
+        case .optionalMemorial: return 2
+        case .seasonal: return 1
+        }
     }
 
     @State private var viewport = CGSize(width: 390, height: 720)
@@ -545,16 +565,24 @@ struct HomeView: View {
 
     private var comingUpSection: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-            GuideSectionLabel(text: "Coming up", color: palette.dim)
+            GuideSectionLabel(text: "Feast days", color: palette.dim)
 
-            if let featured = upcomingPreviewFeasts.first ?? nextRelevantFeast {
+            if let featured = feastDaysFeatured {
                 feastFeatureCard(featured)
             }
         }
     }
 
     private func feastFeatureCard(_ featured: DatedFeast) -> some View {
-        let remaining = Array(upcomingPreviewFeasts.dropFirst().prefix(2))
+        let isToday = Calendar.current.isDate(featured.date, inSameDayAs: today)
+        // Secondary rows are always future feasts; when today is featured, take the first two upcoming.
+        let remaining = Array(
+            (isToday ? upcomingPreviewFeasts : Array(upcomingPreviewFeasts.dropFirst()))
+                .prefix(2)
+        )
+        let dateLine = isToday
+            ? "Today"
+            : featured.date.formatted(.dateTime.day().month(.abbreviated))
         return VStack(spacing: 0) {
             NavigationLink {
                 FeastDetailView(prayLaunch: $prayLaunch, item: featured)
@@ -576,7 +604,7 @@ struct HomeView: View {
                     .clipped()
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                        Text(featured.date.formatted(.dateTime.day().month(.abbreviated)))
+                        Text(dateLine)
                             .font(AppTheme.sans(12, weight: .medium))
                             .foregroundStyle(palette.dim)
                         Text(featured.feast.shortTitle)
