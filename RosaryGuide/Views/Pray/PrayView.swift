@@ -818,124 +818,17 @@ struct PrayView: View {
     // MARK: - Finis
 
     private func finisLayer(_ step: RosaryStep) -> some View {
-        GeometryReader { geo in
-            let artH = min(geo.size.height * 0.62, 544)
-            ZStack(alignment: .top) {
-                // Web `.finis-art`: top 62% painting with veil into pray bg
-                MysteryArtworkView(
-                    set: launch.mysterySet,
-                    mysteryNumber: 5,
-                    slug: MysteryCatalog.mysteries(for: launch.mysterySet).last?.artSlug,
-                    kind: .heroTall
-                )
-                .frame(height: artH)
-                .frame(maxWidth: .infinity)
-                .clipped()
-                .overlay {
-                    LinearGradient(
-                        stops: [
-                            .init(color: palette.prayBg.opacity(colorScheme == .light ? 0.28 : 0.38), location: 0),
-                            .init(color: palette.prayBg.opacity(colorScheme == .light ? 0.88 : 0.86), location: 0.50),
-                            .init(color: palette.prayBg, location: 1)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-
-                palette.prayBg
-                    .ignoresSafeArea()
-                    .opacity(0) // keep hit-testing clear; real fill via background below
-
-                VStack(spacing: 0) {
-                    HStack {
-                        Spacer()
-                        roundControl(system: "xmark") {
-                            finishRosary()
-                        }
-                        .accessibilityLabel("Close")
-                    }
-                    .padding(.horizontal, AppTheme.Space.lg)
-                    .padding(.top, AppTheme.Space.xs)
-                    .safeAreaPadding(.top)
-
-                    // Web `.scroll` flex spacers: before 1.22 / after 1
-                    Spacer(minLength: 12)
-                        .frame(maxHeight: .infinity)
-                        .layoutPriority(1)
-
-                    VStack(spacing: 0) {
-                        FinisEmblem()
-                            .foregroundStyle(palette.accent.opacity(0.9))
-                            .padding(.bottom, 24)
-
-                        Text("The Rosary is complete")
-                            .font(AppTheme.sans(18, weight: .medium))
-                            .tracking(0.18)
-                            .foregroundStyle(palette.ink.opacity(0.88))
-                            .multilineTextAlignment(.center)
-
-                        FinisOrnament()
-                            .foregroundStyle(palette.accent)
-                            .padding(.top, 18)
-                            .padding(.bottom, 22)
-                            .frame(maxWidth: 304)
-
-                        Text("\u{201C}\(step.body.english)\u{201D}")
-                            .font(AppTheme.sans(22))
-                            .lineSpacing(8)
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(palette.ink.opacity(0.96))
-                            .frame(maxWidth: 384)
-
-                        if let by = step.subtitle {
-                            Text(by.english)
-                                .font(AppTheme.sans(13, weight: .regular))
-                                .tracking(0.39)
-                                .foregroundStyle(palette.dim)
-                                .padding(.top, 14)
-                        }
-                    }
-                    .padding(.horizontal, AppTheme.gutter)
-
-                    Spacer(minLength: 12)
-                        .frame(maxHeight: .infinity)
-
-                    VStack(spacing: 12) {
-                        PillButton(title: "Done") {
-                            finishRosary()
-                        }
-
-                        Button {
-                            showingMichael = true
-                            HapticService.play(.medium, enabled: settings.hapticsEnabled)
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: "shield")
-                                    .guideSymbol(size: 15, weight: .medium)
-                                Text("Saint Michael Prayer")
-                                    .font(AppTheme.sans(16, weight: .medium))
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 15)
-                            .foregroundStyle(palette.ink)
-                            .overlay {
-                                Capsule().strokeBorder(palette.dim.opacity(0.45), lineWidth: 1)
-                            }
-                        }
-                        .guidePressable()
-                        .frame(maxWidth: 320)
-                    }
-                    .frame(maxWidth: 320)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, AppTheme.gutter)
-                    .padding(.bottom, AppTheme.Space.xl)
-                    .safeAreaPadding(.bottom)
-                }
+        CompletionView(
+            mysterySet: launch.mysterySet,
+            quote: step.body.english,
+            attribution: step.subtitle?.english ?? "",
+            intentionTitle: chosenIntentionTitle.isEmpty ? nil : chosenIntentionTitle,
+            onDone: { finishRosary() },
+            onMichael: {
+                showingMichael = true
+                HapticService.play(.medium, enabled: settings.hapticsEnabled)
             }
-            .frame(width: geo.size.width, height: geo.size.height)
-            .background(palette.prayBg.ignoresSafeArea())
-        }
+        )
     }
 
     private var michaelLayer: some View {
@@ -1135,96 +1028,6 @@ private struct PlateScrollHintBob: ViewModifier {
                 visible = false
                 drift = 0
             }
-    }
-}
-
-// MARK: - Finis chrome (web emblem + ornament)
-
-private struct FinisEmblem: View {
-    var body: some View {
-        Canvas { ctx, size in
-            let sx = size.width / 60
-            let sy = size.height / 70
-            func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x * sx, y: y * sy) }
-
-            // 22 dots on a ring
-            let n = 22
-            let r: CGFloat = 17
-            let cx: CGFloat = 30
-            let cy: CGFloat = 26
-            for i in 0..<n {
-                let a = (CGFloat(i) / CGFloat(n)) * 2 * .pi - .pi / 2
-                let c = p(cx + cos(a) * r, cy + sin(a) * r)
-                let rad = 1.5 * sx
-                ctx.fill(Path(ellipseIn: CGRect(x: c.x - rad, y: c.y - rad, width: rad * 2, height: rad * 2)), with: .foreground)
-            }
-
-            // center star (approx)
-            var star = Path()
-            let sc = p(30, 26)
-            let outer: CGFloat = 5.4 * sx
-            let inner: CGFloat = 2.2 * sx
-            for i in 0..<8 {
-                let a = CGFloat(i) * .pi / 4 - .pi / 2
-                let rad = i.isMultiple(of: 2) ? outer : inner
-                let pt = CGPoint(x: sc.x + cos(a) * rad, y: sc.y + sin(a) * rad)
-                if i == 0 { star.move(to: pt) } else { star.addLine(to: pt) }
-            }
-            star.closeSubpath()
-            ctx.fill(star, with: .foreground)
-
-            // two descending dots
-            for y in [46.5, 52.0] as [CGFloat] {
-                let c = p(30, y)
-                let rad = 1.5 * sx
-                ctx.fill(Path(ellipseIn: CGRect(x: c.x - rad, y: c.y - rad, width: rad * 2, height: rad * 2)), with: .foreground)
-            }
-
-            // cross
-            var cross = Path()
-            cross.move(to: p(30, 56)); cross.addLine(to: p(30, 67))
-            cross.move(to: p(25.5, 60)); cross.addLine(to: p(34.5, 60))
-            ctx.stroke(cross, with: .foreground, style: StrokeStyle(lineWidth: 1.6 * sx, lineCap: .round))
-        }
-        .frame(width: 68, height: 79)
-        .accessibilityHidden(true)
-    }
-}
-
-private struct FinisOrnament: View {
-    var body: some View {
-        HStack(spacing: 14) {
-            Rectangle()
-                .fill(.primary.opacity(0.32))
-                .frame(height: 1)
-            FinisStar()
-                .frame(width: 11, height: 11)
-                .opacity(0.75)
-            Rectangle()
-                .fill(.primary.opacity(0.32))
-                .frame(height: 1)
-        }
-        .accessibilityHidden(true)
-    }
-}
-
-
-private struct FinisStar: View {
-    var body: some View {
-        Canvas { ctx, size in
-            let c = CGPoint(x: size.width / 2, y: size.height / 2)
-            let outer = min(size.width, size.height) / 2
-            let inner = outer * 0.28
-            var path = Path()
-            for i in 0..<8 {
-                let a = CGFloat(i) * .pi / 4 - .pi / 2
-                let rad = i.isMultiple(of: 2) ? outer : inner
-                let pt = CGPoint(x: c.x + cos(a) * rad, y: c.y + sin(a) * rad)
-                if i == 0 { path.move(to: pt) } else { path.addLine(to: pt) }
-            }
-            path.closeSubpath()
-            ctx.fill(path, with: .foreground)
-        }
     }
 }
 

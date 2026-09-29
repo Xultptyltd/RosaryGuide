@@ -24,8 +24,17 @@ enum QuoteCatalog {
         CompletionQuote(id: "lucia", text: "There is no problem, I tell you, no matter how difficult it is, that we cannot resolve by the prayer of the Holy Rosary.", attribution: "Sister Lucia of Fatima")
     ]
 
+    /// Short enough to show fully on the completion screen without truncation.
+    private static let maxCompletionCharacters = 90
+
+    static var shortQuotes: [CompletionQuote] {
+        all.filter { $0.text.count <= maxCompletionCharacters }
+    }
+
+    /// Prefer a short quote so the completion screen never truncates.
     static func quote(for date: Date = .now, calendar: Calendar = .current) -> CompletionQuote {
+        let pool = shortQuotes.isEmpty ? all : shortQuotes
         let day = calendar.ordinality(of: .day, in: .year, for: date) ?? 1
-        return all[day % all.count]
+        return pool[day % pool.count]
     }
 }

@@ -103,7 +103,7 @@ enum RosarySequenceBuilder {
         let quote = QuoteCatalog.quote()
         append(
             .completion,
-            title: BilingualText(english: "The Rosary is finished.", latin: "Rosarium completum est."),
+            title: BilingualText(english: "Rosary complete", latin: "Rosarium completum est."),
             body: BilingualText(english: quote.text, latin: quote.text),
             subtitle: BilingualText(english: quote.attribution, latin: quote.attribution),
             haptic: .success,
