@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Ceremonial end-of-rosary screen: art → symbol → label → mystery title → date →
+/// Ceremonial end-of-rosary screen: art → symbol → label → mystery title →
 /// quote → optional intention → calm space → Done → optional St Michael prayer.
 /// No stats, X, or confetti — stillness as the emotional endpoint.
 struct CompletionView: View {
@@ -27,16 +27,6 @@ struct CompletionView: View {
 
     /// Near-black page ground for this ceremonial screen (independent of light chrome elsewhere).
     private var pageBg: Color { Color.black }
-
-    private var completedDateLine: String {
-        // e.g. "Tuesday 29 September" — day-first, matching AU locale preference.
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_AU")
-        formatter.setLocalizedDateFormatFromTemplate("EEEEdMMMM")
-        // Prefer explicit pattern so we never get a comma between weekday and day.
-        formatter.dateFormat = "EEEE d MMMM"
-        return formatter.string(from: Date())
-    }
 
     /// Primary headline — adjective + "Mysteries" on two lines when natural.
     private var mysteryHeadline: String {
@@ -113,8 +103,8 @@ struct CompletionView: View {
                                 .accessibilityAddTraits(.isHeader)
                                 .accessibilityLabel("Rosary complete")
 
-                            // 4 + 5. Mystery title + date (tight group)
-                            VStack(spacing: 6) {
+                            // 4. Mystery title
+                            VStack(spacing: 0) {
                                 Text(mysteryHeadline)
                                     .font(AppTheme.sans(prefersCompactType ? 34 : 40, weight: .regular, relativeTo: .largeTitle))
                                     .foregroundStyle(Color.white.opacity(0.96))
@@ -122,20 +112,15 @@ struct CompletionView: View {
                                     .lineSpacing(2)
                                     .minimumScaleFactor(0.78)
                                     .accessibilityLabel(mysterySet.name.english)
-
-                                Text(completedDateLine)
-                                    .font(AppTheme.sans(prefersCompactType ? 15 : 14, weight: .regular, relativeTo: .subheadline))
-                                    .foregroundStyle(Color.white.opacity(0.48))
-                                    .multilineTextAlignment(.center)
                             }
                             .padding(.top, 10)
                             .opacity(opacity(for: .title))
                             .offset(y: offset(for: .title))
 
-                            // 6. Short contemplative quote on the same surface treatment used elsewhere.
+                            // 5. Short contemplative quote on the same surface treatment used elsewhere.
                             VStack(spacing: AppTheme.Space.md) {
                                 Text("“\(completionQuote.text)”")
-                                    .font(AppTheme.TypeRole.quote)
+                                    .font(AppTheme.sans(prefersCompactType ? 18 : 19, relativeTo: .body))
                                     .foregroundStyle(palette.dim)
                                     .multilineTextAlignment(.center)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -154,7 +139,7 @@ struct CompletionView: View {
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("\(completionQuote.text), \(completionQuote.attribution)")
 
-                            // 7. Intention (optional only — omit entirely when absent)
+                            // 6. Intention (optional only — omit entirely when absent)
                             if hasIntention, let intentionTitle {
                                 VStack(spacing: 6) {
                                     Text("OFFERED FOR")
@@ -176,7 +161,7 @@ struct CompletionView: View {
                                 .accessibilityLabel("Offered for \(intentionTitle)")
                             }
 
-                            // 8. Intentional negative space before actions
+                            // 7. Intentional negative space before actions
                             Spacer(minLength: prefersCompactType ? 28 : 44)
                                 .frame(height: prefersCompactType ? 28 : 52)
                         }
@@ -185,7 +170,7 @@ struct CompletionView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                    // 9 + 10. Actions — Done primary, St Michael optional secondary CTA
+                    // 8 + 9. Actions — Done primary, St Michael optional secondary CTA
                     VStack(spacing: 18) {
                         PillButton(title: "Done", action: onDone)
                             .environment(\.colorScheme, .dark)

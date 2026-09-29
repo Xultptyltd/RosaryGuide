@@ -788,7 +788,6 @@ extension AppTheme {
         static var title: Font { AppTheme.sans(40, weight: .regular, relativeTo: .title) }
         static var titleSmall: Font { AppTheme.sans(24, weight: .semibold, relativeTo: .title3) }
         static var body: Font { AppTheme.sans(19, relativeTo: .body) }
-        static var quote: Font { AppTheme.serif(19, italic: true, relativeTo: .body) }
         static var quoteAttribution: Font { AppTheme.sans(10, weight: .medium, relativeTo: .caption) }
         static var bodySmall: Font { AppTheme.sans(17, relativeTo: .body) }
         static var themeSummary: Font { AppTheme.sans(15, relativeTo: .body) }
