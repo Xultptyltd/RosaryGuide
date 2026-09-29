@@ -686,7 +686,8 @@ struct HomeView: View {
             }
             .padding(.horizontal, AppTheme.Space.xl)
             .padding(.vertical, AppTheme.Space.sm)
-            .guideCard(fill: palette.card.opacity(0.92))
+            // Unfilled outline so the page background shows through; stroke matches mystery-card chrome.
+            .guideCard(fill: Color.clear, stroke: true)
         }
     }
 
