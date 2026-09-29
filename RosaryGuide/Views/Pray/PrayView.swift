@@ -104,8 +104,6 @@ struct PrayView: View {
             )
             .environment(offer)
             .environment(\.palette, palette)
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
             .onDisappear {
                 sessionStore.updateIntention(
                     id: chosenIntentionId,

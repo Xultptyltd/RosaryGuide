@@ -37,6 +37,9 @@ struct PrayIntentionSheet: View {
 
     private var noneSelected: Bool { chosenId == nil && chosenTitle.isEmpty }
 
+    /// Four or more saved intentions need the full-height sheet so the list is usable.
+    private var prefersLargeDetent: Bool { offer.sortedIntentions.count >= 4 }
+
     private let cardMinHeight: CGFloat = 64
 
     var body: some View {
@@ -78,6 +81,9 @@ struct PrayIntentionSheet: View {
             .background(palette.bg)
             .navigationTitle("Offer this Rosary for")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(palette.bg, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(palette.scheme, for: .navigationBar)
             .sheet(item: $editorRoute) { route in
                 IntentionEditorSheet(
                     route: route,
@@ -96,6 +102,9 @@ struct PrayIntentionSheet: View {
                 await popeStore.refreshIfNeeded()
             }
         }
+        .presentationDetents(prefersLargeDetent ? [.large] : [.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(palette.bg)
     }
 
     // MARK: - Rows
