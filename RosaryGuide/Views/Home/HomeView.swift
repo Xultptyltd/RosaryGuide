@@ -470,7 +470,7 @@ struct HomeView: View {
             selectedLiturgicalVerse = verse
         } label: {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-                Text("SCRIPTURE FOR TODAY")
+                Text("DAILY SCRIPTURE")
                     .font(AppTheme.TypeRole.sectionLabel)
                     .tracking(1.15)
                     .foregroundStyle(palette.dim)
@@ -504,14 +504,14 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Scripture for today. \(verse.homeExcerpt). \(verse.citationLine)")
+        .accessibilityLabel("Daily scripture. \(verse.homeExcerpt). \(verse.citationLine)")
         .accessibilityHint("Shows the fuller Scripture passage")
     }
 
     private func liturgicalVerseSheet(_ verse: LiturgicalVerse) -> some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-                Text("SCRIPTURE FOR TODAY")
+                Text("DAILY SCRIPTURE")
                     .font(AppTheme.TypeRole.sectionLabel)
                     .tracking(1.15)
                     .foregroundStyle(palette.dim)

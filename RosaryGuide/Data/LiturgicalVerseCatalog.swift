@@ -1,6 +1,6 @@
 import Foundation
 
-/// A short verse for Home “Scripture for today”.
+/// A short verse for Home “Daily scripture”.
 /// Feast days use curated Mass-reading excerpts; ordinary days use a rotating
 /// contemplative catalog that does **not** claim to be today’s liturgy.
 struct LiturgicalVerse: Identifiable, Hashable, Sendable {
