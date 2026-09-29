@@ -1164,10 +1164,14 @@ private struct OverflowMenuButton: View {
     }
 
     /// UIMenu keeps template SF Symbols uncolored even with role .destructive;
-    /// an alwaysOriginal red UIImage is the reliable tint for Menu item icons.
+    /// an alwaysOriginal UIImage is the reliable tint for Menu item icons.
+    /// Match UIMenu destructive title red (#FF3B30), not dynamic `UIColor.systemRed`
+    /// (light #FF383C / dark #FF4245) which reads as a different red next to "Delete".
+    private static let destructiveMenuTitleColor = UIColor(red: 1, green: 59.0 / 255.0, blue: 48.0 / 255.0, alpha: 1)
+
     private static let destructiveTrashIcon: UIImage = {
         let base = UIImage(systemName: "trash.fill") ?? UIImage()
-        return base.withTintColor(.systemRed, renderingMode: .alwaysOriginal)
+        return base.withTintColor(destructiveMenuTitleColor, renderingMode: .alwaysOriginal)
     }()
 }
 
