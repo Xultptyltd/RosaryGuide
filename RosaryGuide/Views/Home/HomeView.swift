@@ -749,8 +749,8 @@ struct HomeView: View {
         let isToday = Calendar.current.isDateInToday(day)
 
         return HStack(alignment: .center, spacing: AppTheme.Space.md) {
-            // Weekday+date stay at 9; crown spacing ~50% of former shared 9 (→4).
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+            // Weekday+date stay at 9; crown spacing ~50% of prior 4 (→2).
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 9) {
                     Text(day.formatted(.dateTime.weekday(.wide)))
                         .font(AppTheme.sans(17))
