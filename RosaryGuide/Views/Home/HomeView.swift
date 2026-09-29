@@ -618,14 +618,14 @@ struct HomeView: View {
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                         if isToday {
-                            Text("Today")
-                                .font(AppTheme.sans(10, weight: .semibold))
-                                .tracking(0.66)
-                                .textCase(.uppercase)
-                                .foregroundStyle(palette.ink)
+                            // Match This week calendar weekRow TODAY pill (colors, font, padding, Capsule).
+                            Text("TODAY")
+                                .font(AppTheme.sans(9, weight: .semibold))
+                                .tracking(0.6)
+                                .foregroundStyle(palette.accent)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(palette.accentTint, in: AppTheme.capsule)
+                                .background(palette.accentTint, in: Capsule())
                         } else {
                             Text(featured.date.formatted(.dateTime.day().month(.abbreviated)))
                                 .font(AppTheme.sans(12, weight: .medium))
