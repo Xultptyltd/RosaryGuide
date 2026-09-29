@@ -38,7 +38,6 @@ struct PrayView: View {
     @State private var chosenIntentionId: UUID?
     @State private var chosenIntentionTitle: String = ""
     @State private var chosenIntentionNote: String = ""
-    @State private var intentionNoteExpanded = false
     @State private var showIntentionSheet = false
     @State private var didRecordCarry = false
 
@@ -445,15 +444,16 @@ struct PrayView: View {
                         if !pinTop { Spacer(minLength: 0) }
                         VStack(alignment: .leading, spacing: 0) {
                             locus(step)
+                            if step.kind == .signOfTheCross {
+                                signOfCrossIntentionBlock
+                                    .padding(.bottom, AppTheme.Space.xl)
+                            }
                             BilingualStack(
                                 text: step.body,
                                 language: language,
                                 font: AppTheme.sans(21 * settings.textSize.scale),
                                 pointSize: 21 * settings.textSize.scale
                             )
-                            if step.kind == .signOfTheCross {
-                                signOfCrossIntentionBelowBody
-                            }
                         }
                         .padding(.horizontal, AppTheme.gutter)
                         .padding(.top, 4)
@@ -594,91 +594,68 @@ struct PrayView: View {
 
 
 
-    /// Rough cut for ~2 lines of body note before offering Read more.
-    
-    private var intentionNoteNeedsExpandControl: Bool {
-        let note = chosenIntentionNote
-        if note.isEmpty { return false }
-        let lineBreaks = note.filter(\.isNewline).count
-        return lineBreaks >= 2 || note.count > 90
+    /// Quiet intention strip on the combined Sign of the Cross opening —
+    /// labeled, avatar + title, change via sheet. Lives under the prayer title,
+    /// above the prayer text (not buried beneath it).
+    private var chosenOfferIntention: OfferIntention? {
+        chosenIntentionId.flatMap { offer.intention(id: $0) }
     }
 
     @ViewBuilder
-    private var signOfCrossIntentionBelowBody: some View {
-        Button {
-            showIntentionSheet = true
-        } label: {
-            intentionCard
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 18)
-    }
-
-    @ViewBuilder
-    private var intentionCard: some View {
+    private var signOfCrossIntentionBlock: some View {
         let hasIntention = !chosenIntentionTitle.isEmpty
-        VStack(alignment: .leading, spacing: 8) {
-            if hasIntention {
-                Text("This Rosary is for")
-                    .font(AppTheme.sans(12, weight: .medium))
-                    .tracking(1.2)
-                    .textCase(.uppercase)
-                    .foregroundStyle(palette.dim)
+        let resolved = chosenOfferIntention
 
-                Text(chosenIntentionTitle)
-                    .font(AppTheme.sans(21, weight: .semibold))
-                    .foregroundStyle(palette.ink)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+            Text("Intention")
+                .font(AppTheme.TypeRole.sectionLabel)
+                .foregroundStyle(palette.dim)
+                .textCase(.uppercase)
+                .tracking(AppTheme.Component.sectionLabelTracking)
+                .accessibilityAddTraits(.isHeader)
 
-                if !chosenIntentionNote.isEmpty {
-                    Text(chosenIntentionNote)
-                        .font(AppTheme.sans(14))
-                        .foregroundStyle(palette.dim)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(intentionNoteExpanded ? nil : 2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            Button {
+                showIntentionSheet = true
+            } label: {
+                HStack(alignment: .center, spacing: AppTheme.Space.md) {
+                    IntentionIconView(
+                        accent: resolved?.accent ?? .skyBlue,
+                        emoji: resolved?.displayEmoji ?? (hasIntention ? "🙏" : ""),
+                        size: 44,
+                        emptyPlaceholder: hasIntention ? nil : "?",
+                        usesPopePortrait: resolved?.isPapal ?? false
+                    )
 
-                    if intentionNoteNeedsExpandControl {
-                        Text(intentionNoteExpanded ? "Show less" : "Read more")
-                            .font(AppTheme.sans(12, weight: .semibold))
-                            .foregroundStyle(palette.accent)
-                            .onTapGesture {
-                                intentionNoteExpanded.toggle()
-                            }
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(hasIntention ? chosenIntentionTitle : "Add an intention")
+                            .font(AppTheme.sans(17, weight: .semibold))
+                            .foregroundStyle(palette.ink)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.88)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Text(hasIntention ? "Change" : "Who or what is this Rosary for?")
+                            .font(AppTheme.TypeRole.caption)
+                            .foregroundStyle(palette.dim)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                }
 
-            } else {
-                Text("Add an intention")
-                    .font(AppTheme.sans(21, weight: .semibold))
-                    .foregroundStyle(palette.ink)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Text("Who or what are you offering this Rosary for?")
-                    .font(AppTheme.sans(13))
-                    .foregroundStyle(palette.dim)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "chevron.right")
+                        .guideSymbol(size: 13, weight: .semibold)
+                        .foregroundStyle(palette.faint)
+                        .accessibilityHidden(true)
+                }
+                .padding(AppTheme.Space.lg)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .guideCard(fill: palette.panel, stroke: true)
+                .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(hasIntention ? "Intention: \(chosenIntentionTitle). Change." : "Add an intention")
+            .accessibilityHint("Opens intention picker")
         }
-        .padding(.horizontal, AppTheme.gutter)
-        .padding(.vertical, 22)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                .fill(hasIntention ? palette.card2.opacity(colorScheme == .light ? 0.92 : 0.55) : Color.clear)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                .strokeBorder(
-                    palette.ink.opacity(hasIntention ? (colorScheme == .light ? 0.06 : 0.12) : 0.35),
-                    style: StrokeStyle(lineWidth: hasIntention ? 1 : 1.5, dash: hasIntention ? [] : [6, 5])
-                )
-        )
     }
 
     /// Website `.lead`: italic dim, with the virtue / "your intention" in stronger ink.
@@ -998,7 +975,6 @@ struct PrayView: View {
             chosenIntentionId = resolvedId
             chosenIntentionTitle = resolvedTitle
             chosenIntentionNote = resolvedId.flatMap { offer.intention(id: $0)?.note } ?? ""
-            intentionNoteExpanded = false
             didRecordCarry = false
         case .resume(let session):
             freshSetPending = nil
@@ -1011,7 +987,6 @@ struct PrayView: View {
                 ?? ""
             chosenIntentionTitle = title
             chosenIntentionNote = session.intentionId.flatMap { offer.intention(id: $0)?.note } ?? ""
-            intentionNoteExpanded = false
             didRecordCarry = false
         }
         playHaptic()
