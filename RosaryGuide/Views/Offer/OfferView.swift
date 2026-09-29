@@ -101,25 +101,39 @@ struct OfferView: View {
         }
     }
 
-    private func addIntentionButton(title: String, isPrimary: Bool = true) -> some View {
+    private func addIntentionButton(
+        title: String,
+        isPrimary: Bool = true,
+        matchesLearnStyle: Bool = false
+    ) -> some View {
         Button {
             editor = .create
         } label: {
-            HStack(spacing: AppTheme.Space.sm) {
-                Image(systemName: "plus")
-                    .guideSymbol(size: 15, weight: .semibold)
+            if matchesLearnStyle {
                 Text(title)
-            }
-            .font(AppTheme.sans(16, weight: .semibold))
-            .foregroundStyle(isPrimary ? palette.onAccent : palette.accent)
-            .frame(maxWidth: .infinity)
-            .frame(height: AppTheme.Component.pillHeight)
-            .background {
-                if isPrimary {
-                    AppTheme.capsule.fill(palette.accent)
-                } else {
-                    AppTheme.capsule
-                        .strokeBorder(palette.accent.opacity(0.55), lineWidth: 1)
+                    .font(AppTheme.sans(16, weight: .semibold))
+                    .foregroundStyle(palette.ink)
+                    .padding(.horizontal, 28)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(palette.panel, in: Capsule())
+            } else {
+                HStack(spacing: AppTheme.Space.sm) {
+                    Image(systemName: "plus")
+                        .guideSymbol(size: 15, weight: .semibold)
+                    Text(title)
+                }
+                .font(AppTheme.sans(16, weight: .semibold))
+                .foregroundStyle(isPrimary ? palette.onAccent : palette.accent)
+                .frame(maxWidth: .infinity)
+                .frame(height: AppTheme.Component.pillHeight)
+                .background {
+                    if isPrimary {
+                        AppTheme.capsule.fill(palette.accent)
+                    } else {
+                        AppTheme.capsule
+                            .strokeBorder(palette.accent.opacity(0.55), lineWidth: 1)
+                    }
                 }
             }
         }
@@ -200,7 +214,7 @@ struct OfferView: View {
                         .guideNavList(pageGutter: AppTheme.gutter)
                     }
 
-                    addIntentionButton(title: "Add an intention", isPrimary: false)
+                    addIntentionButton(title: "Add an intention", matchesLearnStyle: true)
                         .guideNavList(pageGutter: AppTheme.gutter)
 
                     VStack(spacing: 0) {
@@ -301,7 +315,8 @@ private struct CurrentIntentionHero: View {
                 IntentionIconView(
                     accent: intention.accent,
                     emoji: intention.displayEmoji,
-                    size: 64
+                    size: 64,
+                    usesPopePortrait: intention.isPapal
                 )
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
@@ -648,7 +663,8 @@ private struct IntentionListRow: View {
             IntentionIconView(
                 accent: intention.accent,
                 emoji: intention.displayEmoji,
-                size: 44
+                size: 44,
+                usesPopePortrait: intention.isPapal
             )
 
             VStack(alignment: .leading, spacing: 3) {
@@ -773,7 +789,8 @@ private struct IntentionDetailView: View {
             IntentionIconView(
                 accent: intention.accent,
                 emoji: intention.displayEmoji,
-                size: 58
+                size: 58,
+                usesPopePortrait: intention.isPapal
             )
 
             VStack(alignment: .leading, spacing: 8) {
@@ -842,25 +859,40 @@ private struct IntentionDetailView: View {
             VStack(alignment: .leading, spacing: 10) {
                 GuideSectionLabel(text: "Notes", color: palette.dim)
 
-                Button(action: onEdit) {
-                    HStack(alignment: .top, spacing: 12) {
-                        Text(noteText)
-                            .font(AppTheme.sans(15))
-                            .foregroundStyle(hasNote ? palette.ink : palette.dim)
-                            .lineSpacing(4)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        Image(systemName: hasNote ? "square.and.pencil" : "plus")
-                            .guideSymbol(size: 14, weight: .semibold)
-                            .foregroundStyle(palette.accent)
+                if intention.isPapal {
+                    // Papal notes come from the Holy Father suggestion — display only.
+                    Text(hasNote ? (intention.note ?? "") : "No notes")
+                        .font(AppTheme.sans(15))
+                        .foregroundStyle(hasNote ? palette.ink : palette.dim)
+                        .lineSpacing(4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(18)
+                        .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+                                .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
+                        }
+                } else {
+                    Button(action: onEdit) {
+                        HStack(alignment: .top, spacing: 12) {
+                            Text(noteText)
+                                .font(AppTheme.sans(15))
+                                .foregroundStyle(hasNote ? palette.ink : palette.dim)
+                                .lineSpacing(4)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Image(systemName: hasNote ? "square.and.pencil" : "plus")
+                                .guideSymbol(size: 14, weight: .semibold)
+                                .foregroundStyle(palette.accent)
+                        }
+                        .padding(18)
+                        .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+                                .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
+                        }
                     }
-                    .padding(18)
-                    .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                            .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
-                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
 
             VStack(alignment: .leading, spacing: 10) {
@@ -1133,27 +1165,45 @@ private struct OverflowMenuButton: View {
 
 
 struct IntentionIconView: View {
+    @Environment(\.palette) private var palette
+    @Environment(\.colorScheme) private var colorScheme
     var accent: IntentionAccent
     var emoji: String
     var size: CGFloat = 40
     /// Shown in the picker when `emoji` is empty (e.g. "?"). List rows leave this nil.
     var emptyPlaceholder: String? = nil
+    /// Holy Father intentions use the same PopeLeo art as the featured card.
+    var usesPopePortrait: Bool = false
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(accent.color)
-            if !emoji.isEmpty {
-                Image(systemName: symbolName)
-                    .guideSymbol(size: symbolSize, weight: .semibold)
-                    .foregroundStyle(accent.onColor.opacity(0.88))
-            } else if let emptyPlaceholder, !emptyPlaceholder.isEmpty {
-                Image(systemName: "plus")
-                    .guideSymbol(size: size * 0.26, weight: .semibold)
-                    .foregroundStyle(accent.onColor.opacity(0.78))
+        Group {
+            if usesPopePortrait {
+                Image("PopeLeo")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size, height: size)
+                    .clipShape(Circle())
+                    .overlay {
+                        Circle()
+                            .strokeBorder(palette.ink.opacity(colorScheme == .light ? 0.08 : 0.14), lineWidth: 1)
+                    }
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(accent.color)
+                    if !emoji.isEmpty {
+                        Image(systemName: symbolName)
+                            .guideSymbol(size: symbolSize, weight: .semibold)
+                            .foregroundStyle(accent.onColor.opacity(0.88))
+                    } else if let emptyPlaceholder, !emptyPlaceholder.isEmpty {
+                        Image(systemName: "plus")
+                            .guideSymbol(size: size * 0.26, weight: .semibold)
+                            .foregroundStyle(accent.onColor.opacity(0.78))
+                    }
+                }
+                .frame(width: size, height: size)
             }
         }
-        .frame(width: size, height: size)
         .accessibilityHidden(true)
     }
 
@@ -1301,6 +1351,7 @@ struct IntentionEditorSheet: View {
     @State private var suggestOn: Set<MysterySetKind> = []
     @State private var kind: IntentionKindChoice = .personal
     @State private var makeCurrent = true
+    @State private var isPapalIntention = false
     @FocusState private var titleFieldFocused: Bool
 
     var body: some View {
@@ -1346,16 +1397,30 @@ struct IntentionEditorSheet: View {
                         Text("Notes")
                             .font(AppTheme.sans(13, weight: .medium))
                             .foregroundStyle(palette.dim)
-                        TextField("Optional", text: $note, axis: .vertical)
-                            .font(AppTheme.sans(15))
-                            .lineLimit(3...6)
-                            .padding(16)
-                            .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
-                            .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
-                                    .strokeBorder(palette.ink.opacity(0.08), lineWidth: 1)
-                            }
+                        if isPapalIntention {
+                            Text(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "No notes" : note)
+                                .font(AppTheme.sans(15))
+                                .foregroundStyle(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? palette.dim : palette.ink)
+                                .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
+                                .padding(16)
+                                .background(palette.panel.opacity(0.72), in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
+                                        .strokeBorder(palette.ink.opacity(0.08), lineWidth: 1)
+                                }
+                                .accessibilityLabel("Notes (read-only)")
+                        } else {
+                            TextField("Optional", text: $note, axis: .vertical)
+                                .font(AppTheme.sans(15))
+                                .lineLimit(3...6)
+                                .padding(16)
+                                .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
+                                .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
+                                        .strokeBorder(palette.ink.opacity(0.08), lineWidth: 1)
+                                }
+                        }
                     }
 
                     Toggle(isOn: $makeCurrent) {
@@ -1577,6 +1642,7 @@ struct IntentionEditorSheet: View {
             emoji = "🙏"
             kind = .personal
             makeCurrent = true
+            isPapalIntention = false
             suggestOn = Set(initialMystery.map { [$0] } ?? [])
         case .edit(let item):
             title = item.title
@@ -1585,6 +1651,7 @@ struct IntentionEditorSheet: View {
             emoji = item.emoji ?? item.displayEmoji
             kind = IntentionKindChoice(category: item.category)
             makeCurrent = item.isPinned
+            isPapalIntention = item.isPapal
             suggestOn = Set(item.suggestOn)
             if let expiresAt = item.expiresAt {
                 retention = .untilDate
@@ -1614,7 +1681,10 @@ struct IntentionEditorSheet: View {
             onSaved?(created)
         case .edit(var item):
             item.title = title
-            item.note = note
+            // Papal notes stay as provided by the Holy Father suggestion.
+            if !item.isPapal {
+                item.note = note
+            }
             item.expiresAt = expiry
             item.category = kind.category
             item.accent = accent

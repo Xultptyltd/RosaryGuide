@@ -427,7 +427,8 @@ struct HomeView: View {
                             IntentionIconView(
                                 accent: currentIntention?.accent ?? .mintGreen,
                                 emoji: currentIntention?.displayEmoji ?? "🙏",
-                                size: 52
+                                size: 52,
+                                usesPopePortrait: currentIntention?.isPapal == true
                             )
                         }
                         .frame(width: 52, height: 52)

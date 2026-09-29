@@ -82,7 +82,7 @@ struct OfferIntention: Identifiable, Hashable, Sendable {
     var createdAt: Date
     var lastCarriedAt: Date?
     var expiresAt: Date?
-    /// e.g. "pope-2026-09" — marks Holy Father origin; still editable once saved.
+    /// e.g. "pope-2026-09" — marks Holy Father origin; notes stay read-only once saved.
     var sourceId: String?
     var category: IntentionCategory
     var accent: IntentionAccent
