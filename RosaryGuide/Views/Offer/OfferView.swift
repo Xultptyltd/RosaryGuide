@@ -857,11 +857,6 @@ private struct IntentionDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(18)
-        .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
-        }
     }
 
     private var statsCard: some View {
