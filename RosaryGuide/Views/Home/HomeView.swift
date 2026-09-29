@@ -676,15 +676,15 @@ struct HomeView: View {
                     let day = entry.0
                     let item = entry.1
                     weekRow(day: day, assignment: item)
+                        .padding(.horizontal, AppTheme.Space.xl)
 
                     if index < MysteryCalendar.week(containing: today).count - 1 {
+                        // Full-width under each day row (edge-to-edge inside the stroked calendar).
                         Divider()
                             .overlay(palette.hair)
-                            .padding(.leading, AppTheme.Space.xl)
                     }
                 }
             }
-            .padding(.horizontal, AppTheme.Space.xl)
             .padding(.vertical, AppTheme.Space.sm)
             // Unfilled outline so the page background shows through; stroke matches mystery-card chrome.
             .guideCard(fill: Color.clear, stroke: true)
