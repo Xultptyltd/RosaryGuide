@@ -133,24 +133,23 @@ struct CompletionView: View {
                             .offset(y: offset(for: .title))
 
                             // 6. Short contemplative quote on the same surface treatment used elsewhere.
-                            VStack(spacing: 10) {
+                            VStack(spacing: AppTheme.Space.md) {
                                 Text("“\(completionQuote.text)”")
-                                    .font(AppTheme.serif(prefersCompactType ? 18 : 19, italic: true, relativeTo: .body))
-                                    .foregroundStyle(Color.white.opacity(0.84))
+                                    .font(AppTheme.TypeRole.quote)
+                                    .foregroundStyle(palette.dim)
                                     .multilineTextAlignment(.center)
                                     .fixedSize(horizontal: false, vertical: true)
 
                                 Text(completionQuote.attribution.uppercased())
-                                    .font(AppTheme.sans(10, weight: .medium, relativeTo: .caption))
-                                    .tracking(1.3)
-                                    .foregroundStyle(Color.white.opacity(0.46))
+                                    .font(AppTheme.TypeRole.quoteAttribution)
+                                    .tracking(AppTheme.Component.quoteAttributionTracking)
+                                    .foregroundStyle(palette.faint)
                                     .multilineTextAlignment(.center)
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 18)
-                            .guideCard(fill: palette.panel, stroke: true, elevated: false)
-                            .padding(.top, 24)
+                            .padding(AppTheme.Space.lg)
+                            .guideCard(fill: palette.panel, stroke: true)
+                            .padding(.top, AppTheme.Space.xl)
                             .opacity(opacity(for: .rest))
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("\(completionQuote.text), \(completionQuote.attribution)")

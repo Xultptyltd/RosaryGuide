@@ -788,6 +788,8 @@ extension AppTheme {
         static var title: Font { AppTheme.sans(40, weight: .regular, relativeTo: .title) }
         static var titleSmall: Font { AppTheme.sans(24, weight: .semibold, relativeTo: .title3) }
         static var body: Font { AppTheme.sans(19, relativeTo: .body) }
+        static var quote: Font { AppTheme.serif(19, italic: true, relativeTo: .body) }
+        static var quoteAttribution: Font { AppTheme.sans(10, weight: .medium, relativeTo: .caption) }
         static var bodySmall: Font { AppTheme.sans(17, relativeTo: .body) }
         static var themeSummary: Font { AppTheme.sans(15, relativeTo: .body) }
         static var callout: Font { AppTheme.sans(16, relativeTo: .callout) }
@@ -804,6 +806,8 @@ extension AppTheme {
         static let chipPaddingH: CGFloat = Space.md
         static let panelStrokeWidth: CGFloat = 1
         static let panelStrokeOpacity: Double = 0.11
+        /// Tracking for uppercase quote attributions.
+        static let quoteAttributionTracking: CGFloat = 1.3
         /// Shared height for compact segmented controls.
         static let segmentedControlHeight: CGFloat = 40
         /// Matches `GuideSectionLabel` tracking.
