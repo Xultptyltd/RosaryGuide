@@ -40,6 +40,8 @@ struct PrayView: View {
     @State private var chosenIntentionNote: String = ""
     @State private var showIntentionSheet = false
     @State private var didRecordCarry = false
+    /// Locked when entering finis so Offered for survives session.complete() / store churn.
+    @State private var completionIntentionTitle: String?
 
     private var language: PrayerLanguage { settings.language }
     private var current: RosaryStep? {
@@ -820,7 +822,7 @@ struct PrayView: View {
     private var finisLayer: some View {
         CompletionView(
             mysterySet: launch.mysterySet,
-            intentionTitle: chosenIntentionTitle.isEmpty ? nil : chosenIntentionTitle,
+            intentionTitle: completionIntentionTitle,
             onDone: { finishRosary() },
             onMichael: {
                 // Rosary is already marked complete on entering finis; Michael is optional continuation.
@@ -828,7 +830,38 @@ struct PrayView: View {
                 HapticService.play(.medium, enabled: settings.hapticsEnabled)
             }
         )
-        .onAppear { markRosaryCompletedIfNeeded() }
+        .onAppear {
+            lockCompletionIntentionIfNeeded()
+            markRosaryCompletedIfNeeded()
+        }
+    }
+
+    /// Resolve the display title from live state, session, or OfferStore — then freeze it.
+    private func resolvedIntentionTitleForCompletion() -> String? {
+        let trimmedChosen = chosenIntentionTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedChosen.isEmpty { return trimmedChosen }
+
+        if let raw = sessionStore.session?.intentionTitle {
+            let sessionTitle = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !sessionTitle.isEmpty { return sessionTitle }
+        }
+
+        let id = chosenIntentionId ?? sessionStore.session?.intentionId ?? launch.intentionId
+        if let id, let found = offer.intention(id: id) {
+            let title = found.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !title.isEmpty { return title }
+        }
+        return nil
+    }
+
+    private func lockCompletionIntentionIfNeeded() {
+        if completionIntentionTitle == nil {
+            completionIntentionTitle = resolvedIntentionTitleForCompletion()
+        }
+        // Keep live fields aligned so carry / resume paths stay consistent.
+        if let locked = completionIntentionTitle, chosenIntentionTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            chosenIntentionTitle = locked
+        }
     }
 
     private var michaelLayer: some View {
@@ -900,6 +933,7 @@ struct PrayView: View {
             chosenIntentionTitle = resolvedTitle
             chosenIntentionNote = resolvedId.flatMap { offer.intention(id: $0)?.note } ?? ""
             didRecordCarry = false
+            completionIntentionTitle = nil
         case .resume(let session):
             freshSetPending = nil
             steps = RosarySequenceBuilder.build(set: session.mysterySet)
@@ -912,6 +946,7 @@ struct PrayView: View {
             chosenIntentionTitle = title
             chosenIntentionNote = session.intentionId.flatMap { offer.intention(id: $0)?.note } ?? ""
             didRecordCarry = false
+            completionIntentionTitle = nil
         }
         playHaptic()
     }
@@ -933,6 +968,10 @@ struct PrayView: View {
         if let set = freshSetPending, next > 0 {
             sessionStore.start(set: set, language: settings.language, intentionId: chosenIntentionId, intentionTitle: chosenIntentionTitle.isEmpty ? nil : chosenIntentionTitle)
             freshSetPending = nil
+        }
+        // Snapshot intention before the finis onAppear clears the session.
+        if steps.indices.contains(next), steps[next].isFinis {
+            lockCompletionIntentionIfNeeded()
         }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
             index = next

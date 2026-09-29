@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Ceremonial end-of-rosary screen: art → symbol → label → mystery title →
-/// quote → optional intention → calm space → Done → optional St Michael prayer.
+/// optional intention → quote → calm space → Done → optional St Michael prayer.
 /// No stats, X, or confetti — stillness as the emotional endpoint.
 struct CompletionView: View {
     var mysterySet: MysterySetKind
@@ -43,7 +43,9 @@ struct CompletionView: View {
     }
 
     private var prefersCompactType: Bool {
-        dynamicTypeSize >= .accessibility1
+        // xxxLarge already scales title/quote enough to push Offered for under Done
+        // on a non-scrolling layout; don't wait for accessibility sizes.
+        dynamicTypeSize >= .xxxLarge
     }
 
     var body: some View {
@@ -90,6 +92,7 @@ struct CompletionView: View {
                             .padding(.horizontal, AppTheme.gutter)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .clipped()
 
                     // Done remains the primary action and both actions stay at the bottom.
                     VStack(spacing: compactLayout ? 12 : 18) {
@@ -161,13 +164,38 @@ struct CompletionView: View {
                 .opacity(opacity(for: .title))
                 .offset(y: offset(for: .title))
 
+            // Offered for — directly under the mystery headline so the fixed
+            // non-scrolling layout cannot bury it under Done / St Michael.
+            // Exact stored title only (never auto-prefix "For").
+            if hasIntention, let intentionTitle {
+                VStack(spacing: 6) {
+                    Text("OFFERED FOR")
+                        .font(AppTheme.sans(11, weight: .medium, relativeTo: .caption))
+                        .tracking(1.4)
+                        .foregroundStyle(Color.white.opacity(0.42))
+                        .textCase(.uppercase)
+
+                    Text(intentionTitle)
+                        .font(AppTheme.sans(compact ? 18 : 17, weight: .regular, relativeTo: .body))
+                        .foregroundStyle(Color.white.opacity(0.90))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, compact ? 12 : 18)
+                .layoutPriority(1)
+                .opacity(opacity(for: .rest))
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Offered for \(intentionTitle)")
+            }
+
             // Short contemplative quote on the same surface treatment used elsewhere.
             VStack(spacing: compact ? AppTheme.Space.sm : AppTheme.Space.md) {
                 Text("“\(completionQuote.text)”")
                     .font(compact ? AppTheme.sans(18, relativeTo: .body) : AppTheme.TypeRole.bodySmall)
                     .foregroundStyle(palette.dim)
                     .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(compact ? 4 : 5)
+                    .minimumScaleFactor(0.85)
 
                 Text(completionQuote.attribution.uppercased())
                     .font(AppTheme.TypeRole.quoteAttribution)
@@ -183,29 +211,8 @@ struct CompletionView: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(completionQuote.text), \(completionQuote.attribution)")
 
-            // Exact stored intention title, when PrayView supplies one.
-            if hasIntention, let intentionTitle {
-                VStack(spacing: 6) {
-                    Text("OFFERED FOR")
-                        .font(AppTheme.sans(11, weight: .medium, relativeTo: .caption))
-                        .tracking(1.4)
-                        .foregroundStyle(Color.white.opacity(0.42))
-                        .textCase(.uppercase)
-
-                    Text(intentionTitle)
-                        .font(AppTheme.sans(compact ? 18 : 17, weight: .regular, relativeTo: .body))
-                        .foregroundStyle(Color.white.opacity(0.90))
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.top, compact ? 16 : 28)
-                .opacity(opacity(for: .rest))
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Offered for \(intentionTitle)")
-            }
-
             // Small breathing room before the pinned actions.
-            Color.clear.frame(height: compact ? 20 : 32)
+            Color.clear.frame(height: compact ? 12 : 20)
         }
     }
 
