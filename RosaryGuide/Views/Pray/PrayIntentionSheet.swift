@@ -157,7 +157,7 @@ struct PrayIntentionSheet: View {
                 )
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Holy Father")
+                    Text("Holy Father’s Intention")
                         .font(AppTheme.sans(11, weight: .semibold))
                         .foregroundStyle(palette.accent)
                         .textCase(.uppercase)
