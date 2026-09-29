@@ -1546,7 +1546,7 @@ struct IntentionEditorSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                         .font(AppTheme.sans(16, weight: .regular, relativeTo: .body))
-                        .foregroundStyle(palette.dim)
+                        .foregroundStyle(palette.ink)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
