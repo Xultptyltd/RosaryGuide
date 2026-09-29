@@ -749,26 +749,29 @@ struct HomeView: View {
         let isToday = Calendar.current.isDateInToday(day)
 
         return HStack(alignment: .center, spacing: AppTheme.Space.md) {
-            HStack(alignment: .firstTextBaseline, spacing: 9) {
-                Text(day.formatted(.dateTime.weekday(.wide)))
-                    .font(AppTheme.sans(17))
-                    .foregroundStyle(palette.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-
-                if isToday {
-                    Text("TODAY")
-                        .font(AppTheme.sans(9, weight: .semibold))
-                        .tracking(0.6)
-                        .foregroundStyle(palette.accent)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(palette.accentTint, in: Capsule())
-                } else {
-                    Text(day.formatted(.dateTime.day().month(.abbreviated)).uppercased())
-                        .font(AppTheme.sans(13, weight: .medium))
-                        .foregroundStyle(palette.dim)
+            // Weekday+date stay at 9; crown spacing ~50% of former shared 9 (→4).
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 9) {
+                    Text(day.formatted(.dateTime.weekday(.wide)))
+                        .font(AppTheme.sans(17))
+                        .foregroundStyle(palette.ink)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+
+                    if isToday {
+                        Text("TODAY")
+                            .font(AppTheme.sans(9, weight: .semibold))
+                            .tracking(0.6)
+                            .foregroundStyle(palette.accent)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(palette.accentTint, in: Capsule())
+                    } else {
+                        Text(day.formatted(.dateTime.day().month(.abbreviated)).uppercased())
+                            .font(AppTheme.sans(13, weight: .medium))
+                            .foregroundStyle(palette.dim)
+                            .lineLimit(1)
+                    }
                 }
 
                 if let feast = assignment.feast {
