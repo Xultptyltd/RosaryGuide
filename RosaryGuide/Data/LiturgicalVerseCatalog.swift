@@ -15,7 +15,8 @@ struct LiturgicalVerse: Identifiable, Hashable, Sendable {
     /// Which Mass reading the verse comes from, when known (feast days only).
     var readingLabel: String?
     /// Secondary Home label under the citation.
-    /// Feasts: “From today’s liturgy”. Ordinary days: “A verse for today”.
+    /// Ordinary days: “A verse for today”. Feast catalog may still store
+    /// “From today’s liturgy”, but that line is not shown (citation only).
     var sourceLabel: String?
 
     /// Compatibility accessor for callers that treated `text` as the Home copy.
@@ -51,7 +52,15 @@ struct LiturgicalVerse: Identifiable, Hashable, Sendable {
     }
 
     var secondaryCitation: String? {
-        let value = sourceLabel ?? readingLabel
+        // Feast days: omit the quiet “From today’s liturgy” line; keep the cite.
+        // Ordinary days: still show “A verse for today”.
+        if let sourceLabel, !sourceLabel.isEmpty {
+            if sourceLabel == "From today’s liturgy" {
+                return nil
+            }
+            return sourceLabel
+        }
+        let value = readingLabel
         return value?.isEmpty == false ? value : nil
     }
 
