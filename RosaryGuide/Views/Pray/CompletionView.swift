@@ -120,7 +120,7 @@ struct CompletionView: View {
                             // 5. Short contemplative quote on the same surface treatment used elsewhere.
                             VStack(spacing: AppTheme.Space.md) {
                                 Text("“\(completionQuote.text)”")
-                                    .font(AppTheme.sans(prefersCompactType ? 18 : 19, relativeTo: .body))
+                                    .font(prefersCompactType ? AppTheme.sans(18, relativeTo: .body) : AppTheme.TypeRole.bodySmall)
                                     .foregroundStyle(palette.dim)
                                     .multilineTextAlignment(.center)
                                     .fixedSize(horizontal: false, vertical: true)
