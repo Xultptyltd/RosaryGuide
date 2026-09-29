@@ -113,32 +113,17 @@ struct PrayIntentionSheet: View {
         Button {
             editorRoute = .create
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "plus.circle")
-                    .guideSymbol(size: 22, weight: .regular)
-                    .foregroundStyle(palette.ink.opacity(0.85))
-                Text("Add intention")
-                    .font(AppTheme.sans(16, weight: .medium))
-                    .foregroundStyle(palette.ink)
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
-            .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .fill(Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .strokeBorder(
-                        palette.ink.opacity(0.35),
-                        style: StrokeStyle(lineWidth: 1.5, dash: [6, 5])
-                    )
-            )
+            Text("Add an intention")
+                .font(AppTheme.sans(16, weight: .semibold))
+                .foregroundStyle(palette.ink)
+                .padding(.horizontal, 28)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(palette.panel, in: Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Add intention")
+        .guidePressable()
+        .accessibilityLabel("Add an intention")
         .padding(.top, 6)
     }
 
