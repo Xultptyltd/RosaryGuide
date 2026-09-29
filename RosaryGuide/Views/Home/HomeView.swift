@@ -617,7 +617,16 @@ struct HomeView: View {
                 .buttonStyle(.plain)
             }
         }
-        .guideCard()
+        .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous)
+                .strokeBorder(
+                    palette.ink.opacity(colorScheme == .light ? 0.07 : 0.12),
+                    lineWidth: AppTheme.Component.panelStrokeWidth
+                )
+        }
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
+        .guideSoftShadow(elevated: colorScheme == .light)
     }
 
     private var tomorrowCard: some View {
