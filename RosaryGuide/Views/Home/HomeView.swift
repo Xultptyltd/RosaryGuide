@@ -580,9 +580,6 @@ struct HomeView: View {
             (isToday ? upcomingPreviewFeasts : Array(upcomingPreviewFeasts.dropFirst()))
                 .prefix(2)
         )
-        let dateLine = isToday
-            ? "Today"
-            : featured.date.formatted(.dateTime.day().month(.abbreviated))
         return VStack(spacing: 0) {
             NavigationLink {
                 FeastDetailView(prayLaunch: $prayLaunch, item: featured)
@@ -620,9 +617,20 @@ struct HomeView: View {
                     }
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                        Text(dateLine)
-                            .font(AppTheme.sans(12, weight: .medium))
-                            .foregroundStyle(palette.dim)
+                        if isToday {
+                            Text("Today")
+                                .font(AppTheme.sans(10, weight: .semibold))
+                                .tracking(0.66)
+                                .textCase(.uppercase)
+                                .foregroundStyle(palette.ink)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(palette.accentTint, in: AppTheme.capsule)
+                        } else {
+                            Text(featured.date.formatted(.dateTime.day().month(.abbreviated)))
+                                .font(AppTheme.sans(12, weight: .medium))
+                                .foregroundStyle(palette.dim)
+                        }
                         Text(featured.feast.shortTitle)
                             .font(AppTheme.sans(24, weight: .semibold))
                             .foregroundStyle(palette.ink)
