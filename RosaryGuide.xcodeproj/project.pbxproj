@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D8E9F0A1B2C3D4E5F6A70829 /* LiturgicalVerseCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7E8F9A0B1C2D3E4F5A60718 /* LiturgicalVerseCatalog.swift */; };
 		2B1F0975A78C45248878D4B4 /* FeastNarratives.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73615B296B0C41CFA92F7797 /* FeastNarratives.swift */; };
 		E5AB2D35F6C141C0A12E229F /* FeastScriptures.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA8200BBF10943DA9B385CE9 /* FeastScriptures.swift */; };
 		F17192475C3C5E005FFA1934 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65622D107422099E4F60DE1E /* AppTheme.swift */; };
@@ -71,6 +72,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		C7E8F9A0B1C2D3E4F5A60718 /* LiturgicalVerseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiturgicalVerseCatalog.swift; sourceTree = "<group>"; };
 		08B3314BC1EFCF756D53AF17 /* QuoteCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuoteCatalog.swift; sourceTree = "<group>"; };
 		0D14D5C74E932FBB6FE0784F /* PrayHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayHubView.swift; sourceTree = "<group>"; };
 		1564EB2EAFA031721C2527CA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -252,6 +254,7 @@
 				5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */,
 				73615B296B0C41CFA92F7797 /* FeastNarratives.swift */,
 				AA8200BBF10943DA9B385CE9 /* FeastScriptures.swift */,
+				C7E8F9A0B1C2D3E4F5A60718 /* LiturgicalVerseCatalog.swift */,
 				34B7278C515BF0D95EE40796 /* HowToPrayContent.swift */,
 				F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */,
 				4019C8E56EEFC74D6BD9D92D /* PrayerCatalog.swift */,
@@ -456,6 +459,7 @@
 				082CF909021C6EBA3FBB2D68 /* FeastCatalog.swift in Sources */,
 				2B1F0975A78C45248878D4B4 /* FeastNarratives.swift in Sources */,
 				E5AB2D35F6C141C0A12E229F /* FeastScriptures.swift in Sources */,
+				D8E9F0A1B2C3D4E5F6A70829 /* LiturgicalVerseCatalog.swift in Sources */,
 				28C9577CEB49FB4EFCC102BF /* HowToPrayContent.swift in Sources */,
 				05F066B261AA1E475873C6F3 /* MysteryCatalog.swift in Sources */,
 				662E38C7C39EF8E4296FAAD4 /* PrayerCatalog.swift in Sources */,

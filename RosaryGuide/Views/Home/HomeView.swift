@@ -20,6 +20,8 @@ struct HomeView: View {
     @State private var intentionSelectionExplicit = false
     @State private var openFeastID: String?
     @State private var weekFeastInfo: DatedFeast?
+    @State private var selectedMysteryDetail: Mystery?
+    @State private var selectedLiturgicalVerse: LiturgicalVerse?
     @State private var scrollToTopRequest = 0
     @State private var showSettingsDrawer = false
     @State private var navigationPath = NavigationPath()
@@ -124,6 +126,18 @@ struct HomeView: View {
         .sheet(item: $weekFeastInfo) { item in
             weekFeastSheet(item)
                 .presentationDetents([.height(weekFeastSheetHeight(for: item))])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(AppTheme.containerRadius)
+        }
+        .sheet(item: $selectedMysteryDetail) { mystery in
+            mysteryDetailSheet(mystery)
+                .presentationDetents([.height(mysteryDetailSheetHeight(for: mystery)), .large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(AppTheme.containerRadius)
+        }
+        .sheet(item: $selectedLiturgicalVerse) { verse in
+            liturgicalVerseSheet(verse)
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(AppTheme.containerRadius)
         }
@@ -248,6 +262,9 @@ struct HomeView: View {
 
             mysteryRail(gutter: gutter)
                 .padding(.top, AppTheme.decadesGap)
+
+            liturgicalVerseSection
+                .padding(.top, AppTheme.sectionGap)
 
             comingUpSection
                 .padding(.top, AppTheme.sectionGap)
@@ -446,9 +463,89 @@ struct HomeView: View {
         }
     }
 
+    private var liturgicalVerseSection: some View {
+        let verse = LiturgicalVerseCatalog.verse(for: today)
+        return Button {
+            HapticService.play(.light, enabled: settings.hapticsEnabled)
+            selectedLiturgicalVerse = verse
+        } label: {
+            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                Text("SCRIPTURE FOR TODAY")
+                    .font(AppTheme.TypeRole.sectionLabel)
+                    .tracking(1.15)
+                    .foregroundStyle(palette.dim)
+
+                Text(verse.homeDisplayExcerpt)
+                    .font(AppTheme.sans(18, relativeTo: .body))
+                    .foregroundStyle(palette.dim)
+                    .lineSpacing(6)
+                    .lineLimit(5)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                    VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                        Text(verse.reference)
+                            .font(AppTheme.sans(14, weight: .semibold, relativeTo: .subheadline))
+                            .foregroundStyle(palette.ink)
+                        if let secondaryCitation = verse.secondaryCitation {
+                            Text(secondaryCitation)
+                                .font(AppTheme.TypeRole.caption)
+                                .foregroundStyle(palette.faint)
+                        }
+                    }
+                    Spacer(minLength: AppTheme.Space.sm)
+                    Image(systemName: "chevron.right")
+                        .guideSymbol(size: 12, weight: .semibold)
+                        .foregroundStyle(palette.dim)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Scripture for today. \(verse.homeExcerpt). \(verse.citationLine)")
+        .accessibilityHint("Shows the fuller Scripture passage")
+    }
+
+    private func liturgicalVerseSheet(_ verse: LiturgicalVerse) -> some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                Text("SCRIPTURE FOR TODAY")
+                    .font(AppTheme.TypeRole.sectionLabel)
+                    .tracking(1.15)
+                    .foregroundStyle(palette.dim)
+
+                Text(verse.reference)
+                    .font(AppTheme.sans(27, weight: .regular, relativeTo: .title2))
+                    .foregroundStyle(palette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let secondaryCitation = verse.secondaryCitation {
+                    Text(secondaryCitation)
+                        .font(AppTheme.TypeRole.caption)
+                        .foregroundStyle(palette.faint)
+                }
+
+                Text(verse.fullText)
+                    .font(AppTheme.TypeRole.bodySmall)
+                    .foregroundStyle(palette.ink.opacity(0.86))
+                    .lineSpacing(7)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, AppTheme.Space.xl)
+            .padding(.top, AppTheme.Space.xxl)
+            .padding(.bottom, AppTheme.Space.xl)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .background(palette.bg)
+    }
+
     private var comingUpSection: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-            GuideSectionLabel(text: "Upcoming feast days", color: palette.dim)
+            GuideSectionLabel(text: "Coming up", color: palette.dim)
 
             if let featured = upcomingPreviewFeasts.first ?? nextRelevantFeast {
                 feastFeatureCard(featured)
@@ -462,7 +559,7 @@ struct HomeView: View {
             NavigationLink {
                 FeastDetailView(prayLaunch: $prayLaunch, item: featured)
             } label: {
-                ZStack(alignment: .bottomLeading) {
+                VStack(alignment: .leading, spacing: 0) {
                     Group {
                         if let path = ArtCatalog.feastHeroPath(feastId: featured.feast.id, scheme: colorScheme) {
                             FocusedRasterImage(
@@ -475,20 +572,10 @@ struct HomeView: View {
                             MysteryArtworkView(set: featured.feast.suggestedMysterySet ?? .glorious, mysteryNumber: 5, kind: .plateWide)
                         }
                     }
-                        .frame(height: 176)
-                        .clipped()
-                        .overlay {
-                            LinearGradient(
-                                colors: [
-                                    palette.card.opacity(0.86),
-                                    palette.card.opacity(0.52),
-                                    .clear
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        }
-                    VStack(alignment: .leading, spacing: 8) {
+                    .frame(height: 176)
+                    .clipped()
+
+                    VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                         Text(featured.date.formatted(.dateTime.day().month(.abbreviated)))
                             .font(AppTheme.sans(12, weight: .medium))
                             .foregroundStyle(palette.dim)
@@ -499,7 +586,8 @@ struct HomeView: View {
                             .minimumScaleFactor(0.82)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(AppTheme.Space.xl)
+                    .padding(.horizontal, AppTheme.Space.xl)
+                    .padding(.vertical, AppTheme.Space.xl)
                 }
             }
             .buttonStyle(.plain)
@@ -909,7 +997,7 @@ struct HomeView: View {
                 .frame(width: geo.size.width)
                 .clipped()
             }
-            .frame(height: dynamicTypeSize.isAccessibilitySize ? 620 : 438)
+            .frame(height: dynamicTypeSize.isAccessibilitySize ? 520 : 356)
             .padding(.horizontal, -gutter)
         }
     }
@@ -923,29 +1011,93 @@ struct HomeView: View {
     }
 
     private func mysteryCard(_ mystery: Mystery) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false)
-                .frame(height: 168)
-                .clipped()
-
+        Button {
+            HapticService.play(.light, enabled: settings.hapticsEnabled)
+            selectedMysteryDetail = mystery
+        } label: {
             VStack(alignment: .leading, spacing: 0) {
+                MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false)
+                    .frame(height: 168)
+                    .clipped()
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(mystery.title.primary(for: settings.language))
+                        .font(AppTheme.sans(22, weight: .semibold))
+                        .foregroundStyle(palette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, AppTheme.Space.sm)
+
+                    VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                        Hairline()
+                        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                            Text("Fruit")
+                                .font(AppTheme.TypeRole.caption)
+                                .foregroundStyle(palette.faint)
+                            Text(mystery.fruit.primary(for: settings.language))
+                                .font(AppTheme.TypeRole.caption)
+                                .foregroundStyle(palette.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(.top, AppTheme.Space.lg)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                }
+                .padding(.horizontal, AppTheme.Space.xl)
+                .padding(.top, AppTheme.Space.lg)
+                .padding(.bottom, AppTheme.Space.xl)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : 336, alignment: .top)
+            .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous)
+                    .strokeBorder(
+                        palette.ink.opacity(colorScheme == .light ? 0.07 : 0.12),
+                        lineWidth: AppTheme.Component.panelStrokeWidth
+                    )
+            }
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
+            .guideSoftShadow(elevated: colorScheme == .light)
+        }
+        .buttonStyle(.plain)
+        .guidePressable()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(mysteryAccessibilityLabel(mystery))
+        .accessibilityHint("Shows mystery details and fruit")
+    }
+
+    private func mysteryAccessibilityLabel(_ mystery: Mystery) -> String {
+        "Mystery \(mystery.number), \(mystery.title.primary(for: settings.language)). Fruit, \(mystery.fruit.primary(for: settings.language))."
+    }
+
+    private func mysteryDetailSheet(_ mystery: Mystery) -> some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                HStack(alignment: .center, spacing: AppTheme.Space.sm) {
+                    Text(mystery.set.shortName.uppercased())
+                        .font(AppTheme.sans(12, weight: .semibold))
+                        .tracking(1.8)
+                        .foregroundStyle(palette.dim)
+                        .offset(y: 1.5)
+                }
+
                 Text(mystery.title.primary(for: settings.language))
-                    .font(AppTheme.sans(22, weight: .semibold))
+                    .font(AppTheme.sans(27, weight: .regular))
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text(mystery.scriptureExcerpt.primary(for: settings.language))
-                    .font(AppTheme.sans(15))
-                    .foregroundStyle(palette.dim)
-                    .lineSpacing(5)
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 4)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, AppTheme.Space.sm)
+                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    Text(mystery.scriptureExcerpt.primary(for: settings.language))
+                        .font(AppTheme.sans(15))
+                        .lineSpacing(5)
+                        .foregroundStyle(palette.ink.opacity(0.82))
+                        .fixedSize(horizontal: false, vertical: true)
 
-                Text(mystery.scriptureReference)
-                    .font(AppTheme.TypeRole.caption)
-                    .foregroundStyle(palette.faint)
-                    .padding(.top, AppTheme.Space.sm)
+                    Text(mystery.scriptureReference)
+                        .font(AppTheme.TypeRole.caption)
+                        .foregroundStyle(palette.faint)
+                }
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                     Hairline()
@@ -954,36 +1106,29 @@ struct HomeView: View {
                             .font(AppTheme.TypeRole.caption)
                             .foregroundStyle(palette.faint)
                         Text(mystery.fruit.primary(for: settings.language))
-                            .font(AppTheme.TypeRole.caption)
+                            .font(AppTheme.sans(15, weight: .medium))
                             .foregroundStyle(palette.ink)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                .padding(.top, AppTheme.Space.lg)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, AppTheme.Space.xl)
-            .padding(.top, AppTheme.Space.lg)
+            .padding(.top, AppTheme.Space.xxl)
             .padding(.bottom, AppTheme.Space.xl)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : 418, alignment: .top)
-        .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous)
-                .strokeBorder(
-                    palette.ink.opacity(colorScheme == .light ? 0.07 : 0.12),
-                    lineWidth: AppTheme.Component.panelStrokeWidth
-                )
-        }
-        .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
-        .guideSoftShadow(elevated: colorScheme == .light)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(mysteryAccessibilityLabel(mystery))
+        .background(palette.bg)
     }
 
-    private func mysteryAccessibilityLabel(_ mystery: Mystery) -> String {
-        "Mystery \(mystery.number), \(mystery.title.primary(for: settings.language)). \(mystery.scriptureExcerpt.primary(for: settings.language)) Fruit, \(mystery.fruit.primary(for: settings.language))."
+    private func mysteryDetailSheetHeight(for mystery: Mystery) -> CGFloat {
+        let title = mystery.title.primary(for: settings.language)
+        let excerpt = mystery.scriptureExcerpt.primary(for: settings.language)
+        let titleLines = title.count > 28 ? 2 : 1
+        let excerptLines = CGFloat(max(3, Int(ceil(Double(excerpt.count) / 42.0))))
+        let estimated = 168 + CGFloat(titleLines * 36) + (excerptLines * 25) + 72
+        return min(max(estimated, 360), 560)
     }
 
     private var upcomingMarian: [DatedFeast] {
