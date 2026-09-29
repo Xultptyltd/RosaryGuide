@@ -48,11 +48,13 @@ struct CompletionView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let artH = artHeight(for: geo.size.height)
+            let compactLayout = prefersCompactType || geo.size.height < 700
+            let artH = artHeight(for: geo.size.height, compact: compactLayout)
+
             ZStack(alignment: .top) {
                 pageBg.ignoresSafeArea()
 
-                // 1. Hero artwork — full bleed, under status bar, soft fade into black.
+                // Hero artwork stays behind the complete, non-scrolling content block.
                 MysteryArtworkView(
                     set: mysterySet,
                     mysteryNumber: nil,
@@ -78,100 +80,19 @@ struct CompletionView: View {
                 .ignoresSafeArea(edges: .top)
                 .accessibilityHidden(true)
 
+                // The content owns all space above the actions and is centered in it.
+                // It deliberately uses a finite layout, with text wrapping and
+                // slight compression preferred over making the page movable.
                 VStack(spacing: 0) {
-                    // Sit the emblem near the art → black transition.
-                    Color.clear.frame(height: max(artH * 0.58, 120))
-
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 0) {
-                            // 2. Completion symbol
-                            FinisEmblem()
-                                .foregroundStyle(palette.accent.opacity(0.95))
-                                .opacity(opacity(for: .symbol))
-                                .offset(y: offset(for: .symbol))
-                                .padding(.bottom, 18)
-                                .accessibilityHidden(true)
-
-                            // 3. Completion label (metadata, not headline)
-                            Text("ROSARY COMPLETE")
-                                .font(AppTheme.sans(prefersCompactType ? 12 : 11, weight: .medium, relativeTo: .caption))
-                                .tracking(1.6)
-                                .foregroundStyle(Color.white.opacity(0.48))
-                                .multilineTextAlignment(.center)
-                                .opacity(opacity(for: .title))
-                                .offset(y: offset(for: .title))
-                                .accessibilityAddTraits(.isHeader)
-                                .accessibilityLabel("Rosary complete")
-
-                            // 4. Mystery title
-                            VStack(spacing: 0) {
-                                Text(mysteryHeadline)
-                                    .font(AppTheme.sans(prefersCompactType ? 34 : 40, weight: .regular, relativeTo: .largeTitle))
-                                    .foregroundStyle(Color.white.opacity(0.96))
-                                    .multilineTextAlignment(.center)
-                                    .lineSpacing(2)
-                                    .minimumScaleFactor(0.78)
-                                    .accessibilityLabel(mysterySet.name.english)
-                            }
-                            .padding(.top, 10)
-                            .opacity(opacity(for: .title))
-                            .offset(y: offset(for: .title))
-
-                            // 5. Short contemplative quote on the same surface treatment used elsewhere.
-                            VStack(spacing: AppTheme.Space.md) {
-                                Text("“\(completionQuote.text)”")
-                                    .font(prefersCompactType ? AppTheme.sans(18, relativeTo: .body) : AppTheme.TypeRole.bodySmall)
-                                    .foregroundStyle(palette.dim)
-                                    .multilineTextAlignment(.center)
-                                    .fixedSize(horizontal: false, vertical: true)
-
-                                Text(completionQuote.attribution.uppercased())
-                                    .font(AppTheme.TypeRole.quoteAttribution)
-                                    .tracking(AppTheme.Component.quoteAttributionTracking)
-                                    .foregroundStyle(palette.faint)
-                                    .multilineTextAlignment(.center)
-                            }
+                    ZStack {
+                        completionContent(compact: compactLayout)
                             .frame(maxWidth: .infinity)
-                            .padding(AppTheme.Space.lg)
-                            .guideCard(fill: palette.panel, stroke: true)
-                            .padding(.top, AppTheme.Space.xl)
-                            .opacity(opacity(for: .rest))
-                            .accessibilityElement(children: .combine)
-                            .accessibilityLabel("\(completionQuote.text), \(completionQuote.attribution)")
-
-                            // 6. Intention (optional only — omit entirely when absent)
-                            if hasIntention, let intentionTitle {
-                                VStack(spacing: 6) {
-                                    Text("OFFERED FOR")
-                                        .font(AppTheme.sans(11, weight: .medium, relativeTo: .caption))
-                                        .tracking(1.4)
-                                        .foregroundStyle(Color.white.opacity(0.42))
-                                        .textCase(.uppercase)
-
-                                    // Exact stored title — never auto-prefix "For".
-                                    Text(intentionTitle)
-                                        .font(AppTheme.sans(prefersCompactType ? 18 : 17, weight: .regular, relativeTo: .body))
-                                        .foregroundStyle(Color.white.opacity(0.90))
-                                        .multilineTextAlignment(.center)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                                .padding(.top, 28)
-                                .opacity(opacity(for: .rest))
-                                .accessibilityElement(children: .combine)
-                                .accessibilityLabel("Offered for \(intentionTitle)")
-                            }
-
-                            // 7. Intentional negative space before actions
-                            Spacer(minLength: prefersCompactType ? 28 : 44)
-                                .frame(height: prefersCompactType ? 28 : 52)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.horizontal, AppTheme.gutter)
+                            .padding(.horizontal, AppTheme.gutter)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
-                    // 8 + 9. Actions — Done primary, St Michael optional secondary CTA
-                    VStack(spacing: 18) {
+                    // Done remains the primary action and both actions stay at the bottom.
+                    VStack(spacing: compactLayout ? 12 : 18) {
                         PillButton(title: "Done", action: onDone)
                             .environment(\.colorScheme, .dark)
                             .accessibilityLabel("Done")
@@ -196,7 +117,7 @@ struct CompletionView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, AppTheme.gutter)
                     .padding(.top, 4)
-                    .padding(.bottom, AppTheme.Space.md)
+                    .padding(.bottom, compactLayout ? AppTheme.Space.sm : AppTheme.Space.md)
                     .safeAreaPadding(.bottom)
                 }
             }
@@ -206,9 +127,91 @@ struct CompletionView: View {
         .onAppear { runEntrance() }
     }
 
-    private func artHeight(for screenHeight: CGFloat) -> CGFloat {
+    @ViewBuilder
+    private func completionContent(compact: Bool) -> some View {
+        VStack(spacing: 0) {
+            // Completion symbol
+            FinisEmblem()
+                .foregroundStyle(palette.accent.opacity(0.95))
+                .opacity(opacity(for: .symbol))
+                .offset(y: offset(for: .symbol))
+                .padding(.bottom, compact ? 12 : 18)
+                .accessibilityHidden(true)
+
+            // Completion label (metadata, not headline)
+            Text("ROSARY COMPLETE")
+                .font(AppTheme.sans(compact ? 12 : 11, weight: .medium, relativeTo: .caption))
+                .tracking(1.6)
+                .foregroundStyle(Color.white.opacity(0.48))
+                .multilineTextAlignment(.center)
+                .opacity(opacity(for: .title))
+                .offset(y: offset(for: .title))
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityLabel("Rosary complete")
+
+            // Mystery title
+            Text(mysteryHeadline)
+                .font(AppTheme.sans(compact ? 34 : 40, weight: .regular, relativeTo: .largeTitle))
+                .foregroundStyle(Color.white.opacity(0.96))
+                .multilineTextAlignment(.center)
+                .lineSpacing(2)
+                .minimumScaleFactor(0.78)
+                .accessibilityLabel(mysterySet.name.english)
+                .padding(.top, compact ? 8 : 10)
+                .opacity(opacity(for: .title))
+                .offset(y: offset(for: .title))
+
+            // Short contemplative quote on the same surface treatment used elsewhere.
+            VStack(spacing: compact ? AppTheme.Space.sm : AppTheme.Space.md) {
+                Text("“\(completionQuote.text)”")
+                    .font(compact ? AppTheme.sans(18, relativeTo: .body) : AppTheme.TypeRole.bodySmall)
+                    .foregroundStyle(palette.dim)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(completionQuote.attribution.uppercased())
+                    .font(AppTheme.TypeRole.quoteAttribution)
+                    .tracking(AppTheme.Component.quoteAttributionTracking)
+                    .foregroundStyle(palette.faint)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(compact ? AppTheme.Space.md : AppTheme.Space.lg)
+            .guideCard(fill: palette.panel, stroke: true)
+            .padding(.top, compact ? 14 : AppTheme.Space.xl)
+            .opacity(opacity(for: .rest))
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(completionQuote.text), \(completionQuote.attribution)")
+
+            // Exact stored intention title, when PrayView supplies one.
+            if hasIntention, let intentionTitle {
+                VStack(spacing: 6) {
+                    Text("OFFERED FOR")
+                        .font(AppTheme.sans(11, weight: .medium, relativeTo: .caption))
+                        .tracking(1.4)
+                        .foregroundStyle(Color.white.opacity(0.42))
+                        .textCase(.uppercase)
+
+                    Text(intentionTitle)
+                        .font(AppTheme.sans(compact ? 18 : 17, weight: .regular, relativeTo: .body))
+                        .foregroundStyle(Color.white.opacity(0.90))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, compact ? 16 : 28)
+                .opacity(opacity(for: .rest))
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Offered for \(intentionTitle)")
+            }
+
+            // Small breathing room before the pinned actions.
+            Color.clear.frame(height: compact ? 20 : 32)
+        }
+    }
+
+    private func artHeight(for screenHeight: CGFloat, compact: Bool) -> CGFloat {
         // ~42–46% of screen; floor so small phones keep subjects visible.
-        let ratio: CGFloat = prefersCompactType ? 0.36 : 0.44
+        let ratio: CGFloat = compact ? 0.36 : 0.44
         return min(max(screenHeight * ratio, 168), screenHeight * 0.46)
     }
 
