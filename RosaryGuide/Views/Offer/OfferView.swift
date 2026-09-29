@@ -828,20 +828,23 @@ private struct IntentionDetailView: View {
     }
 
     private var detailHeader: some View {
-        HStack(alignment: .top, spacing: 16) {
+        // Avatar stacked above title; title spans full width. No card surface.
+        // Cancel page gutter (24) so the block sits Space.lg (16pt) from screen edges.
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             IntentionIconView(
                 accent: intention.accent,
                 emoji: intention.displayEmoji,
-                size: 58,
+                size: 64,
                 usesPopePortrait: intention.isPapal
             )
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                 Text(intention.title)
                     .font(AppTheme.sans(30, weight: .regular))
                     .foregroundStyle(palette.ink)
                     .lineLimit(4)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                 HStack(spacing: 7) {
                     Text(intention.categoryTitle)
@@ -856,7 +859,8 @@ private struct IntentionDetailView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .guideNavList(pageGutter: AppTheme.gutter)
     }
 
     private var statsCard: some View {
