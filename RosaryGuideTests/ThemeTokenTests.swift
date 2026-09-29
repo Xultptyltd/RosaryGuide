@@ -9,10 +9,13 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(AppTheme.homeTitleSize(width: 800), 56, accuracy: 0.05)
     }
 
-    func testGutterMatchesWebsiteRem() {
-        XCTAssertEqual(AppTheme.gutter(for: 320), 18)
-        XCTAssertEqual(AppTheme.gutter(for: 376), 18)
-        XCTAssertEqual(AppTheme.gutter(for: 390), 24)
+    func testGutterIsSixteenEverywhere() {
+        XCTAssertEqual(AppTheme.gutter, 16)
+        XCTAssertEqual(AppTheme.gutterCompact, 16)
+        XCTAssertEqual(AppTheme.Space.lg, 16)
+        XCTAssertEqual(AppTheme.gutter(for: 320), 16)
+        XCTAssertEqual(AppTheme.gutter(for: 376), 16)
+        XCTAssertEqual(AppTheme.gutter(for: 390), 16)
     }
 
     func testHeroHeightClampedToWebsiteBand() {
@@ -23,6 +26,6 @@ final class ThemeTokenTests: XCTestCase {
 
     func testSheetOverlapMatchesWebsite() {
         XCTAssertEqual(AppTheme.sheetOverlap, 56)
-        XCTAssertEqual(AppTheme.gutter, 24)
+        XCTAssertEqual(AppTheme.gutter, AppTheme.Space.lg)
     }
 }

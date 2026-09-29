@@ -553,7 +553,7 @@ struct FeastDetailView: View {
 
                 Spacer(minLength: 40)
             }
-            .padding(.horizontal, 22)
+            .padding(.horizontal, AppTheme.gutter)
             .padding(.bottom, 108)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -1024,7 +1024,7 @@ struct FeastDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             GuideSectionLabel(text: "More for this feast", color: palette.dim)
             infoRows
-                .guideNavList(pageGutter: 22)
+                .guideNavList(pageGutter: AppTheme.gutter)
         }
     }
 
@@ -1039,7 +1039,7 @@ struct FeastDetailView: View {
             )
         }
         .frame(height: 330)
-        .padding(.horizontal, -22)
+        .padding(.horizontal, -AppTheme.gutter)
         .padding(.top, -8)
         .ignoresSafeArea(edges: .top)
     }
@@ -1527,7 +1527,7 @@ private struct FeastSecondaryPage<Content: View>: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
                 FeastHeroBanner(feast: feast, height: 238, cornerRadius: 0)
-                    .padding(.horizontal, -22)
+                    .padding(.horizontal, -AppTheme.gutter)
                     .padding(.top, -8)
                     .padding(.bottom, 22)
 
@@ -1550,7 +1550,7 @@ private struct FeastSecondaryPage<Content: View>: View {
 
                 Spacer(minLength: 34)
             }
-            .padding(.horizontal, 22)
+            .padding(.horizontal, AppTheme.gutter)
             .padding(.bottom, 108)
             .frame(maxWidth: .infinity, alignment: .leading)
         }

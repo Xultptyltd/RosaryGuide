@@ -39,6 +39,7 @@ struct CompletionView: View {
                     .guidePressable()
             }
         }
-        .padding(24)
+        .padding(.horizontal, AppTheme.gutter)
+        .padding(.vertical, AppTheme.Space.xl)
     }
 }

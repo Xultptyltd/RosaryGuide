@@ -196,7 +196,7 @@ struct PrayView: View {
                         locus(step)
                         announceBody(step)
                     }
-                    .padding(.horizontal, AppTheme.Space.xl)
+                    .padding(.horizontal, AppTheme.gutter)
                     .padding(.top, 4)
                     .padding(.bottom, AppTheme.Space.lg + readingBottomPad)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -425,7 +425,7 @@ struct PrayView: View {
 
         // Fade + chevron live in the reading ZStack above; Next stays predictable here.
         return PillButton(title: nextTitle, filled: true, action: advance)
-            .padding(.horizontal, AppTheme.Space.xl)
+            .padding(.horizontal, AppTheme.gutter)
             .padding(.top, 8)
             .padding(.bottom, AppTheme.Space.lg)
             .scaleEffect(scale)
@@ -455,7 +455,7 @@ struct PrayView: View {
                                 signOfCrossIntentionBelowBody
                             }
                         }
-                        .padding(.horizontal, AppTheme.Space.xl)
+                        .padding(.horizontal, AppTheme.gutter)
                         .padding(.top, 4)
                         .padding(.bottom, AppTheme.Space.lg)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -665,7 +665,7 @@ struct PrayView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppTheme.gutter)
         .padding(.vertical, 22)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
@@ -757,7 +757,7 @@ struct PrayView: View {
                 languageChips
             }
         }
-        .padding(.horizontal, AppTheme.Space.xl)
+        .padding(.horizontal, AppTheme.gutter)
         .padding(.bottom, AppTheme.Space.lg)
         .padding(.top, AppTheme.Space.sm)
         // Solid foot in document flow (web phone). No upward fade — that covered the rosary.
@@ -896,7 +896,7 @@ struct PrayView: View {
                                 .padding(.top, 14)
                         }
                     }
-                    .padding(.horizontal, AppTheme.Space.xl)
+                    .padding(.horizontal, AppTheme.gutter)
 
                     Spacer(minLength: 12)
                         .frame(maxHeight: .infinity)
@@ -928,7 +928,7 @@ struct PrayView: View {
                     }
                     .frame(maxWidth: 320)
                     .frame(maxWidth: .infinity)
-                    .padding(.horizontal, AppTheme.Space.xl)
+                    .padding(.horizontal, AppTheme.gutter)
                     .padding(.bottom, AppTheme.Space.xl)
                     .safeAreaPadding(.bottom)
                 }
@@ -961,7 +961,7 @@ struct PrayView: View {
                     alignment: .center
                 )
             }
-            .padding(.horizontal, AppTheme.Space.xl)
+            .padding(.horizontal, AppTheme.gutter)
             Spacer()
             VStack(spacing: AppTheme.Space.md) {
                 languageChips
@@ -969,7 +969,7 @@ struct PrayView: View {
                     finishRosary()
                 }
             }
-            .padding(.horizontal, AppTheme.Space.xl)
+            .padding(.horizontal, AppTheme.gutter)
             .padding(.bottom, AppTheme.Space.xl)
         }
         .background(palette.prayBg.ignoresSafeArea())

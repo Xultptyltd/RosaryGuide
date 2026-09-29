@@ -13,9 +13,11 @@ enum AppTheme {
     static let brandAccentDark = Color(hex: 0x69A7FF)
     static let brandAccentDarkHighContrast = Color(hex: 0x8FC0FF)
 
-    /// CSS `--gut: 1.5rem` at the 16px rem the type scale is authored against.
-    static let gutter: CGFloat = 24
-    static let gutterCompact: CGFloat = 18
+    /// Canonical page-edge horizontal inset. Matches `Space.lg` (16pt).
+    /// Prefer `AppTheme.gutter` over literals at screen edges.
+    static let gutter: CGFloat = 16
+    /// Same as `gutter` — kept for call-site compatibility; no narrower phone override.
+    static let gutterCompact: CGFloat = 16
     /// `.sheet { margin-top: -3.5rem }`
     static let sheetOverlap: CGFloat = 56
     /// `.hero` `clamp(24rem, 56svh, 34rem)` — 56svh leaves room for the native tab bar.
@@ -33,7 +35,9 @@ enum AppTheme {
     static let controlSize: CGFloat = 40
 
     static func gutter(for width: CGFloat) -> CGFloat {
-        width <= 376 ? gutterCompact : gutter
+        // Single source of truth: always `gutter` (16pt), including compact widths.
+        _ = width
+        return gutter
     }
 
     static func heroHeight(viewport: CGFloat) -> CGFloat {
@@ -295,7 +299,7 @@ struct MorphingNavTitle: View {
             CollapsingTitleMetrics.smallSize,
             t
         )
-        // Match page content inset (`AppTheme.gutter`), not Space.lg.
+        // Match page content inset (`AppTheme.gutter` == Space.lg).
         let gutter = AppTheme.gutter
 
         GeometryReader { geo in
@@ -744,10 +748,11 @@ extension View {
         modifier(GuideRowGroupChrome(radius: radius))
     }
 
-    /// Chevron nav rows: no card chrome. Cancels the page gutter so content sits
-    /// `AppTheme.Space.lg` (16pt) from the screen edge.
+    /// Chevron nav rows: no card chrome. Cancels any page gutter so content sits
+    /// `AppTheme.gutter` / `Space.lg` (16pt) from the screen edge.
+    /// When `pageGutter` already equals `gutter`, this is a no-op.
     func guideNavList(pageGutter: CGFloat) -> some View {
-        padding(.horizontal, AppTheme.Space.lg - pageGutter)
+        padding(.horizontal, AppTheme.gutter - pageGutter)
     }
 
     func guideSymbol(size: CGFloat = 17, weight: Font.Weight = .medium, relativeTo textStyle: Font.TextStyle = .body) -> some View {

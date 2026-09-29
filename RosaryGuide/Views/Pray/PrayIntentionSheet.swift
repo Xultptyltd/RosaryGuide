@@ -54,7 +54,7 @@ struct PrayIntentionSheet: View {
 
                     yourIntentionsSection
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppTheme.gutter)
                 .padding(.top, 8)
                 .padding(.bottom, 28)
             }

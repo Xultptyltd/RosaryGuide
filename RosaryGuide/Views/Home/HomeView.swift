@@ -201,7 +201,7 @@ struct HomeView: View {
                 glassTheme
             }
             .padding(.top, topInset + 12)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.gutter)
         }
     }
 
@@ -556,7 +556,7 @@ struct HomeView: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, AppTheme.Space.xl)
+            .padding(.horizontal, AppTheme.gutter)
             .padding(.top, AppTheme.Space.xxl)
             .padding(.bottom, AppTheme.Space.xl)
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -856,7 +856,7 @@ struct HomeView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, AppTheme.Space.xl)
+        .padding(.horizontal, AppTheme.gutter)
         .padding(.top, AppTheme.Space.xxl)
         .padding(.bottom, AppTheme.Space.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -1179,7 +1179,7 @@ struct HomeView: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, AppTheme.Space.xl)
+            .padding(.horizontal, AppTheme.gutter)
             .padding(.top, AppTheme.Space.xxl)
             .padding(.bottom, AppTheme.Space.xl)
             .frame(maxWidth: .infinity, alignment: .topLeading)

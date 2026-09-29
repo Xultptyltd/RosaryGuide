@@ -791,8 +791,8 @@ private struct IntentionDetailView: View {
                         .font(AppTheme.sans(15))
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 16)
+                        .padding(.horizontal, AppTheme.Space.lg)
+                        .padding(.vertical, AppTheme.Space.lg)
                         .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -829,7 +829,7 @@ private struct IntentionDetailView: View {
 
     private var detailHeader: some View {
         // Avatar stacked above title; title spans full width. No card surface.
-        // Cancel page gutter (24) so the block sits Space.lg (16pt) from screen edges.
+        // Cancel page gutter so the block sits AppTheme.gutter (16pt) from screen edges.
         // Category and Current chip live in bottom details / elsewhere — not in this header.
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             IntentionIconView(
@@ -1028,7 +1028,7 @@ private struct IntentionDetailView: View {
                 .multilineTextAlignment(.trailing)
                 .lineLimit(2)
         }
-        .padding(.horizontal, 18)
+        .padding(.horizontal, AppTheme.Space.lg)
         .padding(.vertical, 15)
     }
 }
@@ -1611,7 +1611,7 @@ struct IntentionEditorSheet: View {
                     .tracking(1.8)
                     .foregroundStyle(palette.faint)
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, AppTheme.gutter)
             .padding(.bottom, 54)
         }
         .ignoresSafeArea(edges: .top)
@@ -1836,7 +1836,7 @@ private struct IntentionIconPickerSheet: View {
     /// Bumped to force the hidden UITextField to become first responder (shows keyboard).
     @State private var emojiFocusNonce: Int = 0
 
-    private let horizontalPad: CGFloat = 24
+    private let horizontalPad: CGFloat = AppTheme.gutter
     private let swatchCount = CGFloat(IntentionAccent.pickerOrder.count)
 
     var body: some View {
