@@ -1209,7 +1209,7 @@ private struct IntentionRow: View {
 }
 
 
-private struct OverflowMenuButton: View {
+struct OverflowMenuButton: View {
     @Environment(\.palette) private var palette
     var isPinned: Bool
     var allowsPin: Bool = true

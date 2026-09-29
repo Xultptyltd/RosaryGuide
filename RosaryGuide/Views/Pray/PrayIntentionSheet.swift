@@ -26,13 +26,12 @@ struct PrayIntentionSheet: View {
         }
     }
 
-    /// Your intentions: tagged for this set first, then the rest.
+    /// Your intentions for this set, pinned/current first (via OfferStore sort), then suggested, then recent.
     /// Drops titles already shown via an unadopted papal suggestion row.
     private var listedIntentions: [OfferIntention] {
-        let matching = offer.sortedIntentions(for: mysterySet).filter { $0.isSuggested(on: mysterySet) }
-        let other = offer.sortedIntentions(for: mysterySet).filter { !$0.isSuggested(on: mysterySet) }
         let papalTitles = Set(papalSuggestions.map { $0.title.lowercased() })
-        return (matching + other).filter { !papalTitles.contains($0.title.lowercased()) }
+        return offer.sortedIntentions(for: mysterySet)
+            .filter { !papalTitles.contains($0.title.lowercased()) }
     }
 
     private var noneSelected: Bool { chosenId == nil && chosenTitle.isEmpty }
@@ -59,16 +58,16 @@ struct PrayIntentionSheet: View {
                     }
 
                     ForEach(listedIntentions) { item in
-                        radioCard(
-                            title: item.title,
-                            subtitle: intentionSubtitle(item),
+                        IntentionRadioRow(
+                            item: item,
                             selected: chosenId == item.id,
-                            showsPin: item.isPinned,
-                            showsNewBadge: item.isNew,
-                            leadingIcon: item
-                        ) {
-                            choose(item)
-                        }
+                            allowsPin: offer.sortedIntentions.count > 1,
+                            cardMinHeight: cardMinHeight,
+                            onChoose: { choose(item) },
+                            onPin: { pinOrUnpin(item) },
+                            onEdit: { editorRoute = .edit(item) },
+                            onDelete: { deleteIntention(item) }
+                        )
                     }
 
                     addIntentionCard
@@ -188,9 +187,6 @@ struct PrayIntentionSheet: View {
         title: String,
         subtitle: String?,
         selected: Bool,
-        showsPin: Bool = false,
-        showsNewBadge: Bool = false,
-        leadingIcon: OfferIntention? = nil,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -200,27 +196,11 @@ struct PrayIntentionSheet: View {
                     .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
 
-                if let leadingIcon {
-                    IntentionIconView(
-                        accent: leadingIcon.accent,
-                        emoji: leadingIcon.displayEmoji,
-                        size: 36,
-                        usesPopePortrait: leadingIcon.isPapal
-                    )
-                }
-
                 VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(title)
-                            .font(AppTheme.sans(16, weight: .semibold))
-                            .foregroundStyle(palette.ink)
-                            .multilineTextAlignment(.leading)
-                        if showsPin {
-                            Image(systemName: "pin.fill")
-                                .font(.caption2)
-                                .foregroundStyle(palette.accent)
-                        }
-                    }
+                    Text(title)
+                        .font(AppTheme.sans(16, weight: .semibold))
+                        .foregroundStyle(palette.ink)
+                        .multilineTextAlignment(.leading)
                     if let subtitle, !subtitle.isEmpty {
                         Text(subtitle)
                             .font(AppTheme.sans(13))
@@ -230,16 +210,6 @@ struct PrayIntentionSheet: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-                if showsNewBadge {
-                    Text("New")
-                        .font(AppTheme.sans(11, weight: .semibold))
-                        .foregroundStyle(palette.ink.opacity(0.75))
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 5)
-                        .background(Capsule().fill(palette.ink.opacity(0.08)))
-                        .accessibilityLabel("New intention")
-                }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 14)
@@ -262,12 +232,22 @@ struct PrayIntentionSheet: View {
 
     // MARK: - Actions
 
-    private func intentionSubtitle(_ item: OfferIntention) -> String? {
-        var parts: [String] = []
-        if item.isPapal { parts.append("Holy Father") }
-        if !item.isNew, !item.carriedLabel.isEmpty { parts.append(item.carriedLabel) }
-        if let note = item.note, !note.isEmpty { parts.append(note) }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    private func pinOrUnpin(_ item: OfferIntention) {
+        if item.isPinned {
+            offer.togglePin(id: item.id)
+        } else {
+            // Exclusive current — moves to top of user intention list.
+            offer.setCurrent(id: item.id)
+        }
+    }
+
+    private func deleteIntention(_ item: OfferIntention) {
+        if chosenId == item.id {
+            chosenId = nil
+            chosenTitle = ""
+            chosenNote = ""
+        }
+        offer.delete(id: item.id)
     }
 
     private func chooseNone() {
@@ -314,5 +294,111 @@ struct PrayIntentionSheet: View {
             chosenNote = created.note ?? ""
         }
         dismiss()
+    }
+}
+
+/// Intention radio row with trailing overflow outside the select Button so menu taps
+/// do not also select the radio (same overlay pattern as CurrentIntentionHero).
+private struct IntentionRadioRow: View {
+    @Environment(\.palette) private var palette
+
+    let item: OfferIntention
+    let selected: Bool
+    let allowsPin: Bool
+    let cardMinHeight: CGFloat
+    let onChoose: () -> Void
+    let onPin: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    @State private var showingDeleteAlert = false
+
+    private var subtitle: String? {
+        var parts: [String] = []
+        if item.isPapal { parts.append("Holy Father") }
+        if !item.isNew, !item.carriedLabel.isEmpty { parts.append(item.carriedLabel) }
+        if let note = item.note, !note.isEmpty { parts.append(note) }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    var body: some View {
+        Button(action: onChoose) {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: selected ? "circle.inset.filled" : "circle")
+                    .guideSymbol(size: 22, weight: .regular)
+                    .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
+                    .frame(width: 24, height: 24)
+
+                IntentionIconView(
+                    accent: item.accent,
+                    emoji: item.displayEmoji,
+                    size: 36,
+                    usesPopePortrait: item.isPapal
+                )
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(item.title)
+                            .font(AppTheme.sans(16, weight: .semibold))
+                            .foregroundStyle(palette.ink)
+                            .multilineTextAlignment(.leading)
+                        if item.isPinned {
+                            Image(systemName: "pin.fill")
+                                .font(.caption2)
+                                .foregroundStyle(palette.accent)
+                        }
+                    }
+                    if let subtitle, !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(AppTheme.sans(13))
+                            .foregroundStyle(palette.dim)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(2)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Reserve trailing space so the overlaid overflow sits clear of the title.
+                Color.clear
+                    .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+                    .fill(palette.card)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+                    .strokeBorder(
+                        selected ? palette.accent.opacity(0.45) : Color.clear,
+                        lineWidth: 1
+                    )
+            )
+            .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityLabel(item.title)
+        .overlay(alignment: .trailing) {
+            // Outside the row Button so menu taps do not also select the radio.
+            OverflowMenuButton(
+                isPinned: item.isPinned,
+                allowsPin: allowsPin,
+                allowsEdit: true,
+                onPin: onPin,
+                onEdit: onEdit,
+                onDelete: { showingDeleteAlert = true }
+            )
+            .padding(.trailing, 14)
+        }
+        .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive, action: onDelete)
+        } message: {
+            Text("This will delete “\(item.title)” from your intentions.")
+        }
     }
 }
