@@ -212,7 +212,8 @@ struct OfferView: View {
                             onPray: { prayWith(currentIntention) },
                             onPin: { offer.togglePin(id: currentIntention.id) },
                             onEdit: { editor = .edit(currentIntention) },
-                            onDelete: { offer.delete(id: currentIntention.id) }
+                            onDelete: { offer.delete(id: currentIntention.id) },
+                            allowsPin: offer.sortedIntentions.count > 1
                         )
                         .guideNavList(pageGutter: AppTheme.gutter)
                     }
@@ -235,7 +236,8 @@ struct OfferView: View {
                                     intention: item,
                                     onPin: { offer.togglePin(id: item.id) },
                                     onEdit: { editor = .edit(item) },
-                                    onDelete: { offer.delete(id: item.id) }
+                                    onDelete: { offer.delete(id: item.id) },
+                                    allowsPin: offer.sortedIntentions.count > 1
                                 )
                             }
                             .buttonStyle(.plain)
@@ -314,6 +316,7 @@ private struct CurrentIntentionHero: View {
     let onPin: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
+    var allowsPin: Bool = true
     @State private var showingDeleteAlert = false
 
     var body: some View {
@@ -371,6 +374,7 @@ private struct CurrentIntentionHero: View {
             // Outside the card Button so menu taps do not also open detail.
             OverflowMenuButton(
                 isPinned: intention.isPinned,
+                allowsPin: allowsPin,
                 allowsEdit: true,
                 onPin: onPin,
                 onEdit: onEdit,
@@ -691,6 +695,7 @@ private struct IntentionListRow: View {
     let onPin: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
+    var allowsPin: Bool = true
     @State private var showingDeleteAlert = false
 
     var body: some View {
@@ -724,6 +729,7 @@ private struct IntentionListRow: View {
 
             OverflowMenuButton(
                 isPinned: intention.isPinned,
+                allowsPin: allowsPin,
                 allowsEdit: true,
                 onPin: onPin,
                 onEdit: onEdit,
@@ -1039,6 +1045,7 @@ private struct IntentionRow: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onPray: () -> Void
+    var allowsPin: Bool = true
     @State private var showingDeleteAlert = false
 
     private var hasDescription: Bool {
@@ -1105,6 +1112,7 @@ private struct IntentionRow: View {
 
                 OverflowMenuButton(
                     isPinned: intention.isPinned,
+                    allowsPin: allowsPin,
                     allowsEdit: true,
                     onPin: onPin,
                     onEdit: onEdit,
@@ -1158,6 +1166,7 @@ private struct IntentionRow: View {
 private struct OverflowMenuButton: View {
     @Environment(\.palette) private var palette
     var isPinned: Bool
+    var allowsPin: Bool = true
     var allowsEdit: Bool = true
     var onPin: () -> Void
     var onEdit: () -> Void
@@ -1165,10 +1174,12 @@ private struct OverflowMenuButton: View {
 
     var body: some View {
         Menu {
-            Button {
-                onPin()
-            } label: {
-                Label(isPinned ? "Unpin" : "Pin", systemImage: isPinned ? "pin.slash" : "pin.fill")
+            if allowsPin {
+                Button {
+                    onPin()
+                } label: {
+                    Label(isPinned ? "Unpin" : "Pin", systemImage: isPinned ? "pin.slash" : "pin.fill")
+                }
             }
 
             if allowsEdit {
