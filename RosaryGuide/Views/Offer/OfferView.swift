@@ -1147,7 +1147,13 @@ private struct OverflowMenuButton: View {
             Button(role: .destructive) {
                 onDelete()
             } label: {
-                Label("Delete", systemImage: "trash.fill")
+                Label {
+                    Text("Delete")
+                } icon: {
+                    Image(systemName: "trash.fill")
+                        .symbolRenderingMode(.monochrome)
+                        .foregroundStyle(.red)
+                }
             }
         } label: {
             Image(systemName: "ellipsis.circle")
