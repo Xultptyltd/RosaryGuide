@@ -209,7 +209,10 @@ struct OfferView: View {
                         CurrentIntentionHero(
                             intention: currentIntention,
                             onOpen: { intentionDetail = currentIntention },
-                            onPray: { prayWith(currentIntention) }
+                            onPray: { prayWith(currentIntention) },
+                            onPin: { offer.togglePin(id: currentIntention.id) },
+                            onEdit: { editor = .edit(currentIntention) },
+                            onDelete: { offer.delete(id: currentIntention.id) }
                         )
                         .guideNavList(pageGutter: AppTheme.gutter)
                     }
@@ -308,45 +311,76 @@ private struct CurrentIntentionHero: View {
     let intention: OfferIntention
     let onOpen: () -> Void
     let onPray: () -> Void
+    let onPin: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    @State private var showingDeleteAlert = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-            HStack(alignment: .center, spacing: AppTheme.Space.lg) {
-                IntentionIconView(
-                    accent: intention.accent,
-                    emoji: intention.displayEmoji,
-                    size: 64,
-                    usesPopePortrait: intention.isPapal
-                )
+        Button(action: onOpen) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                HStack(alignment: .center, spacing: AppTheme.Space.lg) {
+                    IntentionIconView(
+                        accent: intention.accent,
+                        emoji: intention.displayEmoji,
+                        size: 64,
+                        usesPopePortrait: intention.isPapal
+                    )
 
-                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    Text(intention.title)
-                        .font(AppTheme.sans(20, weight: .semibold))
-                        .foregroundStyle(palette.ink)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.88)
+                    VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                        Text(intention.title)
+                            .font(AppTheme.sans(20, weight: .semibold))
+                            .foregroundStyle(palette.ink)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.88)
 
-                    HStack(spacing: AppTheme.Space.xs) {
-                        Image(systemName: intention.isPapal ? "cross.fill" : "heart.fill")
-                            .guideSymbol(size: 13, weight: .semibold)
-                        Text(categoryLabel)
-                            .font(AppTheme.sans(15, weight: .medium))
+                        HStack(spacing: AppTheme.Space.xs) {
+                            Image(systemName: intention.isPapal ? "cross.fill" : "heart.fill")
+                                .guideSymbol(size: 13, weight: .semibold)
+                            Text(categoryLabel)
+                                .font(AppTheme.sans(15, weight: .medium))
+                        }
+                        .foregroundStyle(palette.accent)
                     }
-                    .foregroundStyle(palette.accent)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                Button(action: onOpen) {
-                    Image(systemName: "chevron.right")
-                        .guideSymbol(size: 18, weight: .semibold)
-                        .foregroundStyle(palette.dim)
+                    // Reserve trailing space so the overlaid overflow menu sits where the chevron was.
+                    Color.clear
                         .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
-                        .contentShape(Rectangle())
+                        .accessibilityHidden(true)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open current intention")
-            }
 
+                // Layout-only stand-in; real pray control is overlaid so it does not trigger navigation.
+                Color.clear
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .accessibilityHidden(true)
+            }
+            .padding(AppTheme.Space.lg)
+            .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+                    .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
+            }
+            .guideSoftShadow(elevated: colorScheme == .light)
+            .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open \(intention.title)")
+        .overlay(alignment: .topTrailing) {
+            // Outside the card Button so menu taps do not also open detail.
+            OverflowMenuButton(
+                isPinned: intention.isPinned,
+                allowsEdit: true,
+                onPin: onPin,
+                onEdit: onEdit,
+                onDelete: { showingDeleteAlert = true }
+            )
+            .padding(.top, AppTheme.Space.lg)
+            .padding(.trailing, AppTheme.Space.lg)
+        }
+        .overlay(alignment: .bottom) {
+            // Outside the card Button so pray does not also open detail.
             Button(action: onPray) {
                 HStack(spacing: 8) {
                     Text("Offer my next Rosary")
@@ -359,14 +393,15 @@ private struct CurrentIntentionHero: View {
                 .background(actionFill, in: Capsule())
             }
             .buttonStyle(.plain)
+            .padding(.horizontal, AppTheme.Space.lg)
+            .padding(.bottom, AppTheme.Space.lg)
         }
-        .padding(AppTheme.Space.lg)
-        .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
+        .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive, action: onDelete)
+        } message: {
+            Text("This will delete “\(intention.title)” from your intentions.")
         }
-        .guideSoftShadow(elevated: colorScheme == .light)
     }
 
     private var categoryLabel: String {
