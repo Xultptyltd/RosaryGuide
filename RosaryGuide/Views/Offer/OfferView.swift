@@ -242,9 +242,6 @@ struct OfferView: View {
                         .guideNavList(pageGutter: AppTheme.gutter)
                     }
 
-                    addIntentionButton(title: "Add an intention", matchesLearnStyle: true)
-                        .guideNavList(pageGutter: AppTheme.gutter)
-
                     VStack(spacing: 0) {
                         ForEach(secondaryIntentions) { item in
                             IntentionSecondaryRow(
@@ -264,6 +261,9 @@ struct OfferView: View {
                         }
                     }
                     .guideNavList(pageGutter: AppTheme.gutter)
+
+                    addIntentionButton(title: "Add an intention", matchesLearnStyle: true)
+                        .guideNavList(pageGutter: AppTheme.gutter)
                 }
             }
             .padding(.horizontal, AppTheme.gutter)
