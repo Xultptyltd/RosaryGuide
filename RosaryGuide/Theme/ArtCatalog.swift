@@ -58,7 +58,7 @@ enum ArtCatalog {
         case "easter", "divine-mercy": return (.glorious, "01-resurrection")
         case "ascension": return (.glorious, "02-ascension")
         case "pentecost": return (.glorious, "03-descent-of-the-holy-spirit")
-        case "assumption": return (.glorious, "04-assumption")
+        case "assumption", "mother-of-the-church": return (.glorious, "04-assumption")
         case "queenship": return (.glorious, "05-coronation")
         default: return nil
         }

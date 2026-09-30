@@ -257,6 +257,7 @@ struct Feast: Identifiable, Hashable, Sendable {
         case "presentation-mary": "Presentation of Mary"
         case "immaculate-conception": "Immaculate Conception"
         case "immaculate-heart": "Immaculate Heart of Mary"
+        case "mother-of-the-church": "Mother of the Church"
         case "guadalupe": "Our Lady of Guadalupe"
         case "christmas": "Christmas"
         default: name.english

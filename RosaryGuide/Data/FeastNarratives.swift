@@ -430,6 +430,16 @@ enum FeastNarratives {
             indulgence: nil,
             relatedPrayers: [comeHolySpirit, hailHolyQueen]
         ),
+        "mother-of-the-church": FeastNarrative(
+            about: """
+        On the Monday after Pentecost the Church honors Mary as Mother of the Church. We keep this obligatory memorial because the Woman who stood at the Cross and prayed with the disciples at Pentecost is given to every believer as mother—sharing in the birth of the Church by the Spirit.
+        
+        Spiritually the day joins Marian trust to Pentecostal fire. We ask Mary to form us as disciples who receive the Spirit, love the Body of Christ, and carry the Gospel with her maternal courage.
+        """,
+            history: "The title Mother of the Church was solemnly proclaimed by Pope St Paul VI at the close of the Second Vatican Council. In 2018 Pope Francis inscribed the memorial in the General Roman Calendar on the Monday after Pentecost.",
+            indulgence: nil,
+            relatedPrayers: [comeHolySpirit, memorare, subTuum]
+        ),
         "visitation": FeastNarrative(
             about: """
         Mary, carrying Christ, visits Elizabeth. The child leaps in the womb; Elizabeth blesses Mary; Mary sings the Magnificat. We celebrate the second Joyful Mystery as a feast of charity and praise—because faith that is true moves toward others bearing Christ.

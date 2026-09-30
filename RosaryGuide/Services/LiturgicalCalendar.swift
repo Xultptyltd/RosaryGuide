@@ -44,15 +44,22 @@ enum LiturgicalCalendar {
         return addingDays(daysUntilSunday, to: november27, calendar: calendar)
     }
 
-    /// Baptism of the Lord: Sunday after 6 January, or Monday 7 January if 6 January is Sunday.
+    /// US Epiphany observance: Sunday on or after 2 January (transferred from 6 January).
+    static func epiphany(year: Int, calendar: Calendar = gregorian) -> Date? {
+        guard let jan2 = date(year: year, month: 1, day: 2, calendar: calendar) else { return nil }
+        return sundayOnOrAfter(jan2, calendar: calendar)
+    }
+
+    /// Baptism of the Lord — US particular calendar, derived from the same Epiphany date the app uses.
+    /// Normally the Sunday after Epiphany. When Epiphany falls on 7 or 8 January (US transferred table),
+    /// Baptism is the following Monday so it never precedes Epiphany and Christmas Time ends coherently.
     static func baptismOfTheLord(year: Int, calendar: Calendar = gregorian) -> Date? {
-        guard let january6 = date(year: year, month: 1, day: 6, calendar: calendar) else { return nil }
-        if calendar.component(.weekday, from: january6) == 1 {
-            return addingDays(1, to: january6, calendar: calendar)
+        guard let epiphanyDate = epiphany(year: year, calendar: calendar) else { return nil }
+        let day = calendar.component(.day, from: epiphanyDate)
+        if day == 7 || day == 8 {
+            return addingDays(1, to: epiphanyDate, calendar: calendar)
         }
-        let weekday = calendar.component(.weekday, from: january6)
-        let daysUntilSunday = (8 - weekday) % 7
-        return addingDays(daysUntilSunday, to: january6, calendar: calendar)
+        return addingDays(7, to: epiphanyDate, calendar: calendar)
     }
 
     static func ashWednesday(year: Int, calendar: Calendar = gregorian) -> Date? {

@@ -36,6 +36,57 @@ final class LiturgicalCalendarTests: XCTestCase {
         XCTAssertEqual(season(2027, 1, 6), .christmas)
     }
 
+    func testEpiphanyIsSundayOnOrAfterJanuary2() {
+        // US transferred Epiphany
+        XCTAssertEqual(monthDay(LiturgicalCalendar.epiphany(year: 2026)), (1, 4))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.epiphany(year: 2027)), (1, 3))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.epiphany(year: 2028)), (1, 2))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.epiphany(year: 2029)), (1, 7))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.epiphany(year: 2030)), (1, 6))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.epiphany(year: 2034)), (1, 8))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.epiphany(year: 2035)), (1, 7))
+    }
+
+    func testBaptismOfTheLordFollowsAppEpiphanyRule() {
+        // Sunday after Epiphany; Monday when Epiphany falls on Jan 7 or 8.
+        XCTAssertEqual(monthDay(LiturgicalCalendar.baptismOfTheLord(year: 2026)), (1, 11))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.baptismOfTheLord(year: 2027)), (1, 10))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.baptismOfTheLord(year: 2028)), (1, 9))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.baptismOfTheLord(year: 2029)), (1, 8))  // Mon after Epiphany Jan 7
+        XCTAssertEqual(monthDay(LiturgicalCalendar.baptismOfTheLord(year: 2030)), (1, 13))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.baptismOfTheLord(year: 2034)), (1, 9))  // Mon after Epiphany Jan 8
+        XCTAssertEqual(monthDay(LiturgicalCalendar.baptismOfTheLord(year: 2035)), (1, 8))  // Mon after Epiphany Jan 7
+
+        for year in 2026...2036 {
+            let epiphany = LiturgicalCalendar.epiphany(year: year)!
+            let baptism = LiturgicalCalendar.baptismOfTheLord(year: year)!
+            XCTAssertGreaterThanOrEqual(
+                baptism,
+                epiphany,
+                "Baptism must not precede Epiphany in \(year)"
+            )
+        }
+    }
+
+    func testMotherOfTheChurchIsMondayAfterPentecost() {
+        // Easter + 50.
+        XCTAssertEqual(monthDay(motherOfTheChurch(year: 2026)), (5, 25))
+        XCTAssertEqual(monthDay(motherOfTheChurch(year: 2027)), (5, 17))
+        XCTAssertEqual(monthDay(motherOfTheChurch(year: 2028)), (6, 5))
+
+        for year in 2026...2036 {
+            let easter = LiturgicalCalendar.easter(year: year)!
+            let mother = motherOfTheChurch(year: year)!
+            let days = calendar.dateComponents([.day], from: easter, to: mother).day
+            XCTAssertEqual(days, 50, "Mother of the Church should be Easter+50 in \(year)")
+            XCTAssertEqual(calendar.component(.weekday, from: mother), 2, "Should be Monday in \(year)")
+        }
+    }
+
+    private func motherOfTheChurch(year: Int) -> Date? {
+        FeastCatalog.all.first(where: { $0.id == "mother-of-the-church" })?.dateProvider(year)
+    }
+
     private func season(_ y: Int, _ m: Int, _ d: Int) -> LiturgicalSeason {
         LiturgicalCalendar.season(on: LiturgicalCalendar.date(year: y, month: m, day: d)!, calendar: calendar)
     }

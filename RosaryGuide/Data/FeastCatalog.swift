@@ -39,10 +39,7 @@ enum FeastCatalog {
             suggestedMysterySet: .joyful,
             isMarian: false,
             rank: .solemnity,
-            dateProvider: { year in
-                guard let jan2 = LiturgicalCalendar.date(year: year, month: 1, day: 2) else { return nil }
-                return LiturgicalCalendar.sundayOnOrAfter(jan2)
-            }
+            dateProvider: { year in LiturgicalCalendar.epiphany(year: year) }
         ),
         fixedFeast("presentation", "Presentation of the Lord", "Præsentátio Dómini", 2, 2, .feast, marian: true, set: .joyful,
                    "Candlemas: Jesus is presented in the Temple; Simeon and Anna confess the Light."),
@@ -202,6 +199,18 @@ enum FeastCatalog {
             rank: .solemnity,
             dateProvider: { year in
                 LiturgicalCalendar.easter(year: year).flatMap { LiturgicalCalendar.addingDays(49, to: $0) }
+            }
+        ),
+        Feast(
+            id: "mother-of-the-church",
+            name: BilingualText(english: "The Blessed Virgin Mary, Mother of the Church", latin: "Beáta María Virgo, Ecclésiæ Mater"),
+            summary: "Obligatory memorial on the Monday after Pentecost. Mary, present with the disciples at the Spirit’s coming, is honored as Mother of the Church.",
+            suggestedMysterySet: .glorious,
+            isMarian: true,
+            rank: .memorial,
+            dateProvider: { year in
+                // Monday after Pentecost = Easter + 50 (Pentecost is Easter + 49).
+                LiturgicalCalendar.easter(year: year).flatMap { LiturgicalCalendar.addingDays(50, to: $0) }
             }
         ),
         Feast(
