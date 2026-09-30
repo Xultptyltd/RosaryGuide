@@ -92,6 +92,13 @@ final class SessionStore {
         session = nil
     }
 
+    /// Clears the in-progress rosary and weekly prayer history (Settings wipe).
+    func clearHistoryAndData() {
+        session = nil
+        completedDayStarts = []
+        persistHistory()
+    }
+
     private func persist() {
         if let session, let data = try? JSONEncoder().encode(session) {
             UserDefaults.standard.set(data, forKey: key)

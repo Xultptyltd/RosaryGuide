@@ -3,7 +3,10 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(SessionStore.self) private var session
+    @Environment(OfferStore.self) private var offer
     @Environment(\.palette) private var palette
+
+    @State private var confirmDeleteHistory = false
 
     var body: some View {
         @Bindable var settings = settings
@@ -75,16 +78,14 @@ struct SettingsView: View {
                 SettingsSectionHeader(title: "Appearance")
             }
 
-            if session.resumableSession != nil {
-                Section {
-                    Button(role: .destructive) {
-                        session.discard()
-                    } label: {
-                        SettingsLabel(icon: "trash", title: "Delete history and data", tint: .red)
-                    }
+            Section {
+                Button(role: .destructive) {
+                    confirmDeleteHistory = true
+                } label: {
+                    SettingsLabel(icon: "trash", title: "Delete history and data", tint: .red)
+                }
             } header: {
-                SettingsSectionHeader(title: "Session")
-            }
+                SettingsSectionHeader(title: "Data")
             }
 
         }
@@ -103,6 +104,15 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(palette.bg, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
+        .alert("Delete history and data?", isPresented: $confirmDeleteHistory) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                session.clearHistoryAndData()
+                offer.clearAll()
+            }
+        } message: {
+            Text("This permanently deletes your saved rosary progress, prayer history, and intentions. Prayer preferences are kept.")
+        }
     }
 }
 

@@ -110,6 +110,12 @@ final class OfferStore {
         intentions.removeAll { $0.id == id }
     }
 
+    /// Removes every saved intention (Settings wipe).
+    func clearAll() {
+        intentions = []
+        defaults.removeObject(forKey: Keys.intentions)
+    }
+
     func togglePin(id: UUID) {
         guard let idx = intentions.firstIndex(where: { $0.id == id }) else { return }
         intentions[idx].isPinned.toggle()
