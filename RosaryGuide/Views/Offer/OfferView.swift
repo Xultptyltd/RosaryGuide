@@ -4,7 +4,8 @@ import UIKit
 
 /// List-surface redaction for personal intention copy (banking-style privacy).
 private enum IntentionPrivacy {
-    static let maskedText = "••••••"
+    static let maskedText = "Hidden intention"
+    static let maskedNoteText = "Not shown while intentions are hidden."
 
     static func hides(_ intention: OfferIntention, hidden: Bool) -> Bool {
         hidden && !intention.isPapal
@@ -639,7 +640,7 @@ private struct PapalIntentionDetailView: View {
             .padding(.bottom, 108)
         }
         .background(palette.bg)
-        .guideDetailChrome("Holy Father’s Intention")
+        .guideDetailChrome("Holy Father’s intention")
     }
 
     private var hero: some View {
@@ -819,7 +820,11 @@ private struct IntentionDetailView: View {
 
     private var displayNoteText: String {
         guard hasNote else { return "Add Notes" }
-        return IntentionPrivacy.displayText(noteText, hidden: privacyHidesText)
+        return privacyHidesText ? IntentionPrivacy.maskedNoteText : noteText
+    }
+
+    private var detailNavigationTitle: String {
+        intention.isPapal ? "Holy Father’s intention" : intention.category.title
     }
 
     var body: some View {
@@ -870,7 +875,7 @@ private struct IntentionDetailView: View {
                 }
             }
         }
-        .navigationTitle(displayTitle)
+        .navigationTitle(detailNavigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
