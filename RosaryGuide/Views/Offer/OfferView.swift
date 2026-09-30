@@ -1,6 +1,16 @@
 import SwiftUI
 import UIKit
 
+
+/// List-surface redaction for personal intention copy (banking-style privacy).
+private enum IntentionPrivacy {
+    static let maskedTitle = "••••••"
+
+    static func displayTitle(_ title: String, hidden: Bool) -> String {
+        hidden ? maskedTitle : title
+    }
+}
+
 struct OfferView: View {
     @Environment(OfferStore.self) private var offer
     @Environment(\.palette) private var palette
@@ -12,6 +22,8 @@ struct OfferView: View {
     @State private var navigationPath = NavigationPath()
     @State private var popeStore = PopeIntentionStore.shared
     @State private var intentionDetail: OfferIntention?
+    /// Banking-style privacy: when true, mask personal intention titles on the list surface.
+    @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
     private var todaySet: MysterySetKind {
         MysteryCalendar.assignment(on: Date()).set
     }
@@ -197,11 +209,29 @@ struct OfferView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    GuideSectionLabel(text: "Your intentions", color: palette.dim)
+                    HStack(alignment: .center, spacing: AppTheme.Space.sm) {
+                        GuideSectionLabel(text: "Your intentions", color: palette.dim)
+                        Spacer(minLength: 0)
+                        Button {
+                            hideIntentionText.toggle()
+                        } label: {
+                            Image(systemName: hideIntentionText ? "eye.slash" : "eye")
+                                .guideSymbol(size: 15, weight: .medium)
+                                .foregroundStyle(palette.dim)
+                                .frame(
+                                    width: AppTheme.Accessibility.minHitTarget,
+                                    height: AppTheme.Accessibility.minHitTarget
+                                )
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(hideIntentionText ? "Show intentions" : "Hide intentions")
+                    }
 
                     if let currentIntention {
                         CurrentIntentionHero(
                             intention: currentIntention,
+                            hideText: hideIntentionText,
                             onOpen: { intentionDetail = currentIntention },
                             onPray: { prayWith(currentIntention) },
                             onPin: { offer.togglePin(id: currentIntention.id) },
@@ -219,6 +249,7 @@ struct OfferView: View {
                         ForEach(secondaryIntentions) { item in
                             IntentionSecondaryRow(
                                 intention: item,
+                                hideText: hideIntentionText,
                                 allowsPin: offer.sortedIntentions.count > 1,
                                 onPin: { offer.togglePin(id: item.id) },
                                 onEdit: { editor = .edit(item) },
@@ -295,6 +326,7 @@ private struct CurrentIntentionHero: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
     let intention: OfferIntention
+    var hideText: Bool = false
     let onOpen: () -> Void
     let onPray: () -> Void
     let onPin: () -> Void
@@ -302,6 +334,10 @@ private struct CurrentIntentionHero: View {
     let onDelete: () -> Void
     var allowsPin: Bool = true
     @State private var showingDeleteAlert = false
+
+    private var displayTitle: String {
+        IntentionPrivacy.displayTitle(intention.title, hidden: hideText)
+    }
 
     var body: some View {
         Button(action: onOpen) {
@@ -315,7 +351,7 @@ private struct CurrentIntentionHero: View {
                     )
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                        Text(intention.title)
+                        Text(displayTitle)
                             .font(AppTheme.sans(20, weight: .semibold))
                             .foregroundStyle(palette.ink)
                             .lineLimit(2)
@@ -345,7 +381,7 @@ private struct CurrentIntentionHero: View {
             .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Open \(intention.title)")
+        .accessibilityLabel(hideText ? "Open hidden intention" : "Open \(intention.title)")
         .overlay(alignment: .topTrailing) {
             // Outside the card Button so menu taps do not also open detail.
             OverflowMenuButton(
@@ -653,6 +689,7 @@ private struct PapalIntentionDetailView: View {
 /// so Pin/Edit/Delete are not swallowed by navigation (same pattern as CurrentIntentionHero).
 private struct IntentionSecondaryRow: View {
     let intention: OfferIntention
+    var hideText: Bool = false
     var allowsPin: Bool = true
     let onPin: () -> Void
     let onEdit: () -> Void
@@ -670,7 +707,7 @@ private struct IntentionSecondaryRow: View {
                 onPray: onPray
             )
         } label: {
-            IntentionListRow(intention: intention)
+            IntentionListRow(intention: intention, hideText: hideText)
         }
         .buttonStyle(.plain)
         .overlay(alignment: .trailing) {
@@ -695,6 +732,11 @@ private struct IntentionSecondaryRow: View {
 private struct IntentionListRow: View {
     @Environment(\.palette) private var palette
     let intention: OfferIntention
+    var hideText: Bool = false
+
+    private var displayTitle: String {
+        IntentionPrivacy.displayTitle(intention.title, hidden: hideText)
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 14) {
@@ -707,7 +749,7 @@ private struct IntentionListRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 7) {
-                    Text(intention.title)
+                    Text(displayTitle)
                         .font(AppTheme.sans(17, weight: .semibold))
                         .foregroundStyle(palette.ink)
                         .lineLimit(1)
@@ -732,6 +774,7 @@ private struct IntentionListRow: View {
         }
         .padding(.vertical, 10)
         .contentShape(Rectangle())
+        .accessibilityLabel(hideText ? "Hidden intention, \(metaLabel)" : "\(intention.title), \(metaLabel)")
     }
 
     private var metaLabel: String {
