@@ -6,6 +6,7 @@ import SwiftUI
 struct CompletionView: View {
     var mysterySet: MysterySetKind
     var intentionTitle: String?
+    var intentionIsPapal: Bool = false
     var onDone: () -> Void
     var onMichael: (() -> Void)?
 
@@ -13,6 +14,7 @@ struct CompletionView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
 
     @State private var contentPhase: ContentPhase = .hidden
 
@@ -40,6 +42,14 @@ struct CompletionView: View {
 
     private var completionQuote: CompletionQuote {
         QuoteCatalog.quote()
+    }
+
+    private var displayIntentionTitle: String {
+        guard let intentionTitle else { return IntentionPrivacy.maskedText }
+        return IntentionPrivacy.displayText(
+            intentionTitle,
+            hidden: hideIntentionText && !intentionIsPapal
+        )
     }
 
     private var prefersCompactType: Bool {
@@ -174,7 +184,7 @@ struct CompletionView: View {
                         .foregroundStyle(Color.white.opacity(0.42))
                         .textCase(.uppercase)
 
-                    Text(intentionTitle)
+                    Text(displayIntentionTitle)
                         .font(AppTheme.sans(compact ? 18 : 17, weight: .regular, relativeTo: .body))
                         .foregroundStyle(Color.white.opacity(0.90))
                         .multilineTextAlignment(.center)
@@ -184,7 +194,7 @@ struct CompletionView: View {
                 .layoutPriority(1)
                 .opacity(opacity(for: .rest))
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("Offered for \(intentionTitle)")
+                .accessibilityLabel("Offered for \(displayIntentionTitle)")
             }
 
             // Short contemplative quote on the same surface treatment used elsewhere.

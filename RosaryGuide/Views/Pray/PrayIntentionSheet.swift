@@ -15,6 +15,7 @@ struct PrayIntentionSheet: View {
 
     @State private var popeStore = PopeIntentionStore.shared
     @State private var editorRoute: EditorRoute?
+    @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
 
     private var suggestions: [SuggestedIntention] { IntentionSuggestions.forDay(popeStore: popeStore) }
 
@@ -68,6 +69,7 @@ struct PrayIntentionSheet: View {
                     ForEach(listedIntentions) { item in
                         IntentionRadioRow(
                             item: item,
+                            hideText: hideIntentionText,
                             selected: chosenId == item.id,
                             allowsPin: offer.sortedIntentions.count > 1,
                             cardMinHeight: cardMinHeight,
@@ -304,6 +306,7 @@ private struct IntentionRadioRow: View {
     @Environment(\.palette) private var palette
 
     let item: OfferIntention
+    let hideText: Bool
     let selected: Bool
     let allowsPin: Bool
     let cardMinHeight: CGFloat
@@ -314,11 +317,19 @@ private struct IntentionRadioRow: View {
 
     @State private var showingDeleteAlert = false
 
+    private var hidesText: Bool {
+        IntentionPrivacy.hides(item, hidden: hideText)
+    }
+
+    private var displayTitle: String {
+        IntentionPrivacy.displayTitle(item, hidden: hideText)
+    }
+
     private var subtitle: String? {
         var parts: [String] = []
         if item.isPapal { parts.append(item.categoryTitle) }
         if !item.isNew, !item.carriedLabel.isEmpty { parts.append(item.carriedLabel) }
-        if let note = item.note, !note.isEmpty { parts.append(note) }
+        if !hidesText, let note = item.note, !note.isEmpty { parts.append(note) }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
@@ -339,7 +350,7 @@ private struct IntentionRadioRow: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(item.title)
+                        Text(displayTitle)
                             .font(AppTheme.sans(16, weight: .semibold))
                             .foregroundStyle(palette.ink)
                             .multilineTextAlignment(.leading)
@@ -382,7 +393,7 @@ private struct IntentionRadioRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityLabel(item.title)
+        .accessibilityLabel(hidesText ? IntentionPrivacy.maskedText : item.title)
         .overlay(alignment: .trailing) {
             // Outside the row Button so menu taps do not also select the radio.
             OverflowMenuButton(
@@ -399,7 +410,7 @@ private struct IntentionRadioRow: View {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
         } message: {
-            Text("This will delete “\(item.title)” from your intentions.")
+            Text("This will delete “\(displayTitle)” from your intentions.")
         }
     }
 }

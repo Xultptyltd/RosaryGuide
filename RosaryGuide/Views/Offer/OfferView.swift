@@ -2,24 +2,6 @@ import SwiftUI
 import UIKit
 
 
-/// List-surface redaction for personal intention copy (banking-style privacy).
-private enum IntentionPrivacy {
-    static let maskedText = "Hidden intention"
-    static let maskedNoteText = "Not shown while intentions are hidden."
-
-    static func hides(_ intention: OfferIntention, hidden: Bool) -> Bool {
-        hidden && !intention.isPapal
-    }
-
-    static func displayText(_ text: String, hidden: Bool) -> String {
-        hidden ? maskedText : text
-    }
-
-    static func displayTitle(_ intention: OfferIntention, hidden: Bool) -> String {
-        displayText(intention.title, hidden: hides(intention, hidden: hidden))
-    }
-}
-
 struct OfferView: View {
     @Environment(OfferStore.self) private var offer
     @Environment(\.palette) private var palette

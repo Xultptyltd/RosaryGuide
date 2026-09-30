@@ -18,6 +18,7 @@ struct HomeView: View {
     @State private var chosenIntentionTitle = ""
     @State private var chosenIntentionNote = ""
     @State private var intentionSelectionExplicit = false
+    @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
     @State private var openFeastID: String?
     @State private var weekFeastInfo: DatedFeast?
     @State private var selectedMysteryDetail: Mystery?
@@ -447,7 +448,7 @@ struct HomeView: View {
                     }
 
                     if let currentIntention {
-                        Text(currentIntention.title)
+                        Text(IntentionPrivacy.displayTitle(currentIntention, hidden: hideIntentionText))
                             .font(AppTheme.sans(17))
                             .foregroundStyle(palette.dim)
                             .lineSpacing(4)

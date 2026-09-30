@@ -1,6 +1,25 @@
 import Foundation
 import SwiftUI
 
+/// Shared redaction rules for the optional intention privacy eye.
+/// Holy Father intentions remain readable while personal intentions are hidden.
+enum IntentionPrivacy {
+    static let maskedText = "Hidden intention"
+    static let maskedNoteText = "Not shown while intentions are hidden."
+
+    static func hides(_ intention: OfferIntention, hidden: Bool) -> Bool {
+        hidden && !intention.isPapal
+    }
+
+    static func displayText(_ text: String, hidden: Bool) -> String {
+        hidden ? maskedText : text
+    }
+
+    static func displayTitle(_ intention: OfferIntention, hidden: Bool) -> String {
+        displayText(intention.title, hidden: hides(intention, hidden: hidden))
+    }
+}
+
 enum IntentionAccent: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case skyBlue
     case mintGreen

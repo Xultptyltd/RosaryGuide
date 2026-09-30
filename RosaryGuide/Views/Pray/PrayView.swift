@@ -38,6 +38,7 @@ struct PrayView: View {
     @State private var chosenIntentionId: UUID?
     @State private var chosenIntentionTitle: String = ""
     @State private var chosenIntentionNote: String = ""
+    @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
     @State private var showIntentionSheet = false
     @State private var didRecordCarry = false
     /// Locked when entering finis so Offered for survives session.complete() / store churn.
@@ -606,6 +607,9 @@ struct PrayView: View {
     private var signOfCrossIntentionBlock: some View {
         let hasIntention = !chosenIntentionTitle.isEmpty
         let resolved = chosenOfferIntention
+        let displayTitle = resolved.map {
+            IntentionPrivacy.displayTitle($0, hidden: hideIntentionText)
+        } ?? IntentionPrivacy.displayText(chosenIntentionTitle, hidden: hideIntentionText)
 
         HStack(alignment: .center, spacing: 6) {
             Text("For:")
@@ -626,7 +630,7 @@ struct PrayView: View {
                                 usesPopePortrait: resolved.isPapal
                             )
                         }
-                        Text(chosenIntentionTitle)
+                        Text(displayTitle)
                             .font(AppTheme.sans(15, weight: .medium))
                             .foregroundStyle(palette.ink)
                             .lineLimit(1)
@@ -637,7 +641,7 @@ struct PrayView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("For: \(chosenIntentionTitle)")
+                .accessibilityLabel("For: \(displayTitle)")
                 .accessibilityHint("Opens intention picker")
 
                 Button {
@@ -823,6 +827,7 @@ struct PrayView: View {
         CompletionView(
             mysterySet: launch.mysterySet,
             intentionTitle: completionIntentionTitle,
+            intentionIsPapal: completionIntentionIsPapal,
             onDone: { finishRosary() },
             onMichael: {
                 // Rosary is already marked complete on entering finis; Michael is optional continuation.
@@ -834,6 +839,11 @@ struct PrayView: View {
             lockCompletionIntentionIfNeeded()
             markRosaryCompletedIfNeeded()
         }
+    }
+
+    private var completionIntentionIsPapal: Bool {
+        let id = chosenIntentionId ?? sessionStore.session?.intentionId ?? launch.intentionId
+        return id.flatMap { offer.intention(id: $0)?.isPapal } ?? false
     }
 
     /// Resolve the display title from live state, session, or OfferStore — then freeze it.
