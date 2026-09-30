@@ -612,9 +612,7 @@ struct HomeView: View {
                                 .padding(.vertical, 4)
                                 .background(palette.accentTint, in: Capsule())
                         } else {
-                            Text(featured.date.formatted(.dateTime.day().month(.abbreviated)).uppercased())
-                                .font(AppTheme.sans(12, weight: .medium))
-                                .foregroundStyle(palette.dim)
+                            feastDateText(featured.date)
                         }
                         Text(featured.feast.shortTitle)
                             .font(AppTheme.sans(24, weight: .semibold))
@@ -651,9 +649,7 @@ struct HomeView: View {
                     FeastDetailView(prayLaunch: $prayLaunch, item: item)
                 } label: {
                     HStack(spacing: AppTheme.Space.md) {
-                        Text(item.date.formatted(.dateTime.day().month(.abbreviated)).uppercased())
-                            .font(AppTheme.sans(13, weight: .medium))
-                            .foregroundStyle(palette.dim)
+                        feastDateText(item.date)
                             .frame(width: 62, alignment: .leading)
                         Text(item.feast.shortTitle)
                             .font(AppTheme.sans(17))
@@ -680,6 +676,14 @@ struct HomeView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
         .guideSoftShadow(elevated: colorScheme == .light)
+    }
+
+    private func feastDateText(_ date: Date) -> some View {
+        Text(date.formatted(.dateTime.day().month(.abbreviated)))
+            .font(AppTheme.sans(13, weight: .medium))
+            .tracking(0)
+            .textCase(.uppercase)
+            .foregroundStyle(palette.dim)
     }
 
     private var tomorrowCard: some View {
