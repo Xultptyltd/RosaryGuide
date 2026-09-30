@@ -228,9 +228,6 @@ struct OfferView: View {
                         .accessibilityLabel(hideIntentionText ? "Show intentions" : "Hide intentions")
                     }
 
-                    addIntentionButton(title: "Add an intention", matchesLearnStyle: true)
-                        .guideNavList(pageGutter: AppTheme.gutter)
-
                     if let currentIntention {
                         CurrentIntentionHero(
                             intention: currentIntention,
@@ -244,6 +241,9 @@ struct OfferView: View {
                         )
                         .guideNavList(pageGutter: AppTheme.gutter)
                     }
+
+                    addIntentionButton(title: "Add an intention", matchesLearnStyle: true)
+                        .guideNavList(pageGutter: AppTheme.gutter)
 
                     VStack(spacing: 0) {
                         ForEach(secondaryIntentions) { item in
