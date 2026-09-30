@@ -223,6 +223,12 @@ enum GuideChrome {
         tabBar.scrollEdgeAppearance = tabAppearance
         tabBar.tintColor = UIColor(palette.accent)
         tabBar.unselectedItemTintColor = dim
+
+        // SwiftUI's segmented picker is backed by UISegmentedControl. Keep
+        // its unselected track on the same surface token as the rest of the
+        // app instead of UIKit's default system fill.
+        let segmentedControl = UISegmentedControl.appearance()
+        segmentedControl.backgroundColor = UIColor(palette.surface)
         #endif
     }
 }
