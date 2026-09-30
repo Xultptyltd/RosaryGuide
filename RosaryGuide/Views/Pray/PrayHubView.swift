@@ -358,7 +358,7 @@ struct PrayHubView: View {
                 kind: .plate
             )
             .frame(width: 44, height: 44)
-            .clipShape(Circle())
+            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
             .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
