@@ -62,4 +62,21 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(UIColor(light.learnMoreButtonText), UIColor(light.secondaryButtonText))
         XCTAssertEqual(UIColor(dark.learnMoreButtonText), UIColor(dark.secondaryButtonText))
     }
+
+    func testMysterySetLetterIconsAndColourMapping() {
+        XCTAssertEqual(MysterySetKind.joyful.letter, "J")
+        XCTAssertEqual(MysterySetKind.luminous.letter, "L")
+        XCTAssertEqual(MysterySetKind.sorrowful.letter, "S")
+        XCTAssertEqual(MysterySetKind.glorious.letter, "G")
+
+        // Documented mapping: Joyful→green, Luminous→blue, Sorrowful→purple, Glorious→peach.
+        XCTAssertEqual(UIColor(MysterySetKind.joyful.letterFill), UIColor(AppTheme.intentionMintGreen))
+        XCTAssertEqual(UIColor(MysterySetKind.luminous.letterFill), UIColor(AppTheme.intentionSkyBlue))
+        XCTAssertEqual(UIColor(MysterySetKind.sorrowful.letterFill), UIColor(AppTheme.intentionPurple))
+        XCTAssertEqual(UIColor(MysterySetKind.glorious.letterFill), UIColor(AppTheme.intentionPeach))
+        XCTAssertEqual(UIColor(MysterySetKind.joyful.letterOn), UIColor(AppTheme.intentionMintGreenOn))
+        XCTAssertEqual(UIColor(MysterySetKind.luminous.letterOn), UIColor(AppTheme.intentionSkyBlueOn))
+        XCTAssertEqual(UIColor(MysterySetKind.sorrowful.letterOn), UIColor(AppTheme.intentionPurpleOn))
+        XCTAssertEqual(UIColor(MysterySetKind.glorious.letterOn), UIColor(AppTheme.intentionPeachOn))
+    }
 }

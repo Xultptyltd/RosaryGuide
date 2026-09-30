@@ -12,15 +12,19 @@ enum AppTheme {
     static let brandAccentHighContrast = Color(hex: 0x0054FF)
     static let brandAccentDark = Color(hex: 0x568AF8)
     static let brandAccentDarkHighContrast = Color(hex: 0x568AF8)
-    /// Intention avatar fills — light/dark pairs from the product colour table.
-    /// Green → Personal, Blue → Someone else, Purple → Church & world.
+    /// Soft avatar fills — light/dark pairs from the product colour table.
+    /// Shared by intention avatars and Learn mystery-set letter icons.
+    /// Green → Personal / Joyful; Blue → Someone else / Luminous;
+    /// Purple → Church & world / Sorrowful; Peach → Glorious (fourth).
     static let intentionMintGreen = Color(light: 0xC3EDE6, dark: 0x0C615A)
     static let intentionSkyBlue = Color(light: 0xC0EAF7, dark: 0x005F78)
     static let intentionPurple = Color(light: 0xDADFFF, dark: 0x4B49A5)
-    /// Icon colour on the avatar fill (opposite variant of the fill pair).
+    static let intentionPeach = Color(light: 0xFEDBC9, dark: 0x933600)
+    /// Glyph colour on the avatar fill (opposite variant of the fill pair).
     static let intentionMintGreenOn = Color(light: 0x0C615A, dark: 0xC3EDE6)
     static let intentionSkyBlueOn = Color(light: 0x005F78, dark: 0xC0EAF7)
     static let intentionPurpleOn = Color(light: 0x4B49A5, dark: 0xDADFFF)
+    static let intentionPeachOn = Color(light: 0x933600, dark: 0xFEDBC9)
     /// Legacy single ink used where a non-paired accent text is still needed.
     static let intentionAccentText = Color(red: 0.10, green: 0.20, blue: 0.22)
 

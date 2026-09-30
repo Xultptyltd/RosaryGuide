@@ -3,6 +3,24 @@ import SwiftUI
 import UIKit
 #endif
 
+/// Compact circle icon: mystery-set letter on a soft fill (Learn list rows).
+struct MysterySetLetterIcon: View {
+    var set: MysterySetKind
+    var size: CGFloat = 44
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(set.letterFill)
+            Text(set.letter)
+                .font(AppTheme.sans(size * 0.42, weight: .semibold, relativeTo: .body))
+                .foregroundStyle(set.letterOn)
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+    }
+}
+
 struct MysteryArtworkView: View {
     var set: MysterySetKind
     var mysteryNumber: Int?

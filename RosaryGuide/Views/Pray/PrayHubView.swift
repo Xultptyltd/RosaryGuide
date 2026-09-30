@@ -352,16 +352,7 @@ struct PrayHubView: View {
 
     private func learnRow(_ row: LearnRow) -> some View {
         HStack(alignment: .center, spacing: AppTheme.Space.md) {
-            // Same circular plate treatment as Home “Tomorrow” (slightly smaller for list density).
-            MysteryArtworkView(
-                set: row.mysterySet,
-                mysteryNumber: 1,
-                slug: MysteryCatalog.mysteries(for: row.mysterySet).first?.artSlug,
-                kind: .plate
-            )
-            .frame(width: 44, height: 44)
-            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-            .accessibilityHidden(true)
+            MysterySetLetterIcon(set: row.mysterySet, size: 44)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(row.title)

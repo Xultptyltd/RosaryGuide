@@ -122,6 +122,37 @@ enum MysterySetKind: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// Single-letter mark for Learn list circle icons (and similar compact chrome).
+    var letter: String {
+        switch self {
+        case .joyful: "J"
+        case .luminous: "L"
+        case .sorrowful: "S"
+        case .glorious: "G"
+        }
+    }
+
+    /// Fill for mystery-set letter icons. Mapping (document in UI copy / theme comments):
+    /// Joyful → green, Luminous → blue, Sorrowful → purple, Glorious → peach.
+    var letterFill: Color {
+        switch self {
+        case .joyful: AppTheme.intentionMintGreen
+        case .luminous: AppTheme.intentionSkyBlue
+        case .sorrowful: AppTheme.intentionPurple
+        case .glorious: AppTheme.intentionPeach
+        }
+    }
+
+    /// Letter colour on `letterFill` (swapped light/dark pair, like intention icons).
+    var letterOn: Color {
+        switch self {
+        case .joyful: AppTheme.intentionMintGreenOn
+        case .luminous: AppTheme.intentionSkyBlueOn
+        case .sorrowful: AppTheme.intentionPurpleOn
+        case .glorious: AppTheme.intentionPeachOn
+        }
+    }
+
     /// One-line theme for Home (and similar) under today's mystery set.
     var themeSummary: String {
         switch self {
