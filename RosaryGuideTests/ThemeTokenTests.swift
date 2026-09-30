@@ -45,8 +45,8 @@ final class ThemeTokenTests: XCTestCase {
 
         XCTAssertEqual(UIColor(light.surface), UIColor(Color(hex: 0xF4F5F7)))
         XCTAssertEqual(UIColor(dark.surface), UIColor(Color(hex: 0x191B1E)))
-        XCTAssertEqual(UIColor(light.bg), UIColor(Color(hex: 0xF4F5F7)))
-        XCTAssertEqual(UIColor(dark.bg), UIColor(Color(hex: 0x191B1E)))
+        XCTAssertEqual(UIColor(light.bg), UIColor(Color(hex: 0xFEFEFE)))
+        XCTAssertEqual(UIColor(dark.bg), UIColor(Color(hex: 0x090A0C)))
         XCTAssertEqual(UIColor(light.prayBg), UIColor(light.bg))
         XCTAssertEqual(UIColor(dark.prayBg), UIColor(dark.bg))
 

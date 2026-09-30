@@ -91,8 +91,8 @@ struct ThemePalette {
 
     var bg: Color {
         scheme == .light
-            ? Color(hex: 0xF4F5F7)
-            : Color(hex: 0x191B1E)
+            ? Color(hex: 0xFEFEFE)
+            : Color(hex: 0x090A0C)
     }
     var prayBg: Color { bg }
     /// Header + stage track on mystery plates only; body below keeps `prayBg`.
