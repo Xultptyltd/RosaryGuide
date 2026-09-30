@@ -612,7 +612,7 @@ struct HomeView: View {
                                 .padding(.vertical, 4)
                                 .background(palette.accentTint, in: Capsule())
                         } else {
-                            Text(featured.date.formatted(.dateTime.day().month(.abbreviated)))
+                            Text(featured.date.formatted(.dateTime.day().month(.abbreviated)).uppercased())
                                 .font(AppTheme.sans(12, weight: .medium))
                                 .foregroundStyle(palette.dim)
                         }

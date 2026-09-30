@@ -178,6 +178,85 @@ enum FeastNarratives {
         latin: "Sub tuum præsídium confúgimus, sancta Dei Génitrix; nostras deprecatiónes ne despícias in necessitátibus, sed a perículis cunctis líbera nos semper, Virgo gloriósa et benedícta."
     )
 
+
+    private static let angelOfGod = FeastRelatedPrayer(
+        id: "angel-of-god",
+        title: PrayerCatalog.angelOfGod.title.english,
+        english: PrayerCatalog.angelOfGod.text.english,
+        latin: PrayerCatalog.angelOfGod.text.latin
+    )
+
+    private static let gloryBe = FeastRelatedPrayer(
+        id: "glory-be",
+        title: PrayerCatalog.gloryBe.title.english,
+        english: PrayerCatalog.gloryBe.text.english,
+        latin: PrayerCatalog.gloryBe.text.latin
+    )
+
+    private static let apostlesCreed = FeastRelatedPrayer(
+        id: "apostles-creed",
+        title: PrayerCatalog.apostlesCreed.title.english,
+        english: PrayerCatalog.apostlesCreed.text.english,
+        latin: PrayerCatalog.apostlesCreed.text.latin
+    )
+
+    private static let ourFather = FeastRelatedPrayer(
+        id: "our-father",
+        title: PrayerCatalog.ourFather.title.english,
+        english: PrayerCatalog.ourFather.text.english,
+        latin: PrayerCatalog.ourFather.text.latin
+    )
+
+    private static let flosCarmeli = FeastRelatedPrayer(
+        id: "flos-carmeli",
+        title: "Flos Carmeli",
+        english: """
+        Flower of Carmel, tall vine blossom laden; splendor of heaven, childless and maiden. None equals thee.
+
+        Mother so tender, who all men befriendest, make for us mercy, and strength thou dost sendest. Let it avail us.
+
+        Star of the Sea.
+        """,
+        latin: """
+        Flos Carméli, vitis florigera, splendor cæli, virgo puérpera, singularis.
+
+        Mater mitis, sed viri nescia, Carmélitis esto propitia, stella maris.
+        """,
+        note: "Traditional Carmelite prayer associated with Our Lady of Mount Carmel."
+    )
+
+    private static let stabatMater = FeastRelatedPrayer(
+        id: "stabat-mater",
+        title: "Stabat Mater",
+        english: """
+        At the Cross her station keeping, stood the mournful Mother weeping, close to Jesus to the last.
+
+        Through her heart, his sorrow sharing, all his bitter anguish bearing, now at length the sword has passed.
+
+        O how sad and sore distressed was that Mother highly blest of the sole-begotten One.
+
+        Christ above in torment hangs; she beneath beholds the pangs of her dying glorious Son.
+
+        Is there one who would not weep, whelmed in miseries so deep, Christ's dear Mother to behold?
+
+        Can the human heart refrain from partaking in her pain, in that Mother's pain untold?
+
+        Holy Mother, pierce me through; in my heart each wound renew of my Savior crucified.
+
+        Let me share with thee his pain, who for all my sins was slain, who for me in torments died.
+
+        Christ, when thou shalt call me hence, be thy Mother my defense, be thy Cross my victory.
+        """,
+        latin: """
+        Stabat Mater dolorósa iuxta Crucem lacrimósa, dum pendébat Fílius.
+
+        Cuius ánimam geméntem, contristátam et doléntem pertransívit gládius.
+
+        O quam tristis et afflícta fuit illa benedícta Mater Unigéniti!
+        """,
+        note: "Traditional sequence for Our Lady of Sorrows; English is the classic Caswall translation (public domain)."
+    )
+
     // MARK: - Catalog
 
     private static let table: [String: FeastNarrative] = [
@@ -189,7 +268,7 @@ enum FeastNarratives {
         """,
             history: "The Council of Ephesus (431) defended the title Theotokos against those who would separate Christ’s natures. In the Roman calendar the solemnity falls on 1 January, the Octave of the Nativity, binding the mystery of the Incarnation to Mary’s person and to the Church’s prayer for peace.",
             indulgence: nil,
-            relatedPrayers: [hailHolyQueen, memorare, angelus]
+            relatedPrayers: [subTuum, memorare, hailHolyQueen]
         ),
         "epiphany": FeastNarrative(
             about: """
@@ -199,7 +278,7 @@ enum FeastNarratives {
         """,
             history: "The feast is ancient in East and West. In the United States it is commonly observed on the Sunday between 2 and 8 January. The Magi’s gifts and journey have long shaped Christian devotion, art, and the blessing of homes at Epiphanytide.",
             indulgence: nil,
-            relatedPrayers: [hailHolyQueen]
+            relatedPrayers: [angelus]
         ),
         "baptism-movable": FeastNarrative(
             about: """
@@ -229,7 +308,7 @@ enum FeastNarratives {
         """,
             history: "From a grotto in the Pyrenees, Lourdes became a place of pilgrimage, healing, and Marian devotion. The optional memorial invites the faithful to entrust illness and weakness to Mary’s care under the title she herself confirmed.",
             indulgence: nil,
-            relatedPrayers: [memorare, hailHolyQueen]
+            relatedPrayers: [memorare, hailHolyQueen, subTuum]
         ),
         "ash-wednesday": FeastNarrative(
             about: """
@@ -239,7 +318,7 @@ enum FeastNarratives {
         """,
             history: "Ashes have marked Christian repentance for centuries. The day opens the forty days that prepare the Church for the Paschal Triduum and Easter, shaping a season of discipline ordered to joy.",
             indulgence: nil,
-            relatedPrayers: [animaChristi]
+            relatedPrayers: [animaChristi, fatimaPrayer]
         ),
         "joseph": FeastNarrative(
             about: """
@@ -369,7 +448,7 @@ enum FeastNarratives {
         """,
             history: "The solemnity grew in the Middle Ages and was extended to the universal Church. It gathers Easter’s revelation: the Son sent, the Spirit given, the Father glorified.",
             indulgence: nil,
-            relatedPrayers: [comeHolySpirit]
+            relatedPrayers: [gloryBe, comeHolySpirit]
         ),
         "corpus-christi": FeastNarrative(
             about: """
@@ -409,7 +488,7 @@ enum FeastNarratives {
         """,
             history: "June 29 is an ancient Roman feast of the two apostles. Pilgrims still visit their basilicas; the day celebrates the unity and mission of the Church founded on the apostles.",
             indulgence: nil,
-            relatedPrayers: [hailHolyQueen]
+            relatedPrayers: [apostlesCreed]
         ),
         "carmel": FeastNarrative(
             about: """
@@ -419,7 +498,7 @@ enum FeastNarratives {
         """,
             history: "Carmelite tradition looks to Mount Carmel and to Mary’s care for the Order. The memorial on 16 July keeps that heritage before the whole Church as a path of Marian discipleship.",
             indulgence: nil,
-            relatedPrayers: [hailHolyQueen, memorare, subTuum]
+            relatedPrayers: [flosCarmeli, hailHolyQueen, memorare]
         ),
         "assumption": FeastNarrative(
             about: """
@@ -459,7 +538,7 @@ enum FeastNarratives {
         """,
             history: "The memorial on 12 September grew from devotion to the Holy Name and from thanksgiving after victories entrusted to Mary’s intercession, including the relief of Vienna in 1683.",
             indulgence: nil,
-            relatedPrayers: [hailHolyQueen, memorare]
+            relatedPrayers: [hailHolyQueen, memorare, subTuum]
         ),
         "sorrows": FeastNarrative(
             about: """
@@ -469,7 +548,7 @@ enum FeastNarratives {
         """,
             history: "The memorial follows the Exaltation of the Holy Cross (14 September). Servite devotion to the seven dolors shaped the feast’s popular piety and the sequence Stabat Mater.",
             indulgence: nil,
-            relatedPrayers: [hailHolyQueen, fatimaPrayer, animaChristi]
+            relatedPrayers: [stabatMater, animaChristi, hailHolyQueen]
         ),
         "michael": FeastNarrative(
             about: """
@@ -489,7 +568,7 @@ enum FeastNarratives {
         """,
             history: "Local angel feasts existed for centuries; the memorial on 2 October became universal. Scripture and Tradition affirm angelic guardianship over the faithful.",
             indulgence: nil,
-            relatedPrayers: [saintMichael]
+            relatedPrayers: [angelOfGod, saintMichael]
         ),
         "rosary": FeastNarrative(
             about: """
@@ -509,7 +588,7 @@ enum FeastNarratives {
         """,
             history: "The solemnity on 1 November crowns the harvest of holiness. It balances All Souls on 2 November: glory first, then prayer for those being purified.",
             indulgence: nil,
-            relatedPrayers: [hailHolyQueen]
+            relatedPrayers: [apostlesCreed, hailHolyQueen]
         ),
         "all-souls": FeastNarrative(
             about: """
@@ -539,7 +618,7 @@ enum FeastNarratives {
         """,
             history: "Instituted by Pius XI in 1925 and later moved to the last Sunday of Ordinary Time, the feast proclaims Christ’s kingship over every people and over every heart, looking toward Advent.",
             indulgence: nil,
-            relatedPrayers: [animaChristi]
+            relatedPrayers: [ourFather, animaChristi]
         ),
         "advent-1": FeastNarrative(
             about: """

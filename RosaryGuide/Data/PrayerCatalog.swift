@@ -153,6 +153,15 @@ enum PrayerCatalog {
         )
     )
 
+    static let angelOfGod = Prayer(
+        id: "angel-of-god",
+        title: BilingualText(english: "Angel of God", latin: "Angele Dei"),
+        text: BilingualText(
+            english: "Angel of God, my guardian dear, to whom God's love commits me here, ever this day be at my side, to light and guard, to rule and guide. Amen.",
+            latin: "Ángele Dei, qui custos es mei, me, tibi commíssum pietáte supérna, illúmina, custódi, rege et gubérna. Amen."
+        )
+    )
+
     static let faith = BilingualText(english: "For an increase in faith", latin: "Ad fidei incrementum")
     static let hope = BilingualText(english: "For an increase in hope", latin: "Ad spei incrementum")
     static let charity = BilingualText(english: "For an increase in charity", latin: "Ad caritatis incrementum")

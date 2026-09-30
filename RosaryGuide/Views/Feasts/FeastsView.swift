@@ -589,13 +589,23 @@ struct FeastDetailView: View {
                 )
             ]
         }
-        if feast.id == "michael" || feast.id == "guardian-angels" {
+        if feast.id == "michael" {
             return [
                 FeastRelatedPrayer(
                     id: "saint-michael-fallback",
                     title: PrayerCatalog.saintMichael.title.english,
                     english: PrayerCatalog.saintMichael.text.english,
                     latin: PrayerCatalog.saintMichael.text.latin
+                )
+            ]
+        }
+        if feast.id == "guardian-angels" {
+            return [
+                FeastRelatedPrayer(
+                    id: "angel-of-god-fallback",
+                    title: PrayerCatalog.angelOfGod.title.english,
+                    english: PrayerCatalog.angelOfGod.text.english,
+                    latin: PrayerCatalog.angelOfGod.text.latin
                 )
             ]
         }
