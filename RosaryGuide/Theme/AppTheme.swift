@@ -12,9 +12,16 @@ enum AppTheme {
     static let brandAccentHighContrast = Color(hex: 0x0054FF)
     static let brandAccentDark = Color(hex: 0x568AF8)
     static let brandAccentDarkHighContrast = Color(hex: 0x568AF8)
-    static let intentionSkyBlue = Color(hex: 0x9BCBF0)
-    static let intentionMintGreen = Color(hex: 0xA8E1B8)
-    static let intentionTeal = Color(hex: 0x70C8C6)
+    /// Intention avatar fills — light/dark pairs from the product colour table.
+    /// Green → Personal, Blue → Someone else, Purple → Church & world.
+    static let intentionMintGreen = Color(light: 0xC3EDE6, dark: 0x0C615A)
+    static let intentionSkyBlue = Color(light: 0xC0EAF7, dark: 0x005F78)
+    static let intentionPurple = Color(light: 0xDADFFF, dark: 0x4B49A5)
+    /// Icon colour on the avatar fill (opposite variant of the fill pair).
+    static let intentionMintGreenOn = Color(light: 0x0C615A, dark: 0xC3EDE6)
+    static let intentionSkyBlueOn = Color(light: 0x005F78, dark: 0xC0EAF7)
+    static let intentionPurpleOn = Color(light: 0x4B49A5, dark: 0xDADFFF)
+    /// Legacy single ink used where a non-paired accent text is still needed.
     static let intentionAccentText = Color(red: 0.10, green: 0.20, blue: 0.22)
 
     /// Canonical page-edge horizontal inset. Matches `Space.lg` (16pt).
@@ -82,6 +89,23 @@ extension Color {
             blue: Double(hex & 0xFF) / 255,
             opacity: alpha
         )
+    }
+
+    /// Adaptive sRGB colour that flips with light/dark interface style.
+    init(light: UInt32, dark: UInt32, alpha: Double = 1) {
+#if canImport(UIKit)
+        self.init(uiColor: UIColor { traits in
+            let hex = traits.userInterfaceStyle == .dark ? dark : light
+            return UIColor(
+                red: CGFloat((hex >> 16) & 0xFF) / 255,
+                green: CGFloat((hex >> 8) & 0xFF) / 255,
+                blue: CGFloat(hex & 0xFF) / 255,
+                alpha: alpha
+            )
+        })
+#else
+        self.init(hex: light, alpha: alpha)
+#endif
     }
 }
 

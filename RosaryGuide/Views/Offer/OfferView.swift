@@ -305,7 +305,7 @@ struct OfferView: View {
                 note: item.note,
                 sourceId: papal ? item.id : nil,
                 category: papal ? .world : .personal,
-                accent: papal ? .teal : .mintGreen,
+                accent: papal ? .purple : .mintGreen,
                 emoji: papal ? "✝️" : "🙏"
             )
             // Papal: add quietly. Others: open editor so they can refine.
@@ -1342,15 +1342,16 @@ struct IntentionIconView: View {
         case "✝️", "✝", "†":
             "cross.fill"
         case "👥":
-            "person.2.fill"
+            "person.fill"
         case "🌍", "🌎", "🌏":
-            "globe"
+            "building.columns.fill"
         case "❤️", "❤", "♥️", "♥":
             "heart.fill"
         case "🕊️", "🕊":
             "leaf.fill"
         case "🙏":
-            "hands.sparkles.fill"
+            // Prefer praying-hands reading; SF Symbol hands.and.sparkles.fill.
+            "hands.and.sparkles.fill"
         default:
             fallbackSymbol
         }
@@ -1358,18 +1359,20 @@ struct IntentionIconView: View {
 
     private var fallbackSymbol: String {
         switch accent {
+        case .mintGreen:
+            "hands.and.sparkles.fill"
         case .skyBlue:
-            "person.2.fill"
-        case .mintGreen, .teal:
-            "globe"
+            "person.fill"
+        case .purple:
+            "building.columns.fill"
         }
     }
 
     private var symbolSize: CGFloat {
         switch symbolName {
-        case "globe":
+        case "building.columns.fill":
             size * 0.40
-        case "hands.sparkles.fill":
+        case "hands.and.sparkles.fill", "hands.sparkles.fill":
             size * 0.38
         default:
             size * 0.42
@@ -1421,9 +1424,9 @@ private enum IntentionKindChoice: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .personal: "person.fill"
-        case .someone: "person.2.fill"
-        case .world: "globe"
+        case .personal: "hands.and.sparkles.fill"
+        case .someone: "person.fill"
+        case .world: "building.columns.fill"
         }
     }
 
@@ -1431,7 +1434,7 @@ private enum IntentionKindChoice: String, CaseIterable, Identifiable {
         switch self {
         case .personal: .mintGreen
         case .someone: .skyBlue
-        case .world: .teal
+        case .world: .purple
         }
     }
 

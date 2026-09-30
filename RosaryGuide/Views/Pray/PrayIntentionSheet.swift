@@ -148,7 +148,7 @@ struct PrayIntentionSheet: View {
                     .frame(width: 24, height: 24)
 
                 IntentionIconView(
-                    accent: .teal,
+                    accent: .purple,
                     emoji: "✝️",
                     size: 36,
                     usesPopePortrait: true
@@ -287,7 +287,7 @@ struct PrayIntentionSheet: View {
                 note: item.note,
                 sourceId: papal ? item.id : nil,
                 category: papal ? .world : .personal,
-                accent: papal ? .teal : .mintGreen,
+                accent: papal ? .purple : .mintGreen,
                 emoji: papal ? "✝️" : nil
             )
             chosenId = created.id

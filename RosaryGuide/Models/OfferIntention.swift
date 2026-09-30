@@ -4,7 +4,7 @@ import SwiftUI
 enum IntentionAccent: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case skyBlue
     case mintGreen
-    case teal
+    case purple
 
     var id: String { rawValue }
 
@@ -12,26 +12,29 @@ enum IntentionAccent: String, Codable, CaseIterable, Identifiable, Hashable, Sen
         switch self {
         case .skyBlue: "Soft sky blue"
         case .mintGreen: "Soft mint green"
-        case .teal: "Soft teal"
+        case .purple: "Soft purple"
         }
     }
 
-    /// A deliberately small avatar palette: three soft blue/green tones with
-    /// enough hue separation to remain distinct at a glance.
+    /// Avatar palette: Green (Personal), Blue (Someone else), Purple (Church & world).
     static var pickerOrder: [IntentionAccent] {
-        [.skyBlue, .mintGreen, .teal]
+        [.mintGreen, .skyBlue, .purple]
     }
 
     var color: Color {
         switch self {
         case .skyBlue: AppTheme.intentionSkyBlue
         case .mintGreen: AppTheme.intentionMintGreen
-        case .teal: AppTheme.intentionTeal
+        case .purple: AppTheme.intentionPurple
         }
     }
 
     var onColor: Color {
-        AppTheme.intentionAccentText
+        switch self {
+        case .skyBlue: AppTheme.intentionSkyBlueOn
+        case .mintGreen: AppTheme.intentionMintGreenOn
+        case .purple: AppTheme.intentionPurpleOn
+        }
     }
 
     /// Keep existing saved intentions colourful without allowing legacy hues
@@ -39,12 +42,12 @@ enum IntentionAccent: String, Codable, CaseIterable, Identifiable, Hashable, Sen
     init(from decoder: Decoder) throws {
         let value = try decoder.singleValueContainer().decode(String.self)
         switch value {
-        // Migrate the former four-color palette without reintroducing any
-        // grey/yellow/rose hues into the current UI.
+        // Migrate former palette names (incl. teal → purple) without
+        // reintroducing grey/yellow/rose into the current UI.
         case "skyBlue", "paleBlue", "blue": self = .skyBlue
         case "mintGreen", "paleGreen": self = .mintGreen
-        case "teal", "green": self = .teal
-        case "gray", "gold", "rose", "violet": self = .skyBlue
+        case "purple", "teal", "green", "violet": self = .purple
+        case "gray", "gold", "rose": self = .skyBlue
         default: self = .skyBlue
         }
     }
@@ -68,7 +71,7 @@ enum IntentionCategory: String, Codable, CaseIterable, Identifiable, Hashable, S
     static func inferred(sourceId: String?, accent: IntentionAccent, emoji: String?) -> IntentionCategory {
         if sourceId?.hasPrefix("pope-") == true { return .world }
         if emoji == "👥" || accent == .skyBlue { return .someone }
-        if emoji == "🌍" || accent == .teal { return .world }
+        if emoji == "🌍" || accent == .purple { return .world }
         return .personal
     }
 }
