@@ -228,7 +228,7 @@ struct OfferView: View {
                         .accessibilityLabel(hideIntentionText ? "Show intentions" : "Hide intentions")
                     }
 
-                    addIntentionButton(title: "Add an intention", matchesLearnStyle: true)
+                    addIntentionButton(title: "Add an intention")
                         .guideNavList(pageGutter: AppTheme.gutter)
 
                     if let currentIntention {
@@ -403,7 +403,7 @@ private struct CurrentIntentionHero: View {
                     Image(systemName: "arrow.right")
                 }
                 .font(AppTheme.sans(16, weight: .semibold))
-                .foregroundStyle(palette.primaryButtonText)
+                .foregroundStyle(palette.secondaryButtonText)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
                 .background(actionFill, in: Capsule())
@@ -421,7 +421,7 @@ private struct CurrentIntentionHero: View {
     }
 
     private var actionFill: Color {
-        palette.primaryButtonFill
+        palette.secondaryButtonFill
     }
 }
 
