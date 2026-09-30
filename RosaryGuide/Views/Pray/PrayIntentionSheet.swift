@@ -27,11 +27,19 @@ struct PrayIntentionSheet: View {
     }
 
     /// Your intentions for this set, pinned/current first (via OfferStore sort), then suggested, then recent.
-    /// Drops titles already shown via an unadopted papal suggestion row.
+    /// Includes adopted papal intentions so they can be pinned/edited like any other row.
     private var listedIntentions: [OfferIntention] {
-        let papalTitles = Set(papalSuggestions.map { $0.title.lowercased() })
-        return offer.sortedIntentions(for: mysterySet)
-            .filter { !papalTitles.contains($0.title.lowercased()) }
+        offer.sortedIntentions(for: mysterySet)
+    }
+
+    /// Papal suggestion cards only when not yet saved — once adopted, they appear in `listedIntentions`.
+    private var unadoptedPapalSuggestions: [SuggestedIntention] {
+        papalSuggestions.filter { suggestion in
+            !offer.sortedIntentions.contains {
+                $0.sourceId == suggestion.id
+                    || $0.title.compare(suggestion.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+            }
+        }
     }
 
     private var noneSelected: Bool { chosenId == nil && chosenTitle.isEmpty }
@@ -53,7 +61,7 @@ struct PrayIntentionSheet: View {
                         chooseNone()
                     }
 
-                    ForEach(papalSuggestions) { item in
+                    ForEach(unadoptedPapalSuggestions) { item in
                         papalRadioCard(item)
                     }
 
@@ -230,12 +238,8 @@ struct PrayIntentionSheet: View {
     // MARK: - Actions
 
     private func pinOrUnpin(_ item: OfferIntention) {
-        if item.isPinned {
-            offer.togglePin(id: item.id)
-        } else {
-            // Exclusive current — moves to top of user intention list.
-            offer.setCurrent(id: item.id)
-        }
+        // Exclusive pin / clear unpin — handled in OfferStore.togglePin.
+        offer.togglePin(id: item.id)
     }
 
     private func deleteIntention(_ item: OfferIntention) {

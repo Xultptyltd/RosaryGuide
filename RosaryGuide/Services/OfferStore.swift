@@ -116,9 +116,19 @@ final class OfferStore {
         defaults.removeObject(forKey: Keys.intentions)
     }
 
+    /// Pin as the sole current intention, or unpin if already pinned.
+    /// Pinning is exclusive (same as `setCurrent`); unpin clears only this row.
     func togglePin(id: UUID) {
         guard let idx = intentions.firstIndex(where: { $0.id == id }) else { return }
-        intentions[idx].isPinned.toggle()
+        var next = intentions
+        if next[idx].isPinned {
+            next[idx].isPinned = false
+        } else {
+            for i in next.indices {
+                next[i].isPinned = next[i].id == id
+            }
+        }
+        intentions = next
     }
 
     func recordCarry(id: UUID) {

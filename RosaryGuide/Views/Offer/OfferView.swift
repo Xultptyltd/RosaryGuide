@@ -217,24 +217,14 @@ struct OfferView: View {
 
                     VStack(spacing: 0) {
                         ForEach(secondaryIntentions) { item in
-                            NavigationLink {
-                                IntentionDetailView(
-                                    intention: item,
-                                    onPin: { offer.togglePin(id: item.id) },
-                                    onEdit: { editor = .edit(item) },
-                                    onDelete: { offer.delete(id: item.id) },
-                                    onPray: { prayWith(item) }
-                                )
-                            } label: {
-                                IntentionListRow(
-                                    intention: item,
-                                    onPin: { offer.togglePin(id: item.id) },
-                                    onEdit: { editor = .edit(item) },
-                                    onDelete: { offer.delete(id: item.id) },
-                                    allowsPin: offer.sortedIntentions.count > 1
-                                )
-                            }
-                            .buttonStyle(.plain)
+                            IntentionSecondaryRow(
+                                intention: item,
+                                allowsPin: offer.sortedIntentions.count > 1,
+                                onPin: { offer.togglePin(id: item.id) },
+                                onEdit: { editor = .edit(item) },
+                                onDelete: { offer.delete(id: item.id) },
+                                onPray: { prayWith(item) }
+                            )
 
                             if item.id != secondaryIntentions.last?.id {
                                 Hairline()
@@ -659,14 +649,52 @@ private struct PapalIntentionDetailView: View {
     }
 }
 
-private struct IntentionListRow: View {
-    @Environment(\.palette) private var palette
+/// Secondary row: NavigationLink for open, overflow menu overlaid outside the link
+/// so Pin/Edit/Delete are not swallowed by navigation (same pattern as CurrentIntentionHero).
+private struct IntentionSecondaryRow: View {
     let intention: OfferIntention
+    var allowsPin: Bool = true
     let onPin: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
-    var allowsPin: Bool = true
+    let onPray: () -> Void
     @State private var showingDeleteAlert = false
+
+    var body: some View {
+        NavigationLink {
+            IntentionDetailView(
+                intention: intention,
+                onPin: onPin,
+                onEdit: onEdit,
+                onDelete: onDelete,
+                onPray: onPray
+            )
+        } label: {
+            IntentionListRow(intention: intention)
+        }
+        .buttonStyle(.plain)
+        .overlay(alignment: .trailing) {
+            OverflowMenuButton(
+                isPinned: intention.isPinned,
+                allowsPin: allowsPin,
+                allowsEdit: true,
+                onPin: onPin,
+                onEdit: onEdit,
+                onDelete: { showingDeleteAlert = true }
+            )
+        }
+        .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive, action: onDelete)
+        } message: {
+            Text("This will delete “\(intention.title)” from your intentions.")
+        }
+    }
+}
+
+private struct IntentionListRow: View {
+    @Environment(\.palette) private var palette
+    let intention: OfferIntention
 
     var body: some View {
         HStack(alignment: .center, spacing: 14) {
@@ -697,24 +725,13 @@ private struct IntentionListRow: View {
 
             Spacer(minLength: 8)
 
-            OverflowMenuButton(
-                isPinned: intention.isPinned,
-                allowsPin: allowsPin,
-                allowsEdit: true,
-                onPin: onPin,
-                onEdit: onEdit,
-                onDelete: { showingDeleteAlert = true }
-            )
-            .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+            // Reserve trailing space so the overlaid overflow menu sits clear of the title.
+            Color.clear
+                .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                .accessibilityHidden(true)
         }
         .padding(.vertical, 10)
         .contentShape(Rectangle())
-        .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive, action: onDelete)
-        } message: {
-            Text("This will delete “\(intention.title)” from your intentions.")
-        }
     }
 
     private var metaLabel: String {
@@ -1749,12 +1766,11 @@ struct IntentionEditorSheet: View {
         let resolvedEmoji = glyph.isEmpty ? "🙏" : glyph
         switch route {
         case .create:
-            // Preserve whoever is Current before insert when Make current is OFF,
-            // so a newer unpinned row cannot steal the hero via sortedIntentions fallback.
+            // Preserve an explicit Current when Make current is OFF.
+            // Do not invent a pin from sortedIntentions.first — featured is pin-only.
             let priorCurrentId: UUID? = makeCurrent
                 ? nil
-                : (offer.sortedIntentions.first(where: \.isPinned)?.id
-                    ?? offer.sortedIntentions.first?.id)
+                : offer.sortedIntentions.first(where: \.isPinned)?.id
             let created = offer.add(
                 title: title,
                 note: note,
