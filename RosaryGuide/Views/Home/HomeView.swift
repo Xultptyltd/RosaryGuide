@@ -28,6 +28,10 @@ struct HomeView: View {
     @Namespace private var pickerNamespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    // Archived pending a product decision: keep the Home Daily Scripture implementation
+    // and its detail sheet recoverable without showing the section in the current Home UI.
+    private static let showDailyScriptureOnHome = false
+
     private var today: Date { Date() }
     private var assignment: MysteryAssignment {
         MysteryCalendar.assignment(on: today)
@@ -283,8 +287,10 @@ struct HomeView: View {
             mysteryRail(gutter: gutter)
                 .padding(.top, AppTheme.decadesGap)
 
-            liturgicalVerseSection
-                .padding(.top, AppTheme.sectionGap)
+            if Self.showDailyScriptureOnHome {
+                liturgicalVerseSection
+                    .padding(.top, AppTheme.sectionGap)
+            }
 
             comingUpSection
                 .padding(.top, AppTheme.sectionGap)
