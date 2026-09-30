@@ -850,7 +850,7 @@ private struct IntentionDetailView: View {
                 Button(role: .destructive) {
                     showingDeleteAlert = true
                 } label: {
-                    Text("Remove Intention")
+                    Text("Delete intention")
                         .font(AppTheme.sans(15))
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
