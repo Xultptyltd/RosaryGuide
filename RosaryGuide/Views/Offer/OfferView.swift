@@ -784,8 +784,6 @@ private struct IntentionDetailView: View {
         }
         .navigationTitle(intention.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(palette.bg, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
         .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
@@ -1506,8 +1504,6 @@ struct IntentionEditorSheet: View {
             .background(palette.bg)
             .navigationTitle(routeTitle)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(palette.bg, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(palette.scheme, for: .navigationBar)
             .tint(palette.accent)
             .toolbar {
@@ -1532,7 +1528,6 @@ struct IntentionEditorSheet: View {
             }
         }
         .presentationDragIndicator(.visible)
-        .presentationBackground(palette.bg)
     }
 
     @ViewBuilder

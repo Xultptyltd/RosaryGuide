@@ -1558,7 +1558,12 @@ private struct FeastSecondaryPage<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(palette.bg)
-        .guideDetailChrome(title)
+        // Match FeastDetailView: native nav with hidden (translucent) bar material
+        // so hero content can show through liquid glass.
+        .toolbar(.visible, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

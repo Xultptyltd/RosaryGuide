@@ -187,13 +187,13 @@ struct ThemedRoot<Content: View>: View {
 enum GuideChrome {
     static func apply(_ palette: ThemePalette) {
         #if canImport(UIKit)
-        let bg = UIColor(palette.bg)
         let ink = UIColor(palette.ink)
         let dim = UIColor(palette.dim)
 
+        // Use the system nav bar material (liquid glass on iOS 26) so scrolled
+        // content can show through. An opaque backgroundColor cancels that.
         let nav = UINavigationBarAppearance()
-        nav.configureWithOpaqueBackground()
-        nav.backgroundColor = bg
+        nav.configureWithDefaultBackground()
         nav.shadowColor = .clear
         nav.titleTextAttributes = [
             .foregroundColor: ink,
@@ -240,8 +240,8 @@ struct GuidePageChrome: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(palette.bg)
-            .toolbarBackground(palette.bg, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            // Leave nav bar material to the system (liquid glass on iOS 26).
+            // A solid toolbarBackground fill cancels translucency.
             .toolbarColorScheme(palette.scheme, for: .navigationBar)
     }
 }
@@ -253,7 +253,6 @@ extension View {
 }
 
 struct GuideDetailChrome: ViewModifier {
-    @Environment(\.palette) private var palette
     let title: String
 
     func body(content: Content) -> some View {
@@ -262,9 +261,7 @@ struct GuideDetailChrome: ViewModifier {
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.visible, for: .navigationBar)
-            .toolbarBackground(palette.bg, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(palette.scheme, for: .navigationBar)
+            // System automatic material — do not force a solid fill.
     }
 }
 

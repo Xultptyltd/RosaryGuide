@@ -102,8 +102,6 @@ struct SettingsView: View {
         .tint(palette.accent)
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(palette.bg, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
         .alert("Delete history and data?", isPresented: $confirmDeleteHistory) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {

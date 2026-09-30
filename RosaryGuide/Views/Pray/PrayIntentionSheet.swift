@@ -80,8 +80,6 @@ struct PrayIntentionSheet: View {
             .background(palette.bg)
             .navigationTitle("Offer this Rosary for")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(palette.bg, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(palette.scheme, for: .navigationBar)
             .sheet(item: $editorRoute) { route in
                 IntentionEditorSheet(
@@ -103,7 +101,6 @@ struct PrayIntentionSheet: View {
         }
         .presentationDetents(prefersLargeDetent ? [.large] : [.medium, .large])
         .presentationDragIndicator(.visible)
-        .presentationBackground(palette.bg)
     }
 
     // MARK: - Rows
