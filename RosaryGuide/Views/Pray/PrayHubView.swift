@@ -132,7 +132,7 @@ struct PrayHubView: View {
     private var mysteriesSection: some View {
         learnSection(title: "The mysteries", rows: MysterySetKind.displayOrder.map { set in
             LearnRow(
-                icon: set.learnIcon,
+                mysterySet: set,
                 title: set.displayTitle,
                 detail: set.learnSummary,
                 destination: .mystery(set)
@@ -217,7 +217,7 @@ struct PrayHubView: View {
                     .buttonStyle(.plain)
 
                     if index < rows.count - 1 {
-                        Hairline().padding(.leading, 58)
+                        Hairline().padding(.leading, 44 + AppTheme.Space.md)
                     }
                 }
             }
@@ -350,11 +350,16 @@ struct PrayHubView: View {
 
     private func learnRow(_ row: LearnRow) -> some View {
         HStack(alignment: .center, spacing: AppTheme.Space.md) {
-            Image(systemName: row.icon)
-                .guideSymbol(size: 17, weight: .medium)
-                .foregroundStyle(palette.accent)
-                .frame(width: 34, height: 34)
-                .background(palette.accentTint, in: Circle())
+            // Same circular plate treatment as Home “Tomorrow” (slightly smaller for list density).
+            MysteryArtworkView(
+                set: row.mysterySet,
+                mysteryNumber: 1,
+                slug: MysteryCatalog.mysteries(for: row.mysterySet).first?.artSlug,
+                kind: .plate
+            )
+            .frame(width: 44, height: 44)
+            .clipShape(Circle())
+            .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(row.title)
@@ -380,7 +385,7 @@ struct PrayHubView: View {
 
 private struct LearnRow: Identifiable {
     let id = UUID()
-    var icon: String
+    var mysterySet: MysterySetKind
     var title: String
     var detail: String
     var destination: LearnDestination
@@ -636,15 +641,6 @@ private extension MysterySetKind {
         case .luminous: "The Luminous Mysteries"
         case .sorrowful: "The Sorrowful Mysteries"
         case .glorious: "The Glorious Mysteries"
-        }
-    }
-
-    var learnIcon: String {
-        switch self {
-        case .joyful: "sparkles"
-        case .luminous: "sun.max.fill"
-        case .sorrowful: "cross.fill"
-        case .glorious: "crown.fill"
         }
     }
 
