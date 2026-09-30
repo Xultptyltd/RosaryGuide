@@ -43,7 +43,7 @@ struct FeastsView: View {
         return items
     }
 
-    /// When the selected day is empty, the next upcoming feast for the “Up next” focus.
+    /// When the selected day is empty, the next upcoming feast for the “Next” focus.
     private var nextFeastAfterSelection: DatedFeast? {
         let start = calendar.startOfDay(for: resolvedSelectedDay)
         var items = FeastCatalog.upcoming(from: calendar.date(byAdding: .day, value: 1, to: start) ?? start, limit: 36)
@@ -169,7 +169,7 @@ struct FeastsView: View {
             }
             return resolvedSelectedDay.formatted(.dateTime.day().month(.wide))
         }
-        return "Up next"
+        return "Next"
     }
 
     private func feastActionRow(for item: DatedFeast) -> some View {

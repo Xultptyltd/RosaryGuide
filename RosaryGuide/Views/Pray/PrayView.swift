@@ -644,7 +644,7 @@ struct PrayView: View {
                     clearChosenIntention()
                 } label: {
                     Image(systemName: "xmark")
-                        .guideSymbol(size: 11, weight: .semibold)
+                        .guideSymbol(size: 11, weight: .medium)
                         .foregroundStyle(palette.faint)
                         .frame(width: 28, height: 28)
                         .contentShape(Rectangle())

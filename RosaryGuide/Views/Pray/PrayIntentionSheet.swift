@@ -315,7 +315,7 @@ private struct IntentionRadioRow: View {
 
     private var subtitle: String? {
         var parts: [String] = []
-        if item.isPapal { parts.append("Holy Father") }
+        if item.isPapal { parts.append(item.categoryTitle) }
         if !item.isNew, !item.carriedLabel.isEmpty { parts.append(item.carriedLabel) }
         if let note = item.note, !note.isEmpty { parts.append(note) }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")

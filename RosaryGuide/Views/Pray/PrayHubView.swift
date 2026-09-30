@@ -141,7 +141,7 @@ struct PrayHubView: View {
     }
 
     private var questionsSection: some View {
-        let questions: [LearnArticle] = [.beads, .oneDecade, .losePlace, .repetition, .mary]
+        let questions: [LearnArticle] = [.whatIsRosary, .beads, .oneDecade, .losePlace, .repetition, .mary]
 
         return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionLabel(text: "Common questions", color: palette.dim)
@@ -170,7 +170,7 @@ struct PrayHubView: View {
                 .font(AppTheme.sans(24, weight: .semibold))
                 .foregroundStyle(palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(resumable == nil ? "Use what you’ve learned and enter the full-screen prayer." : "\(set.shortName) Mysteries are waiting where you left off.")
+            Text(resumable == nil ? "Use what you’ve learnt and pray today’s mysteries." : "\(set.shortName) Mysteries are waiting where you left off.")
                 .font(AppTheme.sans(15))
                 .lineSpacing(5)
                 .foregroundStyle(palette.dim)
@@ -410,7 +410,7 @@ private enum LearnArticle: String, Identifiable {
         case .oneDecade: "Can I pray one decade?"
         case .losePlace: "What if I lose my place?"
         case .repetition: "Why repeat prayers?"
-        case .mary: "Why pray with Mary?"
+        case .mary: "Why pray with the Blessed Virgin Mary?"
         }
     }
 
@@ -425,7 +425,7 @@ private enum LearnArticle: String, Identifiable {
         switch self {
         case .whatIsRosary:
             [
-                "The Rosary is a way of praying with Mary while meditating on the life, death, and glory of Jesus.",
+                "The Rosary is a way of praying with the Blessed Virgin Mary while meditating on the life, death, and glory of Jesus.",
                 "Its repeated prayers are not meant to fill silence with noise. They create a steady rhythm so the heart can stay with each mystery.",
                 "A full Rosary is usually five decades. Each decade focuses on one mystery from the Gospel and ends by returning praise to the Trinity."
             ]
@@ -451,13 +451,13 @@ private enum LearnArticle: String, Identifiable {
             [
                 "The repetition of the Rosary is meant to become gentle and contemplative.",
                 "Like breathing, walking, or listening to a familiar song, repeated words can make space for deeper attention.",
-                "The prayers hold you steady while the mysteries invite you to look at Jesus with Mary."
+                "The prayers hold you steady while the mysteries invite you to look at Jesus with the Blessed Virgin Mary."
             ]
         case .mary:
             [
-                "Catholics do not pray to Mary as if she were God. We ask her to pray with us and for us.",
-                "Mary’s role is always to lead us to Jesus. The Rosary is Marian because it is deeply Christ-centered.",
-                "In each mystery, Mary helps the person praying stay close to the life of her Son."
+                "Catholics do not pray to the Blessed Virgin Mary as if she were God. We ask her to pray with us and for us.",
+                "The Blessed Virgin Mary’s role is always to lead us to Jesus. The Rosary is Marian because it is deeply Christ-centered.",
+                "In each mystery, the Blessed Virgin Mary helps the person praying stay close to the life of her Son."
             ]
         }
     }
@@ -564,7 +564,6 @@ private struct LearnMysteryDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                    GuideSectionLabel(text: "Mystery set", color: palette.dim)
                     Text(set.displayTitle)
                         .font(AppTheme.sans(36, weight: .regular))
                         .foregroundStyle(palette.ink)

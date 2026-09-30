@@ -125,7 +125,7 @@ struct OfferIntention: Identifiable, Hashable, Sendable {
     }
 
     var categoryTitle: String {
-        isPapal ? "Holy Father" : category.title
+        isPapal ? "Holy Father’s Intention" : category.title
     }
 
     var isExpired: Bool {

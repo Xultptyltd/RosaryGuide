@@ -172,7 +172,8 @@ struct OfferView: View {
 
     private var suggestions: [SuggestedIntention] { IntentionSuggestions.forDay(popeStore: popeStore) }
     private var currentIntention: OfferIntention? {
-        offer.sortedIntentions.first(where: \.isPinned) ?? offer.sortedIntentions.first
+        // Featured/current card only when something is explicitly pinned.
+        offer.sortedIntentions.first(where: \.isPinned)
     }
     private var secondaryIntentions: [OfferIntention] {
         guard let currentIntention else { return offer.sortedIntentions }
@@ -939,22 +940,29 @@ private struct IntentionDetailView: View {
             }
 
             if let extract = papalSource?.extract, !extract.isEmpty {
-                VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                    ForEach(extract, id: \.self) { paragraph in
-                        Text(paragraph)
-                            .font(AppTheme.sans(17))
-                            .foregroundStyle(palette.ink)
-                            .multilineTextAlignment(.leading)
-                            .lineSpacing(7)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                    Divider()
+                        .overlay(palette.hair)
+                    GuideSectionLabel(text: "Vatican extract", color: palette.dim)
+                    VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                        ForEach(extract, id: \.self) { paragraph in
+                            Text(paragraph)
+                                .font(AppTheme.sans(17))
+                                .foregroundStyle(palette.ink)
+                                .multilineTextAlignment(.leading)
+                                .lineSpacing(7)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if let sourceTitle = papalSource?.sourceTitle, !sourceTitle.isEmpty {
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    GuideSectionLabel(text: "Source", color: palette.dim)
                     Text(sourceTitle)
                         .font(AppTheme.sans(13))
                         .foregroundStyle(palette.dim)

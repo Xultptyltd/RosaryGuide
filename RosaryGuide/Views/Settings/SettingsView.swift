@@ -80,7 +80,7 @@ struct SettingsView: View {
                     Button(role: .destructive) {
                         session.discard()
                     } label: {
-                        SettingsLabel(icon: "trash", title: "Discard saved Rosary", tint: .red)
+                        SettingsLabel(icon: "trash", title: "Delete history and data", tint: .red)
                     }
             } header: {
                 SettingsSectionHeader(title: "Session")
