@@ -209,10 +209,11 @@ enum GuideChrome {
         navBar.compactAppearance = nav
         navBar.tintColor = ink
 
+        // Use the system tab bar material (liquid glass on iOS 26) so scrolled
+        // content can show through. An opaque backgroundColor cancels that.
         let tabAppearance = UITabBarAppearance()
-        tabAppearance.configureWithOpaqueBackground()
-        tabAppearance.backgroundColor = UIColor(palette.bg)
-        tabAppearance.shadowColor = UIColor(palette.hair)
+        tabAppearance.configureWithDefaultBackground()
+        tabAppearance.shadowColor = .clear
         tabAppearance.stackedLayoutAppearance.selected.iconColor = UIColor(palette.accent)
         tabAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(palette.accent)]
         tabAppearance.stackedLayoutAppearance.normal.iconColor = UIColor(palette.dim)

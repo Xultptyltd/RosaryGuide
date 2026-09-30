@@ -90,27 +90,25 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            GeometryReader { geo in
-                ScrollViewReader { proxy in
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            hero(topInset: topInset, viewport: viewport.height + topInset)
-                                .frame(width: geo.size.width)
-                                .id("home-top")
-                            sheet(width: geo.size.width, gutter: AppTheme.gutter(for: geo.size.width))
-                                .padding(.top, -36)
-                                .frame(width: geo.size.width)
-                        }
-                        .frame(width: geo.size.width, alignment: .top)
-                        .padding(.bottom, AppTheme.Space.xxl)
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        hero(topInset: topInset, viewport: viewport.height + topInset)
+                            .frame(width: viewport.width)
+                            .id("home-top")
+                        sheet(width: viewport.width, gutter: AppTheme.gutter(for: viewport.width))
+                            .padding(.top, -36)
+                            .frame(width: viewport.width)
                     }
-                    .scrollBounceBehavior(.basedOnSize, axes: .vertical)
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .clipped()
-                    .onChange(of: scrollToTopRequest) { _, _ in
-                        withAnimation(reduceMotion ? nil : MotionTokens.selection) {
-                            proxy.scrollTo("home-top", anchor: .top)
-                        }
+                    .frame(width: viewport.width, alignment: .top)
+                    // Match Feasts/Learn/Intentions: clear the tab bar and allow
+                    // scrolled content to show through liquid glass.
+                    .padding(.bottom, 108)
+                }
+                .scrollBounceBehavior(.basedOnSize, axes: .vertical)
+                .onChange(of: scrollToTopRequest) { _, _ in
+                    withAnimation(reduceMotion ? nil : MotionTokens.selection) {
+                        proxy.scrollTo("home-top", anchor: .top)
                     }
                 }
             }

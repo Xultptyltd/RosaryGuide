@@ -18,38 +18,40 @@ struct PrayHubView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            GeometryReader { proxy in
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            CollapsingTitleSpacer()
-                            introCard
-                                .padding(.top, AppTheme.Space.sm)
-                        }
-                        .guideReveal()
-
-                        prayersSection
-                            .guideReveal(delay: 0.06)
-
-                        mysteriesSection
-                            .guideReveal(delay: 0.1)
-
-                        questionsSection
-                            .guideReveal(delay: 0.14)
-
-                        prayTodayCard
-                            .guideReveal(delay: 0.18)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        CollapsingTitleSpacer()
+                        introCard
+                            .padding(.top, AppTheme.Space.sm)
                     }
-                    .padding(.horizontal, pageGutter)
-                    .padding(.top, AppTheme.Space.sm)
-                    .padding(.bottom, 108)
-                    .frame(width: proxy.size.width, alignment: .topLeading)
-                    .onAppear { pageGutter = AppTheme.gutter(for: proxy.size.width) }
-                    .onChange(of: proxy.size.width) { _, w in pageGutter = AppTheme.gutter(for: w) }
+                    .guideReveal()
+
+                    prayersSection
+                        .guideReveal(delay: 0.06)
+
+                    mysteriesSection
+                        .guideReveal(delay: 0.1)
+
+                    questionsSection
+                        .guideReveal(delay: 0.14)
+
+                    prayTodayCard
+                        .guideReveal(delay: 0.18)
                 }
-                .scrollBounceBehavior(.basedOnSize)
-                .clipped()
+                .padding(.horizontal, pageGutter)
+                .padding(.top, AppTheme.Space.sm)
+                .padding(.bottom, 108)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear
+                            .onAppear { pageGutter = AppTheme.gutter(for: proxy.size.width) }
+                            .onChange(of: proxy.size.width) { _, w in pageGutter = AppTheme.gutter(for: w) }
+                    }
+                }
             }
+            .scrollBounceBehavior(.basedOnSize)
             .guidePageChrome()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
