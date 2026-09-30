@@ -4,10 +4,18 @@ import UIKit
 
 /// List-surface redaction for personal intention copy (banking-style privacy).
 private enum IntentionPrivacy {
-    static let maskedTitle = "••••••"
+    static let maskedText = "••••••"
 
-    static func displayTitle(_ title: String, hidden: Bool) -> String {
-        hidden ? maskedTitle : title
+    static func hides(_ intention: OfferIntention, hidden: Bool) -> Bool {
+        hidden && !intention.isPapal
+    }
+
+    static func displayText(_ text: String, hidden: Bool) -> String {
+        hidden ? maskedText : text
+    }
+
+    static func displayTitle(_ intention: OfferIntention, hidden: Bool) -> String {
+        displayText(intention.title, hidden: hides(intention, hidden: hidden))
     }
 }
 
@@ -61,6 +69,7 @@ struct OfferView: View {
             .navigationDestination(item: $intentionDetail) { item in
                 IntentionDetailView(
                     intention: item,
+                    hideText: hideIntentionText,
                     onPin: { offer.togglePin(id: item.id) },
                     onEdit: { editor = .edit(item) },
                     onDelete: { offer.delete(id: item.id) },
@@ -336,7 +345,7 @@ private struct CurrentIntentionHero: View {
     @State private var showingDeleteAlert = false
 
     private var displayTitle: String {
-        IntentionPrivacy.displayTitle(intention.title, hidden: hideText)
+        IntentionPrivacy.displayTitle(intention, hidden: hideText)
     }
 
     var body: some View {
@@ -381,7 +390,7 @@ private struct CurrentIntentionHero: View {
             .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(hideText ? "Open hidden intention" : "Open \(intention.title)")
+        .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Open hidden intention" : "Open \(intention.title)")
         .overlay(alignment: .topTrailing) {
             // Outside the card Button so menu taps do not also open detail.
             OverflowMenuButton(
@@ -416,7 +425,7 @@ private struct CurrentIntentionHero: View {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
         } message: {
-            Text("This will delete “\(intention.title)” from your intentions.")
+            Text("This will delete “\(displayTitle)” from your intentions.")
         }
     }
 
@@ -697,10 +706,15 @@ private struct IntentionSecondaryRow: View {
     let onPray: () -> Void
     @State private var showingDeleteAlert = false
 
+    private var displayTitle: String {
+        IntentionPrivacy.displayTitle(intention, hidden: hideText)
+    }
+
     var body: some View {
         NavigationLink {
             IntentionDetailView(
                 intention: intention,
+                hideText: hideText,
                 onPin: onPin,
                 onEdit: onEdit,
                 onDelete: onDelete,
@@ -724,7 +738,7 @@ private struct IntentionSecondaryRow: View {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
         } message: {
-            Text("This will delete “\(intention.title)” from your intentions.")
+            Text("This will delete “\(displayTitle)” from your intentions.")
         }
     }
 }
@@ -735,7 +749,7 @@ private struct IntentionListRow: View {
     var hideText: Bool = false
 
     private var displayTitle: String {
-        IntentionPrivacy.displayTitle(intention.title, hidden: hideText)
+        IntentionPrivacy.displayTitle(intention, hidden: hideText)
     }
 
     var body: some View {
@@ -774,7 +788,7 @@ private struct IntentionListRow: View {
         }
         .padding(.vertical, 10)
         .contentShape(Rectangle())
-        .accessibilityLabel(hideText ? "Hidden intention, \(metaLabel)" : "\(intention.title), \(metaLabel)")
+        .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Hidden intention, \(metaLabel)" : "\(intention.title), \(metaLabel)")
     }
 
     private var metaLabel: String {
@@ -788,11 +802,25 @@ private struct IntentionDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     let intention: OfferIntention
+    var hideText: Bool = false
     let onPin: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onPray: () -> Void
     @State private var showingDeleteAlert = false
+
+    private var privacyHidesText: Bool {
+        IntentionPrivacy.hides(intention, hidden: hideText)
+    }
+
+    private var displayTitle: String {
+        IntentionPrivacy.displayTitle(intention, hidden: hideText)
+    }
+
+    private var displayNoteText: String {
+        guard hasNote else { return "Add Notes" }
+        return IntentionPrivacy.displayText(noteText, hidden: privacyHidesText)
+    }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -842,7 +870,7 @@ private struct IntentionDetailView: View {
                 }
             }
         }
-        .navigationTitle(intention.title)
+        .navigationTitle(displayTitle)
         .navigationBarTitleDisplayMode(.inline)
         .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
@@ -851,7 +879,7 @@ private struct IntentionDetailView: View {
                 dismiss()
             }
         } message: {
-            Text("This will delete “\(intention.title)” from your intentions.")
+            Text("This will delete “\(displayTitle)” from your intentions.")
         }
     }
 
@@ -867,7 +895,7 @@ private struct IntentionDetailView: View {
                 usesPopePortrait: intention.isPapal
             )
 
-            Text(intention.title)
+            Text(displayTitle)
                 .font(AppTheme.sans(30, weight: .regular))
                 .foregroundStyle(palette.ink)
                 .lineLimit(4)
@@ -917,7 +945,7 @@ private struct IntentionDetailView: View {
 
                     Button(action: onEdit) {
                         HStack(alignment: .top, spacing: 12) {
-                            Text(noteText)
+                            Text(displayNoteText)
                                 .font(AppTheme.sans(15))
                                 .foregroundStyle(hasNote ? palette.ink : palette.dim)
                                 .lineSpacing(4)
