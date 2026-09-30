@@ -1068,7 +1068,7 @@ struct HomeView: View {
                 .frame(width: geo.size.width)
                 .clipped()
             }
-            .frame(height: dynamicTypeSize.isAccessibilitySize ? 520 : 356)
+            .frame(height: dynamicTypeSize.isAccessibilitySize ? 620 : 438)
             .padding(.horizontal, -gutter)
         }
     }
@@ -1099,6 +1099,21 @@ struct HomeView: View {
                         .padding(.top, AppTheme.Space.sm)
                         .padding(.horizontal, AppTheme.Space.xl)
 
+                    Text(mystery.scriptureExcerpt.primary(for: settings.language))
+                        .font(AppTheme.sans(15))
+                        .foregroundStyle(palette.dim)
+                        .lineSpacing(5)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 4)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, AppTheme.Space.sm)
+                        .padding(.horizontal, AppTheme.Space.xl)
+
+                    Text(mystery.scriptureReference)
+                        .font(AppTheme.TypeRole.caption)
+                        .foregroundStyle(palette.faint)
+                        .padding(.top, AppTheme.Space.sm)
+                        .padding(.horizontal, AppTheme.Space.xl)
+
                     VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                         Hairline()
                             .padding(.horizontal, AppTheme.Space.xl)
@@ -1121,7 +1136,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : 336, alignment: .top)
+            .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : 418, alignment: .top)
             .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
             .guideSoftShadow(elevated: colorScheme == .light)
@@ -1130,11 +1145,11 @@ struct HomeView: View {
         .guidePressable()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(mysteryAccessibilityLabel(mystery))
-        .accessibilityHint("Shows mystery details and fruit")
+        .accessibilityHint("Shows mystery details, Scripture, and fruit")
     }
 
     private func mysteryAccessibilityLabel(_ mystery: Mystery) -> String {
-        "Mystery \(mystery.number), \(mystery.title.primary(for: settings.language)). Fruit, \(mystery.fruit.primary(for: settings.language))."
+        "Mystery \(mystery.number), \(mystery.title.primary(for: settings.language)). \(mystery.scriptureExcerpt.primary(for: settings.language)) Fruit, \(mystery.fruit.primary(for: settings.language))."
     }
 
     private func mysteryDetailSheet(_ mystery: Mystery) -> some View {
