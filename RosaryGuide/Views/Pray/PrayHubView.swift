@@ -408,7 +408,7 @@ private enum LearnArticle: String, Identifiable {
         case .oneDecade: "Can I pray one decade?"
         case .losePlace: "What if I lose my place?"
         case .repetition: "Why repeat prayers?"
-        case .mary: "Why pray with the Blessed Virgin Mary?"
+        case .mary: "Why pray with Mary?"
         }
     }
 
