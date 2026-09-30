@@ -704,7 +704,7 @@ struct HomeView: View {
             HStack(spacing: AppTheme.Space.md) {
                 MysteryArtworkView(set: cardSet, mysteryNumber: 1, slug: MysteryCatalog.mysteries(for: cardSet).first?.artSlug, kind: .plate)
                     .frame(width: 54, height: 54)
-                    .clipShape(Circle())
+                    .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
                         .font(AppTheme.sans(18, weight: .semibold))
