@@ -1,4 +1,6 @@
 import XCTest
+import SwiftUI
+import UIKit
 @testable import RosaryGuide
 
 final class ThemeTokenTests: XCTestCase {
@@ -27,5 +29,37 @@ final class ThemeTokenTests: XCTestCase {
     func testSheetOverlapMatchesWebsite() {
         XCTAssertEqual(AppTheme.sheetOverlap, 56)
         XCTAssertEqual(AppTheme.gutter, AppTheme.Space.lg)
+    }
+
+    func testGroupedSurfaceAliasesUseSingleToken() {
+        let palette = ThemePalette(scheme: .light)
+
+        XCTAssertEqual(UIColor(palette.surface), UIColor(palette.panel))
+        XCTAssertEqual(UIColor(palette.surface), UIColor(palette.card))
+        XCTAssertEqual(UIColor(palette.surface), UIColor(palette.card2))
+    }
+
+    func testSurfaceAndButtonColorTokens() {
+        let light = ThemePalette(scheme: .light)
+        let dark = ThemePalette(scheme: .dark)
+
+        XCTAssertEqual(UIColor(light.surface), UIColor(Color(hex: 0xF4F5F7)))
+        XCTAssertEqual(UIColor(dark.surface), UIColor(Color(hex: 0x191B1E)))
+        XCTAssertEqual(UIColor(light.bg), UIColor(Color(hex: 0xF4F5F7)))
+        XCTAssertEqual(UIColor(dark.bg), UIColor(Color(hex: 0x191B1E)))
+        XCTAssertEqual(UIColor(light.prayBg), UIColor(light.bg))
+        XCTAssertEqual(UIColor(dark.prayBg), UIColor(dark.bg))
+
+        XCTAssertEqual(UIColor(light.primaryButtonFill), UIColor(Color(hex: 0x0054FF)))
+        XCTAssertEqual(UIColor(dark.primaryButtonFill), UIColor(Color(hex: 0x568AF8)))
+
+        XCTAssertEqual(UIColor(light.secondaryButtonFill), UIColor(Color.black))
+        XCTAssertEqual(UIColor(dark.secondaryButtonFill), UIColor(Color.white))
+        XCTAssertEqual(UIColor(light.secondaryButtonText), UIColor(Color.white))
+        XCTAssertEqual(UIColor(dark.secondaryButtonText), UIColor(Color.black))
+        XCTAssertEqual(UIColor(light.learnMoreButtonFill), UIColor(light.secondaryButtonFill))
+        XCTAssertEqual(UIColor(dark.learnMoreButtonFill), UIColor(dark.secondaryButtonFill))
+        XCTAssertEqual(UIColor(light.learnMoreButtonText), UIColor(light.secondaryButtonText))
+        XCTAssertEqual(UIColor(dark.learnMoreButtonText), UIColor(dark.secondaryButtonText))
     }
 }

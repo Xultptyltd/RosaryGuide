@@ -108,7 +108,7 @@ struct CompletionView: View {
                                     .padding(.horizontal, 28)
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 52)
-                                    .background(palette.panel, in: Capsule())
+                                    .background(palette.surface, in: Capsule())
                             }
                             .buttonStyle(.plain)
                             .guidePressable()
@@ -204,7 +204,7 @@ struct CompletionView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(compact ? AppTheme.Space.md : AppTheme.Space.lg)
-            .guideCard(fill: palette.panel, stroke: true)
+            .guideCard(fill: palette.surface, stroke: true)
             .padding(.top, compact ? AppTheme.Space.xl : AppTheme.Space.xxl)
             .opacity(opacity(for: .rest))
             .accessibilityElement(children: .combine)

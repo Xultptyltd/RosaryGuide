@@ -112,11 +112,11 @@ struct OfferView: View {
             if matchesLearnStyle {
                 Text(title)
                     .font(AppTheme.sans(16, weight: .semibold))
-                    .foregroundStyle(palette.ink)
+                    .foregroundStyle(palette.secondaryButtonText)
                     .padding(.horizontal, 28)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
-                    .background(palette.panel, in: Capsule())
+                    .background(palette.secondaryButtonFill, in: Capsule())
             } else {
                 HStack(spacing: AppTheme.Space.sm) {
                     Image(systemName: "plus")
@@ -124,17 +124,10 @@ struct OfferView: View {
                     Text(title)
                 }
                 .font(AppTheme.sans(16, weight: .semibold))
-                .foregroundStyle(isPrimary ? palette.onAccent : palette.accent)
+                .foregroundStyle(isPrimary ? palette.primaryButtonText : palette.secondaryButtonText)
                 .frame(maxWidth: .infinity)
                 .frame(height: AppTheme.Component.pillHeight)
-                .background {
-                    if isPrimary {
-                        AppTheme.capsule.fill(palette.accent)
-                    } else {
-                        AppTheme.capsule
-                            .strokeBorder(palette.accent.opacity(0.55), lineWidth: 1)
-                    }
-                }
+                .background(isPrimary ? palette.primaryButtonFill : palette.secondaryButtonFill, in: AppTheme.capsule)
             }
         }
         .buttonStyle(.plain)
@@ -353,7 +346,7 @@ private struct CurrentIntentionHero: View {
                     .accessibilityHidden(true)
             }
             .padding(AppTheme.Space.lg)
-            .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
@@ -384,7 +377,7 @@ private struct CurrentIntentionHero: View {
                     Image(systemName: "arrow.right")
                 }
                 .font(AppTheme.sans(16, weight: .semibold))
-                .foregroundStyle(palette.onAccent)
+                .foregroundStyle(palette.primaryButtonText)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
                 .background(actionFill, in: Capsule())
@@ -402,7 +395,7 @@ private struct CurrentIntentionHero: View {
     }
 
     private var actionFill: Color {
-        palette.accent
+        palette.primaryButtonFill
     }
 }
 
@@ -420,10 +413,6 @@ private struct EmptyPapalIntentionCard: View {
                     .scaledToFill()
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
-                    .overlay {
-                        Circle()
-                            .strokeBorder(palette.ink.opacity(colorScheme == .light ? 0.08 : 0.14), lineWidth: 1)
-                    }
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
@@ -446,7 +435,7 @@ private struct EmptyPapalIntentionCard: View {
             }
             .padding(.horizontal, AppTheme.Space.lg)
             .padding(.vertical, AppTheme.Space.md)
-            .guideCard(radius: AppTheme.containerRadius, fill: palette.panel, stroke: true, elevated: colorScheme == .light)
+            .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: colorScheme == .light)
         }
         .buttonStyle(.plain)
         .guidePressable()
@@ -488,11 +477,7 @@ private struct PapalMonthCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(minHeight: 96)
-            .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .strokeBorder(palette.ink.opacity(colorScheme == .light ? 0.07 : 0.12), lineWidth: 1)
-            }
+            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -557,10 +542,10 @@ private struct PapalIntentionDetailView: View {
                                 .guideSymbol(size: 14, weight: .semibold)
                         }
                         .font(AppTheme.sans(15, weight: .semibold))
-                        .foregroundStyle(palette.onAccent)
+                        .foregroundStyle(palette.primaryButtonText)
                         .frame(maxWidth: .infinity)
                         .frame(height: AppTheme.Component.pillHeight)
-                        .background(palette.accent, in: Capsule())
+                        .background(palette.primaryButtonFill, in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
@@ -637,10 +622,6 @@ private struct PapalIntentionDetailView: View {
                     .accessibilityHidden(true)
             }
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
-            }
             .accessibilityHidden(true)
     }
 
@@ -782,7 +763,7 @@ private struct IntentionDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, AppTheme.Space.lg)
                         .padding(.vertical, AppTheme.Space.lg)
-                        .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+                        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
                 }
                 .buttonStyle(.plain)
 
@@ -848,11 +829,7 @@ private struct IntentionDetailView: View {
             stat(intention.createdAt.formatted(.dateTime.day().month(.abbreviated)), "Added")
         }
         .frame(height: 82)
-        .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
-        }
+        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
     }
 
     private func stat(_ value: String, _ label: String) -> some View {
@@ -892,11 +869,7 @@ private struct IntentionDetailView: View {
                                 .foregroundStyle(palette.accent)
                         }
                         .padding(18)
-                        .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                                .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
-                        }
+                        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
                     }
                     .buttonStyle(.plain)
                 }
@@ -907,11 +880,7 @@ private struct IntentionDetailView: View {
                 Hairline().padding(.leading, 18)
                 detailRow("Created", value: intention.createdAt.formatted(.dateTime.day().month(.abbreviated).year()))
             }
-            .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
-            }
+            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         }
     }
 
@@ -1043,10 +1012,6 @@ private struct PapalSuggestionCard: View {
                     .scaledToFill()
                     .frame(width: 96, height: 124)
                     .clipShape(RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
-                            .strokeBorder(palette.ink.opacity(0.08), lineWidth: 1)
-                    )
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -1278,7 +1243,6 @@ struct OverflowMenuButton: View {
 
 struct IntentionIconView: View {
     @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var colorScheme
     var accent: IntentionAccent
     var emoji: String
     var size: CGFloat = 40
@@ -1295,10 +1259,6 @@ struct IntentionIconView: View {
                     .scaledToFill()
                     .frame(width: size, height: size)
                     .clipShape(Circle())
-                    .overlay {
-                        Circle()
-                            .strokeBorder(palette.ink.opacity(colorScheme == .light ? 0.08 : 0.14), lineWidth: 1)
-                    }
             } else {
                 ZStack {
                     Circle()
@@ -1528,7 +1488,7 @@ struct IntentionEditorSheet: View {
                     .padding(.vertical, AppTheme.Space.md)
                     .guideCard(
                         radius: AppTheme.containerRadius,
-                        fill: palette.panel,
+                        fill: palette.surface,
                         stroke: true,
                         elevated: false
                     )
@@ -1587,7 +1547,7 @@ struct IntentionEditorSheet: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .guideCard(
                     radius: AppTheme.containerRadius,
-                    fill: palette.panel,
+                    fill: palette.surface,
                     stroke: true,
                     elevated: false
                 )
@@ -1653,10 +1613,10 @@ struct IntentionEditorSheet: View {
                         .foregroundStyle(palette.ink)
                         .frame(maxWidth: .infinity)
                         .frame(height: 82)
-                        .background(selected ? Color(hex: 0xF0DFC4) : palette.card.opacity(0.72), in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+                        .background(selected ? palette.accentTint : palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                         .overlay {
                             RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
-                                .strokeBorder(palette.ink.opacity(selected ? 0 : 0.10), lineWidth: 1)
+                                .strokeBorder(selected ? Color.clear : palette.selectionStroke, lineWidth: 1)
                         }
                     }
                     .buttonStyle(.plain)
@@ -1674,10 +1634,10 @@ struct IntentionEditorSheet: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+                .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
-                        .strokeBorder(palette.ink.opacity(colorScheme == .light ? 0.12 : 0.22), lineWidth: 1)
+                        .strokeBorder(palette.fieldStroke, lineWidth: 1)
                 )
         }
     }
@@ -1704,7 +1664,7 @@ struct IntentionEditorSheet: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
     }
 
 
@@ -1723,14 +1683,14 @@ struct IntentionEditorSheet: View {
                     } label: {
                         Text(set.shortName)
                             .font(AppTheme.sans(14, weight: .semibold))
-                            .foregroundStyle(selected ? (colorScheme == .dark ? Color.black : Color.white) : palette.ink)
+                            .foregroundStyle(selected ? palette.secondaryButtonText : palette.ink)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 11)
                             .background(
-                                Capsule().fill(selected ? palette.ink : palette.card)
+                                Capsule().fill(selected ? palette.secondaryButtonFill : palette.surface)
                             )
                             .overlay(
-                                Capsule().strokeBorder(palette.ink.opacity(selected ? 0 : 0.18), lineWidth: 1)
+                                Capsule().strokeBorder(selected ? Color.clear : palette.selectionStroke, lineWidth: 1)
                             )
                     }
                     .buttonStyle(.plain)
@@ -1740,7 +1700,7 @@ struct IntentionEditorSheet: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
     }
 
     private var routeTitle: String {
@@ -1922,8 +1882,8 @@ private struct IntentionIconPickerSheet: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 SaveCapsuleButton(
                     title: "Save",
-                    ink: UIColor(palette.ink),
-                    labelColor: colorScheme == .dark ? .black : .white
+                    ink: UIColor(palette.primaryButtonFill),
+                    labelColor: UIColor(palette.primaryButtonText)
                 ) {
                     commitAndDismiss()
                 }

@@ -76,7 +76,7 @@ struct HowToPrayView: View {
                 }
             }
             .padding(.horizontal, AppTheme.Space.lg)
-            .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .strokeBorder(panelStroke, lineWidth: 1)
@@ -101,7 +101,7 @@ struct HowToPrayView: View {
             }
             .padding(.horizontal, AppTheme.Space.lg)
             .padding(.vertical, 4)
-            .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .strokeBorder(panelStroke, lineWidth: 1)
@@ -186,7 +186,7 @@ struct HowToPrayView: View {
                 }
             }
             .padding(.horizontal, AppTheme.Space.lg)
-            .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .strokeBorder(panelStroke, lineWidth: 1)
@@ -210,7 +210,7 @@ struct HowToPrayView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AppTheme.Space.md)
                 .padding(.horizontal, 8)
-                .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+                .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                         .strokeBorder(panelStroke, lineWidth: 1)

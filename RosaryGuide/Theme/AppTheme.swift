@@ -8,10 +8,14 @@ enum AppTheme {
     /// The app's one explicit brand color. Everything else routes through
     /// Apple semantic colors so Light/Dark, contrast, and accessibility modes
     /// can do their work at the system layer.
-    static let brandAccent = Color(hex: 0x0A66C2)
-    static let brandAccentHighContrast = Color(hex: 0x0057B8)
-    static let brandAccentDark = Color(hex: 0x69A7FF)
-    static let brandAccentDarkHighContrast = Color(hex: 0x8FC0FF)
+    static let brandAccent = Color(hex: 0x0054FF)
+    static let brandAccentHighContrast = Color(hex: 0x0054FF)
+    static let brandAccentDark = Color(hex: 0x568AF8)
+    static let brandAccentDarkHighContrast = Color(hex: 0x568AF8)
+    static let intentionSkyBlue = Color(hex: 0x9BCBF0)
+    static let intentionMintGreen = Color(hex: 0xA8E1B8)
+    static let intentionTeal = Color(hex: 0x70C8C6)
+    static let intentionAccentText = Color(red: 0.10, green: 0.20, blue: 0.22)
 
     /// Canonical page-edge horizontal inset. Matches `Space.lg` (16pt).
     /// Prefer `AppTheme.gutter` over literals at screen edges.
@@ -85,15 +89,32 @@ struct ThemePalette {
     var scheme: ColorScheme
     var contrast: ColorSchemeContrast = .standard
 
-    var bg: Color { Color(uiColor: .systemBackground) }
-    var prayBg: Color { Color(uiColor: .systemBackground) }
+    var bg: Color {
+        scheme == .light
+            ? Color(hex: 0xF4F5F7)
+            : Color(hex: 0x191B1E)
+    }
+    var prayBg: Color { bg }
     /// Header + stage track on mystery plates only; body below keeps `prayBg`.
     var plateChrome: Color { Color(uiColor: .secondarySystemBackground) }
     var ink: Color { .primary }
     var dim: Color { .secondary }
+    var secondaryText: Color { dim }
     var faint: Color { Color(uiColor: .tertiaryLabel) }
-    var card: Color { Color(uiColor: .secondarySystemGroupedBackground) }
-    var card2: Color { Color(uiColor: .tertiarySystemGroupedBackground) }
+    var destructive: Color { Color(uiColor: .systemRed) }
+    var feastIndicator: Color { scheme == .light ? Color(hex: 0xC4922C) : Color(hex: 0xE2B75A) }
+    /// The app's single grouped/elevated surface color.
+    ///
+    /// Keep cards, accordions, grouped rows, sheets, and compact panels on this
+    /// token so the app does not accumulate slightly different cream/black
+    /// surfaces across screens.
+    var surface: Color {
+        scheme == .light
+            ? Color(hex: 0xF4F5F7)
+            : Color(hex: 0x191B1E)
+    }
+    var card: Color { surface }
+    var card2: Color { surface }
     var hair: Color { Color(uiColor: .separator) }
     var accent: Color {
         switch (scheme, contrast) {
@@ -104,11 +125,27 @@ struct ThemePalette {
         }
     }
     var onAccent: Color { scheme == .dark ? Color.black : Color.white }
-    var panel: Color { Color(uiColor: .secondarySystemGroupedBackground) }
-    var accentTint: Color { accent.opacity(scheme == .dark ? 0.22 : 0.12) }
+    var panel: Color { surface }
+    var primaryButtonFill: Color { accent }
+    var primaryButtonText: Color { onAccent }
+    var secondaryButtonFill: Color { scheme == .dark ? Color.white : Color.black }
+    var secondaryButtonText: Color { scheme == .dark ? Color.black : Color.white }
+    var learnMoreButtonFill: Color { secondaryButtonFill }
+    var learnMoreButtonText: Color { secondaryButtonText }
+    var accentTint: Color {
+        scheme == .dark
+            ? accent.opacity(0.20)
+            : accent.opacity(0.12)
+    }
     var glassFill: Color { Color(uiColor: .secondarySystemBackground).opacity(0.92) }
     var glassInk: Color { ink }
     var glassEdge: Color { hair }
+    var fieldStroke: Color { ink.opacity(scheme == .light ? 0.12 : 0.22) }
+    var selectionStroke: Color { ink.opacity(scheme == .light ? 0.08 : 0.16) }
+    var cardStroke: Color { ink.opacity(scheme == .light ? 0.07 : 0.12) }
+    var subtleStroke: Color { ink.opacity(0.08) }
+    var selectedShadow: Color { accent.opacity(0.28) }
+    var scrim: Color { Color.black }
 }
 
 private struct ThemePaletteKey: EnvironmentKey {
@@ -680,7 +717,7 @@ struct GuideCardChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .background(fill ?? palette.panel, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .background(fill ?? palette.surface, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay {
                 if stroke {
                     RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -699,15 +736,11 @@ struct GuideCardChrome: ViewModifier {
 
 struct GuideRowGroupChrome: ViewModifier {
     @Environment(\.palette) private var palette
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     var radius: CGFloat = AppTheme.containerRadius
 
     func body(content: Content) -> some View {
         content
-            .background(
-                (reduceTransparency ? palette.panel : palette.card.opacity(0.52)),
-                in: RoundedRectangle(cornerRadius: radius, style: .continuous)
-            )
+            .background(palette.surface, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
     }
 }

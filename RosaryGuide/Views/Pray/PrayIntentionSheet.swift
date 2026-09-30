@@ -118,7 +118,7 @@ struct PrayIntentionSheet: View {
                 .padding(.horizontal, 28)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
-                .background(palette.panel, in: Capsule())
+                .background(palette.surface, in: Capsule())
         }
         .buttonStyle(.plain)
         .guidePressable()
@@ -168,7 +168,7 @@ struct PrayIntentionSheet: View {
             .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .fill(palette.card)
+                    .fill(palette.surface)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
@@ -216,7 +216,7 @@ struct PrayIntentionSheet: View {
             .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .fill(palette.card)
+                    .fill(palette.surface)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
@@ -368,7 +368,7 @@ private struct IntentionRadioRow: View {
             .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .fill(palette.card)
+                    .fill(palette.surface)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)

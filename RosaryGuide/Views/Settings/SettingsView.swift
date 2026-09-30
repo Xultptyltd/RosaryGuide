@@ -155,7 +155,7 @@ private struct AccountManagementCard: View {
         .padding(.vertical, AppTheme.Space.xl)
         .guideCard(
             radius: AppTheme.containerRadius,
-            fill: palette.panel,
+            fill: palette.surface,
             stroke: true,
             elevated: colorScheme == .light
         )
@@ -193,7 +193,7 @@ private struct AppIconPickerRow: View {
             if let message = appIcon.lastErrorMessage {
                 Text(message)
                     .font(AppTheme.TypeRole.themeSummary)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(palette.destructive)
             }
         }
         .padding(.vertical, AppTheme.Space.xs)
@@ -214,12 +214,12 @@ private struct AppIconPickerRow: View {
                     .overlay {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .strokeBorder(
-                                selected ? palette.accent : palette.ink.opacity(colorScheme == .light ? 0.08 : 0.16),
+                                selected ? palette.accent : palette.selectionStroke,
                                 lineWidth: selected ? 2.5 : AppTheme.Component.panelStrokeWidth
                             )
                     }
                     .shadow(
-                        color: selected ? palette.accent.opacity(0.28) : .clear,
+                        color: selected ? palette.selectedShadow : .clear,
                         radius: selected ? 6 : 0,
                         y: selected ? 2 : 0
                     )

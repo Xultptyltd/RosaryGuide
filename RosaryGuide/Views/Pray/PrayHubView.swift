@@ -89,16 +89,16 @@ struct PrayHubView: View {
                     Image(systemName: "arrow.right")
                         .font(AppTheme.sans(14, weight: .semibold))
                 }
-                .foregroundStyle(palette.onAccent)
+                .foregroundStyle(palette.primaryButtonText)
                 .padding(.horizontal, AppTheme.Space.lg)
                 .frame(height: 56)
-                .background(palette.accent, in: Capsule())
+                .background(palette.primaryButtonFill, in: Capsule())
             }
             .buttonStyle(.plain)
             .guidePressable()
         }
         .padding(AppTheme.Space.xl)
-        .guideCard(radius: AppTheme.containerRadius, fill: palette.panel)
+        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface)
     }
 
     private var prayersSection: some View {
@@ -190,17 +190,17 @@ struct PrayHubView: View {
                     Image(systemName: "arrow.right")
                         .font(AppTheme.sans(14, weight: .semibold))
                 }
-                .foregroundStyle(palette.onAccent)
+                .foregroundStyle(palette.secondaryButtonText)
                 .padding(.horizontal, AppTheme.Space.lg)
                 .frame(height: 54)
-                .background(palette.accent, in: Capsule())
+                .background(palette.secondaryButtonFill, in: Capsule())
             }
             .buttonStyle(.plain)
             .guidePressable()
             .padding(.top, AppTheme.Space.xs)
         }
         .padding(AppTheme.Space.xl)
-        .guideCard(radius: AppTheme.containerRadius, fill: palette.panel)
+        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface)
     }
 
     private func learnSection(title: String, rows: [LearnRow]) -> some View {
@@ -515,7 +515,7 @@ private struct LearnPrayerDetailView: View {
                     .foregroundStyle(palette.dim)
                     .padding(AppTheme.Space.lg)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+                    .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
 
                 Text(prayer.text.primary(for: settings.language))
                     .font(AppTheme.sans(19))
@@ -581,7 +581,7 @@ private struct LearnMysteryDetailView: View {
                                 .font(AppTheme.sans(13, weight: .semibold))
                                 .foregroundStyle(palette.dim)
                                 .frame(width: 28, height: 28)
-                                .background(palette.card, in: Circle())
+                                .background(palette.surface, in: Circle())
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(mystery.title.primary(for: settings.language))
                                     .font(AppTheme.sans(17, weight: .semibold))
@@ -600,7 +600,7 @@ private struct LearnMysteryDetailView: View {
                     }
                 }
                 .padding(.horizontal, AppTheme.Space.lg)
-                .guideCard(radius: AppTheme.containerRadius, fill: palette.panel)
+                .guideCard(radius: AppTheme.containerRadius, fill: palette.surface)
 
                 Button {
                     prayLaunch = .fresh(set)
@@ -612,10 +612,10 @@ private struct LearnMysteryDetailView: View {
                         Image(systemName: "arrow.right")
                             .font(AppTheme.sans(14, weight: .semibold))
                     }
-                    .foregroundStyle(palette.onAccent)
+                    .foregroundStyle(palette.primaryButtonText)
                     .padding(.horizontal, AppTheme.Space.lg)
                     .frame(height: 56)
-                    .background(palette.accent, in: Capsule())
+                    .background(palette.primaryButtonFill, in: Capsule())
                 }
                 .buttonStyle(.plain)
                 .guidePressable()

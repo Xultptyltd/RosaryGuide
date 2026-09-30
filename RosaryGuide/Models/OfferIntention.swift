@@ -24,14 +24,14 @@ enum IntentionAccent: String, Codable, CaseIterable, Identifiable, Hashable, Sen
 
     var color: Color {
         switch self {
-        case .skyBlue: Color(hex: 0x9BCBF0)
-        case .mintGreen: Color(hex: 0xA8E1B8)
-        case .teal: Color(hex: 0x70C8C6)
+        case .skyBlue: AppTheme.intentionSkyBlue
+        case .mintGreen: AppTheme.intentionMintGreen
+        case .teal: AppTheme.intentionTeal
         }
     }
 
     var onColor: Color {
-        Color(red: 0.10, green: 0.20, blue: 0.22)
+        AppTheme.intentionAccentText
     }
 
     /// Keep existing saved intentions colourful without allowing legacy hues

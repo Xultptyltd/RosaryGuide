@@ -179,10 +179,10 @@ struct FeastsView: View {
             } label: {
                 Text("Learn")
                     .font(AppTheme.sans(16, weight: .semibold))
-                    .foregroundStyle(palette.ink)
+                    .foregroundStyle(palette.secondaryButtonText)
                     .padding(.horizontal, 28)
                     .frame(height: 52)
-                    .background(palette.panel, in: Capsule())
+                    .background(palette.secondaryButtonFill, in: Capsule())
             }
             .buttonStyle(.plain)
             .guidePressable()
@@ -198,10 +198,10 @@ struct FeastsView: View {
                     Image(systemName: "arrow.right")
                         .font(AppTheme.sans(14, weight: .semibold))
                 }
-                .foregroundStyle(palette.onAccent)
+                .foregroundStyle(palette.primaryButtonText)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
-                .background(palette.accent, in: Capsule())
+                .background(palette.primaryButtonFill, in: Capsule())
             }
             .buttonStyle(.plain)
             .guidePressable()
@@ -308,7 +308,7 @@ private struct FeastMonthCalendar: View {
                         .guideSymbol(size: 14, weight: .semibold)
                         .foregroundStyle(palette.ink)
                         .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
-                        .background(palette.card, in: Circle())
+                        .background(palette.surface, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .guideHitTarget()
@@ -327,7 +327,7 @@ private struct FeastMonthCalendar: View {
                         .guideSymbol(size: 14, weight: .semibold)
                         .foregroundStyle(palette.ink)
                         .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
-                        .background(palette.card, in: Circle())
+                        .background(palette.surface, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .guideHitTarget()
@@ -367,14 +367,7 @@ private struct FeastMonthCalendar: View {
         .padding(.top, 14)
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.panel, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                .strokeBorder(
-                    colorScheme == .light ? palette.hair : Color.clear,
-                    lineWidth: 1
-                )
-        }
+        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         .guideSoftShadow(elevated: colorScheme == .light)
     }
 
@@ -395,24 +388,24 @@ private struct FeastMonthCalendar: View {
             VStack(spacing: 3) {
                 Text("\(calendar.component(.day, from: day))")
                     .font(AppTheme.sans(15, weight: isSelected || isToday ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? palette.onAccent : (hasFeast ? palette.ink : palette.dim))
+                    .foregroundStyle(isSelected ? palette.primaryButtonText : (hasFeast ? palette.ink : palette.dim))
                     .frame(width: 32, height: 32)
                     .background {
                         if isSelected {
-                            Circle().fill(palette.accent)
+                            Circle().fill(palette.primaryButtonFill)
                         } else if isToday {
-                            Circle().strokeBorder(palette.accent.opacity(0.55), lineWidth: 1.2)
+                            Circle().strokeBorder(palette.primaryButtonFill.opacity(0.55), lineWidth: 1.2)
                         }
                     }
 
                 HStack(spacing: 3) {
                     if hasMarian {
                         Circle()
-                            .fill(isSelected ? palette.onAccent.opacity(0.9) : palette.accent)
+                            .fill(isSelected ? palette.primaryButtonText.opacity(0.9) : palette.primaryButtonFill)
                             .frame(width: 4, height: 4)
                     } else if hasFeast {
                         Circle()
-                            .fill(isSelected ? palette.onAccent.opacity(0.7) : palette.faint)
+                            .fill(isSelected ? palette.primaryButtonText.opacity(0.7) : palette.faint)
                             .frame(width: 4, height: 4)
                     } else {
                         Color.clear.frame(width: 4, height: 4)
@@ -654,7 +647,7 @@ struct FeastDetailView: View {
             }
         }
         .padding(.horizontal, AppTheme.Space.lg)
-        .guideCard(radius: AppTheme.containerRadius, fill: palette.panel, elevated: false)
+        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: false)
     }
 
     private func quickFactRow(_ label: String, _ value: String) -> some View {
@@ -811,7 +804,7 @@ struct FeastDetailView: View {
         }
         .padding(AppTheme.Space.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .guideCard(radius: AppTheme.containerRadius, fill: palette.panel, elevated: false)
+        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: false)
     }
 
     private var feastScriptures: [FeastScripturePassage] {
@@ -909,7 +902,7 @@ struct FeastDetailView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .guideCard(radius: AppTheme.containerRadius, fill: palette.card.opacity(0.88))
+        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface)
     }
 
     private var devotionalCopy: String {
@@ -943,27 +936,27 @@ struct FeastDetailView: View {
             HStack(spacing: 14) {
                 Image(systemName: "hands.sparkles.fill")
                     .guideSymbol(size: 20, weight: .medium)
-                    .foregroundStyle(palette.onAccent)
+                    .foregroundStyle(palette.primaryButtonText)
                     .frame(width: 30)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Pray with this feast")
                         .font(AppTheme.sans(16, weight: .semibold))
-                        .foregroundStyle(palette.onAccent)
+                        .foregroundStyle(palette.primaryButtonText)
                     Text(prayWithFeastSubtitle)
                         .font(AppTheme.sans(13))
-                        .foregroundStyle(palette.onAccent.opacity(0.72))
+                        .foregroundStyle(palette.primaryButtonText.opacity(0.72))
                 }
 
                 Spacer()
 
                 Image(systemName: "arrow.right")
                     .font(AppTheme.sans(14, weight: .semibold))
-                    .foregroundStyle(palette.onAccent)
+                    .foregroundStyle(palette.primaryButtonText)
             }
             .padding(.horizontal, 18)
             .frame(minHeight: 64)
-            .background(palette.accent, in: Capsule())
+            .background(palette.primaryButtonFill, in: Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -992,7 +985,7 @@ struct FeastDetailView: View {
             Spacer(minLength: 6)
         }
         .padding(AppTheme.Space.lg)
-        .guideCard(radius: AppTheme.containerRadius, fill: palette.card.opacity(0.78), elevated: false)
+        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: false)
     }
 
     private func relatedPrayerPreview(_ prayer: FeastRelatedPrayer) -> some View {
@@ -1027,7 +1020,7 @@ struct FeastDetailView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .guideCard(radius: AppTheme.containerRadius, fill: palette.card.opacity(0.88))
+        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface)
     }
 
     private var supportingLinks: some View {
@@ -1071,7 +1064,7 @@ struct FeastDetailView: View {
                 .foregroundStyle(palette.ink)
                 .frame(maxWidth: .infinity)
                 .frame(height: 76)
-                .background(palette.card.opacity(0.86), in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+                .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
                         .strokeBorder(palette.ink.opacity(0.08), lineWidth: 1)
@@ -1093,7 +1086,7 @@ struct FeastDetailView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 76)
-        .background(palette.card.opacity(0.86), in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
                 .strokeBorder(palette.ink.opacity(0.08), lineWidth: 1)
@@ -1153,7 +1146,7 @@ struct FeastDetailView: View {
             .foregroundStyle(palette.ink)
             .padding(.horizontal, 11)
             .padding(.vertical, 6)
-            .background(palette.card, in: Capsule())
+            .background(palette.surface, in: Capsule())
             .overlay {
                 Capsule().strokeBorder(palette.hair, lineWidth: 1)
             }
@@ -1274,7 +1267,7 @@ struct FeastDetailView: View {
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                 .strokeBorder(palette.hair.opacity(0.9), lineWidth: 1)

@@ -808,7 +808,7 @@ struct PrayView: View {
         }
         .buttonStyle(.plain)
         .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
-        .background(palette.card, in: Circle())
+        .background(palette.surface, in: Circle())
         .guidePressable()
         .accessibilityLabel(label ?? system ?? "Control")
     }

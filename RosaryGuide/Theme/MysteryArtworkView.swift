@@ -55,13 +55,13 @@ struct MysteryArtworkView: View {
                 )
                 .overlay { plateScrim }
             } else {
-                palette.card2
+                palette.surface
             }
         }
     }
 
     private var plateScrim: some View {
-        let fade = kind == .plateWide ? palette.bg : palette.card
+        let fade = kind == .plateWide ? palette.bg : palette.surface
         let stops: [Gradient.Stop] = bottomFade
             ? [
                 .init(color: fade.opacity(0.28), location: 0),
@@ -137,7 +137,7 @@ struct SeasonBadge: View {
         .foregroundStyle(palette.ink)
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
-        .background(palette.card2.opacity(0.55), in: Capsule())
+        .background(palette.surface, in: Capsule())
     }
 }
 
@@ -226,19 +226,14 @@ struct PillButton: View {
         } label: {
             Text(title)
                 .font(AppTheme.sans(16, weight: filled ? .semibold : .medium, relativeTo: .callout))
-                .foregroundStyle(filled ? palette.onAccent : palette.ink)
+                .foregroundStyle(filled ? palette.primaryButtonText : palette.learnMoreButtonText)
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: AppTheme.Component.pillHeight)
                 .padding(.vertical, AppTheme.Space.xs)
-                .background(filled ? palette.accent : palette.card, in: Capsule())
-                .overlay {
-                    if !filled {
-                        Capsule().strokeBorder(palette.hair, lineWidth: 1)
-                    }
-                }
+                .background(filled ? palette.primaryButtonFill : palette.learnMoreButtonFill, in: Capsule())
         }
         .buttonStyle(.plain)
         .guidePressable()

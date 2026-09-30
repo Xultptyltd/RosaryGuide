@@ -218,7 +218,7 @@ struct HomeView: View {
                 .guideSymbol(size: 17, weight: .medium)
                 .foregroundStyle(palette.ink)
                 .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
-                .background(palette.panel.opacity(0.94), in: Circle())
+                .background(palette.surface, in: Circle())
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -237,7 +237,7 @@ struct HomeView: View {
                 .foregroundStyle(palette.ink)
                 .padding(.horizontal, 14)
                 .frame(minHeight: AppTheme.Accessibility.minHitTarget)
-                .background(palette.panel.opacity(0.94), in: Capsule())
+                .background(palette.surface, in: Capsule())
         }
         .buttonStyle(.plain)
         .guidePressable()
@@ -340,11 +340,11 @@ struct HomeView: View {
                                 }
                             }
                             .padding(AppTheme.Space.md)
-                            .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+                            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
                             .overlay {
                                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                                     .strokeBorder(
-                                        palette.ink.opacity(colorScheme == .light ? 0.07 : 0.12),
+                                        palette.cardStroke,
                                         lineWidth: AppTheme.Component.panelStrokeWidth
                                     )
                             }
@@ -449,7 +449,7 @@ struct HomeView: View {
                             .lineSpacing(4)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(AppTheme.Space.lg)
-                            .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+                            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                         HStack {
                             Text("Change intention")
                                 .font(AppTheme.sans(14, weight: .medium))
@@ -470,7 +470,7 @@ struct HomeView: View {
                         }
                         .foregroundStyle(palette.ink)
                         .padding(AppTheme.Space.lg)
-                        .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+                        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                         Text("You can also pray without a specific intention.")
                             .font(AppTheme.sans(13))
                             .foregroundStyle(palette.dim)
@@ -478,7 +478,7 @@ struct HomeView: View {
                     }
                 }
                 .padding(AppTheme.Space.lg)
-                .guideCard(fill: palette.panel)
+                .guideCard(fill: palette.surface)
             }
             .buttonStyle(.plain)
         }
@@ -511,7 +511,7 @@ struct HomeView: View {
                         if let secondaryCitation = verse.secondaryCitation {
                             Text(secondaryCitation)
                                 .font(AppTheme.TypeRole.caption)
-                                .foregroundStyle(palette.faint)
+                                .foregroundStyle(palette.secondaryText)
                         }
                     }
                     Spacer(minLength: AppTheme.Space.sm)
@@ -545,7 +545,7 @@ struct HomeView: View {
                 if let secondaryCitation = verse.secondaryCitation {
                     Text(secondaryCitation)
                         .font(AppTheme.TypeRole.caption)
-                        .foregroundStyle(palette.faint)
+                        .foregroundStyle(palette.secondaryText)
                 }
 
                 Text(verse.fullText)
@@ -600,6 +600,14 @@ struct HomeView: View {
                     }
                     .frame(height: 176)
                     .clipped()
+                    .overlay {
+                        PartialCardStroke(
+                            edges: [.top, .leading, .trailing],
+                            radius: AppTheme.featureRadius,
+                            color: palette.cardStroke,
+                            lineWidth: AppTheme.Component.panelStrokeWidth
+                        )
+                    }
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                         if isToday {
@@ -607,10 +615,10 @@ struct HomeView: View {
                             Text("TODAY")
                                 .font(AppTheme.sans(9, weight: .semibold))
                                 .tracking(0.6)
-                                .foregroundStyle(palette.accent)
+                                .foregroundStyle(palette.primaryButtonText)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(palette.accentTint, in: Capsule())
+                                .background(palette.primaryButtonFill, in: Capsule())
                         } else {
                             feastDateText(featured.date)
                         }
@@ -645,6 +653,7 @@ struct HomeView: View {
 
             ForEach(remaining) { item in
                 Hairline()
+                    .padding(.horizontal, AppTheme.Space.xl)
                 NavigationLink {
                     FeastDetailView(prayLaunch: $prayLaunch, item: item)
                 } label: {
@@ -666,14 +675,7 @@ struct HomeView: View {
                 .buttonStyle(.plain)
             }
         }
-        .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous)
-                .strokeBorder(
-                    palette.ink.opacity(colorScheme == .light ? 0.07 : 0.12),
-                    lineWidth: AppTheme.Component.panelStrokeWidth
-                )
-        }
+        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
         .guideSoftShadow(elevated: colorScheme == .light)
     }
@@ -716,7 +718,7 @@ struct HomeView: View {
                     .guideSymbol(size: 12, weight: .semibold)
                     .foregroundStyle(palette.faint)
                     .frame(width: 42, height: 42)
-                    .background(palette.card, in: Circle())
+                    .background(palette.surface, in: Circle())
             }
             .padding(AppTheme.Space.lg)
             .guideCard()
@@ -736,15 +738,14 @@ struct HomeView: View {
                         .padding(.horizontal, AppTheme.Space.xl)
 
                     if index < MysteryCalendar.week(containing: today).count - 1 {
-                        // Full-width under each day row (edge-to-edge inside the stroked calendar).
                         Divider()
                             .overlay(palette.hair)
+                            .padding(.horizontal, AppTheme.Space.xl)
                     }
                 }
             }
             .padding(.vertical, AppTheme.Space.sm)
-            // Subtle surface fill + outline stroke (matches mystery/feast card chrome).
-            .guideCard(fill: palette.card.opacity(0.92), stroke: true)
+            .guideCard(fill: palette.surface)
         }
     }
 
@@ -766,10 +767,10 @@ struct HomeView: View {
                         Text("TODAY")
                             .font(AppTheme.sans(9, weight: .semibold))
                             .tracking(0.6)
-                            .foregroundStyle(palette.accent)
+                            .foregroundStyle(palette.primaryButtonText)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(palette.accentTint, in: Capsule())
+                            .background(palette.primaryButtonFill, in: Capsule())
                     } else {
                         Text(day.formatted(.dateTime.day().month(.abbreviated)).uppercased())
                             .font(AppTheme.sans(13, weight: .medium))
@@ -977,7 +978,7 @@ struct HomeView: View {
             }
         }
         .padding(3)
-        .background(colorScheme == .light ? palette.card2 : palette.card, in: Capsule())
+        .background(palette.surface, in: Capsule())
         .guideSoftShadow(elevated: colorScheme == .light)
     }
 
@@ -987,7 +988,7 @@ struct HomeView: View {
     }
 
     private var pickerFill: Color {
-        colorScheme == .light ? .white : palette.card2
+        colorScheme == .light ? .white : palette.surface
     }
 
 
@@ -1099,8 +1100,8 @@ struct HomeView: View {
                         .padding(.horizontal, AppTheme.Space.xl)
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                        // Full-width under title (edge-to-edge inside the stroked card).
                         Hairline()
+                            .padding(.horizontal, AppTheme.Space.xl)
                         HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
                             Text("Fruit")
                                 .font(AppTheme.TypeRole.caption)
@@ -1121,14 +1122,7 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : 336, alignment: .top)
-            .background(palette.card, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous)
-                    .strokeBorder(
-                        palette.ink.opacity(colorScheme == .light ? 0.07 : 0.12),
-                        lineWidth: AppTheme.Component.panelStrokeWidth
-                    )
-            }
+            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
             .guideSoftShadow(elevated: colorScheme == .light)
         }
@@ -1255,10 +1249,10 @@ struct HomeView: View {
                                             .font(AppTheme.sans(11, weight: .medium))
                                             .tracking(0.66)
                                             .textCase(.uppercase)
-                                            .foregroundStyle(palette.onAccent)
+                                            .foregroundStyle(palette.primaryButtonText)
                                             .padding(.horizontal, 8)
                                             .padding(.vertical, 3)
-                                            .background(palette.accent, in: Capsule())
+                                            .background(palette.primaryButtonFill, in: Capsule())
                                     }
                                 }
                                 Spacer(minLength: 8)
@@ -1293,7 +1287,7 @@ struct HomeView: View {
                 }
             }
             .padding(.horizontal, AppTheme.Space.lg)
-            .guideCard(radius: AppTheme.containerRadius, fill: palette.panel)
+            .guideCard(radius: AppTheme.containerRadius, fill: palette.surface)
         }
     }
 
@@ -1319,15 +1313,15 @@ struct HomeView: View {
                                         .font(AppTheme.sans(11, weight: .medium))
                                         .tracking(0.66)
                                         .textCase(.uppercase)
-                                        .foregroundStyle(palette.onAccent)
+                                        .foregroundStyle(palette.primaryButtonText)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 3)
-                                        .background(palette.accent, in: Capsule())
+                                        .background(palette.primaryButtonFill, in: Capsule())
                                 }
                                 if dayAssignment.feast != nil {
                                     Image(systemName: "crown.fill")
                                         .guideSymbol(size: 12, weight: .semibold, relativeTo: .caption)
-                                        .foregroundStyle(Color(hex: colorScheme == .light ? 0xC4922C : 0xE2B75A))
+                                        .foregroundStyle(palette.feastIndicator)
                                         .accessibilityLabel(dayAssignment.feast?.feast.name.english ?? "Feast")
                                 }
                             }
@@ -1358,7 +1352,37 @@ struct HomeView: View {
                 }
             }
             .padding(.horizontal, AppTheme.Space.lg)
-            .guideCard(radius: AppTheme.containerRadius, fill: palette.panel)
+            .guideCard(radius: AppTheme.containerRadius, fill: palette.surface)
         }
+    }
+}
+
+private struct PartialCardStroke: View {
+    var edges: Edge.Set
+    var radius: CGFloat
+    var color: Color
+    var lineWidth: CGFloat
+
+    var body: some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+            Path { path in
+                if edges.contains(.top) {
+                    path.move(to: CGPoint(x: radius, y: lineWidth / 2))
+                    path.addLine(to: CGPoint(x: size.width - radius, y: lineWidth / 2))
+                }
+                if edges.contains(.leading) {
+                    path.move(to: CGPoint(x: lineWidth / 2, y: radius))
+                    path.addLine(to: CGPoint(x: lineWidth / 2, y: size.height))
+                }
+                if edges.contains(.trailing) {
+                    path.move(to: CGPoint(x: size.width - lineWidth / 2, y: radius))
+                    path.addLine(to: CGPoint(x: size.width - lineWidth / 2, y: size.height))
+                }
+            }
+            .stroke(color, lineWidth: lineWidth)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
