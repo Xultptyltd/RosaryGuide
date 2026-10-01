@@ -9,6 +9,7 @@ struct RosaryBeadMapView: View {
     var locus: BeadLocus?
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private static let crucifixImage: UIImage? = {
         #if canImport(UIKit)
@@ -26,13 +27,15 @@ struct RosaryBeadMapView: View {
     private let layout = RosaryGeometry.shared
 
     var body: some View {
-        Canvas { context, size in
-            let s = min(size.width / layout.viewW, size.height / layout.viewH)
-            let ox = (size.width - layout.viewW * s) / 2
-            let oy = (size.height - layout.viewH * s) / 2
-            context.translateBy(x: ox, y: oy)
-            context.scaleBy(x: s, y: s)
-            paint(&context)
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { timeline in
+            Canvas { context, size in
+                let s = min(size.width / layout.viewW, size.height / layout.viewH)
+                let ox = (size.width - layout.viewW * s) / 2
+                let oy = (size.height - layout.viewH * s) / 2
+                context.translateBy(x: ox, y: oy)
+                context.scaleBy(x: s, y: s)
+                paint(&context, phase: pulsePhase(at: timeline.date))
+            }
         }
         .frame(height: 118)
         .accessibilityLabel("Rosary beads")
@@ -54,10 +57,17 @@ struct RosaryBeadMapView: View {
         }
     }
 
-    private func paint(_ context: inout GraphicsContext) {
+    private func pulsePhase(at date: Date) -> CGFloat {
+        guard !reduceMotion else { return 0 }
+        let cycle = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.35) / 1.35
+        return CGFloat(cycle)
+    }
+
+    private func paint(_ context: inout GraphicsContext, phase: CGFloat) {
         let cord = mix(palette.dim, onto: palette.prayBg, amount: colorScheme == .light ? 0.55 : 0.40)
         // Draw cord only between beads (website pearls sit on top of an opaque cord gap).
         paintCordSegments(&context, color: cord)
+        paintPulse(&context, phase: phase)
 
         for bead in layout.beads {
             let state = state(of: bead.locus)
@@ -76,6 +86,57 @@ struct RosaryBeadMapView: View {
         // chords cut diagonals across the loop corners.
         context.stroke(layout.pendantPath, with: .color(color), lineWidth: 1.15)
         context.stroke(layout.loopPath, with: .color(color), lineWidth: 1.15)
+    }
+
+    private func paintPulse(_ context: inout GraphicsContext, phase: CGFloat) {
+        guard let target = pulseTarget else { return }
+        let wave = reduceMotion ? 0.45 : easeOutCubic(phase)
+        let outerRadius = target.baseRadius + target.expansion * wave
+        let innerRadius = max(target.baseRadius * 0.62, target.baseRadius - target.expansion * 0.16)
+        let outerOpacity = reduceMotion ? 0.30 : 0.52 * (1 - Double(wave))
+        let fillOpacity = reduceMotion ? 0.18 : 0.34 * (1 - Double(wave))
+
+        let outer = circleRect(center: target.point, radius: outerRadius)
+        let inner = circleRect(center: target.point, radius: innerRadius)
+        context.fill(Path(ellipseIn: inner), with: .color(palette.beadPulseFill.opacity(fillOpacity)))
+        context.stroke(Path(ellipseIn: outer), with: .color(palette.beadPulseStroke.opacity(outerOpacity)), lineWidth: target.lineWidth)
+    }
+
+    private func easeOutCubic(_ value: CGFloat) -> CGFloat {
+        let t = min(max(value, 0), 1)
+        return 1 - pow(1 - t, 3)
+    }
+
+    private func circleRect(center: CGPoint, radius: CGFloat) -> CGRect {
+        CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
+    }
+
+    private struct PulseTarget {
+        var point: CGPoint
+        var baseRadius: CGFloat
+        var expansion: CGFloat
+        var lineWidth: CGFloat
+    }
+
+    private var pulseTarget: PulseTarget? {
+        guard let locus else { return nil }
+        switch locus {
+        case .crucifix:
+            return PulseTarget(point: layout.crucifix, baseRadius: 14, expansion: 13, lineWidth: 1.6)
+        case .closing:
+            return PulseTarget(point: layout.medal, baseRadius: 13, expansion: 12, lineWidth: 1.5)
+        default:
+            guard let bead = layout.beads.first(where: { matches(locus, $0.locus) }) else { return nil }
+            if bead.isSpace {
+                return PulseTarget(point: bead.point, baseRadius: 6.5, expansion: 5.2, lineWidth: 1.0)
+            }
+            return PulseTarget(
+                point: bead.point,
+                baseRadius: bead.large ? 6.6 : 4.8,
+                expansion: bead.large ? 5.4 : 4.0,
+                lineWidth: bead.large ? 1.05 : 0.9
+            )
+        }
     }
 
     private enum State { case future, now, done }
@@ -115,17 +176,13 @@ struct RosaryBeadMapView: View {
         // Opaque underlay so the cord never shows through (website pearls are color-mix solids).
         context.fill(Path(ellipseIn: disk), with: .color(palette.prayBg))
         let fill = pearlColor(state)
-        if state == .now {
-            let glow = CGRect(x: p.x - r * 2.6, y: p.y - r * 2.6, width: r * 5.2, height: r * 5.2)
-            context.fill(Path(ellipseIn: glow), with: .color(palette.ink.opacity(colorScheme == .light ? 0.10 : 0.20)))
-        }
         context.fill(Path(ellipseIn: disk), with: .color(fill))
         let sr = max(0.38, r * 0.19)
         let shine = CGRect(x: p.x - r * 0.40 - sr, y: p.y - r * 0.44 - sr, width: sr * 2, height: sr * 2)
         let shineOp: Double = state == .future
             ? (colorScheme == .light ? 0.62 : 0.38)
             : (colorScheme == .light ? 0.32 : 0.22)
-        context.fill(Path(ellipseIn: shine), with: .color(Color.white.opacity(shineOp)))
+        context.fill(Path(ellipseIn: shine), with: .color(palette.beadHighlight.opacity(shineOp)))
     }
 
     /// Website `color-mix(in srgb, var(--text) N%, var(--bg))` — opaque, not alpha.
@@ -182,12 +239,8 @@ struct RosaryBeadMapView: View {
     private func paintMedal(_ context: inout GraphicsContext, at p: CGPoint, state: State) {
         let rim = CGRect(x: p.x - 9.3, y: p.y - 6.75, width: 18.6, height: 13.5)
         let field = CGRect(x: p.x - 7.4, y: p.y - 5.18, width: 14.8, height: 10.36)
-        let rimFill = colorScheme == .light
-            ? Color(red: 0.78, green: 0.76, blue: 0.70)
-            : Color.white.opacity(state == .future ? 0.32 : 0.55)
-        let fieldFill = colorScheme == .light
-            ? Color(red: 0.20, green: 0.18, blue: 0.16)
-            : Color.black.opacity(0.55)
+        let rimFill = state == .future ? palette.beadMedalRimFuture : palette.beadMedalRim
+        let fieldFill = palette.beadMedalField
         context.fill(Path(ellipseIn: rim), with: .color(rimFill))
         context.fill(Path(ellipseIn: field), with: .color(fieldFill))
         var m = Path()
@@ -196,10 +249,7 @@ struct RosaryBeadMapView: View {
         m.addLine(to: CGPoint(x: p.x, y: p.y + 0.55))
         m.addLine(to: CGPoint(x: p.x + 2.2, y: p.y - 1.5))
         m.addLine(to: CGPoint(x: p.x + 2.2, y: p.y + 2.0))
-        context.stroke(m, with: .color(Color.white.opacity(colorScheme == .light ? 0.55 : 0.7)), lineWidth: 0.7)
-        if state == .now {
-            context.fill(Path(ellipseIn: rim.insetBy(dx: -4, dy: -4)), with: .color(palette.ink.opacity(0.12)))
-        }
+        context.stroke(m, with: .color(palette.beadMedalGlyph), lineWidth: 0.7)
     }
 
     private func paintCrucifix(_ context: inout GraphicsContext, at p: CGPoint, state: State) {
@@ -218,12 +268,6 @@ struct RosaryBeadMapView: View {
         context.rotate(by: .degrees(-90))
         context.translateBy(x: -p.x, y: -p.y)
         context.opacity = 1
-        if state == .now {
-            context.fill(
-                Path(ellipseIn: CGRect(x: p.x - 14, y: p.y - 10, width: 28, height: 20)),
-                with: .color(palette.ink.opacity(0.12))
-            )
-        }
     }
 }
 
@@ -291,6 +335,7 @@ private struct RosaryGeometry {
 
         // Loop bead order from join (left mid), clockwise
         var specs: [(BeadLocus, Bool, Bool)] = []
+        specs.append((.decadeOurFather(1), true, false))
         for i in 1...10 { specs.append((.decadeHail(1, i), false, false)) }
         specs.append((.decadeGlory(1), false, true))
         for d in 2...5 {
@@ -307,8 +352,8 @@ private struct RosaryGeometry {
         // Place evenly with HM clustering + OF gaps, starting just past medal join
         let perimeter = 2 * (lw - 2 * r) + 2 * .pi * r
         var distances: [CGFloat] = []
-        // medal → first HM
-        distances.append(rMedal + rHM + gapOF * 0.55)
+        // medal → first loop bead (decade 1 Our Father)
+        distances.append(rMedal + rOF + gapOF * 0.55)
         for i in 0..<(specs.count - 1) {
             let a = specs[i], b = specs[i + 1]
             let ra = radius(large: a.1, space: a.2)
@@ -367,9 +412,9 @@ private struct RosaryGeometry {
             }
         }
 
-        // Pendant: out from medal — D1 OF, intro glory space, HM3, HM2, HM1, opening OF
+        // Pendant: out from medal — intro glory space, HM3, HM2, HM1, opening OF.
+        // The first decade's Our Father lives on the first large bead of the loop.
         let pend: [(BeadLocus, Bool, Bool)] = [
-            (.decadeOurFather(1), true, false),
             (.openingGlory, false, true),
             (.openingHail(3), false, false),
             (.openingHail(2), false, false),
@@ -391,7 +436,12 @@ private struct RosaryGeometry {
             }
         }
 
-        let openOF = pendantBeads[5].point.x
+        // Opening Our Father is the outermost pendant bead (crucifix joins to its left).
+        // Use locus lookup — not a hard-coded index — so pendant count changes stay safe.
+        guard let openingOF = pendantBeads.first(where: { $0.locus == .openingOurFather }) ?? pendantBeads.last else {
+            preconditionFailure("Pendant must include the opening Our Father bead")
+        }
+        let openOF = openingOF.point.x
         let join = openOF - rOF - gapOF
         let cxH: CGFloat = 40
         let foot = join - cxH
@@ -456,7 +506,7 @@ struct SevenStageTrack: View {
                 } label: {
                     Capsule()
                         .fill(barColor(stage))
-                        .frame(height: 3)
+                        .frame(height: 4)
                         .frame(maxWidth: .infinity)
                         // Hit target ~44pt, but visual gap under ticks ≈ web 1.35rem (not 18+18).
                         .padding(.top, 14)
