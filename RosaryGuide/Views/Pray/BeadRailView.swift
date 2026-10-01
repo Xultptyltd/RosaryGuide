@@ -376,11 +376,14 @@ private struct RosaryGeometry {
             var d = distance.truncatingRemainder(dividingBy: perimeter)
             if d < 0 { d += perimeter }
 
-            // From left-mid going UP (to top) — counterclockwise of classic clock but matches web clockwise around loop interior
-            // Web starts at join and goes around; visually beads fill top then right then bottom.
-            // Use: left-mid → top via upper-left arc, across top, right, bottom, lower-left arc.
+            // From left-mid going UP (to top). SwiftUI y grows downward, so the
+            // upper-left quarter uses 180° → 270° (sin goes negative / upward).
+            // The old 180° → 90° path walked below the join, which put decade-1
+            // Our Father + early Hail Marys on the wrong side of the loop until
+            // distance cleared leftHalf and jumped onto the top rail.
+            // Path: left-mid → top via upper-left arc, across top, right, bottom, lower-left arc.
             if d <= leftHalf {
-                let a = .pi - (d / r) // 180° → 90°
+                let a = .pi + (d / r) // 180° → 270°
                 return CGPoint(x: lx + r + cos(a) * r, y: ly + r + sin(a) * r)
             }
             d -= leftHalf
