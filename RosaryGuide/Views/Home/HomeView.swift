@@ -22,6 +22,7 @@ struct HomeView: View {
     @State private var openFeastID: String?
     @State private var weekFeastInfo: DatedFeast?
     @State private var selectedMysteryDetail: Mystery?
+    @State private var mysteryScrollID: String?
     @State private var selectedLiturgicalVerse: LiturgicalVerse?
     @State private var scrollToTopRequest = 0
     @State private var showSettingsDrawer = false
@@ -129,6 +130,9 @@ struct HomeView: View {
         .onAppear {
             if selectedSet == nil { selectedSet = assignment.set }
             syncCurrentIntentionIfNeeded()
+        }
+        .onChange(of: currentSet) { _, _ in
+            mysteryScrollID = mysteries.first?.id
         }
         .onChange(of: chosenIntentionId) { _, _ in
             intentionSelectionExplicit = true
@@ -1069,13 +1073,39 @@ struct HomeView: View {
                     .padding(.vertical, 4)
                 }
                 .scrollTargetBehavior(.viewAligned)
+                .scrollPosition(id: $mysteryScrollID)
                 .contentMargins(.horizontal, 0, for: .scrollContent)
                 .frame(width: geo.size.width)
                 .clipped()
             }
             .frame(height: dynamicTypeSize.isAccessibilitySize ? 620 : 438)
             .padding(.horizontal, -gutter)
+
+            mysteryPageDots
+                .padding(.top, AppTheme.Space.sm)
         }
+    }
+
+    private var mysteryPageDots: some View {
+        HStack(spacing: AppTheme.Space.sm) {
+            ForEach(mysteries.indices, id: \.self) { index in
+                Capsule()
+                    .fill(index == currentMysteryIndex ? palette.accent : palette.accent.opacity(0.28))
+                    .frame(width: index == currentMysteryIndex ? 18 : 6, height: 6)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: currentMysteryIndex)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Mystery card \(currentMysteryIndex + 1) of \(mysteries.count)")
+    }
+
+    private var currentMysteryIndex: Int {
+        guard let mysteryScrollID,
+              let index = mysteries.firstIndex(where: { $0.id == mysteryScrollID }) else {
+            return 0
+        }
+        return index
     }
 
     private var mysteryRailTitle: String {
