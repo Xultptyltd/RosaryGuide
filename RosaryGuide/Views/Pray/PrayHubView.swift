@@ -323,9 +323,9 @@ struct PrayHubView: View {
                 VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                     ForEach(article.paragraphs, id: \.self) { paragraph in
                         Text(paragraph)
-                            .font(AppTheme.sans(18))
-                            .lineSpacing(7)
-                            .foregroundStyle(palette.dim)
+                            .font(AppTheme.TypeRole.callout)
+                            .lineSpacing(5)
+                            .foregroundStyle(palette.ink)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -477,9 +477,9 @@ private struct LearnArticleView: View {
                 VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
                     ForEach(article.paragraphs, id: \.self) { paragraph in
                         Text(paragraph)
-                            .font(AppTheme.sans(18))
+                            .font(AppTheme.TypeRole.callout)
                             .lineSpacing(8)
-                            .foregroundStyle(palette.dim)
+                            .foregroundStyle(palette.ink)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
