@@ -1052,8 +1052,9 @@ struct HomeView: View {
     }
 
     private func mysteryRail(gutter: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+        VStack(alignment: .leading, spacing: 0) {
             GuideSectionLabel(text: mysteryRailTitle, color: palette.dim)
+                .padding(.bottom, AppTheme.Space.md)
             GeometryReader { geo in
                 let cardWidth = min(286, max(252, geo.size.width * 0.74))
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -1082,7 +1083,7 @@ struct HomeView: View {
             .padding(.horizontal, -gutter)
 
             mysteryPageDots
-                .padding(.top, AppTheme.Space.sm)
+                .padding(.top, AppTheme.Space.xs)
         }
     }
 
@@ -1094,7 +1095,7 @@ struct HomeView: View {
                     .frame(width: index == currentMysteryIndex ? 18 : 6, height: 6)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: currentMysteryIndex)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Mystery card \(currentMysteryIndex + 1) of \(mysteries.count)")
