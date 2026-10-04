@@ -88,13 +88,12 @@ struct FeastsView: View {
                     VStack(spacing: 0) {
                         CollapsingTitleSpacer()
 
-                        Picker("Scope", selection: $filter) {
-                            ForEach(FeastScope.allCases) { option in
-                                Text(option.title).tag(option)
-                            }
-                        }
-                        .guideSegmentedControl()
-                        .frame(maxWidth: .infinity)
+                        GuideSegmentedPicker(
+                            selection: $filter,
+                            options: Array(FeastScope.allCases),
+                            title: { $0.title },
+                            accessibilityLabel: "Feast scope"
+                        )
                     }
 
                     FeastMonthCalendar(

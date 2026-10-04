@@ -366,12 +366,42 @@ enum GuideChrome {
         tabBar.tintColor = UIColor(palette.accent)
         tabBar.unselectedItemTintColor = dim
 
-        // SwiftUI's segmented picker is backed by UISegmentedControl. Keep
-        // its unselected track on the same surface token as the rest of the
-        // app instead of UIKit's default system fill.
+        // UISegmentedControl ignores backgroundColor whenever a background
+        // image is installed, and iOS 26 ships a system (glass) image by
+        // default — so setting backgroundColor never reached the screen.
+        // The unselected track is that background image. Paint it with the
+        // resolved ThemePalette.surface (light #F0F1F4, dark #191B1E), not
+        // page bg (#090A0C) and not secondarySystemBackground.
+        // selectedSegmentTintColor is only the selected pill.
+        let style: UIUserInterfaceStyle = palette.scheme == .dark ? .dark : .light
+        let traits = UITraitCollection(userInterfaceStyle: style)
+        let track = UIColor(palette.surface).resolvedColor(with: traits)
+        let trackImage = UIImage.solid(color: track)
         let segmentedControl = UISegmentedControl.appearance()
-        segmentedControl.backgroundColor = UIColor(palette.segmentedControlTrack)
-        segmentedControl.selectedSegmentTintColor = UIColor(palette.selectedControlFill)
+        segmentedControl.setBackgroundImage(trackImage, for: .normal, barMetrics: .default)
+        segmentedControl.setBackgroundImage(trackImage, for: .highlighted, barMetrics: .default)
+        segmentedControl.setBackgroundImage(trackImage, for: .disabled, barMetrics: .default)
+        segmentedControl.setBackgroundImage(nil, for: .selected, barMetrics: .default)
+        segmentedControl.setDividerImage(
+            UIImage(),
+            forLeftSegmentState: .normal,
+            rightSegmentState: .normal,
+            barMetrics: .default
+        )
+        segmentedControl.setDividerImage(
+            UIImage(),
+            forLeftSegmentState: .selected,
+            rightSegmentState: .normal,
+            barMetrics: .default
+        )
+        segmentedControl.setDividerImage(
+            UIImage(),
+            forLeftSegmentState: .normal,
+            rightSegmentState: .selected,
+            barMetrics: .default
+        )
+        segmentedControl.backgroundColor = track
+        segmentedControl.selectedSegmentTintColor = UIColor(palette.selectedControlFill).resolvedColor(with: traits)
         segmentedControl.setTitleTextAttributes(
             [
                 .foregroundColor: dim,
@@ -390,7 +420,21 @@ enum GuideChrome {
     }
 }
 
+extension UIImage {
+    /// 1×1 stretchable fill. Used for `UISegmentedControl` track images,
+    /// because `backgroundColor` is ignored once a background image exists.
+    static func solid(color: UIColor) -> UIImage {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1))
+        let image = renderer.image { context in
+            color.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
+        }
+        return image.resizableImage(withCapInsets: .zero, resizingMode: .stretch)
+    }
+}
+
 struct GuidePageChrome: ViewModifier {
+
     @Environment(\.palette) private var palette
 
     func body(content: Content) -> some View {
@@ -965,7 +1009,70 @@ struct GuideRowGroupChrome: ViewModifier {
     }
 }
 
-/// Shared segmented-picker chrome used by the prayer language selector and Feasts scope filter.
+/// Feasts (and any other scope filter) must not use `Picker` + `.segmented`.
+/// On iOS 26 that control draws a system glass track and ignores both
+/// `backgroundColor` and a SwiftUI `.background`. This view paints the
+/// unselected track with `palette.surface` directly (light #F0F1F4, dark #191B1E).
+struct GuideSegmentedPicker<Selection: Hashable>: View {
+    @Environment(\.palette) private var palette
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Binding var selection: Selection
+    var options: [Selection]
+    var title: (Selection) -> String
+    var accessibilityLabel: String
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(options, id: \.self) { option in
+                let isSelected = selection == option
+                Button {
+                    guard selection != option else { return }
+                    withAnimation(reduceMotion ? nil : MotionTokens.selection) {
+                        selection = option
+                    }
+                } label: {
+                    Text(title(option))
+                        .font(AppTheme.TypeRole.segmentedControl)
+                        .foregroundStyle(isSelected ? palette.ink : palette.dim)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(title(option))
+                .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+            }
+        }
+        .padding(AppTheme.Component.segmentedControlInset)
+        .frame(maxWidth: .infinity)
+        .frame(height: AppTheme.Component.segmentedControlHeight)
+        .background(alignment: .leading) {
+            GeometryReader { geometry in
+                let inset = AppTheme.Component.segmentedControlInset
+                let width = max(geometry.size.width - inset * 2, 0)
+                let segmentWidth = width / CGFloat(max(options.count, 1))
+                let index = options.firstIndex(of: selection) ?? 0
+                AppTheme.capsule
+                    .fill(palette.selectedControlFill)
+                    .frame(width: segmentWidth, height: AppTheme.Component.segmentedControlInnerHeight)
+                    .offset(
+                        x: inset + CGFloat(index) * segmentWidth,
+                        y: inset
+                    )
+                    .allowsHitTesting(false)
+            }
+        }
+        // Unselected track. `surface`, not `bg` and not a system fill.
+        .background(palette.surface, in: AppTheme.capsule)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(accessibilityLabel)
+    }
+}
+
+/// Shared segmented-picker chrome used by the prayer language selector and intention category.
+/// Prefer `GuideSegmentedPicker` when the unselected track must be `palette.surface`
+/// — UIKit's segmented control does not honour this token on iOS 26.
 struct GuideSegmentedControl: ViewModifier {
     func body(content: Content) -> some View {
         content
