@@ -325,7 +325,7 @@ struct PrayHubView: View {
                         Text(paragraph)
                             .font(AppTheme.TypeRole.callout)
                             .lineSpacing(5)
-                            .foregroundStyle(palette.ink)
+                            .foregroundStyle(palette.dim)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -479,7 +479,7 @@ private struct LearnArticleView: View {
                         Text(paragraph)
                             .font(AppTheme.TypeRole.callout)
                             .lineSpacing(8)
-                            .foregroundStyle(palette.ink)
+                            .foregroundStyle(palette.dim)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
