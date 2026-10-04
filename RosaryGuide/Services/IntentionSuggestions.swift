@@ -6,10 +6,6 @@ struct SuggestedIntention: Identifiable, Hashable, Sendable {
     var note: String?
     var sourceLabel: String
     var monthLabel: String?
-    var description: String?
-    var extract: [String]?
-    var sourceTitle: String?
-    var sourceURL: String?
 }
 
 enum IntentionSuggestions {
@@ -24,11 +20,7 @@ enum IntentionSuggestions {
                     title: papal.title,
                     note: papal.note,
                     sourceLabel: "Holy Father’s Intention",
-                    monthLabel: papal.monthLabel,
-                    description: papal.description,
-                    extract: papal.extract,
-                    sourceTitle: papal.sourceTitle,
-                    sourceURL: papal.sourceURL
+                    monthLabel: papal.monthLabel
                 )
             )
         }

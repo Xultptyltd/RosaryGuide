@@ -38,7 +38,14 @@ struct OfferView: View {
                 morphEnabled: true
             )
             .sheet(item: $editor) { route in
-                IntentionEditorSheet(route: route)
+                IntentionEditorSheet(
+                    route: route,
+                    onDeleted: { deleted in
+                        if intentionDetail?.id == deleted.id {
+                            intentionDetail = nil
+                        }
+                    }
+                )
                     .environment(offer)
                     .environment(\.palette, palette)
             }
@@ -60,7 +67,6 @@ struct OfferView: View {
                 )
             }
             .onAppear { offer.pruneExpired() }
-            .task { await popeStore.refreshIfNeeded() }
         }
     }
 
@@ -77,6 +83,8 @@ struct OfferView: View {
                     .padding(.top, AppTheme.Space.sm)
 
                 VStack(spacing: AppTheme.Space.lg) {
+                    syncWarning
+
                     Text("Keep the people, needs and hopes you want to remember in your Rosary.")
                         .font(AppTheme.TypeRole.bodySmall)
                         .foregroundStyle(palette.dim)
@@ -85,7 +93,7 @@ struct OfferView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, AppTheme.Space.md)
 
-                    addIntentionButton(title: "Add your first intention")
+                    addIntentionButton(title: "Add your first intention", showsIcon: false)
 
                     emptyOrDivider
 
@@ -108,26 +116,29 @@ struct OfferView: View {
     private func addIntentionButton(
         title: String,
         isPrimary: Bool = true,
-        matchesLearnStyle: Bool = false
+        matchesLearnStyle: Bool = false,
+        showsIcon: Bool = true
     ) -> some View {
         Button {
             editor = .create
         } label: {
             if matchesLearnStyle {
                 Text(title)
-                    .font(AppTheme.sans(16, weight: .semibold))
+                    .font(AppTheme.TypeRole.callout(weight: .semibold))
                     .foregroundStyle(palette.secondaryButtonText)
                     .padding(.horizontal, 28)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 52)
+                    .frame(height: AppTheme.Component.pillHeight)
                     .background(palette.secondaryButtonFill, in: Capsule())
             } else {
                 HStack(spacing: AppTheme.Space.sm) {
-                    Image(systemName: "plus")
-                        .guideSymbol(size: 15, weight: .semibold)
+                    if showsIcon {
+                        Image(systemName: "plus")
+                            .guideSymbol(size: 15, weight: .semibold)
+                    }
                     Text(title)
                 }
-                .font(AppTheme.sans(16, weight: .semibold))
+                .font(AppTheme.TypeRole.callout(weight: .semibold))
                 .foregroundStyle(isPrimary ? palette.primaryButtonText : palette.secondaryButtonText)
                 .frame(maxWidth: .infinity)
                 .frame(height: AppTheme.Component.pillHeight)
@@ -182,44 +193,56 @@ struct OfferView: View {
     private var currentMonthTitle: String {
         Date().formatted(.dateTime.month(.wide).year())
     }
+
+    private var titlePrivacyButton: some View {
+        Button {
+            hideIntentionText.toggle()
+        } label: {
+            Group {
+                if hideIntentionText {
+                    ClosedEyeIcon()
+                } else {
+                    Image(systemName: "eye")
+                        .guideSymbol(size: 17, weight: .medium)
+                }
+            }
+            .foregroundStyle(palette.dim)
+            .frame(
+                width: AppTheme.Accessibility.minHitTarget,
+                height: AppTheme.Accessibility.minHitTarget
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .guidePressable()
+        .accessibilityLabel(hideIntentionText ? "Show intentions" : "Hide intentions")
+    }
     private var intentionList: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                 // Keep the papal card directly beneath the page title, like Feasts' control.
                 VStack(alignment: .leading, spacing: 0) {
                     CollapsingTitleSpacer()
+                        .overlay(alignment: .topTrailing) {
+                            titlePrivacyButton
+                                .padding(.top, 10)
+                        }
 
-                    if let papalSuggestion {
-                        PapalMonthCard(
+	                    if let papalSuggestion {
+	                        PapalMonthCard(
                             item: papalSuggestion,
                             isAdded: hasAdoptedSuggestion(papalSuggestion),
                             onOpen: { papalDetail = papalSuggestion },
                             onAdd: { adoptSuggestion(papalSuggestion) }
                         )
-                        .guideNavList(pageGutter: AppTheme.gutter)
-                    }
-                }
+	                        .guideNavList(pageGutter: AppTheme.gutter)
+	                    }
+
+	                    syncWarning
+	                        .padding(.horizontal, AppTheme.gutter)
+	                }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .center, spacing: AppTheme.Space.sm) {
-                        GuideSectionLabel(text: "Your intentions", color: palette.dim)
-                        Spacer(minLength: 0)
-                        Button {
-                            hideIntentionText.toggle()
-                        } label: {
-                            Image(systemName: hideIntentionText ? "eye.slash" : "eye")
-                                .guideSymbol(size: 15, weight: .medium)
-                                .foregroundStyle(palette.dim)
-                                .frame(
-                                    width: AppTheme.Accessibility.minHitTarget,
-                                    height: AppTheme.Accessibility.minHitTarget
-                                )
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(hideIntentionText ? "Show intentions" : "Hide intentions")
-                    }
-
                     if let currentIntention {
                         CurrentIntentionHero(
                             intention: currentIntention,
@@ -262,6 +285,26 @@ struct OfferView: View {
             // Same top breathing room as FeastsView before its title/control block.
             .padding(.top, AppTheme.Space.sm)
             .padding(.bottom, 108)
+        }
+    }
+
+    @ViewBuilder
+    private var syncWarning: some View {
+        if let message = offer.syncErrorMessage {
+            HStack(alignment: .top, spacing: AppTheme.Space.sm) {
+                Image(systemName: "exclamationmark.triangle")
+                    .guideSymbol(size: 14, weight: .medium)
+                    .foregroundStyle(palette.dim)
+
+                Text(message)
+                    .font(AppTheme.TypeRole.caption())
+                    .foregroundStyle(palette.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(AppTheme.Space.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+            .accessibilityElement(children: .combine)
         }
     }
 
@@ -331,6 +374,10 @@ private struct CurrentIntentionHero: View {
         IntentionPrivacy.displayTitle(intention, hidden: hideText)
     }
 
+    private var titleColor: Color {
+        IntentionPrivacy.hides(intention, hidden: hideText) ? palette.dim : palette.ink
+    }
+
     var body: some View {
         Button(action: onOpen) {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
@@ -344,8 +391,8 @@ private struct CurrentIntentionHero: View {
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                         Text(displayTitle)
-                            .font(AppTheme.sans(20, weight: .semibold))
-                            .foregroundStyle(palette.ink)
+                            .font(AppTheme.TypeRole.body(weight: .semibold))
+                            .foregroundStyle(titleColor)
                             .lineLimit(2)
                             .minimumScaleFactor(0.88)
                     }
@@ -360,14 +407,14 @@ private struct CurrentIntentionHero: View {
                 // Layout-only stand-in; real pray control is overlaid so it does not trigger navigation.
                 Color.clear
                     .frame(maxWidth: .infinity)
-                    .frame(height: 52)
+                    .frame(height: AppTheme.Component.pillHeight)
                     .accessibilityHidden(true)
             }
             .padding(AppTheme.Space.lg)
             .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .strokeBorder(palette.ink.opacity(0.07), lineWidth: 1)
+                    .strokeBorder(palette.cardStroke, lineWidth: AppTheme.Component.panelStrokeWidth)
             }
             .guideSoftShadow(elevated: colorScheme == .light)
             .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
@@ -384,7 +431,7 @@ private struct CurrentIntentionHero: View {
                 onEdit: onEdit,
                 onDelete: { showingDeleteAlert = true }
             )
-            .padding(.top, AppTheme.Space.lg)
+            .padding(.top, AppTheme.Space.lg + 10)
             .padding(.trailing, AppTheme.Space.lg)
         }
         .overlay(alignment: .bottom) {
@@ -394,10 +441,10 @@ private struct CurrentIntentionHero: View {
                     Text("Offer my next Rosary")
                     Image(systemName: "arrow.right")
                 }
-                .font(AppTheme.sans(16, weight: .semibold))
+                .font(AppTheme.TypeRole.callout(weight: .semibold))
                 .foregroundStyle(palette.primaryButtonText)
                 .frame(maxWidth: .infinity)
-                .frame(height: 52)
+                .frame(height: AppTheme.Component.pillHeight)
                 .background(actionFill, in: Capsule())
             }
             .buttonStyle(.plain)
@@ -435,13 +482,14 @@ private struct EmptyPapalIntentionCard: View {
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     Text("Holy Father’s intention")
-                        .font(AppTheme.sans(16, weight: .semibold))
+                        .font(AppTheme.TypeRole.caption(weight: .semibold))
                         .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(monthLine)
-                        .guideThemeSummaryStyle()
+                        .font(AppTheme.TypeRole.caption)
+                        .foregroundStyle(palette.textSecondary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -482,17 +530,21 @@ private struct PapalMonthCard: View {
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     Text(item.title)
-                        .font(AppTheme.sans(19, weight: .semibold))
+                        .font(AppTheme.TypeRole.callout(weight: .semibold))
                         .foregroundStyle(palette.ink)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.88)
+                        .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     Text(monthLabel)
-                        .guideThemeSummaryStyle()
+                        .font(AppTheme.TypeRole.caption)
+                        .foregroundStyle(palette.textSecondary)
                         .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.trailing, AppTheme.Space.lg)
+                .padding(.vertical, AppTheme.Space.md)
             }
             .frame(minHeight: 96)
             .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
@@ -529,7 +581,7 @@ private struct PapalIntentionDetailView: View {
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                         GuideSectionLabel(text: "Intention", color: palette.dim)
                         Text(note)
-                            .font(AppTheme.sans(20, weight: .regular))
+                            .font(AppTheme.TypeRole.body(weight: .regular))
                             .foregroundStyle(palette.ink)
                             .multilineTextAlignment(.leading)
                             .lineSpacing(7)
@@ -537,16 +589,6 @@ private struct PapalIntentionDetailView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                if let description = item.description {
-                    Text(description)
-                        .font(AppTheme.sans(15))
-                        .foregroundStyle(palette.dim)
-                        .multilineTextAlignment(.leading)
-                        .lineSpacing(4)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 if !added {
@@ -559,57 +601,13 @@ private struct PapalIntentionDetailView: View {
                             Image(systemName: "arrow.right")
                                 .guideSymbol(size: 14, weight: .semibold)
                         }
-                        .font(AppTheme.sans(15, weight: .semibold))
+                        .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
                         .foregroundStyle(palette.primaryButtonText)
                         .frame(maxWidth: .infinity)
                         .frame(height: AppTheme.Component.pillHeight)
                         .background(palette.primaryButtonFill, in: Capsule())
                     }
                     .buttonStyle(.plain)
-                }
-
-                if let extract = item.extract, !extract.isEmpty {
-                    VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                        Divider()
-                            .overlay(palette.hair)
-                        GuideSectionLabel(text: "Vatican extract", color: palette.dim)
-                        VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                            ForEach(extract, id: \.self) { paragraph in
-                                Text(paragraph)
-                                    .font(AppTheme.sans(17))
-                                    .foregroundStyle(palette.ink)
-                                    .multilineTextAlignment(.leading)
-                                    .lineSpacing(7)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                if let sourceTitle = item.sourceTitle {
-                    VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                        GuideSectionLabel(text: "Source", color: palette.dim)
-                        Text(sourceTitle)
-                            .font(AppTheme.sans(13))
-                            .foregroundStyle(palette.dim)
-                            .multilineTextAlignment(.leading)
-                            .lineSpacing(3)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        if let sourceURL = item.sourceURL {
-                            Text(sourceURL)
-                                .font(AppTheme.sans(12))
-                                .foregroundStyle(palette.faint)
-                                .multilineTextAlignment(.leading)
-                                .lineLimit(3)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 Spacer(minLength: 80)
@@ -646,7 +644,7 @@ private struct PapalIntentionDetailView: View {
     private var heroCopy: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
             Text(monthLabel)
-                .font(AppTheme.sans(12, weight: .medium))
+                .font(AppTheme.TypeRole.caption(weight: .medium))
                 .tracking(AppTheme.Component.sectionLabelTracking)
                 .textCase(.uppercase)
                 .foregroundStyle(palette.dim)
@@ -655,7 +653,7 @@ private struct PapalIntentionDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(item.title)
-                .font(AppTheme.sans(34, weight: .regular))
+                .font(AppTheme.TypeRole.screenTitle)
                 .foregroundStyle(palette.ink)
                 .multilineTextAlignment(.leading)
                 .lineLimit(3)
@@ -679,6 +677,54 @@ private struct PapalIntentionDetailView: View {
 
 /// Secondary row: NavigationLink for open, overflow menu overlaid outside the link
 /// so Pin/Edit/Delete are not swallowed by navigation (same pattern as CurrentIntentionHero).
+private struct ClosedEyeIcon: View {
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        ZStack {
+            ClosedEyeLid()
+                .stroke(
+                    palette.dim,
+                    style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round)
+                )
+
+            ClosedEyeLashes()
+                .stroke(
+                    palette.dim,
+                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
+                )
+        }
+        .frame(width: 19, height: 17)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct ClosedEyeLid: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + rect.width * 0.12, y: rect.minY + rect.height * 0.45))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX - rect.width * 0.12, y: rect.minY + rect.height * 0.45),
+            control: CGPoint(x: rect.midX, y: rect.maxY - rect.height * 0.12)
+        )
+        return path
+    }
+}
+
+private struct ClosedEyeLashes: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let y = rect.minY + rect.height * 0.64
+        let lashTop = rect.minY + rect.height * 0.78
+        [0.36, 0.5, 0.64].forEach { ratio in
+            let x = rect.minX + rect.width * ratio
+            path.move(to: CGPoint(x: x, y: y))
+            path.addLine(to: CGPoint(x: x, y: lashTop))
+        }
+        return path
+    }
+}
+
 private struct IntentionSecondaryRow: View {
     let intention: OfferIntention
     var hideText: Bool = false
@@ -735,8 +781,12 @@ private struct IntentionListRow: View {
         IntentionPrivacy.displayTitle(intention, hidden: hideText)
     }
 
+    private var titleColor: Color {
+        IntentionPrivacy.hides(intention, hidden: hideText) ? palette.dim : palette.ink
+    }
+
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
+        HStack(alignment: .center, spacing: AppTheme.Space.lg) {
             IntentionIconView(
                 accent: intention.accent,
                 emoji: intention.displayEmoji,
@@ -744,11 +794,11 @@ private struct IntentionListRow: View {
                 usesPopePortrait: intention.isPapal
             )
 
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 7) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                HStack(spacing: AppTheme.Space.sm) {
                     Text(displayTitle)
-                        .font(AppTheme.sans(17, weight: .semibold))
-                        .foregroundStyle(palette.ink)
+                        .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                        .foregroundStyle(titleColor)
                         .lineLimit(1)
                     if intention.isPinned {
                         Image(systemName: "pin.fill")
@@ -757,7 +807,7 @@ private struct IntentionListRow: View {
                     }
                 }
                 Text(metaLabel)
-                    .font(AppTheme.sans(12))
+                    .font(AppTheme.TypeRole.caption)
                     .foregroundStyle(palette.dim)
                     .lineLimit(1)
             }
@@ -775,7 +825,7 @@ private struct IntentionListRow: View {
     }
 
     private var metaLabel: String {
-        intention.categoryTitle
+        intention.createdAt.formatted(.dateTime.month(.wide).year())
     }
 }
 
@@ -800,6 +850,10 @@ private struct IntentionDetailView: View {
         IntentionPrivacy.displayTitle(intention, hidden: hideText)
     }
 
+    private var hiddenTextColor: Color {
+        privacyHidesText ? palette.dim : palette.ink
+    }
+
     private var displayNoteText: String {
         guard hasNote else { return "Add Notes" }
         return privacyHidesText ? IntentionPrivacy.maskedNoteText : noteText
@@ -811,36 +865,27 @@ private struct IntentionDetailView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 12) {
                 detailHeader
                     .padding(.top, 18)
 
                 statsCard
 
+                if shouldShowNotesField {
+                    notesField
+                }
+
                 Button(action: onPray) {
                     Text("Offer a Rosary")
-                        .font(AppTheme.sans(16, weight: .semibold))
-                        .foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
+                        .font(AppTheme.TypeRole.callout(weight: .semibold))
+                        .foregroundStyle(palette.secondaryButtonText)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(palette.ink, in: Capsule())
+                        .frame(height: AppTheme.Component.pillHeight)
+                        .background(palette.secondaryButtonFill, in: Capsule())
                 }
                 .buttonStyle(.plain)
 
                 detailSection
-
-                Button(role: .destructive) {
-                    showingDeleteAlert = true
-                } label: {
-                    Text("Delete intention")
-                        .font(AppTheme.sans(15))
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, AppTheme.Space.lg)
-                        .padding(.vertical, AppTheme.Space.lg)
-                        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-                }
-                .buttonStyle(.plain)
 
                 Spacer(minLength: 80)
             }
@@ -852,7 +897,7 @@ private struct IntentionDetailView: View {
             if !intention.isPapal {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Edit", action: onEdit)
-                        .font(AppTheme.sans(15, weight: .medium))
+                        .font(AppTheme.TypeRole.bodySmall(weight: .medium))
                         .foregroundStyle(palette.accent)
                 }
             }
@@ -883,8 +928,8 @@ private struct IntentionDetailView: View {
             )
 
             Text(displayTitle)
-                .font(AppTheme.sans(30, weight: .regular))
-                .foregroundStyle(palette.ink)
+                .font(AppTheme.TypeRole.modalTitle)
+                .foregroundStyle(hiddenTextColor)
                 .lineLimit(4)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -895,61 +940,64 @@ private struct IntentionDetailView: View {
 
     private var statsCard: some View {
         HStack(spacing: 0) {
-            stat("\(intention.timesCarried)", intention.timesCarried == 1 ? "Rosary" : "Rosaries")
+            stat("\(intention.timesCarried)", intention.timesCarried == 1 ? "Rosary prayed" : "Rosaries prayed")
             Divider().opacity(0.4)
-            stat(lastPrayedShort, "Last prayed")
-            Divider().opacity(0.4)
-            stat(intention.createdAt.formatted(.dateTime.day().month(.abbreviated)), "Added")
+            stat(lastPrayedRelative, "Last prayed")
         }
-        .frame(height: 82)
+        .frame(height: 80)
         .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
     }
 
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(AppTheme.sans(20, weight: .semibold))
+                .font(AppTheme.TypeRole.body(weight: .semibold))
                 .foregroundStyle(palette.ink)
             Text(label)
-                .font(AppTheme.sans(12))
+                .font(AppTheme.TypeRole.caption)
                 .foregroundStyle(palette.dim)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
     }
 
-    private var lastPrayedShort: String {
-        intention.lastCarriedAt?.formatted(.dateTime.day().month(.abbreviated)) ?? "Not yet"
+    private var lastPrayedRelative: String {
+        guard let date = intention.lastCarriedAt else { return "Not yet prayed" }
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return "Today" }
+        if calendar.isDateInYesterday(date) { return "Yesterday" }
+
+        let startDate = calendar.startOfDay(for: date)
+        let startToday = calendar.startOfDay(for: Date())
+        let days = max(0, calendar.dateComponents([.day], from: startDate, to: startToday).day ?? 0)
+
+        if (2...6).contains(days) {
+            return date.formatted(.dateTime.weekday(.wide))
+        }
+
+        if days < 28 {
+            let weeks = max(1, days / 7)
+            return weeks == 1 ? "1 week ago" : "\(weeks) weeks ago"
+        }
+
+        let components = calendar.dateComponents([.year, .month], from: startDate, to: startToday)
+        if let years = components.year, years >= 1 {
+            return years == 1 ? "1 year ago" : "\(years) years ago"
+        }
+        let months = max(1, components.month ?? Int(round(Double(days) / 30.0)))
+        return months == 1 ? "1 month ago" : "\(months) months ago"
+    }
+
+    private var lastPrayedExact: String {
+        intention.lastCarriedAt?.formatted(.dateTime.day().month(.wide).year()) ?? "Not yet prayed"
     }
 
     private var detailSection: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            if intention.isPapal {
-                papalFullContent
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    GuideSectionLabel(text: "Notes", color: palette.dim)
-
-                    Button(action: onEdit) {
-                        HStack(alignment: .top, spacing: 12) {
-                            Text(displayNoteText)
-                                .font(AppTheme.sans(15))
-                                .foregroundStyle(hasNote ? palette.ink : palette.dim)
-                                .lineSpacing(4)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            Image(systemName: hasNote ? "square.and.pencil" : "plus")
-                                .guideSymbol(size: 14, weight: .semibold)
-                                .foregroundStyle(palette.accent)
-                        }
-                        .padding(18)
-                        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
+        VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
             VStack(spacing: 0) {
                 detailRow("Category", value: intention.categoryTitle)
+                Hairline().padding(.leading, 18)
+                detailRow("Last prayed", value: lastPrayedExact)
                 Hairline().padding(.leading, 18)
                 detailRow("Created", value: intention.createdAt.formatted(.dateTime.day().month(.abbreviated).year()))
             }
@@ -957,75 +1005,32 @@ private struct IntentionDetailView: View {
         }
     }
 
-    /// Same Holy Father copy as `PapalIntentionDetailView` / featured papal card source
-    /// (`PopeIntentionStore` → `PopeIntentions.json`), looked up by `sourceId`.
-    private var papalFullContent: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-            if let note = papalDisplayNote {
-                Text(note)
-                    .font(AppTheme.sans(20, weight: .regular))
-                    .foregroundStyle(palette.ink)
-                    .multilineTextAlignment(.leading)
-                    .lineSpacing(7)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            if let description = papalSource?.description, !description.isEmpty {
-                Text(description)
-                    .font(AppTheme.sans(15))
-                    .foregroundStyle(palette.dim)
-                    .multilineTextAlignment(.leading)
-                    .lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            if let extract = papalSource?.extract, !extract.isEmpty {
-                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                    Divider()
-                        .overlay(palette.hair)
-                    GuideSectionLabel(text: "Vatican extract", color: palette.dim)
-                    VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                        ForEach(extract, id: \.self) { paragraph in
-                            Text(paragraph)
-                                .font(AppTheme.sans(17))
-                                .foregroundStyle(palette.ink)
-                                .multilineTextAlignment(.leading)
-                                .lineSpacing(7)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
+    @ViewBuilder
+    private var notesField: some View {
+        if hasDisplayNote {
+            Text(detailDisplayNoteText)
+                .font(AppTheme.TypeRole.themeSummary)
+                .foregroundStyle(privacyHidesText ? palette.dim : palette.ink)
+                .lineSpacing(4)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            if let sourceTitle = papalSource?.sourceTitle, !sourceTitle.isEmpty {
-                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                    GuideSectionLabel(text: "Source", color: palette.dim)
-                    Text(sourceTitle)
-                        .font(AppTheme.sans(13))
+                .padding(20)
+                .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+        } else {
+            Button(action: onEdit) {
+                HStack(alignment: .center, spacing: 12) {
+                    Text(displayNoteText)
+                        .font(AppTheme.TypeRole.themeSummary)
                         .foregroundStyle(palette.dim)
-                        .multilineTextAlignment(.leading)
-                        .lineSpacing(3)
-                        .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    if let sourceURL = papalSource?.sourceURL, !sourceURL.isEmpty {
-                        Text(sourceURL)
-                            .font(AppTheme.sans(12))
-                            .foregroundStyle(palette.faint)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(3)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    Image(systemName: "plus")
+                        .guideSymbol(size: 14, weight: .semibold)
+                        .foregroundStyle(palette.accent)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(20)
+                .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             }
+            .buttonStyle(.plain)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var papalSource: PopeMonthIntention? {
@@ -1045,6 +1050,24 @@ private struct IntentionDetailView: View {
         return nil
     }
 
+    private var shouldShowNotesField: Bool {
+        !intention.isPapal || hasDisplayNote
+    }
+
+    private var hasDisplayNote: Bool {
+        if intention.isPapal {
+            return papalDisplayNote?.isEmpty == false
+        }
+        return hasNote
+    }
+
+    private var detailDisplayNoteText: String {
+        if intention.isPapal {
+            return papalDisplayNote ?? ""
+        }
+        return displayNoteText
+    }
+
     private var hasNote: Bool {
         intention.note?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
     }
@@ -1057,11 +1080,11 @@ private struct IntentionDetailView: View {
     private func detailRow(_ title: String, value: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(title)
-                .font(AppTheme.sans(15))
+                .font(AppTheme.TypeRole.themeSummary)
                 .foregroundStyle(palette.ink)
             Spacer()
             Text(value)
-                .font(AppTheme.sans(14))
+                .font(AppTheme.TypeRole.label)
                 .foregroundStyle(palette.dim)
                 .multilineTextAlignment(.trailing)
                 .lineLimit(2)
@@ -1078,8 +1101,8 @@ private struct PapalSuggestionCard: View {
     let item: SuggestedIntention
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .top, spacing: 18) {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(alignment: .top, spacing: 20) {
                 Image("PopeLeo")
                     .resizable()
                     .scaledToFill()
@@ -1087,16 +1110,16 @@ private struct PapalSuggestionCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                     .accessibilityHidden(true)
 
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                     Text(item.sourceLabel)
-                        .font(AppTheme.sans(11, weight: .semibold))
+                        .font(AppTheme.TypeRole.caption(weight: .medium))
                         .foregroundStyle(palette.accent)
                         .textCase(.uppercase)
                         .tracking(1.1)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(item.title)
-                        .font(AppTheme.sans(23, weight: .semibold))
+                        .font(AppTheme.TypeRole.body(weight: .semibold))
                         .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
@@ -1106,16 +1129,16 @@ private struct PapalSuggestionCard: View {
 
             if let note = item.note, !note.isEmpty {
                 Text(note)
-                    .font(AppTheme.sans(15))
+                    .font(AppTheme.TypeRole.themeSummary)
                     .foregroundStyle(palette.dim)
                     .multilineTextAlignment(.leading)
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            HStack(spacing: 6) {
+            HStack(spacing: AppTheme.Space.sm) {
                 Text("Tap to add")
-                    .font(AppTheme.sans(12, weight: .medium))
+                    .font(AppTheme.TypeRole.caption(weight: .medium))
                 Image(systemName: "arrow.right")
                     .guideSymbol(size: 11, weight: .semibold)
             }
@@ -1149,9 +1172,9 @@ private struct IntentionRow: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: hasDescription ? .top : .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 7) {
+                    HStack(spacing: AppTheme.Space.sm) {
                         Text(intention.title)
-                            .font(AppTheme.sans(19, weight: .semibold))
+                            .font(AppTheme.TypeRole.body(weight: .semibold))
                             .foregroundStyle(palette.ink)
                             .multilineTextAlignment(.leading)
                         if intention.isPinned {
@@ -1164,13 +1187,13 @@ private struct IntentionRow: View {
 
                     if let note = intention.note, !note.isEmpty {
                         Text(note)
-                            .font(AppTheme.sans(13))
+                            .font(AppTheme.TypeRole.label)
                             .foregroundStyle(palette.dim)
                             .lineLimit(2)
                     }
 
                     // Meta under description (or under title when there’s no note)
-                    HStack(spacing: 6) {
+                    HStack(spacing: AppTheme.Space.sm) {
                         if !intention.carriedLabel.isEmpty {
                             Text(intention.carriedLabel)
                         }
@@ -1187,14 +1210,14 @@ private struct IntentionRow: View {
                             Text(durationLabel)
                         }
                     }
-                    .font(AppTheme.sans(12))
+                    .font(AppTheme.TypeRole.caption)
                     .foregroundStyle(palette.dim)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 if intention.isNew {
                     Text("New")
-                        .font(AppTheme.sans(11, weight: .semibold))
+                        .font(AppTheme.TypeRole.caption(weight: .semibold))
                         .foregroundStyle(palette.ink.opacity(0.75))
                         .padding(.horizontal, 9)
                         .padding(.vertical, 5)
@@ -1216,7 +1239,7 @@ private struct IntentionRow: View {
 
             Button(action: onPray) {
                 Text("Pray for this intention")
-                    .font(AppTheme.sans(15, weight: .semibold))
+                    .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
                     .foregroundStyle(palette.ink)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -1224,7 +1247,7 @@ private struct IntentionRow: View {
             .buttonStyle(.plain)
             .background(
                 Capsule()
-                    .strokeBorder(palette.ink.opacity(0.28), lineWidth: 1.2)
+                    .strokeBorder(palette.strongStroke, lineWidth: 1.2)
             )
             .accessibilityHint("Starts a Rosary with this intention")
         }
@@ -1246,7 +1269,7 @@ private struct IntentionRow: View {
     }
 
     private var rowAccessibilityLabel: String {
-        var parts = [intention.title, intention.categoryTitle]
+        var parts = [intention.title, intention.createdAt.formatted(.dateTime.month(.wide).year())]
         if intention.isPinned { parts.append("Current") }
         if !intention.carriedLabel.isEmpty { parts.append(intention.carriedLabel) }
         if let note = intention.note, !note.isEmpty { parts.append(note) }
@@ -1293,8 +1316,8 @@ struct OverflowMenuButton: View {
                 }
             }
         } label: {
-            Image(systemName: "ellipsis.circle")
-                .guideSymbol(size: 17, weight: .medium)
+            Image(systemName: "ellipsis")
+                .guideSymbol(size: 18, weight: .semibold)
                 .foregroundStyle(palette.ink)
                 .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
         }
@@ -1305,7 +1328,7 @@ struct OverflowMenuButton: View {
     /// an alwaysOriginal UIImage is the reliable tint for Menu item icons.
     /// Match UIMenu destructive title red (#FF3B30), not dynamic `UIColor.systemRed`
     /// (light #FF383C / dark #FF4245) which reads as a different red next to "Delete".
-    private static let destructiveMenuTitleColor = UIColor(red: 1, green: 59.0 / 255.0, blue: 48.0 / 255.0, alpha: 1)
+    private static let destructiveMenuTitleColor = UIColor(AppTheme.destructiveMenuRed)
 
     private static let destructiveTrashIcon: UIImage = {
         let base = UIImage(systemName: "trash.fill") ?? UIImage()
@@ -1337,9 +1360,18 @@ struct IntentionIconView: View {
                     Circle()
                         .fill(accent.color)
                     if !emoji.isEmpty {
-                        Image(systemName: symbolName)
-                            .guideSymbol(size: symbolSize, weight: .semibold)
-                            .foregroundStyle(accent.onColor.opacity(0.88))
+                        if let assetName {
+                            Image(assetName)
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: symbolSize, height: symbolSize)
+                                .foregroundStyle(accent.onColor.opacity(0.88))
+                        } else {
+                            Image(systemName: symbolName)
+                                .guideSymbol(size: symbolSize, weight: .semibold)
+                                .foregroundStyle(accent.onColor.opacity(0.88))
+                        }
                     } else if let emptyPlaceholder, !emptyPlaceholder.isEmpty {
                         Image(systemName: "plus")
                             .guideSymbol(size: size * 0.26, weight: .semibold)
@@ -1350,6 +1382,32 @@ struct IntentionIconView: View {
             }
         }
         .accessibilityHidden(true)
+    }
+
+    private var assetName: String? {
+        switch emoji {
+        case "👥":
+            "IntentionGroupFilled"
+        case "🌍", "🌎", "🌏":
+            "IntentionChurchFilled"
+        case "🙏":
+            "IntentionHandsFilled"
+        case "✝️", "✝", "†", "❤️", "❤", "♥️", "♥", "🕊️", "🕊":
+            nil
+        default:
+            fallbackAssetName
+        }
+    }
+
+    private var fallbackAssetName: String? {
+        switch accent {
+        case .mintGreen:
+            "IntentionHandsFilled"
+        case .skyBlue:
+            "IntentionGroupFilled"
+        case .purple:
+            "IntentionChurchFilled"
+        }
     }
 
     private var symbolName: String {
@@ -1365,8 +1423,7 @@ struct IntentionIconView: View {
         case "🕊️", "🕊":
             "leaf.fill"
         case "🙏":
-            // Prefer praying-hands reading; SF Symbol hands.and.sparkles.fill.
-            "hands.and.sparkles.fill"
+            "hands.clap.fill"
         default:
             fallbackSymbol
         }
@@ -1375,7 +1432,7 @@ struct IntentionIconView: View {
     private var fallbackSymbol: String {
         switch accent {
         case .mintGreen:
-            "hands.and.sparkles.fill"
+            "hands.clap.fill"
         case .skyBlue:
             "person.fill"
         case .purple:
@@ -1384,17 +1441,13 @@ struct IntentionIconView: View {
     }
 
     private var symbolSize: CGFloat {
-        switch symbolName {
-        case "building.columns.fill":
-            size * 0.40
-        case "hands.and.sparkles.fill", "hands.sparkles.fill":
-            size * 0.38
-        default:
+        if assetName != nil {
+            min(22, size * 0.55)
+        } else {
             size * 0.42
         }
     }
 }
-
 
 enum EditorRoute: Identifiable, Hashable {
     case create
@@ -1437,11 +1490,11 @@ private enum IntentionKindChoice: String, CaseIterable, Identifiable {
         }
     }
 
-    var icon: String {
+    var iconAsset: String {
         switch self {
-        case .personal: "hands.and.sparkles.fill"
-        case .someone: "person.fill"
-        case .world: "building.columns.fill"
+        case .personal: "IntentionHandsFilled"
+        case .someone: "IntentionGroupFilled"
+        case .world: "IntentionChurchFilled"
         }
     }
 
@@ -1479,6 +1532,15 @@ private enum IntentionKindChoice: String, CaseIterable, Identifiable {
 }
 
 
+private struct EditorSheetScrollMetrics: Equatable {
+    var offsetY: CGFloat
+    var maxOffsetY: CGFloat
+}
+
+private enum EditorSheetScrollAnchor {
+    static let bottom = "intention-editor-bottom"
+}
+
 struct IntentionEditorSheet: View {
     @Environment(OfferStore.self) private var offer
     @Environment(\.palette) private var palette
@@ -1489,6 +1551,7 @@ struct IntentionEditorSheet: View {
     /// When creating from a Rosary, pre-select that mystery.
     var initialMystery: MysterySetKind? = nil
     var onSaved: ((OfferIntention) -> Void)? = nil
+    var onDeleted: ((OfferIntention) -> Void)? = nil
 
     @State private var title = ""
     @State private var note = ""
@@ -1500,15 +1563,20 @@ struct IntentionEditorSheet: View {
     @State private var kind: IntentionKindChoice = .personal
     @State private var makeCurrent = false
     @State private var isPapalIntention = false
+    @State private var showingDeleteAlert = false
+    @State private var keyboardVisible = false
+    @State private var editorActionExpanded = false
+    @Namespace private var editorActionNamespace
     @FocusState private var titleFieldFocused: Bool
 
     var body: some View {
         NavigationStack {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                     editorFieldSection(label: "Intention") {
                         TextField("For…", text: $title, axis: .vertical)
-                            .font(AppTheme.sans(21, weight: .regular, relativeTo: .title3))
+                            .font(AppTheme.TypeRole.body)
                             .foregroundStyle(palette.ink)
                             .lineLimit(2...5)
                             .focused($titleFieldFocused)
@@ -1550,14 +1618,9 @@ struct IntentionEditorSheet: View {
                     }
 
                     Toggle(isOn: $makeCurrent) {
-                        VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                            Text("Make current")
-                                .font(AppTheme.sans(15, weight: .medium, relativeTo: .body))
-                                .foregroundStyle(palette.ink)
-                            Text("Selected when you begin your next Rosary.")
-                                .font(AppTheme.TypeRole.caption)
-                                .foregroundStyle(palette.dim)
-                        }
+                        Text("Set as primary intention")
+                            .font(AppTheme.TypeRole.bodySmall(weight: .medium))
+                            .foregroundStyle(palette.ink)
                     }
                     .tint(palette.accent)
                     .padding(.horizontal, AppTheme.Space.lg)
@@ -1573,12 +1636,55 @@ struct IntentionEditorSheet: View {
                             ? "On. This intention will be selected for your next Rosary."
                             : "Off. Leave your current intention unchanged."
                     )
+
+                    if let editingItem {
+                        Button(role: .destructive) {
+                            showingDeleteAlert = true
+                        } label: {
+                            Text("Delete intention")
+                                .font(AppTheme.TypeRole.bodySmall(weight: .regular))
+                                .foregroundStyle(palette.destructive)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, AppTheme.Space.lg)
+                                .padding(.vertical, AppTheme.Space.lg)
+                                .guideCard(
+                                    radius: AppTheme.containerRadius,
+                                    fill: palette.surface,
+                                    stroke: false,
+                                    elevated: false
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Deletes \(editingItem.title)")
+                    }
+                    }
+                    .padding(.horizontal, AppTheme.gutter)
+                    .padding(.top, AppTheme.Space.xl)
+                    .padding(.bottom, AppTheme.Space.xxl + AppTheme.Space.sm)
+                    .background(alignment: .bottom) {
+                        Color.clear
+                            .frame(height: 1)
+                            .id(EditorSheetScrollAnchor.bottom)
+                    }
                 }
-                .padding(.horizontal, AppTheme.gutter)
-                .padding(.top, AppTheme.Space.xl)
-                .padding(.bottom, AppTheme.Space.xxl + AppTheme.Space.sm)
+                .scrollDismissesKeyboard(.interactively)
+                .onScrollGeometryChange(for: EditorSheetScrollMetrics.self) { geometry in
+                    EditorSheetScrollMetrics(
+                        offsetY: geometry.contentOffset.y,
+                        maxOffsetY: max(0, geometry.contentSize.height - geometry.containerSize.height + geometry.contentInsets.bottom)
+                    )
+                } action: { oldValue, newValue in
+                    guard keyboardVisible, !editorActionExpanded else { return }
+                    let nearBottom = newValue.maxOffsetY - newValue.offsetY <= 28
+                    let movedDown = newValue.offsetY > oldValue.offsetY + 6
+                    if nearBottom && movedDown {
+                        settleEditorAction(proxy)
+                    }
+                }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    editorBottomAction { settleEditorAction(proxy) }
+                }
             }
-            .scrollDismissesKeyboard(.interactively)
             .background(palette.bg)
             .navigationTitle(routeTitle)
             .navigationBarTitleDisplayMode(.inline)
@@ -1587,13 +1693,13 @@ struct IntentionEditorSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .font(AppTheme.sans(16, weight: .regular, relativeTo: .body))
+                        .font(AppTheme.TypeRole.callout(weight: .regular))
                         .foregroundStyle(palette.ink)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
-                        .font(AppTheme.sans(16, weight: .semibold, relativeTo: .body))
-                        .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .font(AppTheme.TypeRole.callout(weight: .semibold))
+                        .disabled(!canSaveIntention)
                 }
             }
             .onAppear {
@@ -1604,8 +1710,93 @@ struct IntentionEditorSheet: View {
                     }
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                keyboardVisible = true
+                editorActionExpanded = false
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                keyboardVisible = false
+            }
+            .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) {
+                    deleteEditingItem()
+                }
+            } message: {
+                Text("This will delete “\(editingItem?.title ?? "this intention")” from your intentions.")
+            }
         }
         .presentationDragIndicator(.visible)
+    }
+
+    private var canSaveIntention: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func settleEditorAction(_ proxy: ScrollViewProxy) {
+        guard !editorActionExpanded else { return }
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.84)) {
+            editorActionExpanded = true
+            proxy.scrollTo(EditorSheetScrollAnchor.bottom, anchor: .bottom)
+        }
+        titleFieldFocused = false
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+
+    private func editorBottomAction(onSettle: @escaping () -> Void) -> some View {
+        let showCompact = keyboardVisible && !editorActionExpanded
+
+        return HStack {
+            if showCompact {
+                Spacer(minLength: 0)
+            }
+            Button {
+                if showCompact {
+                    onSettle()
+                } else {
+                    save()
+                }
+            } label: {
+                Group {
+                    if showCompact {
+                        Image(systemName: "chevron.down")
+                            .guideSymbol(size: 17, weight: .semibold)
+                            .foregroundStyle(palette.secondaryButtonText)
+                            .frame(
+                                width: AppTheme.Component.mysteryPlateActionCircle,
+                                height: AppTheme.Component.mysteryPlateActionCircle
+                            )
+                    } else {
+                        Text("Done")
+                            .font(AppTheme.TypeRole.callout(weight: .semibold))
+                            .foregroundStyle(palette.secondaryButtonText)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: AppTheme.Component.pillHeight)
+                    }
+                }
+                .background {
+                    Capsule()
+                        .fill(palette.secondaryButtonFill)
+                        .matchedGeometryEffect(id: "editor-bottom-action-background", in: editorActionNamespace)
+                }
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .guidePressable()
+            .disabled(!showCompact && !canSaveIntention)
+            .opacity(!showCompact && !canSaveIntention ? 0.45 : 1)
+            .accessibilityLabel(showCompact ? "Scroll to bottom" : "Done")
+        }
+        .animation(.spring(response: 0.42, dampingFraction: 0.84), value: showCompact)
+        .padding(.horizontal, AppTheme.gutter)
+        .padding(.top, 8)
+        .padding(.bottom, AppTheme.Space.lg)
+        .background(palette.bg.opacity(showCompact ? 0 : 1))
+    }
+
+    private var editingItem: OfferIntention? {
+        if case .edit(let item) = route { return item }
+        return nil
     }
 
     @ViewBuilder
@@ -1646,11 +1837,11 @@ struct IntentionEditorSheet: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 Text("\"Carry one another's\nburdens, and in this\nway you will fulfil\nthe law of Christ.\"")
-                    .font(AppTheme.sans(17))
+                    .font(AppTheme.TypeRole.bodySmall)
                     .foregroundStyle(palette.dim)
                     .lineSpacing(4)
                 Text("GALATIANS 6:2")
-                    .font(AppTheme.sans(10, weight: .medium))
+                    .font(AppTheme.TypeRole.caption(weight: .medium))
                     .tracking(1.8)
                     .foregroundStyle(palette.faint)
             }
@@ -1663,10 +1854,10 @@ struct IntentionEditorSheet: View {
     private var categoryPicker: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Type of intention")
-                .font(AppTheme.sans(14, weight: .medium))
+                .font(AppTheme.TypeRole.label(weight: .medium))
                 .foregroundStyle(palette.ink)
 
-            HStack(spacing: 10) {
+            HStack(spacing: AppTheme.Space.md) {
                 ForEach(IntentionKindChoice.allCases) { option in
                     let selected = kind == option
                     Button {
@@ -1675,17 +1866,20 @@ struct IntentionEditorSheet: View {
                         emoji = option.emoji
                     } label: {
                         VStack(spacing: 8) {
-                            Image(systemName: option.icon)
-                                .guideSymbol(size: 23, weight: .regular)
+                            Image(option.iconAsset)
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 24, height: 24)
                             Text(option.title)
-                                .font(AppTheme.sans(11, weight: .medium))
+                                .font(AppTheme.TypeRole.caption(weight: .medium))
                                 .multilineTextAlignment(.center)
                                 .lineLimit(2)
                                 .minimumScaleFactor(0.72)
                         }
                         .foregroundStyle(palette.ink)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 82)
+                        .frame(height: 80)
                         .background(selected ? palette.accentTint : palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                         .overlay {
                             RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
@@ -1701,7 +1895,7 @@ struct IntentionEditorSheet: View {
     private func fieldBlock<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(label)
-                .font(AppTheme.sans(13, weight: .semibold))
+                .font(AppTheme.TypeRole.label(weight: .semibold))
                 .foregroundStyle(palette.ink)
             content()
                 .padding(.horizontal, 14)
@@ -1718,7 +1912,7 @@ struct IntentionEditorSheet: View {
     private var retentionCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Keep intention")
-                .font(AppTheme.sans(13, weight: .semibold))
+                .font(AppTheme.TypeRole.label(weight: .semibold))
                 .foregroundStyle(palette.ink)
             Picker("Duration", selection: $retention) {
                 ForEach(RetentionChoice.allCases) { option in
@@ -1742,9 +1936,9 @@ struct IntentionEditorSheet: View {
 
 
     private var suggestOnCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             Text("Mystery")
-                .font(AppTheme.sans(13, weight: .semibold))
+                .font(AppTheme.TypeRole.label(weight: .semibold))
                 .foregroundStyle(palette.ink)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
@@ -1755,7 +1949,7 @@ struct IntentionEditorSheet: View {
                         if selected { suggestOn.removeAll() } else { suggestOn = [set] }
                     } label: {
                         Text(set.shortName)
-                            .font(AppTheme.sans(14, weight: .semibold))
+                            .font(AppTheme.TypeRole.label(weight: .semibold))
                             .foregroundStyle(selected ? palette.secondaryButtonText : palette.ink)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 11)
@@ -1866,6 +2060,13 @@ struct IntentionEditorSheet: View {
         }
         dismiss()
     }
+
+    private func deleteEditingItem() {
+        guard let item = editingItem else { return }
+        offer.delete(id: item.id)
+        onDeleted?(item)
+        dismiss()
+    }
 }
 
 /// Contact-style colour + emoji picker (preview, swatches with check).
@@ -1906,9 +2107,9 @@ private struct IntentionIconPickerSheet: View {
                     .contentShape(Circle())
                     .onTapGesture { emojiFocusNonce += 1 }
 
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
                         Text("Intention colour")
-                            .font(AppTheme.sans(14, weight: .semibold))
+                            .font(AppTheme.TypeRole.label(weight: .semibold))
                             .foregroundStyle(palette.ink)
 
                         GeometryReader { geo in
@@ -1926,7 +2127,7 @@ private struct IntentionIconPickerSheet: View {
                                                 .frame(width: side, height: side)
                                             if draftAccent == option {
                                                 Circle()
-                                                    .strokeBorder(palette.ink.opacity(0.85), lineWidth: 2.5)
+                                                    .strokeBorder(palette.selectedSwatchStroke, lineWidth: 2.5)
                                                     .frame(width: side, height: side)
                                                 Image(systemName: "checkmark")
                                                     .guideSymbol(size: max(12, side * 0.32), weight: .bold)
@@ -1942,7 +2143,7 @@ private struct IntentionIconPickerSheet: View {
                             }
                             .frame(width: geo.size.width, height: side)
                         }
-                        .frame(height: 56)
+                        .frame(height: AppTheme.Component.pillHeight)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, horizontalPad)
@@ -1959,7 +2160,7 @@ private struct IntentionIconPickerSheet: View {
                 ) {
                     commitAndDismiss()
                 }
-                .frame(height: 52)
+                .frame(height: AppTheme.Component.pillHeight)
                 .padding(.horizontal, horizontalPad)
                 .padding(.top, 6)
                 .padding(.bottom, 18) // ~12pt higher above the keyboard

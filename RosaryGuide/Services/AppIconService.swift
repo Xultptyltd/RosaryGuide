@@ -13,7 +13,7 @@ enum AppIconOption: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .black: "Black"
         case .white: "White"
-        case .blue: "Blue"
+        case .blue: "Marian Blue"
         }
     }
 

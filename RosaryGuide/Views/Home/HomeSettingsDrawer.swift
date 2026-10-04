@@ -14,7 +14,7 @@ struct HomeSettingsDrawer: View {
         GeometryReader { geo in
             let width = geo.size.width
             ZStack(alignment: .leading) {
-                Color.black
+                palette.scrim
                     .opacity(scrimOpacity)
                     .ignoresSafeArea()
                     .onTapGesture { dismiss() }
@@ -22,24 +22,7 @@ struct HomeSettingsDrawer: View {
                     .accessibilityAddTraits(.isButton)
 
                 NavigationStack {
-                    SettingsView()
-                        .toolbar {
-                            ToolbarItem(placement: .topBarLeading) {
-                                Button {
-                                    dismiss()
-                                } label: {
-                                    Image(systemName: "xmark")
-                                        .guideSymbol(size: 16, weight: .semibold)
-                                        .foregroundStyle(palette.ink)
-                                        .frame(
-                                            width: AppTheme.Accessibility.minHitTarget,
-                                            height: AppTheme.Accessibility.minHitTarget
-                                        )
-                                        .contentShape(Rectangle())
-                                }
-                                .accessibilityLabel("Close")
-                            }
-                        }
+                    SettingsView(onClose: dismiss)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(palette.bg)

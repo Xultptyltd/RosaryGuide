@@ -17,6 +17,7 @@ struct CompletionView: View {
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
 
     @State private var contentPhase: ContentPhase = .hidden
+    @State private var completionQuote = QuoteCatalog.freshCompletionQuote()
 
     private enum ContentPhase: Int, Comparable {
         case hidden = 0
@@ -27,8 +28,9 @@ struct CompletionView: View {
         static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
     }
 
-    /// Near-black page ground for this ceremonial screen (independent of light chrome elsewhere).
-    private var pageBg: Color { Color.black }
+    /// Ceremonial page ground, routed through the app palette even though this
+    /// screen intentionally stays dark.
+    private var pageBg: Color { palette.completionBackground }
 
     /// Primary headline — adjective + "Mysteries" on two lines when natural.
     private var mysteryHeadline: String {
@@ -38,10 +40,6 @@ struct CompletionView: View {
     private var hasIntention: Bool {
         guard let intentionTitle else { return false }
         return !intentionTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private var completionQuote: CompletionQuote {
-        QuoteCatalog.quote()
     }
 
     private var displayIntentionTitle: String {
@@ -92,17 +90,15 @@ struct CompletionView: View {
                 .ignoresSafeArea(edges: .top)
                 .accessibilityHidden(true)
 
-                // The content owns all space above the actions and is centered in it.
-                // It deliberately uses a finite layout, with text wrapping and
-                // slight compression preferred over making the page movable.
+                // The content rests just above the pinned actions.
                 VStack(spacing: 0) {
                     ZStack {
                         completionContent(compact: compactLayout)
                             .frame(maxWidth: .infinity)
                             .padding(.horizontal, AppTheme.gutter)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                    .clipped()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .padding(.bottom, compactLayout ? 12 : 18)
 
                     // Done remains the primary action and both actions stay at the bottom.
                     VStack(spacing: compactLayout ? 12 : 18) {
@@ -112,13 +108,14 @@ struct CompletionView: View {
 
                         if let onMichael {
                             Button(action: onMichael) {
+                                let secondary = ThemePalette(scheme: .dark)
                                 Text("Saint Michael Prayer")
-                                    .font(AppTheme.sans(16, weight: .semibold, relativeTo: .callout))
-                                    .foregroundStyle(palette.ink)
+                                    .font(AppTheme.TypeRole.callout(weight: .semibold))
+                                    .foregroundStyle(secondary.secondaryButtonText)
                                     .padding(.horizontal, 28)
                                     .frame(maxWidth: .infinity)
-                                    .frame(height: 52)
-                                    .background(palette.surface, in: Capsule())
+                                    .frame(height: AppTheme.Component.pillHeight)
+                                    .background(secondary.secondaryButtonFill, in: Capsule())
                             }
                             .buttonStyle(.plain)
                             .guidePressable()
@@ -143,7 +140,6 @@ struct CompletionView: View {
     @ViewBuilder
     private func completionContent(compact: Bool) -> some View {
         VStack(spacing: 0) {
-            // Completion symbol
             FinisEmblem()
                 .foregroundStyle(palette.accent.opacity(0.95))
                 .opacity(opacity(for: .symbol))
@@ -153,9 +149,9 @@ struct CompletionView: View {
 
             // Completion label (metadata, not headline)
             Text("ROSARY COMPLETE")
-                .font(AppTheme.sans(compact ? 12 : 11, weight: .medium, relativeTo: .caption))
+                .font(AppTheme.TypeRole.caption(weight: .medium))
                 .tracking(1.6)
-                .foregroundStyle(Color.white.opacity(0.48))
+                .foregroundStyle(palette.completionLabel)
                 .multilineTextAlignment(.center)
                 .opacity(opacity(for: .title))
                 .offset(y: offset(for: .title))
@@ -164,8 +160,8 @@ struct CompletionView: View {
 
             // Mystery title
             Text(mysteryHeadline)
-                .font(AppTheme.sans(compact ? 34 : 40, weight: .regular, relativeTo: .largeTitle))
-                .foregroundStyle(Color.white.opacity(0.96))
+                .font(compact ? AppTheme.TypeRole.screenTitle : AppTheme.TypeRole.title)
+                .foregroundStyle(palette.completionTitle)
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
                 .minimumScaleFactor(0.78)
@@ -176,17 +172,17 @@ struct CompletionView: View {
 
             // Offered for — between the mystery title and quote surface.
             // Exact stored title only (never auto-prefix "For").
-            if hasIntention, let intentionTitle {
-                VStack(spacing: 6) {
+            if hasIntention {
+                VStack(spacing: AppTheme.Space.sm) {
                     Text("OFFERED FOR")
-                        .font(AppTheme.sans(11, weight: .medium, relativeTo: .caption))
+                        .font(AppTheme.TypeRole.caption(weight: .medium))
                         .tracking(1.4)
-                        .foregroundStyle(Color.white.opacity(0.42))
+                        .foregroundStyle(palette.completionMeta)
                         .textCase(.uppercase)
 
                     Text(displayIntentionTitle)
-                        .font(AppTheme.sans(compact ? 18 : 17, weight: .regular, relativeTo: .body))
-                        .foregroundStyle(Color.white.opacity(0.90))
+                        .font(compact ? AppTheme.TypeRole.body : AppTheme.TypeRole.bodySmall)
+                        .foregroundStyle(palette.completionMetaValue)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -200,11 +196,10 @@ struct CompletionView: View {
             // Short contemplative quote on the same surface treatment used elsewhere.
             VStack(spacing: compact ? AppTheme.Space.sm : AppTheme.Space.md) {
                 Text("“\(completionQuote.text)”")
-                    .font(compact ? AppTheme.sans(18, relativeTo: .body) : AppTheme.TypeRole.bodySmall)
+                    .font(compact ? AppTheme.TypeRole.body : AppTheme.TypeRole.bodySmall)
                     .foregroundStyle(palette.dim)
                     .multilineTextAlignment(.center)
-                    .lineLimit(compact ? 4 : 5)
-                    .minimumScaleFactor(0.85)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(completionQuote.attribution.uppercased())
                     .font(AppTheme.TypeRole.quoteAttribution)
@@ -214,7 +209,7 @@ struct CompletionView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(compact ? AppTheme.Space.md : AppTheme.Space.lg)
-            .guideCard(fill: palette.surface, stroke: true)
+            .guideCard(fill: palette.surface)
             .padding(.top, compact ? AppTheme.Space.xl : AppTheme.Space.xxl)
             .opacity(opacity(for: .rest))
             .accessibilityElement(children: .combine)

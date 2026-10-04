@@ -100,7 +100,7 @@ enum RosarySequenceBuilder {
         append(.versicle, haptic: .medium, stage: .closing, bead: .closing)
         append(.concludingPrayer, haptic: .medium, stage: .closing, bead: .closing)
 
-        let quote = QuoteCatalog.quote()
+        let quote = QuoteCatalog.freshCompletionQuote()
         append(
             .completion,
             title: BilingualText(english: "Rosary complete", latin: "Rosarium completum est."),

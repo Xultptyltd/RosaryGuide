@@ -3,6 +3,43 @@ import SwiftUI
 import UIKit
 #endif
 
+private struct PrayChromeButton: View {
+    @Environment(\.palette) private var palette
+
+    var system: String? = nil
+    var label: String? = nil
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            content
+                .foregroundStyle(palette.ink)
+                .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+        .background {
+            Circle()
+                .fill(.clear)
+                .guideFloatingGlass(in: Circle(), palette: palette)
+                .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
+        }
+        .guidePressable()
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if let system {
+            Image(systemName: system)
+                .guideSymbol(size: 13, weight: .semibold)
+        } else if let label {
+            Text(label)
+                .font(AppTheme.TypeRole.label(weight: .medium))
+        }
+    }
+}
+
 struct PrayView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(SessionStore.self) private var sessionStore
@@ -19,6 +56,7 @@ struct PrayView: View {
     @State private var confirmReplace = false
     @State private var didConfigure = false
     @State private var showingMichael = false
+    @State private var showingCompletion = false
     @State private var freshSetPending: MysterySetKind?
 
     /// Mystery set for the Rosary in progress (may differ from the calendar day).
@@ -33,8 +71,10 @@ struct PrayView: View {
     @State private var plateViewportHeight: CGFloat = 0
     @State private var plateHintDismissed = false
     @State private var plateNearBottom = false
+    @State private var plateActionLockedToNext = false
     /// Measured header + progress track height (safe-area content, not status bar).
     @State private var plateChromeHeight: CGFloat = 96
+    @Namespace private var plateActionNamespace
     @State private var chosenIntentionId: UUID?
     @State private var chosenIntentionTitle: String = ""
     @State private var chosenIntentionNote: String = ""
@@ -54,6 +94,8 @@ struct PrayView: View {
             palette.prayBg.ignoresSafeArea()
             if showingMichael {
                 michaelLayer
+            } else if showingCompletion {
+                finisLayer
             } else if let current {
                 if current.isFinis {
                     finisLayer
@@ -83,7 +125,7 @@ struct PrayView: View {
         }
         .gesture(
             DragGesture(minimumDistance: 50).onEnded { value in
-                if showingMichael || current?.isFinis == true { return }
+                if showingCompletion || showingMichael || current?.isFinis == true { return }
                 if value.translation.width < -40 { advance() }
                 if value.translation.width > 40 { retreat() }
             }
@@ -133,6 +175,10 @@ struct PrayView: View {
                     }
 
                     ZStack {
+                        if step.kind == .signOfTheCross {
+                            edgeTapZones
+                        }
+
                         VStack(spacing: 0) {
                             standardPrayColumn(step, scrollHeight: geo.size.height)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -145,7 +191,10 @@ struct PrayView: View {
                                     .frame(maxWidth: .infinity)
                             }
                         }
-                        edgeTapZones
+
+                        if step.kind != .signOfTheCross {
+                            edgeTapZones
+                        }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -188,102 +237,97 @@ struct PrayView: View {
             .ignoresSafeArea(edges: .top)
             .allowsHitTesting(false)
 
-            ScrollView {
-                VStack(spacing: 0) {
-                    Color.clear
-                        .frame(height: heroSpacer)
-                        .accessibilityHidden(true)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 0) {
+                        Color.clear
+                            .frame(height: heroSpacer)
+                            .accessibilityHidden(true)
 
-                    VStack(alignment: .leading, spacing: 0) {
-                        locus(step)
-                        announceBody(step)
+                        VStack(alignment: .leading, spacing: 0) {
+                            locus(step)
+                            announceBody(step)
+                        }
+                        .padding(.horizontal, AppTheme.gutter)
+                        .padding(.top, 4)
+                        .padding(.bottom, AppTheme.Space.lg + readingBottomPad)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityElement(children: .contain)
+
+                        Color.clear
+                            .frame(height: 1)
+                            .id(PlateScrollAnchor.bottom)
+                            .accessibilityHidden(true)
                     }
-                    .padding(.horizontal, AppTheme.gutter)
-                    .padding(.top, 4)
-                    .padding(.bottom, AppTheme.Space.lg + readingBottomPad)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityElement(children: .contain)
+                    .background {
+                        GeometryReader { geo in
+                            Color.clear.preference(key: PlateContentHeightKey.self, value: geo.size.height)
+                        }
+                    }
                 }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
                 .background {
                     GeometryReader { geo in
-                        Color.clear.preference(key: PlateContentHeightKey.self, value: geo.size.height)
+                        Color.clear.preference(key: PlateViewportHeightKey.self, value: geo.size.height)
                     }
                 }
-            }
-            .scrollIndicators(.hidden)
-            .scrollBounceBehavior(.basedOnSize)
-            .background {
-                GeometryReader { geo in
-                    Color.clear.preference(key: PlateViewportHeightKey.self, value: geo.size.height)
+                .onPreferenceChange(PlateContentHeightKey.self) { height in
+                    if height > 1 { plateContentHeight = height }
                 }
-            }
-            .onPreferenceChange(PlateContentHeightKey.self) { height in
-                if height > 1 { plateContentHeight = height }
-            }
-            .onPreferenceChange(PlateViewportHeightKey.self) { height in
-                if height > 1 { plateViewportHeight = height }
-            }
-            .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
-                PlateScrollMetrics(
-                    offsetY: geometry.contentOffset.y,
-                    contentHeight: geometry.contentSize.height,
-                    viewportHeight: geometry.containerSize.height
-                )
-            } action: { _, newValue in
-                let y = max(0, newValue.offsetY)
-                plateScrollY = y
-                if newValue.contentHeight > 1 {
-                    plateContentHeight = max(plateContentHeight, newValue.contentHeight)
+                .onPreferenceChange(PlateViewportHeightKey.self) { height in
+                    if height > 1 { plateViewportHeight = height }
                 }
-                if newValue.viewportHeight > 1 {
-                    plateViewportHeight = newValue.viewportHeight
+                .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
+                    PlateScrollMetrics(
+                        offsetY: geometry.contentOffset.y,
+                        contentHeight: geometry.contentSize.height,
+                        viewportHeight: geometry.containerSize.height
+                    )
+                } action: { _, newValue in
+                    let y = max(0, newValue.offsetY)
+                    plateScrollY = y
+                    if newValue.contentHeight > 1 {
+                        plateContentHeight = max(plateContentHeight, newValue.contentHeight)
+                    }
+                    if newValue.viewportHeight > 1 {
+                        plateViewportHeight = newValue.viewportHeight
+                    }
+                    let contentH = max(plateContentHeight, newValue.contentHeight)
+                    let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : plateViewportHeight
+                    let maxOffset = max(0, contentH - viewH)
+                    let shouldSettle = maxOffset > 8 && y >= maxOffset - 56
+                    let shouldUnlock = maxOffset > 8 && y < maxOffset - 112
+                    if shouldSettle, !plateNearBottom {
+                        plateActionLockedToNext = true
+                        withAnimation(reduceMotion ? nil : MotionTokens.soft) {
+                            proxy.scrollTo(PlateScrollAnchor.bottom, anchor: .bottom)
+                        }
+                    } else if shouldUnlock, plateActionLockedToNext {
+                        plateActionLockedToNext = false
+                    }
+                    plateNearBottom = shouldSettle
                 }
-                if y > 18, !plateHintDismissed {
-                    withAnimation(.easeOut(duration: 0.28)) {
-                        plateHintDismissed = true
+                .task(id: mystery.id) {
+                    plateScrollY = 0
+                    plateHintDismissed = false
+                    plateNearBottom = false
+                    plateActionLockedToNext = false
+                }
+                // Edge taps below chrome so Aa / close / track keep priority.
+                .overlay {
+                    edgeTapZones
+                        .padding(.top, chromeH)
+                }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    plateActionChrome(step) {
+                        HapticService.play(.light, enabled: settings.hapticsEnabled)
+                        plateActionLockedToNext = true
+                        withAnimation(reduceMotion ? nil : MotionTokens.reveal) {
+                            proxy.scrollTo(PlateScrollAnchor.bottom, anchor: .bottom)
+                        }
                     }
                 }
-                let contentH = max(plateContentHeight, newValue.contentHeight)
-                let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : plateViewportHeight
-                let maxOffset = max(0, contentH - viewH)
-                plateNearBottom = maxOffset > 8 && y >= maxOffset - 48
-            }
-            .task(id: mystery.id) {
-                plateScrollY = 0
-                plateHintDismissed = false
-                plateNearBottom = false
-            }
-            // Edge taps below chrome so Aa / close / track keep priority.
-            .overlay {
-                edgeTapZones
-                    .padding(.top, chromeH)
-            }
-            // Scripture softens into the page above the fixed Next control.
-            .overlay(alignment: .bottom) {
-                LinearGradient(
-                    stops: [
-                        .init(color: palette.prayBg.opacity(0), location: 0),
-                        .init(color: palette.prayBg.opacity(0.85), location: 0.61),
-                        .init(color: palette.prayBg, location: 1)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 56)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-            }
-            .overlay(alignment: .bottom) {
-                if plateShowsScrollHint {
-                    plateScrollHint
-                        .padding(.bottom, 22)
-                        .transition(.opacity)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                }
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                plateNextChrome(step)
             }
 
             // Fixed floating chrome — last so it composites above the hero canvas.
@@ -389,7 +433,7 @@ struct PrayView: View {
                 .clipped()
 
             // Scrim under the bottom fade. Light washes to white; dark uses black.
-            (colorScheme == .light ? Color.white : Color.black)
+            palette.selectedControlFill
                 .opacity(washOverlay)
                 .allowsHitTesting(false)
 
@@ -411,30 +455,59 @@ struct PrayView: View {
         .clipped()
     }
 
-    private var plateScrollHint: some View {
-        Image(systemName: "chevron.down")
-            .guideSymbol(size: 15, weight: .medium)
-            .foregroundStyle(palette.ink.opacity(0.38))
-            .modifier(PlateScrollHintBob(animate: !reduceMotion))
+    private var plateCanScrollFurther: Bool {
+        plateContentHeight > plateViewportHeight + 6 && !plateActionLockedToNext
     }
 
-    private func plateNextChrome(_ step: RosaryStep) -> some View {
+    private func plateActionChrome(_ step: RosaryStep, scrollToBottom: @escaping () -> Void) -> some View {
         let nextTitle = step.nextLabel == "Continue" ? "Next" : step.nextLabel
-        let near = plateNearBottom
-        let lift: CGFloat = (!reduceMotion && near) ? -1.5 : 0
-        let scale: CGFloat = (!reduceMotion && near) ? 1.012 : 1.0
-        let opacity: Double = near ? 1.0 : 0.97
+        let showScroll = plateCanScrollFurther
+        let animation = reduceMotion ? nil : Animation.spring(response: 0.42, dampingFraction: 0.84)
 
-        // Fade + chevron live in the reading ZStack above; Next stays predictable here.
-        return PillButton(title: nextTitle, filled: true, action: advance)
+        return HStack {
+            if showScroll {
+                Spacer(minLength: 0)
+            }
+            Button {
+                if showScroll {
+                    scrollToBottom()
+                } else {
+                    advance()
+                }
+            } label: {
+                Group {
+                    if showScroll {
+                        Image(systemName: "chevron.down")
+                            .guideSymbol(size: 17, weight: .semibold)
+                            .foregroundStyle(palette.secondaryButtonText)
+                            .frame(
+                                width: AppTheme.Component.mysteryPlateActionCircle,
+                                height: AppTheme.Component.mysteryPlateActionCircle
+                            )
+                    } else {
+                        Text(nextTitle)
+                            .font(AppTheme.TypeRole.callout(weight: .semibold))
+                        .foregroundStyle(palette.secondaryButtonText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: AppTheme.Component.pillHeight)
+                    }
+                }
+                .background {
+                    Capsule()
+                        .fill(palette.secondaryButtonFill)
+                        .matchedGeometryEffect(id: "plate-action-background", in: plateActionNamespace)
+                }
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .guidePressable()
+            .accessibilityLabel(showScroll ? "Scroll to read full scripture" : nextTitle)
+        }
+        .animation(animation, value: showScroll)
+        .transition(.opacity.combined(with: .scale(scale: 0.96)))
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, 8)
             .padding(.bottom, AppTheme.Space.lg)
-            .scaleEffect(scale)
-            .offset(y: lift)
-            .opacity(opacity)
-            .accessibilityLabel(nextTitle)
-            .background(palette.prayBg)
     }
 
         /// Non-plate pray column (unchanged mid-column / Creed pin behavior).
@@ -453,7 +526,7 @@ struct PrayView: View {
                             BilingualStack(
                                 text: step.body,
                                 language: language,
-                                font: AppTheme.sans(21 * settings.textSize.scale),
+                                font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
                                 pointSize: 21 * settings.textSize.scale
                             )
                         }
@@ -522,7 +595,7 @@ struct PrayView: View {
     /// Web `#pnow`: roman + padded middot + mystery title (`.sep` is `padding: 0 .5em`).
     @ViewBuilder
     private func progressNowLabel(_ step: RosaryStep) -> some View {
-        let font = AppTheme.sans(13, weight: .medium)
+        let font = AppTheme.TypeRole.label(weight: .medium)
         if let mystery = step.mystery,
            [.first, .second, .third, .fourth, .fifth].contains(step.stage) {
             HStack(spacing: 0) {
@@ -543,14 +616,14 @@ struct PrayView: View {
     }
 
     private func locus(_ step: RosaryStep) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
             if step.isPlate, let mystery = step.mystery {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
                     Text(OrdinalWord.roman(mystery.number))
-                        .font(AppTheme.sans(18, weight: .medium))
+                        .font(AppTheme.TypeRole.body(weight: .medium))
                         .foregroundStyle(palette.ink.opacity(0.72))
                     Text("\(OrdinalWord.english(mystery.number)) \(mystery.set.shortName)")
-                        .font(AppTheme.sans(11, weight: .medium))
+                        .font(AppTheme.TypeRole.caption(weight: .medium))
                         .tracking(2.0)
                         .textCase(.uppercase)
                         .foregroundStyle(palette.faint)
@@ -563,20 +636,18 @@ struct PrayView: View {
                step.decadeNumber != nil,
                let n = step.hailMaryNumber {
                 Text("\(n) of 10")
-                    .font(AppTheme.sans(14, weight: .medium))
+                    .font(AppTheme.TypeRole.label(weight: .medium))
                     .foregroundStyle(palette.faint)
                     // VStack spacing is 6; +4 → 10pt under "1 of 10".
                     .padding(.bottom, 4)
             }
-            // Mystery plates are English-only (no language picker).
-            let titleLang: PrayerLanguage = step.isPlate ? .english : language
-            Text(step.title.primary(for: titleLang))
-                .font(AppTheme.sans(28, weight: .regular))
+            Text(step.title.primary(for: language))
+                .font(AppTheme.TypeRole.modalTitle)
                 .foregroundStyle(palette.ink)
                 .tracking(-0.2)
             if !step.isPlate, language == .bilingual {
                 Text(step.title.latin)
-                    .font(AppTheme.sans(17))
+                    .font(AppTheme.TypeRole.bodySmall)
                     .foregroundStyle(palette.dim)
             }
             if let intention = step.intention, step.kind != .signOfTheCross {
@@ -611,27 +682,27 @@ struct PrayView: View {
             IntentionPrivacy.displayTitle($0, hidden: hideIntentionText)
         } ?? IntentionPrivacy.displayText(chosenIntentionTitle, hidden: hideIntentionText)
 
-        HStack(alignment: .center, spacing: 6) {
+        HStack(alignment: .center, spacing: AppTheme.Space.sm) {
             Text("For:")
-                .font(AppTheme.sans(15))
+                .font(AppTheme.TypeRole.themeSummary)
                 .foregroundStyle(palette.dim)
 
             if hasIntention {
                 Button {
                     showIntentionSheet = true
                 } label: {
-                    HStack(spacing: 6) {
-                        // Tiny avatar only when we have a known intention (papal portrait / glyph).
+                    HStack(spacing: AppTheme.Space.sm) {
+                        // Avatar only when we have a known intention (papal portrait / glyph).
                         if let resolved {
                             IntentionIconView(
                                 accent: resolved.accent,
                                 emoji: resolved.displayEmoji,
-                                size: 18,
+                                size: 27,
                                 usesPopePortrait: resolved.isPapal
                             )
                         }
                         Text(displayTitle)
-                            .font(AppTheme.sans(15, weight: .medium))
+                            .font(AppTheme.TypeRole.bodySmall(weight: .medium))
                             .foregroundStyle(palette.ink)
                             .lineLimit(1)
                             .minimumScaleFactor(0.85)
@@ -648,20 +719,21 @@ struct PrayView: View {
                     clearChosenIntention()
                 } label: {
                     Image(systemName: "xmark")
-                        .guideSymbol(size: 11, weight: .medium)
-                        .foregroundStyle(palette.faint)
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
+                        .guideSymbol(size: 15, weight: .semibold)
+                        .foregroundStyle(palette.secondaryText)
+                        .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                        .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Clear intention")
+                .accessibilityHint("Returns to Add an intention")
             } else {
                 Button {
                     showIntentionSheet = true
                 } label: {
                     HStack(spacing: 4) {
                         Text("Add an intention")
-                            .font(AppTheme.sans(15, weight: .medium))
+                            .font(AppTheme.TypeRole.bodySmall(weight: .medium))
                             .foregroundStyle(palette.accent)
                         Spacer(minLength: 0)
                         Image(systemName: "chevron.right")
@@ -700,11 +772,11 @@ struct PrayView: View {
 
     @ViewBuilder
     private func leadLine(_ full: String, emphasizeSuffix: String?) -> some View {
-        let base = AppTheme.sans(17)
+        let base = AppTheme.TypeRole.bodySmall
         if let suffix = emphasizeSuffix, let range = full.range(of: suffix, options: [.caseInsensitive, .backwards]) {
             let before = String(full[..<range.lowerBound])
             let hit = String(full[range])
-            (Text(before).foregroundStyle(palette.dim) + Text(hit).foregroundStyle(palette.ink).fontWeight(.medium))
+            Text("\(Text(before).foregroundStyle(palette.dim))\(Text(hit).foregroundStyle(palette.ink).fontWeight(.medium))")
                 .font(base)
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
@@ -731,27 +803,32 @@ struct PrayView: View {
                     .padding(.top, step.isPlate ? 2 : 0)
             }
             if let fruit = step.subtitle {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text("Fruit")
-                        .font(AppTheme.sans(step.isPlate ? 12 : 14, weight: .medium))
-                        .tracking(step.isPlate ? 0.8 : 0)
-                        .foregroundStyle(palette.faint.opacity(step.isPlate ? 0.85 : 1))
-                    Text(fruit.primary(for: .english))
-                        .font(AppTheme.sans(17, weight: .medium))
-                        .foregroundStyle(palette.ink)
+                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                    Hairline()
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text("Fruit")
+                            .font(AppTheme.sans(step.isPlate ? 12 : 14, weight: .medium))
+                            .tracking(step.isPlate ? 0.8 : 0)
+                            .foregroundStyle(palette.faint.opacity(step.isPlate ? 0.85 : 1))
+                        Text(fruit.primary(for: .english))
+                            .font(AppTheme.TypeRole.bodySmall(weight: .medium))
+                            .foregroundStyle(palette.ink)
+                    }
                 }
-                .padding(.top, AppTheme.Space.md)
+                .padding(.top, AppTheme.Space.lg)
             }
         }
     }
 
     private func footer(_ step: RosaryStep) -> some View {
         let nextTitle = step.nextLabel == "Continue" ? "Next" : step.nextLabel
-        let showCompleteDecade = step.kind == .hailMary && step.decadeNumber != nil
-        return VStack(spacing: AppTheme.Space.md) {
+        let isDecadeHailMary = step.kind == .hailMary && step.decadeNumber != nil
+        let showCompleteDecade = isDecadeHailMary && step.hailMaryNumber != 10
+        let nextIsPrimary = step.kind == .hailMary && step.hailMaryNumber != 10
+        return VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
             // Web `.pfoot`: Next | Complete decade side by side on Hail Marys.
-            HStack(spacing: 10) {
-                PillButton(title: nextTitle, filled: true, action: advance)
+            HStack(spacing: AppTheme.Component.prayerFooterButtonGap) {
+                PillButton(title: nextTitle, filled: nextIsPrimary, action: advance)
                 if showCompleteDecade {
                     PillButton(title: "Complete decade", filled: false) {
                         skipDecadeHailMarys()
@@ -798,27 +875,12 @@ struct PrayView: View {
     }
 
     private func roundControl(system: String? = nil, label: String? = nil, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Group {
-                if let system {
-                    Image(systemName: system)
-                        .guideSymbol(size: 13, weight: .semibold)
-                } else if let label {
-                    Text(label)
-                        .font(AppTheme.sans(13, weight: .medium))
-                }
-            }
-            .frame(minWidth: 18, minHeight: 18)
-        }
-        .buttonStyle(.plain)
-        .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
-        .background(palette.surface, in: Circle())
-        .guidePressable()
-        .accessibilityLabel(label ?? system ?? "Control")
+        PrayChromeButton(system: system, label: label, action: action)
+            .accessibilityLabel(label ?? system ?? "Control")
     }
 
     private func shouldShowBeads(_ step: RosaryStep) -> Bool {
-        language != .bilingual && !step.isPlate && !step.isFinis && step.kind != .completion
+        language != .bilingual && !step.isPlate && !step.isFinis && step.kind != .completion && step.kind != .ourFather
     }
 
     // MARK: - Finis
@@ -835,10 +897,6 @@ struct PrayView: View {
                 HapticService.play(.medium, enabled: settings.hapticsEnabled)
             }
         )
-        .onAppear {
-            lockCompletionIntentionIfNeeded()
-            markRosaryCompletedIfNeeded()
-        }
     }
 
     private var completionIntentionIsPapal: Bool {
@@ -887,21 +945,21 @@ struct PrayView: View {
             Spacer()
             VStack(spacing: AppTheme.Space.lg) {
                 Text(PrayerCatalog.saintMichael.title.primary(for: language))
-                    .font(AppTheme.sans(26, weight: .regular))
+                    .font(AppTheme.TypeRole.titleSmall(weight: .regular))
                     .multilineTextAlignment(.center)
                 BilingualStack(
                     text: PrayerCatalog.saintMichael.text,
                     language: language,
-                    font: AppTheme.sans(21 * settings.textSize.scale),
+                    font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
                     pointSize: 21 * settings.textSize.scale,
                     alignment: .center
                 )
             }
             .padding(.horizontal, AppTheme.gutter)
             Spacer()
-            VStack(spacing: AppTheme.Space.md) {
+            VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
                 languageChips
-                PillButton(title: "Amen") {
+                PillButton(title: "Amen", filled: false) {
                     finishRosary()
                 }
             }
@@ -944,11 +1002,15 @@ struct PrayView: View {
             chosenIntentionNote = resolvedId.flatMap { offer.intention(id: $0)?.note } ?? ""
             didRecordCarry = false
             completionIntentionTitle = nil
+            showingCompletion = false
         case .resume(let session):
             freshSetPending = nil
             steps = RosarySequenceBuilder.build(set: session.mysterySet)
             index = min(session.stepIndex, max(steps.count - 1, 0))
-            settings.language = session.language
+            if var current = sessionStore.session {
+                current.language = settings.language
+                sessionStore.session = current
+            }
             chosenIntentionId = session.intentionId
             let title = session.intentionTitle
                 ?? session.intentionId.flatMap { offer.intention(id: $0)?.title }
@@ -957,11 +1019,22 @@ struct PrayView: View {
             chosenIntentionNote = session.intentionId.flatMap { offer.intention(id: $0)?.note } ?? ""
             didRecordCarry = false
             completionIntentionTitle = nil
+            showingCompletion = false
         }
         playHaptic()
     }
 
     private func advance() {
+        if current?.isFinis == true {
+            finishRosary()
+            return
+        }
+
+        if current?.kind == .concludingPrayer {
+            showCompletionScreen()
+            return
+        }
+
         guard index < steps.count - 1 else {
             finishRosary()
             return
@@ -969,7 +1042,16 @@ struct PrayView: View {
         move(to: index + 1)
     }
 
+    private func showCompletionScreen() {
+        lockCompletionIntentionIfNeeded()
+        playHaptic()
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+            showingCompletion = true
+        }
+    }
+
     private func retreat() {
+        guard !showingCompletion else { return }
         guard index > 0 else { return }
         move(to: index - 1)
     }
@@ -979,7 +1061,6 @@ struct PrayView: View {
             sessionStore.start(set: set, language: settings.language, intentionId: chosenIntentionId, intentionTitle: chosenIntentionTitle.isEmpty ? nil : chosenIntentionTitle)
             freshSetPending = nil
         }
-        // Snapshot intention before the finis onAppear clears the session.
         if steps.indices.contains(next), steps[next].isFinis {
             lockCompletionIntentionIfNeeded()
         }
@@ -1019,6 +1100,10 @@ private struct PlateScrollMetrics: Equatable {
     var offsetY: CGFloat
     var contentHeight: CGFloat
     var viewportHeight: CGFloat
+}
+
+private enum PlateScrollAnchor {
+    static let bottom = "plate-scroll-bottom"
 }
 
 private struct PlateChromeHeightKey: PreferenceKey {

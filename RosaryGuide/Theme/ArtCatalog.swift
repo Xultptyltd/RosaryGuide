@@ -103,6 +103,7 @@ enum ArtCatalog {
         case (.sorrowful, .dark): Color(hex: 0x0A0907)
         case (.glorious, .light): Color(hex: 0xF6F7F1)
         case (.glorious, .dark): Color(hex: 0x050505)
+        default: scheme == .light ? Color(hex: 0xF6F7F1) : Color(hex: 0x050505)
         }
     }
 
@@ -187,7 +188,7 @@ struct BundleRasterImage: View {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions) else {
             return UIImage(contentsOfFile: url.path)
         }
-        let scale = UIScreen.main.scale
+        let scale = UITraitCollection.current.displayScale
         let maxDim = max(maxPixel * scale, 1)
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,

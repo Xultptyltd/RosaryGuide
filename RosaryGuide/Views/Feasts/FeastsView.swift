@@ -70,13 +70,13 @@ struct FeastsView: View {
     private var upcomingItems: [DatedFeast] {
         var items: [DatedFeast]
         if filter == .marian {
-            items = Array(FeastCatalog.upcoming(from: Date(), limit: 36).filter(\.feast.isMarian).prefix(8))
+            items = Array(FeastCatalog.upcoming(from: Date(), limit: 48).filter(\.feast.isMarian))
         } else {
-            items = FeastCatalog.upcoming(from: Date(), limit: 8)
+            items = FeastCatalog.upcoming(from: Date(), limit: 18)
         }
         // Avoid duplicating the focused feast(s) in the Upcoming list.
         let focusedIDs = Set(focusedFeasts.map(\.id))
-        return items.filter { !focusedIDs.contains($0.id) }
+        return Array(items.filter { !focusedIDs.contains($0.id) }.prefix(9))
     }
 
 
@@ -134,7 +134,7 @@ struct FeastsView: View {
             if !focusedFeasts.isEmpty {
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                     VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                        GuideSectionLabel(text: focusedSectionTitle, color: palette.dim)
+                        GuideSectionLabel(text: focusedSectionTitle, prominence: .strong)
 
                         VStack(spacing: 0) {
                             ForEach(Array(focusedFeasts.enumerated()), id: \.element.id) { index, item in
@@ -178,10 +178,10 @@ struct FeastsView: View {
                 FeastDetailView(prayLaunch: $prayLaunch, item: item)
             } label: {
                 Text("Learn")
-                    .font(AppTheme.sans(16, weight: .semibold))
+                    .font(AppTheme.TypeRole.callout(weight: .semibold))
                     .foregroundStyle(palette.secondaryButtonText)
                     .padding(.horizontal, 28)
-                    .frame(height: 52)
+                    .frame(height: AppTheme.Component.pillHeight)
                     .background(palette.secondaryButtonFill, in: Capsule())
             }
             .buttonStyle(.plain)
@@ -193,14 +193,14 @@ struct FeastsView: View {
                 prayLaunch = .fresh(set)
             } label: {
                 HStack(spacing: 8) {
-                    Text("Pray the Rosary")
-                        .font(AppTheme.sans(16, weight: .semibold))
+                    Text("Pray this Rosary")
+                        .font(AppTheme.TypeRole.callout(weight: .semibold))
                     Image(systemName: "arrow.right")
-                        .font(AppTheme.sans(14, weight: .semibold))
+                        .font(AppTheme.TypeRole.label(weight: .semibold))
                 }
                 .foregroundStyle(palette.primaryButtonText)
                 .frame(maxWidth: .infinity)
-                .frame(height: 52)
+                .frame(height: AppTheme.Component.pillHeight)
                 .background(palette.primaryButtonFill, in: Capsule())
             }
             .buttonStyle(.plain)
@@ -214,7 +214,7 @@ struct FeastsView: View {
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionLabel(
                 text: filter == .marian ? "Upcoming Marian feasts" : "Upcoming",
-                color: palette.dim
+                prominence: .strong
             )
 
             VStack(spacing: 0) {
@@ -334,11 +334,11 @@ private struct FeastMonthCalendar: View {
                 .accessibilityLabel("Next month")
             }
 
-            VStack(spacing: 6) {
+            VStack(spacing: AppTheme.Space.sm) {
                 HStack(spacing: 0) {
                     ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
                         Text(symbol)
-                            .font(AppTheme.sans(11, weight: .medium))
+                            .font(AppTheme.TypeRole.caption(weight: .medium))
                             .tracking(0.4)
                             .textCase(.uppercase)
                             .foregroundStyle(palette.faint)
@@ -385,9 +385,9 @@ private struct FeastMonthCalendar: View {
                 selectedDay = start
             }
         } label: {
-            VStack(spacing: 3) {
+            VStack(spacing: AppTheme.Space.xs) {
                 Text("\(calendar.component(.day, from: day))")
-                    .font(AppTheme.sans(15, weight: isSelected || isToday ? .semibold : .regular))
+                    .font(AppTheme.TypeRole.bodySmall(weight: isSelected || isToday ? .semibold : .regular))
                     .foregroundStyle(isSelected ? palette.primaryButtonText : (hasFeast ? palette.ink : palette.dim))
                     .frame(width: 32, height: 32)
                     .background {
@@ -398,7 +398,7 @@ private struct FeastMonthCalendar: View {
                         }
                     }
 
-                HStack(spacing: 3) {
+                HStack(spacing: AppTheme.Space.xs) {
                     if hasMarian {
                         Circle()
                             .fill(isSelected ? palette.primaryButtonText.opacity(0.9) : palette.primaryButtonFill)
@@ -471,25 +471,25 @@ private struct FeastTimelineRow: View {
     @Environment(\.palette) private var palette
 
     var body: some View {
-        HStack(alignment: .center, spacing: 18) {
+        HStack(alignment: .center, spacing: 20) {
             VStack(spacing: 0) {
                 Text(item.date.formatted(.dateTime.day()))
-                    .font(AppTheme.sans(27, weight: .regular))
+                    .font(AppTheme.TypeRole.sectionTitle)
                     .foregroundStyle(palette.ink)
                 Text(item.date.formatted(.dateTime.month(.abbreviated)).uppercased())
-                    .font(AppTheme.sans(10, weight: .medium))
+                    .font(AppTheme.TypeRole.caption(weight: .medium))
                     .tracking(1.1)
                     .foregroundStyle(palette.dim)
             }
-            .frame(width: 54)
+            .frame(width: 56)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.feast.shortTitle)
-                    .font(AppTheme.sans(17, weight: .semibold))
+                    .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
                     .foregroundStyle(palette.ink)
                     .lineLimit(2)
                 Text(item.feast.rank.title)
-                    .font(AppTheme.sans(13))
+                    .font(AppTheme.TypeRole.label)
                     .foregroundStyle(palette.dim)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -528,14 +528,14 @@ struct FeastDetailView: View {
                     .padding(.top, 18)
 
                 Text(feast.shortTitle)
-                    .font(AppTheme.sans(34, weight: .regular))
+                    .font(AppTheme.TypeRole.screenTitle)
                     .foregroundStyle(palette.ink)
                     .lineLimit(3)
                     .minimumScaleFactor(0.78)
                     .padding(.top, 8)
 
                 Text(feast.summary)
-                    .font(AppTheme.sans(18))
+                    .font(AppTheme.TypeRole.body)
                     .foregroundStyle(palette.dim)
                     .lineSpacing(7)
                     .fixedSize(horizontal: false, vertical: true)
@@ -617,7 +617,7 @@ struct FeastDetailView: View {
     }
 
     private var feastGuideSections: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
             atAGlanceCard
             meaningSection
             keepTheDaySection
@@ -651,11 +651,11 @@ struct FeastDetailView: View {
     }
 
     private func quickFactRow(_ label: String, _ value: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 14) {
+        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.lg) {
             Text(label)
                 .font(AppTheme.TypeRole.sectionLabel)
                 .foregroundStyle(palette.dim)
-                .frame(width: 86, alignment: .leading)
+                .frame(width: 88, alignment: .leading)
             Text(value)
                 .font(AppTheme.TypeRole.bodySmall)
                 .foregroundStyle(palette.ink)
@@ -715,10 +715,10 @@ struct FeastDetailView: View {
 
     private var keepTheDaySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GuideSectionLabel(text: "Keep the day", color: palette.dim)
+            GuideSectionLabel(text: "Keep the day", prominence: .strong)
             VStack(spacing: 0) {
                 ForEach(Array(dayPractices.enumerated()), id: \.offset) { index, practice in
-                    VStack(alignment: .leading, spacing: 5) {
+                    VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                         Text(practice.title)
                             .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
                             .foregroundStyle(palette.ink)
@@ -743,7 +743,7 @@ struct FeastDetailView: View {
 
     private var prayersForDaySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GuideSectionLabel(text: "Prayers for this day", color: palette.dim)
+            GuideSectionLabel(text: "Prayers for this day", prominence: .strong)
             ForEach(prayersForDay) { prayer in
                 prayerCard(prayer)
             }
@@ -752,7 +752,7 @@ struct FeastDetailView: View {
 
     private var scriptureRosarySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GuideSectionLabel(text: "Scripture and Rosary", color: palette.dim)
+            GuideSectionLabel(text: "Scripture and Rosary", prominence: .strong)
             rosaryConnectionCard
 
             if feastScriptures.isEmpty {
@@ -764,7 +764,7 @@ struct FeastDetailView: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(feastScriptures.prefix(3).enumerated()), id: \.element.id) { index, passage in
-                        VStack(alignment: .leading, spacing: 7) {
+                        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                             GuideSectionLabel(text: passage.reference, color: palette.dim)
                             Text(passage.title)
                                 .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
@@ -790,7 +790,7 @@ struct FeastDetailView: View {
     }
 
     private func guideTextCard(eyebrow: String, title: String, body: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionLabel(text: eyebrow, color: palette.dim)
             Text(title)
                 .font(AppTheme.TypeRole.titleSmall)
@@ -862,7 +862,7 @@ struct FeastDetailView: View {
         default:
             if feast.isMarian {
                 return [
-                    ("Pray the Rosary", "Let the day lead you back to Christ through Mary."),
+                    ("Pray this Rosary", "Let the day lead you back to Christ through Mary."),
                     ("Pray a Marian prayer", "The Hail Holy Queen, Memorare, or Angelus is a simple way to keep the feast."),
                     ("Offer an intention", "Bring one person or need to Mary’s intercession today.")
                 ]
@@ -883,8 +883,8 @@ struct FeastDetailView: View {
     }
 
     private var devotionalMeditation: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            GuideSectionLabel(text: "Reflection", color: palette.dim)
+        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+            GuideSectionLabel(text: "Reflection", prominence: .strong)
             Text(devotionalCopy)
                 .font(AppTheme.TypeRole.body)
                 .foregroundStyle(palette.ink)
@@ -933,25 +933,25 @@ struct FeastDetailView: View {
         Button {
             prayLaunch = .fresh(feast.suggestedMysterySet ?? feastDayAssignment.set)
         } label: {
-            HStack(spacing: 14) {
+            HStack(spacing: AppTheme.Space.lg) {
                 Image(systemName: "hands.sparkles.fill")
                     .guideSymbol(size: 20, weight: .medium)
                     .foregroundStyle(palette.primaryButtonText)
-                    .frame(width: 30)
+                    .frame(width: 32)
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     Text("Pray with this feast")
-                        .font(AppTheme.sans(16, weight: .semibold))
+                        .font(AppTheme.TypeRole.callout(weight: .semibold))
                         .foregroundStyle(palette.primaryButtonText)
                     Text(prayWithFeastSubtitle)
-                        .font(AppTheme.sans(13))
+                        .font(AppTheme.TypeRole.label)
                         .foregroundStyle(palette.primaryButtonText.opacity(0.72))
                 }
 
                 Spacer()
 
                 Image(systemName: "arrow.right")
-                    .font(AppTheme.sans(14, weight: .semibold))
+                    .font(AppTheme.TypeRole.label(weight: .semibold))
                     .foregroundStyle(palette.primaryButtonText)
             }
             .padding(.horizontal, 18)
@@ -972,13 +972,13 @@ struct FeastDetailView: View {
         let set = feast.suggestedMysterySet ?? feastDayAssignment.set
         return HStack(alignment: .center, spacing: AppTheme.Space.md) {
             MysteryArtworkView(set: set, mysteryNumber: 1, slug: MysteryCatalog.mysteries(for: set).first?.artSlug, kind: .plate)
-                .frame(width: 54, height: 54)
+                .frame(width: 56, height: 56)
                 .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 4) {
-                GuideSectionLabel(text: "Mystery set", color: palette.dim)
+                GuideSectionLabel(text: "Mystery set", prominence: .strong)
                 Text(set.name.english)
-                    .font(AppTheme.sans(20, weight: .semibold))
+                    .font(AppTheme.TypeRole.body(weight: .semibold))
                     .foregroundStyle(palette.ink)
             }
 
@@ -989,10 +989,10 @@ struct FeastDetailView: View {
     }
 
     private func relatedPrayerPreview(_ prayer: FeastRelatedPrayer) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            GuideSectionLabel(text: "Related prayer", color: palette.dim)
+        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+            GuideSectionLabel(text: "Related prayer", prominence: .strong)
             Text(prayer.title)
-                .font(AppTheme.sans(22, weight: .semibold))
+                .font(AppTheme.TypeRole.titleSmall(weight: .semibold))
                 .foregroundStyle(palette.ink)
 
             Text(prayerText(prayer))
@@ -1008,10 +1008,10 @@ struct FeastDetailView: View {
             } label: {
                 HStack {
                     Text("Pray this prayer")
-                        .font(AppTheme.sans(14, weight: .medium))
+                        .font(AppTheme.TypeRole.label(weight: .medium))
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(AppTheme.sans(12, weight: .semibold))
+                        .font(AppTheme.TypeRole.caption(weight: .semibold))
                 }
                 .foregroundStyle(palette.ink)
                 .padding(.top, 2)
@@ -1025,7 +1025,7 @@ struct FeastDetailView: View {
 
     private var supportingLinks: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GuideSectionLabel(text: "More for this feast", color: palette.dim)
+            GuideSectionLabel(text: "More for this feast", prominence: .strong)
             infoRows
                 .guideNavList(pageGutter: AppTheme.gutter)
         }
@@ -1048,18 +1048,16 @@ struct FeastDetailView: View {
     }
 
     private var detailActions: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: AppTheme.Space.md) {
             detailAction("Remind me", icon: "bell.fill")
             Button {
-                if let set = feast.suggestedMysterySet {
-                    prayLaunch = .fresh(set)
-                }
+                prayLaunch = .fresh(feast.suggestedMysterySet ?? feastDayAssignment.set)
             } label: {
                 VStack(spacing: 8) {
                     Image(systemName: "hands.sparkles.fill")
                         .guideSymbol(size: 20, weight: .medium)
                     Text("Pray")
-                        .font(AppTheme.sans(12, weight: .medium))
+                        .font(AppTheme.TypeRole.caption(weight: .medium))
                 }
                 .foregroundStyle(palette.ink)
                 .frame(maxWidth: .infinity)
@@ -1067,7 +1065,7 @@ struct FeastDetailView: View {
                 .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
-                        .strokeBorder(palette.ink.opacity(0.08), lineWidth: 1)
+                        .strokeBorder(palette.subtleStroke, lineWidth: AppTheme.Component.panelStrokeWidth)
                 }
             }
             .buttonStyle(.plain)
@@ -1081,7 +1079,7 @@ struct FeastDetailView: View {
                 .guideSymbol(size: 20, weight: .medium)
                 .foregroundStyle(palette.accent)
             Text(title)
-                .font(AppTheme.sans(12, weight: .medium))
+                .font(AppTheme.TypeRole.caption(weight: .medium))
                 .foregroundStyle(palette.ink)
         }
         .frame(maxWidth: .infinity)
@@ -1089,7 +1087,7 @@ struct FeastDetailView: View {
         .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
-                .strokeBorder(palette.ink.opacity(0.08), lineWidth: 1)
+                .strokeBorder(palette.subtleStroke, lineWidth: AppTheme.Component.panelStrokeWidth)
         }
     }
 
@@ -1129,7 +1127,7 @@ struct FeastDetailView: View {
     private func infoRow(_ title: String) -> some View {
         HStack(spacing: 16) {
             Text(title)
-                .font(AppTheme.serif(17, opticalSize: 24))
+                .font(AppTheme.TypeRole.serifBody)
                 .foregroundStyle(palette.ink)
             Spacer()
             Image(systemName: "chevron.right")
@@ -1142,7 +1140,7 @@ struct FeastDetailView: View {
 
     private func feastChip(_ label: String) -> some View {
         Text(label)
-            .font(AppTheme.sans(12, weight: .medium))
+            .font(AppTheme.TypeRole.caption(weight: .medium))
             .foregroundStyle(palette.ink)
             .padding(.horizontal, 11)
             .padding(.vertical, 6)
@@ -1153,10 +1151,10 @@ struct FeastDetailView: View {
     }
 
     private func narrativeSection(title: String, body: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionLabel(text: title, color: palette.dim)
             Text(body)
-                .font(AppTheme.serif(19, opticalSize: 20))
+                .font(AppTheme.TypeRole.serifBody)
                 .foregroundStyle(palette.ink)
                 .lineSpacing(13)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1203,7 +1201,7 @@ struct FeastDetailView: View {
             .accessibilityHint(isExpanded ? "Collapses the prayer" : "Expands the prayer")
 
             if isExpanded {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                     Text(prayerText(prayer))
                         .font(AppTheme.TypeRole.bodySmall)
                         .foregroundStyle(palette.dim)
@@ -1212,7 +1210,7 @@ struct FeastDetailView: View {
 
                     if settings.language == .bilingual, let latin = prayer.latin, !latin.isEmpty {
                         Text(latin)
-                            .font(AppTheme.sans(15))
+                            .font(AppTheme.TypeRole.themeSummary)
                             .foregroundStyle(palette.faint)
                             .lineSpacing(6)
                             .fixedSize(horizontal: false, vertical: true)
@@ -1243,19 +1241,19 @@ struct FeastDetailView: View {
     }
 
     private func mysteriesCard(_ set: MysterySetKind) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
             GuideSectionLabel(text: "Suggested mysteries", color: palette.dim)
 
             Text(set.name.english)
-                .font(AppTheme.serif(24, opticalSize: 32))
+                .font(AppTheme.TypeRole.serifTitle)
                 .foregroundStyle(palette.ink)
 
             Text(set.name.latin)
-                .font(AppTheme.serif(15, italic: true, opticalSize: 16))
+                .font(AppTheme.TypeRole.serifItalicBody)
                 .foregroundStyle(palette.dim)
 
             Text("The weekday set stays the default. You can pray the \(set.shortName) Mysteries for this feast if you wish.")
-                .font(AppTheme.sans(14))
+                .font(AppTheme.TypeRole.label)
                 .foregroundStyle(palette.dim)
                 .lineSpacing(3)
                 .padding(.top, 2)
@@ -1265,12 +1263,12 @@ struct FeastDetailView: View {
             }
             .padding(.top, 4)
         }
-        .padding(18)
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                .strokeBorder(palette.hair.opacity(0.9), lineWidth: 1)
+                .strokeBorder(palette.hair, lineWidth: AppTheme.Component.panelStrokeWidth)
         }
     }
 }
@@ -1340,7 +1338,7 @@ private struct FeastRelatedPrayersView: View {
 
     var body: some View {
         FeastSecondaryPage(title: "Related prayers", feast: feast) {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
                 ForEach(prayers) { prayer in
                     prayerCard(prayer)
                 }
@@ -1382,7 +1380,7 @@ private struct FeastRelatedPrayersView: View {
             .accessibilityHint(isExpanded ? "Collapses the prayer" : "Expands the prayer")
 
             if isExpanded {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                     Text(prayerText(prayer))
                         .font(AppTheme.TypeRole.bodySmall)
                         .foregroundStyle(palette.dim)
@@ -1391,7 +1389,7 @@ private struct FeastRelatedPrayersView: View {
 
                     if settings.language == .bilingual, let latin = prayer.latin, !latin.isEmpty {
                         Text(latin)
-                            .font(AppTheme.sans(15))
+                            .font(AppTheme.TypeRole.themeSummary)
                             .foregroundStyle(palette.faint)
                             .lineSpacing(6)
                             .fixedSize(horizontal: false, vertical: true)
@@ -1432,7 +1430,7 @@ private struct FeastPatronagesView: View {
         FeastSecondaryPage(title: "Patronages", feast: feast) {
             VStack(alignment: .leading, spacing: 24) {
                 Text("Traditions associated with this feast.")
-                    .font(AppTheme.serif(19, opticalSize: 22))
+                    .font(AppTheme.TypeRole.serifBody)
                     .foregroundStyle(palette.dim)
                     .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1441,7 +1439,7 @@ private struct FeastPatronagesView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         GuideSectionLabel(text: "Patronage", color: palette.faint)
                         Text(patronage)
-                            .font(AppTheme.serif(24, opticalSize: 30))
+                            .font(AppTheme.TypeRole.serifTitle)
                             .foregroundStyle(palette.ink)
                             .lineSpacing(4)
                             .fixedSize(horizontal: false, vertical: true)
@@ -1498,13 +1496,13 @@ private struct FeastScriptureView: View {
                     )
                 } else {
                     ForEach(passages) { passage in
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                             GuideSectionLabel(text: passage.reference, color: palette.faint)
                             Text(passage.title)
-                                .font(AppTheme.serif(22, opticalSize: 28))
+                                .font(AppTheme.TypeRole.serifTitle)
                                 .foregroundStyle(palette.ink)
                             Text(passage.excerpt)
-                                .font(AppTheme.serif(18, opticalSize: 20))
+                                .font(AppTheme.TypeRole.serifBody)
                                 .foregroundStyle(palette.dim)
                                 .lineSpacing(5)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -1537,13 +1535,13 @@ private struct FeastSecondaryPage<Content: View>: View {
                 GuideSectionLabel(text: feast.rank.title, color: palette.dim)
 
                 Text(title)
-                    .font(AppTheme.serif(38, opticalSize: 44))
+                    .font(AppTheme.TypeRole.serifDisplay)
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 8)
 
                 Text(feast.shortTitle)
-                    .font(AppTheme.serif(20, opticalSize: 26))
+                    .font(AppTheme.TypeRole.serifBody)
                     .foregroundStyle(palette.dim)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 8)
@@ -1573,10 +1571,10 @@ private struct FeastTextPanel: View {
     @Environment(\.palette) private var palette
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionLabel(text: title, color: palette.faint)
             Text(text)
-                .font(AppTheme.serif(19, opticalSize: 20))
+                .font(AppTheme.TypeRole.serifBody)
                 .foregroundStyle(palette.ink)
                 .lineSpacing(13)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1630,9 +1628,7 @@ private struct FeastHeroBanner: View {
                     .clipped()
             } else {
                 LinearGradient(
-                    colors: colorScheme == .light
-                        ? [Color(hex: 0xE8E2D6), Color(hex: 0xD4CBB8)]
-                        : [Color(hex: 0x2A2620), Color(hex: 0x1A1713)],
+                    colors: palette.feastArtworkFallbackGradient,
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )

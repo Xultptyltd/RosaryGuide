@@ -59,7 +59,7 @@ struct RosaryBeadMapView: View {
 
     private func pulsePhase(at date: Date) -> CGFloat {
         guard !reduceMotion else { return 0 }
-        let cycle = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.35) / 1.35
+        let cycle = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: AppTheme.Component.beadPulseCycle) / AppTheme.Component.beadPulseCycle
         return CGFloat(cycle)
     }
 
@@ -72,7 +72,7 @@ struct RosaryBeadMapView: View {
         for bead in layout.beads {
             let state = state(of: bead.locus)
             if bead.isSpace {
-                paintSpace(&context, at: bead.point, state: state)
+                paintSpace(&context, bead: bead, state: state)
             } else {
                 paintPearl(&context, at: bead.point, large: bead.large, state: state)
             }
@@ -93,8 +93,8 @@ struct RosaryBeadMapView: View {
         let wave = reduceMotion ? 0.45 : easeOutCubic(phase)
         let outerRadius = target.baseRadius + target.expansion * wave
         let innerRadius = max(target.baseRadius * 0.62, target.baseRadius - target.expansion * 0.16)
-        let outerOpacity = reduceMotion ? 0.30 : 0.52 * (1 - Double(wave))
-        let fillOpacity = reduceMotion ? 0.18 : 0.34 * (1 - Double(wave))
+        let outerOpacity = reduceMotion ? 0.42 : AppTheme.Component.beadPulseOpacity * (1 - Double(wave))
+        let fillOpacity = reduceMotion ? 0.26 : AppTheme.Component.beadPulseFillOpacity * (1 - Double(wave))
 
         let outer = circleRect(center: target.point, radius: outerRadius)
         let inner = circleRect(center: target.point, radius: innerRadius)
@@ -122,19 +122,19 @@ struct RosaryBeadMapView: View {
         guard let locus else { return nil }
         switch locus {
         case .crucifix:
-            return PulseTarget(point: layout.crucifix, baseRadius: 14, expansion: 13, lineWidth: 1.6)
+            return PulseTarget(point: layout.crucifix, baseRadius: 15, expansion: 17, lineWidth: 2.2)
         case .closing:
-            return PulseTarget(point: layout.medal, baseRadius: 13, expansion: 12, lineWidth: 1.5)
+            return PulseTarget(point: layout.medal, baseRadius: 14, expansion: 16, lineWidth: 2.0)
         default:
             guard let bead = layout.beads.first(where: { matches(locus, $0.locus) }) else { return nil }
             if bead.isSpace {
-                return PulseTarget(point: bead.point, baseRadius: 6.5, expansion: 5.2, lineWidth: 1.0)
+                return PulseTarget(point: bead.point, baseRadius: 7.0, expansion: 7.2, lineWidth: 1.35)
             }
             return PulseTarget(
                 point: bead.point,
-                baseRadius: bead.large ? 6.6 : 4.8,
-                expansion: bead.large ? 5.4 : 4.0,
-                lineWidth: bead.large ? 1.05 : 0.9
+                baseRadius: bead.large ? 7.0 : 5.2,
+                expansion: bead.large ? 7.4 : 5.8,
+                lineWidth: bead.large ? 1.45 : 1.2
             )
         }
     }
@@ -190,7 +190,7 @@ struct RosaryBeadMapView: View {
         let amount: CGFloat
         switch state {
         case .future: amount = 0.34
-        case .now: amount = colorScheme == .light ? 0.55 : 0.48
+        case .now: return palette.accent
         case .done: amount = 0.74
         }
         return mix(palette.ink, onto: palette.prayBg, amount: amount)
@@ -215,7 +215,8 @@ struct RosaryBeadMapView: View {
         #endif
     }
 
-    private func paintSpace(_ context: inout GraphicsContext, at p: CGPoint, state: State) {
+    private func paintSpace(_ context: inout GraphicsContext, bead: RosaryBead, state: State) {
+        let p = bead.point
         switch state {
         case .future:
             return
@@ -223,7 +224,13 @@ struct RosaryBeadMapView: View {
             var tick = Path()
             tick.move(to: CGPoint(x: p.x - 3.4, y: p.y))
             tick.addLine(to: CGPoint(x: p.x + 3.4, y: p.y))
-            context.stroke(tick, with: .color(palette.accent), lineWidth: 2.6)
+            context.stroke(
+                tick.applying(CGAffineTransform(translationX: -p.x, y: -p.y)
+                    .rotated(by: bead.tangent)
+                    .translatedBy(x: p.x, y: p.y)),
+                with: .color(palette.accent),
+                lineWidth: 2.6
+            )
             context.fill(
                 Path(ellipseIn: CGRect(x: p.x - 6, y: p.y - 6, width: 12, height: 12)),
                 with: .color(palette.accent.opacity(0.18))
@@ -278,6 +285,7 @@ private struct RosaryBead {
     var point: CGPoint
     var large: Bool
     var isSpace: Bool
+    var tangent: CGFloat = 0
 }
 
 private struct CordNode {
@@ -367,7 +375,7 @@ private struct RosaryGeometry {
         let sum = distances.reduce(0, +) + rMedal + 2.0 + gapOF * 0.4
         let scale = perimeter / max(sum, 1)
 
-        func pointOnStadium(distance: CGFloat) -> CGPoint {
+        func stadiumPointAndTangent(distance: CGFloat) -> (CGPoint, CGFloat) {
             // Parameterize clockwise from left-mid (join)
             // Segments: top-left quarter-arc up, top, right arc, bottom, left-lower arc back
             let straight = lw - 2 * r
@@ -384,32 +392,41 @@ private struct RosaryGeometry {
             // Path: left-mid → top via upper-left arc, across top, right, bottom, lower-left arc.
             if d <= leftHalf {
                 let a = .pi + (d / r) // 180° → 270°
-                return CGPoint(x: lx + r + cos(a) * r, y: ly + r + sin(a) * r)
+                return (
+                    CGPoint(x: lx + r + cos(a) * r, y: ly + r + sin(a) * r),
+                    a + .pi / 2
+                )
             }
             d -= leftHalf
             if d <= straight {
-                return CGPoint(x: lx + r + d, y: ly)
+                return (CGPoint(x: lx + r + d, y: ly), 0)
             }
             d -= straight
             if d <= halfArc {
                 let a = -.pi / 2 + (d / r)
-                return CGPoint(x: lx + lw - r + cos(a) * r, y: ly + r + sin(a) * r)
+                return (
+                    CGPoint(x: lx + lw - r + cos(a) * r, y: ly + r + sin(a) * r),
+                    a + .pi / 2
+                )
             }
             d -= halfArc
             if d <= straight {
-                return CGPoint(x: lx + lw - r - d, y: ly + lh)
+                return (CGPoint(x: lx + lw - r - d, y: ly + lh), .pi)
             }
             d -= straight
             // bottom-left half arc: 90° → 180°
             let a = .pi / 2 + (d / r)
-            return CGPoint(x: lx + r + cos(a) * r, y: ly + lh - r + sin(a) * r)
+            return (
+                CGPoint(x: lx + r + cos(a) * r, y: ly + lh - r + sin(a) * r),
+                a + .pi / 2
+            )
         }
 
         var loopBeads: [RosaryBead] = []
         var cursor = distances[0] * scale
         for (i, spec) in specs.enumerated() {
-            let p = pointOnStadium(distance: cursor)
-            loopBeads.append(RosaryBead(locus: spec.0, point: p, large: spec.1, isSpace: spec.2))
+            let placed = stadiumPointAndTangent(distance: cursor)
+            loopBeads.append(RosaryBead(locus: spec.0, point: placed.0, large: spec.1, isSpace: spec.2, tangent: placed.1))
             if i + 1 < distances.count {
                 cursor += distances[i + 1] * scale
             }
@@ -471,7 +488,7 @@ private struct RosaryGeometry {
         self.pendantPath = shPath(pendant)
         self.loopPath = shPath(loop)
         let allBeads = (pendantBeads + loopBeads).map {
-            RosaryBead(locus: $0.locus, point: sh($0.point), large: $0.large, isSpace: $0.isSpace)
+            RosaryBead(locus: $0.locus, point: sh($0.point), large: $0.large, isSpace: $0.isSpace, tangent: $0.tangent)
         }
         self.beads = allBeads
 

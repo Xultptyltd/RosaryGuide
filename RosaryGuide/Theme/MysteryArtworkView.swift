@@ -13,7 +13,7 @@ struct MysterySetLetterIcon: View {
             Circle()
                 .fill(set.letterFill)
             Text(set.letter)
-                .font(AppTheme.sans(size * 0.42, weight: .semibold, relativeTo: .body))
+                .font(AppTheme.TypeRole.avatarLetter(for: size))
                 .foregroundStyle(set.letterOn)
         }
         .frame(width: size, height: size)
@@ -145,11 +145,11 @@ struct SeasonBadge: View {
         HStack(spacing: 8) {
             Circle()
                 .fill(AppTheme.color(for: season))
-                .frame(width: 7, height: 7)
+                .frame(width: 8, height: 8)
             Text(season.name.primary(for: language))
-                .font(AppTheme.sans(13, weight: .medium))
+                .font(AppTheme.TypeRole.label(weight: .medium))
             Text(season.liturgicalColorName)
-                .font(AppTheme.sans(12))
+                .font(AppTheme.TypeRole.caption)
                 .foregroundStyle(palette.dim)
         }
         .foregroundStyle(palette.ink)
@@ -162,7 +162,7 @@ struct SeasonBadge: View {
 struct BilingualStack: View {
     var text: BilingualText
     var language: PrayerLanguage
-    var font: Font = AppTheme.sans(21)
+    var font: Font = AppTheme.TypeRole.body
     /// Point size used when targeting CSS line-height 1.85.
     var pointSize: CGFloat = 21
     var alignment: TextAlignment = .leading
@@ -189,7 +189,7 @@ struct BilingualStack: View {
                     prayerColumn(text.latin, color: palette.dim, italic: false)
                 }
             } else {
-                HStack(alignment: .top, spacing: 22) {
+                HStack(alignment: .top, spacing: AppTheme.Space.xl) {
                     prayerColumn(text.english, color: palette.ink, italic: false)
                     prayerColumn(text.latin, color: palette.dim, italic: false)
                 }
@@ -243,17 +243,16 @@ struct PillButton: View {
             action()
         } label: {
             Text(title)
-                .font(AppTheme.sans(16, weight: filled ? .semibold : .medium, relativeTo: .callout))
+                .font(AppTheme.TypeRole.callout(weight: filled ? .semibold : .medium))
                 .foregroundStyle(filled ? palette.primaryButtonText : palette.learnMoreButtonText)
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: AppTheme.Component.pillHeight)
-                .padding(.vertical, AppTheme.Space.xs)
+                .frame(height: AppTheme.Component.pillHeight)
                 .background(filled ? palette.primaryButtonFill : palette.learnMoreButtonFill, in: Capsule())
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .guidePressable()
     }
 }

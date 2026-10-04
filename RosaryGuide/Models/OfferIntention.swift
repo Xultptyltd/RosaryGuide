@@ -4,7 +4,7 @@ import SwiftUI
 /// Shared redaction rules for the optional intention privacy eye.
 /// Holy Father intentions remain readable while personal intentions are hidden.
 enum IntentionPrivacy {
-    static let maskedText = "Hidden intention"
+    static let maskedText = "Hidden"
     static let maskedNoteText = "Not shown while intentions are hidden."
 
     static func hides(_ intention: OfferIntention, hidden: Bool) -> Bool {
@@ -29,13 +29,13 @@ enum IntentionAccent: String, Codable, CaseIterable, Identifiable, Hashable, Sen
 
     var title: String {
         switch self {
-        case .skyBlue: "Soft sky blue"
+        case .skyBlue: "Soft Marian Blue"
         case .mintGreen: "Soft mint green"
         case .purple: "Soft purple"
         }
     }
 
-    /// Avatar palette: Green (Personal), Blue (Someone else), Purple (Church & world).
+    /// Avatar palette: Green (Personal), Marian Blue (Someone else), Purple (Church & world).
     static var pickerOrder: [IntentionAccent] {
         [.mintGreen, .skyBlue, .purple]
     }

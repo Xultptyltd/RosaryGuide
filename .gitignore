@@ -15,6 +15,10 @@ xcuserdata/
 .build/
 .swiftpm/
 
+# Node / Firebase emulator tests
+node_modules/
+firestore-debug.log
+
 # macOS
 .DS_Store
 .AppleDouble

@@ -1,5 +1,13 @@
 import SwiftUI
 
+private struct HomeCTABottomPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct HomeView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(AppIconService.self) private var appIcon
@@ -11,8 +19,6 @@ struct HomeView: View {
     @Binding var prayLaunch: PrayLaunch?
 
     @State private var selectedSet: MysterySetKind?
-    @State private var viewingTomorrow = false
-    @State private var showMysterySelector = false
     @State private var showIntentionSheet = false
     @State private var chosenIntentionId: UUID?
     @State private var chosenIntentionTitle = ""
@@ -24,7 +30,6 @@ struct HomeView: View {
     @State private var selectedMysteryDetail: Mystery?
     @State private var mysteryScrollID: String?
     @State private var selectedLiturgicalVerse: LiturgicalVerse?
-    @State private var scrollToTopRequest = 0
     @State private var showSettingsDrawer = false
     @State private var navigationPath = NavigationPath()
     @Namespace private var pickerNamespace
@@ -48,10 +53,6 @@ struct HomeView: View {
             return nil
         }
         return offer.sortedIntentions.first(where: \.isPinned)
-    }
-    private var tomorrowAssignment: MysteryAssignment {
-        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today) ?? today
-        return MysteryCalendar.assignment(on: tomorrow)
     }
     private var nextRelevantFeast: DatedFeast? {
         if let feast = assignment.feast { return feast }
@@ -89,6 +90,9 @@ struct HomeView: View {
 
     @State private var viewport = CGSize(width: 390, height: 720)
     @State private var topInset: CGFloat = 47
+    @State private var bottomInset: CGFloat = 83
+    @State private var measuredCTABottom: CGFloat = 0
+    @State private var collapseHeroTopBand = false
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -105,13 +109,12 @@ struct HomeView: View {
                     .frame(width: viewport.width, alignment: .top)
                     // Match Feasts/Learn/Intentions: clear the tab bar and allow
                     // scrolled content to show through liquid glass.
-                    .padding(.bottom, 108)
+                    .padding(.bottom, AppTheme.tabBarContentClearance)
                 }
                 .scrollBounceBehavior(.basedOnSize, axes: .vertical)
-                .onChange(of: scrollToTopRequest) { _, _ in
-                    withAnimation(reduceMotion ? nil : MotionTokens.selection) {
-                        proxy.scrollTo("home-top", anchor: .top)
-                    }
+                .onPreferenceChange(HomeCTABottomPreferenceKey.self) { value in
+                    measuredCTABottom = value
+                    updateHeroTopBandIfNeeded()
                 }
             }
             .background(palette.bg)
@@ -136,9 +139,6 @@ struct HomeView: View {
         }
         .onChange(of: chosenIntentionId) { _, _ in
             intentionSelectionExplicit = true
-        }
-        .sheet(isPresented: $showMysterySelector) {
-            mysterySelectorSheet
         }
         .sheet(isPresented: $showIntentionSheet) {
             PrayIntentionSheet(
@@ -182,12 +182,28 @@ struct HomeView: View {
     private func captureMetrics(_ geo: GeometryProxy) {
         viewport = geo.size
         topInset = geo.safeAreaInsets.top
+        bottomInset = geo.safeAreaInsets.bottom
+        updateHeroTopBandIfNeeded()
+    }
+
+    private func updateHeroTopBandIfNeeded() {
+        guard measuredCTABottom > 0, viewport.height > 0 else { return }
+        let visibleBottom = viewport.height - bottomInset - AppTheme.tabBarContentClearance
+        let shouldCollapse = measuredCTABottom > visibleBottom
+        guard shouldCollapse != collapseHeroTopBand else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            collapseHeroTopBand = shouldCollapse
+        }
     }
 
     private func hero(topInset: CGFloat, viewport: CGFloat) -> some View {
-        ZStack(alignment: .top) {
+        let artworkTop = collapseHeroTopBand ? 0 : topInset
+        return ZStack(alignment: .top) {
+            palette.bg
             MysteryArtworkView(set: currentSet, kind: .heroTall)
-                .frame(height: AppTheme.heroHeight(viewport: viewport) + topInset)
+                .frame(height: AppTheme.homeHeroHeight(viewport: viewport) + topInset)
                 .clipped()
                 .overlay {
                     LinearGradient(
@@ -202,14 +218,16 @@ struct HomeView: View {
                         endPoint: .bottom
                     )
                 }
-            HStack(spacing: 10) {
+                .padding(.top, artworkTop)
+            HStack(spacing: AppTheme.Space.md) {
                 menuButton
                 Spacer(minLength: 0)
                 glassTheme
             }
-            .padding(.top, topInset + 12)
+            .padding(.top, topInset)
             .padding(.horizontal, AppTheme.gutter)
         }
+        .frame(height: AppTheme.homeHeroHeight(viewport: viewport) + topInset + artworkTop)
     }
 
     private var menuButton: some View {
@@ -225,7 +243,11 @@ struct HomeView: View {
                 .guideSymbol(size: 17, weight: .medium)
                 .foregroundStyle(palette.ink)
                 .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
-                .background(palette.surface, in: Circle())
+                .background {
+                    Circle()
+                        .fill(.clear)
+                        .guideFloatingGlass(in: Circle(), palette: palette)
+                }
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -240,11 +262,15 @@ struct HomeView: View {
         } label: {
             Label(colorScheme == .light ? "Day" : "Night", systemImage: colorScheme == .light ? "sun.max.fill" : "moon.fill")
                 .labelStyle(.titleAndIcon)
-                .font(AppTheme.sans(13, weight: .medium))
+                .font(AppTheme.TypeRole.label(weight: .medium))
                 .foregroundStyle(palette.ink)
                 .padding(.horizontal, 14)
                 .frame(minHeight: AppTheme.Accessibility.minHitTarget)
-                .background(palette.surface, in: Capsule())
+                .background {
+                    Capsule()
+                        .fill(.clear)
+                        .guideFloatingGlass(in: Capsule(), palette: palette)
+                }
         }
         .buttonStyle(.plain)
         .guidePressable()
@@ -255,13 +281,13 @@ struct HomeView: View {
     private func sheet(width: CGFloat, gutter: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(today.formatted(.dateTime.weekday(.wide).month(.wide).day()))
-                .font(AppTheme.sans(14))
+                .font(AppTheme.TypeRole.label)
                 .foregroundStyle(palette.dim)
                 .padding(.bottom, AppTheme.Space.md)
                 .guideReveal(delay: 0.02)
 
             GuideDisplayTitle(
-                text: currentSet.name.primary(for: settings.language),
+                text: homeMysteryTitle,
                 size: AppTheme.homeTitleSize(width: width),
                 color: palette.ink
             )
@@ -275,17 +301,21 @@ struct HomeView: View {
                 .animation(reduceMotion ? nil : MotionTokens.selection, value: currentSet)
                 .guideReveal(delay: 0.08)
 
-            primaryTodayCTA
+            setPicker
                 .padding(.top, AppTheme.Space.xl)
                 .guideReveal(delay: 0.1)
 
-            tomorrowCard
+            primaryTodayCTA
                 .padding(.top, AppTheme.Space.lg)
+                .background {
+                    GeometryReader { geometry in
+                        Color.clear.preference(
+                            key: HomeCTABottomPreferenceKey.self,
+                            value: geometry.frame(in: .global).maxY
+                        )
+                    }
+                }
                 .guideReveal(delay: 0.14)
-
-            chooseAnotherButton
-                .padding(.top, AppTheme.Space.sm)
-                .guideReveal(delay: 0.16)
 
             mysteryRail(gutter: gutter)
                 .padding(.top, AppTheme.decadesGap)
@@ -295,10 +325,16 @@ struct HomeView: View {
                     .padding(.top, AppTheme.sectionGap)
             }
 
-            comingUpSection
+            VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                GuideSectionLabel(text: "Upcoming feast days", prominence: .strong)
+                comingUpSection
+            }
                 .padding(.top, AppTheme.sectionGap)
 
-            weekGlance
+            VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                GuideSectionLabel(text: "This week", prominence: .strong)
+                weekGlance
+            }
                 .padding(.top, AppTheme.sectionGap)
         }
         .padding(.horizontal, gutter)
@@ -306,73 +342,6 @@ struct HomeView: View {
         .padding(.bottom, AppTheme.Space.xxl)
         .frame(maxWidth: 576, alignment: .leading)
         .frame(maxWidth: .infinity)
-    }
-
-    private var mysterySelectorSheet: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-                    Text("Choose another mystery set")
-                        .font(AppTheme.sans(28, weight: .regular))
-                        .foregroundStyle(palette.ink)
-                    Text("Today recommends the \(assignment.set.shortName) Mysteries, but you can begin any set.")
-                        .font(AppTheme.sans(15))
-                        .foregroundStyle(palette.dim)
-                        .lineSpacing(4)
-
-                    ForEach(MysterySetKind.displayOrder) { set in
-                        Button {
-                            HapticService.play(.light, enabled: settings.hapticsEnabled)
-                            withAnimation(reduceMotion ? nil : MotionTokens.selection) {
-                                selectedSet = set
-                                viewingTomorrow = false
-                            }
-                            showMysterySelector = false
-                        } label: {
-                            HStack(spacing: AppTheme.Space.md) {
-                                MysteryArtworkView(set: set, mysteryNumber: 1, slug: MysteryCatalog.mysteries(for: set).first?.artSlug, kind: .plate)
-                                    .frame(width: 82, height: 64)
-                                    .clipShape(RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(set.name.primary(for: settings.language))
-                                        .font(AppTheme.sans(19, weight: .semibold))
-                                        .foregroundStyle(palette.ink)
-                                    Text(set.days(in: assignment.season))
-                                        .font(AppTheme.sans(13))
-                                        .foregroundStyle(palette.dim)
-                                }
-                                Spacer(minLength: 8)
-                                if currentSet == set {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .guideSymbol(size: 18, weight: .semibold)
-                                        .foregroundStyle(palette.ink)
-                                }
-                            }
-                            .padding(AppTheme.Space.md)
-                            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                                    .strokeBorder(
-                                        palette.cardStroke,
-                                        lineWidth: AppTheme.Component.panelStrokeWidth
-                                    )
-                            }
-                            .guideSoftShadow(elevated: colorScheme == .light)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(AppTheme.gutter)
-            }
-            .background(palette.bg)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { showMysterySelector = false }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
     }
 
     private func syncCurrentIntentionIfNeeded() {
@@ -406,25 +375,6 @@ struct HomeView: View {
         return resumable
     }
 
-    private var chooseAnotherButton: some View {
-        Button {
-            showMysterySelector = true
-        } label: {
-            HStack(spacing: AppTheme.Space.md) {
-                Text("Choose another mystery set")
-                    .font(AppTheme.sans(14, weight: .medium))
-                    .foregroundStyle(palette.accent)
-                Spacer()
-                Image(systemName: "circle.grid.3x3")
-                    .guideSymbol(size: 13, weight: .medium)
-                    .foregroundStyle(palette.accent)
-            }
-            .padding(.horizontal, AppTheme.Space.lg)
-            .padding(.vertical, AppTheme.Space.md)
-        }
-        .buttonStyle(.plain)
-    }
-
     private var todayIntentionSection: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             Button {
@@ -443,7 +393,7 @@ struct HomeView: View {
                         .frame(width: 52, height: 52)
 
                         Text("Offer this Rosary for")
-                            .font(AppTheme.sans(21, weight: .semibold))
+                            .font(AppTheme.TypeRole.body(weight: .semibold))
                             .foregroundStyle(palette.ink)
                         Spacer(minLength: 8)
                         Image(systemName: "chevron.right")
@@ -453,7 +403,7 @@ struct HomeView: View {
 
                     if let currentIntention {
                         Text(IntentionPrivacy.displayTitle(currentIntention, hidden: hideIntentionText))
-                            .font(AppTheme.sans(17))
+                            .font(AppTheme.TypeRole.bodySmall)
                             .foregroundStyle(palette.dim)
                             .lineSpacing(4)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -461,7 +411,7 @@ struct HomeView: View {
                             .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                         HStack {
                             Text("Change intention")
-                                .font(AppTheme.sans(14, weight: .medium))
+                                .font(AppTheme.TypeRole.label(weight: .medium))
                             Spacer()
                             Image(systemName: "pencil")
                                 .guideSymbol(size: 13, weight: .medium)
@@ -472,7 +422,7 @@ struct HomeView: View {
                     } else {
                         HStack {
                             Text("Add an intention")
-                                .font(AppTheme.sans(14, weight: .medium))
+                                .font(AppTheme.TypeRole.label(weight: .medium))
                             Spacer()
                             Image(systemName: "plus")
                                 .guideSymbol(size: 13, weight: .semibold)
@@ -481,7 +431,7 @@ struct HomeView: View {
                         .padding(AppTheme.Space.lg)
                         .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                         Text("You can also pray without a specific intention.")
-                            .font(AppTheme.sans(13))
+                            .font(AppTheme.TypeRole.label)
                             .foregroundStyle(palette.dim)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -506,7 +456,7 @@ struct HomeView: View {
                     .foregroundStyle(palette.dim)
 
                 Text(verse.homeDisplayExcerpt)
-                    .font(AppTheme.sans(18, relativeTo: .body))
+                    .font(AppTheme.TypeRole.body)
                     .foregroundStyle(palette.dim)
                     .lineSpacing(6)
                     .lineLimit(5)
@@ -515,7 +465,7 @@ struct HomeView: View {
                 HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
                     VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                         Text(verse.reference)
-                            .font(AppTheme.sans(14, weight: .semibold, relativeTo: .subheadline))
+                            .font(AppTheme.TypeRole.label(weight: .semibold))
                             .foregroundStyle(palette.ink)
                         if let secondaryCitation = verse.secondaryCitation {
                             Text(secondaryCitation)
@@ -547,7 +497,7 @@ struct HomeView: View {
                     .foregroundStyle(palette.dim)
 
                 Text(verse.reference)
-                    .font(AppTheme.sans(27, weight: .regular, relativeTo: .title2))
+                    .font(AppTheme.TypeRole.sectionTitle)
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -574,9 +524,7 @@ struct HomeView: View {
     }
 
     private var comingUpSection: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-            GuideSectionLabel(text: "Feast days", color: palette.dim)
-
+        VStack(alignment: .leading, spacing: 0) {
             if let featured = feastDaysFeatured {
                 feastFeatureCard(featured)
             }
@@ -622,17 +570,17 @@ struct HomeView: View {
                         if isToday {
                             // Match This week calendar weekRow TODAY pill (colors, font, padding, Capsule).
                             Text("TODAY")
-                                .font(AppTheme.sans(9, weight: .semibold))
+                                .font(AppTheme.TypeRole.caption(weight: .semibold))
                                 .tracking(0.6)
-                                .foregroundStyle(palette.primaryButtonText)
+                                .foregroundStyle(palette.todayPillText)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(palette.primaryButtonFill, in: Capsule())
+                                .background(palette.todayPillFill, in: Capsule())
                         } else {
                             feastDateText(featured.date)
                         }
                         Text(featured.feast.shortTitle)
-                            .font(AppTheme.sans(24, weight: .semibold))
+                            .font(AppTheme.TypeRole.cardTitle)
                             .foregroundStyle(palette.ink)
                             .lineLimit(3)
                             .minimumScaleFactor(0.82)
@@ -668,9 +616,9 @@ struct HomeView: View {
                 } label: {
                     HStack(spacing: AppTheme.Space.md) {
                         feastDateText(item.date)
-                            .frame(width: 62, alignment: .leading)
+                            .frame(width: 64, alignment: .leading)
                         Text(item.feast.shortTitle)
-                            .font(AppTheme.sans(17))
+                            .font(AppTheme.TypeRole.bodySmall)
                             .foregroundStyle(palette.ink)
                             .lineLimit(1)
                         Spacer()
@@ -691,54 +639,14 @@ struct HomeView: View {
 
     private func feastDateText(_ date: Date) -> some View {
         Text(date.formatted(.dateTime.day().month(.abbreviated)))
-            .font(AppTheme.sans(13, weight: .medium))
+            .font(AppTheme.TypeRole.label(weight: .medium))
             .tracking(0)
             .textCase(.uppercase)
             .foregroundStyle(palette.dim)
     }
 
-    private var tomorrowCard: some View {
-        let cardSet = viewingTomorrow ? assignment.set : tomorrowAssignment.set
-        let title = viewingTomorrow ? "Back to today" : "Tomorrow"
-        let subtitle = viewingTomorrow ? "\(assignment.set.shortName) Mysteries" : "\(tomorrowAssignment.set.shortName) Mysteries"
-
-        return Button {
-            HapticService.play(.light, enabled: settings.hapticsEnabled)
-            withAnimation(reduceMotion ? nil : MotionTokens.selection) {
-                selectedSet = cardSet
-                viewingTomorrow.toggle()
-                scrollToTopRequest += 1
-            }
-        } label: {
-            HStack(spacing: AppTheme.Space.md) {
-                MysteryArtworkView(set: cardSet, mysteryNumber: 1, slug: MysteryCatalog.mysteries(for: cardSet).first?.artSlug, kind: .plate)
-                    .frame(width: 54, height: 54)
-                    .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(AppTheme.sans(18, weight: .semibold))
-                        .foregroundStyle(palette.ink)
-                    Text(subtitle)
-                        .font(AppTheme.sans(14))
-                        .foregroundStyle(palette.dim)
-                }
-                Spacer()
-                Image(systemName: viewingTomorrow ? "arrow.uturn.left" : "chevron.right")
-                    .guideSymbol(size: 12, weight: .semibold)
-                    .foregroundStyle(palette.faint)
-                    .frame(width: 42, height: 42)
-                    .background(palette.surface, in: Circle())
-            }
-            .padding(AppTheme.Space.lg)
-            .guideCard()
-        }
-        .buttonStyle(.plain)
-    }
-
     private var weekGlance: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            GuideSectionLabel(text: "This week", color: palette.dim)
-
+        VStack(alignment: .leading, spacing: 0) {
             VStack(spacing: 0) {
                 ForEach(Array(MysteryCalendar.week(containing: today).enumerated()), id: \.element.0) { index, entry in
                     let day = entry.0
@@ -764,25 +672,25 @@ struct HomeView: View {
 
         return HStack(alignment: .center, spacing: AppTheme.Space.md) {
             // Weekday+date stay at 9; crown spacing ~50% of prior 4 (→2).
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                HStack(alignment: .firstTextBaseline, spacing: 9) {
+            HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.xs) {
+                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
                     Text(day.formatted(.dateTime.weekday(.wide)))
-                        .font(AppTheme.sans(17))
+                        .font(AppTheme.TypeRole.bodySmall)
                         .foregroundStyle(palette.ink)
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
 
                     if isToday {
-                        Text("TODAY")
-                            .font(AppTheme.sans(9, weight: .semibold))
-                            .tracking(0.6)
-                            .foregroundStyle(palette.primaryButtonText)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(palette.primaryButtonFill, in: Capsule())
+                            Text("TODAY")
+                                .font(AppTheme.TypeRole.caption(weight: .semibold))
+                                .tracking(0.6)
+                                .foregroundStyle(palette.todayPillText)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(palette.todayPillFill, in: Capsule())
                     } else {
                         Text(day.formatted(.dateTime.day().month(.abbreviated)).uppercased())
-                            .font(AppTheme.sans(13, weight: .medium))
+                            .font(AppTheme.TypeRole.label(weight: .medium))
                             .foregroundStyle(palette.dim)
                             .lineLimit(1)
                     }
@@ -797,6 +705,7 @@ struct HomeView: View {
                             .guideSymbol(size: 11, weight: .semibold)
                             .foregroundStyle(palette.accent)
                             .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                            .offset(x: -4)
                             .contentShape(Circle())
                     }
                     .buttonStyle(.plain)
@@ -810,7 +719,7 @@ struct HomeView: View {
 
             HStack(spacing: 8) {
                 Text(assignment.set.shortName)
-                    .font(AppTheme.sans(16))
+                    .font(AppTheme.TypeRole.callout)
                     .foregroundStyle(palette.dim)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
@@ -850,23 +759,23 @@ struct HomeView: View {
                     .guideSymbol(size: 14, weight: .semibold)
                     .foregroundStyle(palette.accent)
                 Text(item.feast.rank.title.uppercased())
-                    .font(AppTheme.sans(12, weight: .semibold))
+                    .font(AppTheme.TypeRole.caption(weight: .semibold))
                     .tracking(1.8)
                     .foregroundStyle(palette.dim)
                     .offset(y: 1.5)
             }
 
             Text(item.feast.shortTitle)
-                .font(AppTheme.sans(27, weight: .regular))
+                .font(AppTheme.TypeRole.sectionTitle)
                 .foregroundStyle(palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(item.date.formatted(.dateTime.weekday(.wide).day().month(.wide).year()))
-                .font(AppTheme.sans(14, weight: .medium))
+                .font(AppTheme.TypeRole.label(weight: .medium))
                 .foregroundStyle(palette.dim)
 
             Text(weekFeastDescription(for: item.feast))
-                .font(AppTheme.sans(15))
+                .font(AppTheme.TypeRole.themeSummary)
                 .lineSpacing(5)
                 .foregroundStyle(palette.ink.opacity(0.82))
                 .fixedSize(horizontal: false, vertical: true)
@@ -906,17 +815,17 @@ struct HomeView: View {
         let quote = QuoteCatalog.quote(for: today)
         return VStack(spacing: AppTheme.Space.md) {
             Text("“")
-                .font(AppTheme.sans(44, weight: .regular))
+                .font(AppTheme.TypeRole.title)
                 .foregroundStyle(palette.accent.opacity(colorScheme == .light ? 0.26 : 0.42))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(height: 20)
             Text("“\(quote.text)”")
-                .font(AppTheme.sans(16))
+                .font(AppTheme.TypeRole.callout)
                 .foregroundStyle(palette.dim)
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
             Text(quote.attribution.uppercased())
-                .font(AppTheme.sans(10, weight: .medium))
+                .font(AppTheme.TypeRole.caption(weight: .medium))
                 .tracking(1.6)
                 .foregroundStyle(palette.faint)
         }
@@ -925,24 +834,19 @@ struct HomeView: View {
     }
 
     private func weekDotColor(_ set: MysterySetKind) -> Color {
-        switch set {
-        case .joyful: Color(hex: 0x1E1A15)
-        case .luminous: Color(hex: 0xEDC68D)
-        case .sorrowful: Color(hex: 0xDFA05D)
-        case .glorious: Color(hex: 0xD19A12)
-        }
+        AppTheme.mysteryIndicatorColor(for: set)
     }
 
     private func feastOffer(_ feast: DatedFeast) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
             GuideSectionLabel(text: "Today", color: palette.dim)
             Text(feast.feast.name.primary(for: settings.language))
-                .font(AppTheme.sans(21, weight: .semibold))
+                .font(AppTheme.TypeRole.body(weight: .semibold))
                 .foregroundStyle(palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
             if let suggested = feast.feast.suggestedMysterySet, suggested != assignment.set {
                 Text("The calendar keeps the \(assignment.set.shortName) Mysteries. You can pray the \(suggested.shortName) Mysteries for this feast instead.")
-                    .font(AppTheme.sans(14))
+                    .font(AppTheme.TypeRole.label)
                     .foregroundStyle(palette.dim)
                     .lineSpacing(4)
             }
@@ -951,53 +855,75 @@ struct HomeView: View {
     }
 
     private var setPicker: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 0) {
             ForEach(MysterySetKind.displayOrder) { set in
                 Button {
-                    HapticService.play(.light, enabled: settings.hapticsEnabled)
-                    withAnimation(reduceMotion ? nil : MotionTokens.selection) {
-                        selectedSet = set
-                        viewingTomorrow = false
-                    }
+                    mysterySetSelection.wrappedValue = set
                 } label: {
-                    Text(set.shortName)
-                        .font(AppTheme.sans(13, weight: .semibold))
-                        .foregroundStyle(pickerInk(for: set))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppTheme.Space.md)
-                        .background {
-                            if currentSet == set {
-                                Capsule()
-                                    .fill(pickerFill)
-                                    .matchedGeometryEffect(id: "pickerGlow", in: pickerNamespace)
-                                    .guideSoftShadow(elevated: true)
-                            }
+                    ZStack(alignment: .top) {
+                        Text(set.shortName)
+                            .font(AppTheme.TypeRole.segmentedControl)
+                            .foregroundStyle(currentSet == set ? palette.ink : palette.dim)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        if set == assignment.set {
+                            Circle()
+                                .fill(currentSet == assignment.set ? palette.ink : palette.faint)
+                                .frame(width: AppTheme.Space.xs, height: AppTheme.Space.xs)
+                                .padding(.top, AppTheme.Space.xs)
+                                .accessibilityHidden(true)
                         }
-                        .overlay(alignment: .top) {
-                            if set == assignment.set {
-                                Circle()
-                                    .fill(currentSet == set ? pickerInk(for: set) : palette.faint)
-                                    .frame(width: 3, height: 3)
-                                    .offset(y: 5)
-                            }
-                        }
+                    }
+                    .contentShape(Rectangle())
                 }
-                .guidePressable()
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(set.shortName) Mysteries")
                 .accessibilityAddTraits(currentSet == set ? .isSelected : [])
             }
         }
-        .padding(3)
-        .background(palette.surface, in: Capsule())
-        .guideSoftShadow(elevated: colorScheme == .light)
+        .padding(AppTheme.Component.segmentedControlInset)
+        .frame(height: AppTheme.Component.mysterySelectorHeight)
+        .background(alignment: .leading) {
+            GeometryReader { geometry in
+                let width = max(geometry.size.width - AppTheme.Component.segmentedControlInset * 2, 0)
+                let segmentWidth = width / CGFloat(max(MysterySetKind.displayOrder.count, 1))
+                if let index = MysterySetKind.displayOrder.firstIndex(of: currentSet) {
+                    AppTheme.capsule
+                        .fill(palette.selectedControlFill)
+                        .frame(width: segmentWidth, height: AppTheme.Component.mysterySelectorInnerHeight)
+                        .offset(
+                            x: AppTheme.Component.segmentedControlInset + CGFloat(index) * segmentWidth,
+                            y: AppTheme.Component.segmentedControlInset
+                        )
+                        .allowsHitTesting(false)
+                }
+            }
+        }
+        .background(palette.segmentedControlTrack, in: AppTheme.capsule)
+        .compositingGroup()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Mystery set")
     }
 
-    private func pickerInk(for set: MysterySetKind) -> Color {
-        guard currentSet == set else { return palette.dim }
-        return colorScheme == .light ? Color.black : palette.ink
+    private func mysteryDotX(index: Int, width: CGFloat) -> CGFloat {
+        guard !MysterySetKind.displayOrder.isEmpty else { return 0 }
+        let segmentWidth = width / CGFloat(MysterySetKind.displayOrder.count)
+        return segmentWidth * (CGFloat(index) + 0.5)
     }
 
-    private var pickerFill: Color {
-        colorScheme == .light ? .white : palette.surface
+    private var mysterySetSelection: Binding<MysterySetKind> {
+        Binding(
+            get: { currentSet },
+            set: { newValue in
+                HapticService.play(.light, enabled: settings.hapticsEnabled)
+                withAnimation(reduceMotion ? nil : MotionTokens.selection) {
+                    selectedSet = newValue
+                }
+            }
+        )
+    }
+
+    private var homeMysteryTitle: String {
+        "\(currentSet.shortName)\nMysteries"
     }
 
 
@@ -1053,7 +979,7 @@ struct HomeView: View {
 
     private func mysteryRail(gutter: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            GuideSectionLabel(text: mysteryRailTitle, color: palette.dim)
+            GuideSectionLabel(text: mysteryRailTitle, prominence: .strong)
                 .padding(.bottom, AppTheme.Space.md)
             GeometryReader { geo in
                 let cardWidth = min(286, max(252, geo.size.width * 0.74))
@@ -1114,7 +1040,7 @@ struct HomeView: View {
     }
 
     private var isShowingTodayMysteries: Bool {
-        currentSet == assignment.set && !viewingTomorrow
+        currentSet == assignment.set
     }
 
     private func mysteryCard(_ mystery: Mystery) -> some View {
@@ -1129,14 +1055,14 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 0) {
                     Text(mystery.title.primary(for: settings.language))
-                        .font(AppTheme.sans(22, weight: .semibold))
+                        .font(AppTheme.TypeRole.body(weight: .semibold))
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, AppTheme.Space.sm)
                         .padding(.horizontal, AppTheme.Space.xl)
 
                     Text(mystery.scriptureExcerpt.primary(for: settings.language))
-                        .font(AppTheme.sans(15))
+                        .font(AppTheme.TypeRole.themeSummary)
                         .foregroundStyle(palette.dim)
                         .lineSpacing(5)
                         .lineLimit(3)
@@ -1194,20 +1120,20 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
                 HStack(alignment: .center, spacing: AppTheme.Space.sm) {
                     Text(mystery.set.shortName.uppercased())
-                        .font(AppTheme.sans(12, weight: .semibold))
+                        .font(AppTheme.TypeRole.caption(weight: .semibold))
                         .tracking(1.8)
                         .foregroundStyle(palette.dim)
                         .offset(y: 1.5)
                 }
 
                 Text(mystery.title.primary(for: settings.language))
-                    .font(AppTheme.sans(27, weight: .regular))
+                    .font(AppTheme.TypeRole.sectionTitle)
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                     Text(mystery.scriptureExcerpt.primary(for: settings.language))
-                        .font(AppTheme.sans(15))
+                        .font(AppTheme.TypeRole.themeSummary)
                         .lineSpacing(5)
                         .foregroundStyle(palette.ink.opacity(0.82))
                         .fixedSize(horizontal: false, vertical: true)
@@ -1224,7 +1150,7 @@ struct HomeView: View {
                             .font(AppTheme.TypeRole.caption)
                             .foregroundStyle(palette.faint)
                         Text(mystery.fruit.primary(for: settings.language))
-                            .font(AppTheme.sans(15, weight: .medium))
+                            .font(AppTheme.TypeRole.bodySmall(weight: .medium))
                             .foregroundStyle(palette.ink)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -1265,7 +1191,7 @@ struct HomeView: View {
 
     private var upcomingMarianSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            GuideSectionLabel(text: "Upcoming Marian feasts", color: palette.dim)
+            GuideSectionLabel(text: "Upcoming Marian feasts", prominence: .strong)
                 .padding(.bottom, AppTheme.Space.lg)
             VStack(spacing: 0) {
                 ForEach(Array(upcomingMarian.enumerated()), id: \.element.id) { index, item in
@@ -1277,12 +1203,12 @@ struct HomeView: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 0) {
                             HStack(alignment: .center, spacing: 16) {
-                                VStack(spacing: 3) {
+                                VStack(spacing: AppTheme.Space.xs) {
                                     Text(item.date.formatted(.dateTime.day()))
-                                        .font(AppTheme.serif(24, opticalSize: 34))
+                                        .font(AppTheme.TypeRole.serifTitle)
                                         .foregroundStyle(palette.ink)
                                     Text(item.date.formatted(.dateTime.month(.abbreviated)))
-                                        .font(AppTheme.sans(10, weight: .medium))
+                                        .font(AppTheme.TypeRole.caption(weight: .medium))
                                         .tracking(1.2)
                                         .textCase(.uppercase)
                                         .foregroundStyle(palette.faint)
@@ -1291,20 +1217,20 @@ struct HomeView: View {
 
                                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                                     Text(item.feast.shortTitle)
-                                        .font(AppTheme.serif(17, opticalSize: 26))
+                                        .font(AppTheme.TypeRole.serifBody)
                                         .foregroundStyle(palette.ink)
                                         .multilineTextAlignment(.leading)
                                         .lineLimit(2)
                                         .minimumScaleFactor(0.92)
                                     if Calendar.current.isDateInToday(item.date) {
                                         Text("Today")
-                                            .font(AppTheme.sans(11, weight: .medium))
+                                            .font(AppTheme.TypeRole.caption(weight: .medium))
                                             .tracking(0.66)
                                             .textCase(.uppercase)
-                                            .foregroundStyle(palette.primaryButtonText)
+                                            .foregroundStyle(palette.todayPillText)
                                             .padding(.horizontal, 8)
                                             .padding(.vertical, 3)
-                                            .background(palette.primaryButtonFill, in: Capsule())
+                                            .background(palette.todayPillFill, in: Capsule())
                                     }
                                 }
                                 Spacer(minLength: 8)
@@ -1316,7 +1242,7 @@ struct HomeView: View {
                             .padding(.vertical, AppTheme.Space.md)
 
                             Text(item.feast.summary)
-                                .font(AppTheme.serif(16, opticalSize: 16))
+                                .font(AppTheme.TypeRole.serifBody)
                                 .foregroundStyle(palette.dim)
                                 .lineSpacing(5)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1345,30 +1271,27 @@ struct HomeView: View {
 
     private var weekStrip: some View {
         VStack(alignment: .leading, spacing: 0) {
-            GuideSectionLabel(text: "This week", color: palette.dim)
-                .padding(.bottom, AppTheme.Space.lg)
             VStack(spacing: 0) {
                 ForEach(Array(weekDays.enumerated()), id: \.element.0) { index, pair in
                     let day = pair.0
                     let dayAssignment = pair.1
                     Button {
                         selectedSet = dayAssignment.set
-                        viewingTomorrow = false
                     } label: {
                         HStack(alignment: .firstTextBaseline, spacing: 12) {
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            HStack(alignment: .firstTextBaseline, spacing: 4) {
                                 Text(day.formatted(.dateTime.weekday(.wide)))
-                                    .font(AppTheme.serif(18, opticalSize: 28))
+                                    .font(AppTheme.TypeRole.serifBody)
                                     .foregroundStyle(palette.ink)
                                 if Calendar.current.isDateInToday(day) {
                                     Text("Today")
-                                        .font(AppTheme.sans(11, weight: .medium))
+                                        .font(AppTheme.TypeRole.caption(weight: .medium))
                                         .tracking(0.66)
                                         .textCase(.uppercase)
-                                        .foregroundStyle(palette.primaryButtonText)
+                                        .foregroundStyle(palette.todayPillText)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 3)
-                                        .background(palette.primaryButtonFill, in: Capsule())
+                                        .background(palette.todayPillFill, in: Capsule())
                                 }
                                 if dayAssignment.feast != nil {
                                     Image(systemName: "crown.fill")
@@ -1379,7 +1302,7 @@ struct HomeView: View {
                             }
                             Spacer(minLength: 8)
                             Text(dayAssignment.set.shortName)
-                                .font(AppTheme.sans(15))
+                                .font(AppTheme.TypeRole.themeSummary)
                                 .foregroundStyle(Calendar.current.isDateInToday(day) ? palette.ink : palette.dim)
                             Group {
                                 if session.prayed(on: day) {
@@ -1389,11 +1312,11 @@ struct HomeView: View {
                                         .accessibilityLabel("Prayed")
                                 } else {
                                     Color.clear
-                                        .frame(width: 14, height: 14)
+                                        .frame(width: 16, height: 16)
                                         .accessibilityHidden(true)
                                 }
                             }
-                            .frame(width: 18, alignment: .trailing)
+                            .frame(width: 20, alignment: .trailing)
                         }
                         .padding(.vertical, 15)
                     }

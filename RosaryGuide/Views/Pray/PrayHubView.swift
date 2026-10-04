@@ -63,19 +63,19 @@ struct PrayHubView: View {
         VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
             HStack(alignment: .top, spacing: AppTheme.Space.md) {
                 Text("Learn the Rosary")
-                    .font(AppTheme.sans(40, weight: .regular))
+                    .font(AppTheme.TypeRole.title)
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "book.closed")
                     .guideSymbol(size: 30, weight: .medium)
                     .foregroundStyle(palette.accent)
-                    .frame(width: 58, height: 58)
+                    .frame(width: 56, height: 56)
                     .background(palette.accentTint, in: Circle())
             }
 
             Text("A simple path through the prayers, mysteries, and tradition behind it.")
-                .font(AppTheme.sans(16))
+                .font(AppTheme.TypeRole.callout)
                 .lineSpacing(5)
                 .foregroundStyle(palette.dim)
                 .fixedSize(horizontal: false, vertical: true)
@@ -86,14 +86,14 @@ struct PrayHubView: View {
             } label: {
                 HStack {
                     Text("Begin walkthrough")
-                        .font(AppTheme.sans(16, weight: .semibold))
+                        .font(AppTheme.TypeRole.callout(weight: .semibold))
                     Spacer()
                     Image(systemName: "arrow.right")
-                        .font(AppTheme.sans(14, weight: .semibold))
+                        .font(AppTheme.TypeRole.label(weight: .semibold))
                 }
                 .foregroundStyle(palette.primaryButtonText)
                 .padding(.horizontal, AppTheme.Space.lg)
-                .frame(height: 56)
+                .frame(height: AppTheme.Component.pillHeight)
                 .background(palette.primaryButtonFill, in: Capsule())
             }
             .buttonStyle(.plain)
@@ -115,7 +115,7 @@ struct PrayHubView: View {
         ]
 
         return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            GuideSectionLabel(text: "The prayers", color: palette.dim)
+            GuideSectionLabel(text: "The prayers", prominence: .strong)
 
             VStack(spacing: 0) {
                 ForEach(Array(prayers.enumerated()), id: \.element.id) { index, prayer in
@@ -146,7 +146,7 @@ struct PrayHubView: View {
         let questions: [LearnArticle] = [.whatIsRosary, .beads, .oneDecade, .losePlace, .repetition, .mary]
 
         return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            GuideSectionLabel(text: "Common questions", color: palette.dim)
+            GuideSectionLabel(text: "Common questions", prominence: .strong)
 
             VStack(spacing: 0) {
                 ForEach(Array(questions.enumerated()), id: \.element.id) { index, article in
@@ -169,11 +169,11 @@ struct PrayHubView: View {
 
         return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             Text(resumable == nil ? assignment.set.displayTitle : "Resume your Rosary")
-                .font(AppTheme.sans(24, weight: .semibold))
+                .font(AppTheme.TypeRole.cardTitle)
                 .foregroundStyle(palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
             Text(resumable == nil ? "Use what you’ve learnt and pray today’s mysteries." : "\(set.shortName) Mysteries are waiting where you left off.")
-                .font(AppTheme.sans(15))
+                .font(AppTheme.TypeRole.themeSummary)
                 .lineSpacing(5)
                 .foregroundStyle(palette.dim)
 
@@ -187,14 +187,14 @@ struct PrayHubView: View {
             } label: {
                 HStack {
                     Text(cta)
-                        .font(AppTheme.sans(16, weight: .semibold))
+                        .font(AppTheme.TypeRole.callout(weight: .semibold))
                     Spacer()
                     Image(systemName: "arrow.right")
-                        .font(AppTheme.sans(14, weight: .semibold))
+                        .font(AppTheme.TypeRole.label(weight: .semibold))
                 }
                 .foregroundStyle(palette.secondaryButtonText)
                 .padding(.horizontal, AppTheme.Space.lg)
-                .frame(height: 54)
+                .frame(height: AppTheme.Component.pillHeight)
                 .background(palette.secondaryButtonFill, in: Capsule())
             }
             .buttonStyle(.plain)
@@ -207,7 +207,7 @@ struct PrayHubView: View {
 
     private func learnSection(title: String, rows: [LearnRow]) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            GuideSectionLabel(text: title, color: palette.dim)
+            GuideSectionLabel(text: title, prominence: .strong)
 
             VStack(spacing: 0) {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
@@ -239,11 +239,11 @@ struct PrayHubView: View {
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(prayer.title.primary(for: settings.language))
-                            .font(AppTheme.sans(19, weight: .semibold))
+                            .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
                             .foregroundStyle(palette.ink)
                             .fixedSize(horizontal: false, vertical: true)
                         Text(wherePrayerAppears(prayer))
-                            .font(AppTheme.sans(14))
+                            .font(AppTheme.TypeRole.label)
                             .foregroundStyle(palette.dim)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -251,7 +251,7 @@ struct PrayHubView: View {
                     Spacer(minLength: 8)
 
                     Image(systemName: "chevron.down")
-                        .font(AppTheme.sans(11, weight: .semibold))
+                        .font(AppTheme.TypeRole.caption(weight: .semibold))
                         .foregroundStyle(palette.faint)
                         .rotationEffect(.degrees(isOpen ? 180 : 0))
                 }
@@ -265,9 +265,9 @@ struct PrayHubView: View {
 
             if isOpen {
                 Text(prayer.text.primary(for: settings.language))
-                    .font(AppTheme.sans(18))
-                    .lineSpacing(7)
-                    .foregroundStyle(palette.ink)
+                    .font(AppTheme.TypeRole.themeSummary)
+                    .lineSpacing(5)
+                    .foregroundStyle(palette.dim)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.trailing, AppTheme.Space.sm)
                     .padding(.bottom, AppTheme.Space.xl)
@@ -300,14 +300,14 @@ struct PrayHubView: View {
             } label: {
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     Text(article.title)
-                        .font(AppTheme.sans(19, weight: .semibold))
+                        .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Spacer(minLength: 8)
 
                     Image(systemName: "chevron.down")
-                        .font(AppTheme.sans(11, weight: .semibold))
+                        .font(AppTheme.TypeRole.caption(weight: .semibold))
                         .foregroundStyle(palette.faint)
                         .rotationEffect(.degrees(isOpen ? 180 : 0))
                 }
@@ -356,11 +356,11 @@ struct PrayHubView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(row.title)
-                    .font(AppTheme.sans(19, weight: .semibold))
+                    .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(row.detail)
-                    .font(AppTheme.sans(14))
+                    .font(AppTheme.TypeRole.label)
                     .foregroundStyle(palette.dim)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -368,7 +368,7 @@ struct PrayHubView: View {
             Spacer(minLength: 8)
 
             Image(systemName: "chevron.right")
-                .font(AppTheme.sans(11, weight: .semibold))
+                .font(AppTheme.TypeRole.caption(weight: .semibold))
                 .foregroundStyle(palette.faint)
         }
         .padding(.vertical, AppTheme.Space.lg)
@@ -470,7 +470,7 @@ private struct LearnArticleView: View {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                 GuideSectionLabel(text: article.eyebrow, color: palette.dim)
                 Text(article.title)
-                    .font(AppTheme.sans(36, weight: .regular))
+                    .font(AppTheme.TypeRole.screenTitle)
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -503,12 +503,12 @@ private struct LearnPrayerDetailView: View {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                 GuideSectionLabel(text: "Prayer", color: palette.dim)
                 Text(prayer.title.primary(for: settings.language))
-                    .font(AppTheme.sans(36, weight: .regular))
+                    .font(AppTheme.TypeRole.screenTitle)
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text(whereItAppears)
-                    .font(AppTheme.sans(15))
+                    .font(AppTheme.TypeRole.themeSummary)
                     .lineSpacing(6)
                     .foregroundStyle(palette.dim)
                     .padding(AppTheme.Space.lg)
@@ -516,7 +516,7 @@ private struct LearnPrayerDetailView: View {
                     .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
 
                 Text(prayer.text.primary(for: settings.language))
-                    .font(AppTheme.sans(19))
+                    .font(AppTheme.TypeRole.body)
                     .lineSpacing(9)
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
@@ -548,6 +548,7 @@ private struct LearnMysteryDetailView: View {
     @Environment(\.palette) private var palette
     var set: MysterySetKind
     @Binding var prayLaunch: PrayLaunch?
+    @State private var expandedMysteries: Set<String> = []
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -563,34 +564,18 @@ private struct LearnMysteryDetailView: View {
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                     Text(set.displayTitle)
-                        .font(AppTheme.sans(36, weight: .regular))
+                        .font(AppTheme.TypeRole.screenTitle)
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(set.learnDescription)
-                        .font(AppTheme.sans(18))
+                        .font(AppTheme.TypeRole.body)
                         .lineSpacing(8)
                         .foregroundStyle(palette.dim)
                 }
 
                 VStack(spacing: 0) {
                     ForEach(Array(MysteryCatalog.mysteries(for: set).enumerated()), id: \.element.id) { index, mystery in
-                        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
-                            Text("\(index + 1)")
-                                .font(AppTheme.sans(13, weight: .semibold))
-                                .foregroundStyle(palette.dim)
-                                .frame(width: 28, height: 28)
-                                .background(palette.surface, in: Circle())
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(mystery.title.primary(for: settings.language))
-                                    .font(AppTheme.sans(17, weight: .semibold))
-                                    .foregroundStyle(palette.ink)
-                                Text(mystery.fruit.primary(for: settings.language))
-                                    .font(AppTheme.sans(13))
-                                    .foregroundStyle(palette.dim)
-                            }
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.vertical, AppTheme.Space.md)
+                        mysteryAccordionRow(index: index, mystery: mystery)
 
                         if index < MysteryCatalog.mysteries(for: set).count - 1 {
                             Hairline().padding(.leading, 44)
@@ -605,14 +590,14 @@ private struct LearnMysteryDetailView: View {
                 } label: {
                     HStack {
                         Text("Pray these mysteries")
-                            .font(AppTheme.sans(16, weight: .semibold))
+                            .font(AppTheme.TypeRole.callout(weight: .semibold))
                         Spacer()
                         Image(systemName: "arrow.right")
-                            .font(AppTheme.sans(14, weight: .semibold))
+                            .font(AppTheme.TypeRole.label(weight: .semibold))
                     }
                     .foregroundStyle(palette.primaryButtonText)
                     .padding(.horizontal, AppTheme.Space.lg)
-                    .frame(height: 56)
+                    .frame(height: AppTheme.Component.pillHeight)
                     .background(palette.primaryButtonFill, in: Capsule())
                 }
                 .buttonStyle(.plain)
@@ -624,6 +609,66 @@ private struct LearnMysteryDetailView: View {
         }
         .background(palette.bg)
         .guideDetailChrome(set.shortName)
+    }
+
+    private func mysteryAccordionRow(index: Int, mystery: Mystery) -> some View {
+        let isExpanded = expandedMysteries.contains(mystery.id)
+
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(MotionTokens.selection) {
+                    if isExpanded {
+                        expandedMysteries.remove(mystery.id)
+                    } else {
+                        expandedMysteries.insert(mystery.id)
+                    }
+                }
+            } label: {
+                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
+                    Text("\(index + 1)")
+                        .font(AppTheme.TypeRole.label(weight: .semibold))
+                        .foregroundStyle(palette.dim)
+                        .frame(width: 28, height: 28)
+                        .background(palette.surface, in: Circle())
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(mystery.title.primary(for: settings.language))
+                            .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                            .foregroundStyle(palette.ink)
+                        Text(mystery.fruit.primary(for: settings.language))
+                            .font(AppTheme.TypeRole.label)
+                            .foregroundStyle(palette.dim)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Image(systemName: "chevron.down")
+                        .guideSymbol(size: 12, weight: .semibold)
+                        .foregroundStyle(palette.faint)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                        .accessibilityHidden(true)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(isExpanded ? .isSelected : [])
+            .accessibilityHint(isExpanded ? "Collapses Scripture" : "Expands Scripture")
+            .padding(.vertical, AppTheme.Space.md)
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    Text(mystery.scriptureExcerpt.primary(for: settings.language))
+                        .font(AppTheme.TypeRole.themeSummary)
+                        .foregroundStyle(palette.dim)
+                        .lineSpacing(5)
+                        .fixedSize(horizontal: false, vertical: true)
+                    GuideSectionLabel(text: mystery.scriptureReference, color: palette.secondaryText)
+                }
+                .padding(.leading, 44)
+                .padding(.trailing, AppTheme.Space.sm)
+                .padding(.bottom, AppTheme.Space.md)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
     }
 }
 

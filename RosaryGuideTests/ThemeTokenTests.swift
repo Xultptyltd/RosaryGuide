@@ -43,15 +43,15 @@ final class ThemeTokenTests: XCTestCase {
         let light = ThemePalette(scheme: .light)
         let dark = ThemePalette(scheme: .dark)
 
-        XCTAssertEqual(UIColor(light.surface), UIColor(Color(hex: 0xF4F5F7)))
-        XCTAssertEqual(UIColor(dark.surface), UIColor(Color(hex: 0x191B1E)))
+        XCTAssertEqual(UIColor(light.surface), UIColor(Color(hex: 0xF0F1F4)))
+        XCTAssertEqual(UIColor(dark.surface), UIColor(Color(hex: 0x1E2024)))
         XCTAssertEqual(UIColor(light.bg), UIColor(Color(hex: 0xFEFEFE)))
         XCTAssertEqual(UIColor(dark.bg), UIColor(Color(hex: 0x090A0C)))
         XCTAssertEqual(UIColor(light.prayBg), UIColor(light.bg))
         XCTAssertEqual(UIColor(dark.prayBg), UIColor(dark.bg))
 
         XCTAssertEqual(UIColor(light.primaryButtonFill), UIColor(Color(hex: 0x0054FF)))
-        XCTAssertEqual(UIColor(dark.primaryButtonFill), UIColor(Color(hex: 0x568AF8)))
+        XCTAssertEqual(UIColor(dark.primaryButtonFill), UIColor(Color(hex: 0x0054FF)))
 
         XCTAssertEqual(UIColor(light.secondaryButtonFill), UIColor(Color.black))
         XCTAssertEqual(UIColor(dark.secondaryButtonFill), UIColor(Color.white))
@@ -61,6 +61,35 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(UIColor(dark.learnMoreButtonFill), UIColor(dark.secondaryButtonFill))
         XCTAssertEqual(UIColor(light.learnMoreButtonText), UIColor(light.secondaryButtonText))
         XCTAssertEqual(UIColor(dark.learnMoreButtonText), UIColor(dark.secondaryButtonText))
+    }
+
+
+    func testCoreComponentMeasurementsStayOnGrid() {
+        let measurements: [CGFloat] = [
+            AppTheme.gutter,
+            AppTheme.Space.xs,
+            AppTheme.Space.sm,
+            AppTheme.Space.md,
+            AppTheme.Space.lg,
+            AppTheme.Space.xl,
+            AppTheme.Space.xxl,
+            AppTheme.containerRadius,
+            AppTheme.nestedRadius,
+            AppTheme.Component.pillHeight,
+            AppTheme.Component.segmentedControlHeight,
+            AppTheme.Component.profileRowHeight,
+            AppTheme.Accessibility.minHitTarget
+        ]
+
+        for measurement in measurements {
+            XCTAssertEqual(measurement.truncatingRemainder(dividingBy: 4), 0, "\(measurement) is off the 4pt grid")
+        }
+    }
+
+    func testTouchTargetsMeetAppleMinimum() {
+        XCTAssertGreaterThanOrEqual(AppTheme.Accessibility.minHitTarget, 44)
+        XCTAssertGreaterThanOrEqual(AppTheme.Component.pillHeight, AppTheme.Accessibility.minHitTarget)
+        XCTAssertGreaterThanOrEqual(AppTheme.Component.profileRowHeight, AppTheme.Accessibility.minHitTarget)
     }
 
     func testMysterySetLetterIconsAndColourMapping() {

@@ -1,6 +1,8 @@
 import Foundation
 
 enum QuoteCatalog {
+    private static let lastCompletionQuoteKey = "rosary.completion.lastQuoteId"
+
     static let all: [CompletionQuote] = [
         CompletionQuote(id: "m1", text: "When the Holy Rosary is said well, it gives Jesus and Mary more glory and is more meritorious than any other prayer.", attribution: "St. Louis de Montfort"),
         CompletionQuote(id: "m2", text: "Never will anyone who says his Rosary every day be led astray. This is a statement that I would gladly sign with my blood.", attribution: "St. Louis de Montfort"),
@@ -36,5 +38,15 @@ enum QuoteCatalog {
         let pool = shortQuotes.isEmpty ? all : shortQuotes
         let day = calendar.ordinality(of: .day, in: .year, for: date) ?? 1
         return pool[day % pool.count]
+    }
+
+    /// Pick a fresh short quote for the completion screen, avoiding the previous completion quote.
+    static func freshCompletionQuote(defaults: UserDefaults = .standard) -> CompletionQuote {
+        let pool = shortQuotes.isEmpty ? all : shortQuotes
+        let lastQuoteId = defaults.string(forKey: lastCompletionQuoteKey)
+        let candidates = pool.count > 1 ? pool.filter { $0.id != lastQuoteId } : pool
+        let selected = candidates.randomElement() ?? pool[0]
+        defaults.set(selected.id, forKey: lastCompletionQuoteKey)
+        return selected
     }
 }

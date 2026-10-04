@@ -1,6 +1,23 @@
 import XCTest
 @testable import RosaryGuide
 
+private func XCTAssertEqual(
+    _ expression1: @autoclosure () throws -> (Int, Int),
+    _ expression2: @autoclosure () throws -> (Int, Int),
+    _ message: @autoclosure () -> String = "",
+    file: StaticString = #filePath,
+    line: UInt = #line
+) {
+    do {
+        let lhs = try expression1()
+        let rhs = try expression2()
+        XCTAssertEqual(lhs.0, rhs.0, message(), file: file, line: line)
+        XCTAssertEqual(lhs.1, rhs.1, message(), file: file, line: line)
+    } catch {
+        XCTFail("Thrown error: \(error)", file: file, line: line)
+    }
+}
+
 final class LiturgicalCalendarTests: XCTestCase {
     private let calendar = LiturgicalCalendar.gregorian
 

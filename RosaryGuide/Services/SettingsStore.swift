@@ -5,6 +5,7 @@ import Observation
 final class SettingsStore {
     private enum Keys {
         static let language = "settings.language"
+        static let rosaryLanguage = "settings.rosaryLanguage"
         static let appearance = "settings.appearance"
         static let saintMichael = "settings.includeSaintMichael"
         static let haptics = "settings.hapticsEnabled"
@@ -12,7 +13,16 @@ final class SettingsStore {
     }
 
     var language: PrayerLanguage {
-        didSet { UserDefaults.standard.set(language.rawValue, forKey: Keys.language) }
+        didSet {
+            UserDefaults.standard.set(language.rawValue, forKey: Keys.language)
+            if rosaryLanguage != language {
+                rosaryLanguage = language
+            }
+        }
+    }
+
+    var rosaryLanguage: PrayerLanguage {
+        didSet { UserDefaults.standard.set(rosaryLanguage.rawValue, forKey: Keys.rosaryLanguage) }
     }
 
     var appearance: AppearancePreference {
@@ -33,7 +43,9 @@ final class SettingsStore {
     }
 
     init(defaults: UserDefaults = .standard) {
-        language = PrayerLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .english
+        let legacyLanguage = PrayerLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .english
+        language = legacyLanguage
+        rosaryLanguage = legacyLanguage
         appearance = AppearancePreference(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
         includeSaintMichael = defaults.object(forKey: Keys.saintMichael) as? Bool ?? false
         hapticsEnabled = defaults.object(forKey: Keys.haptics) as? Bool ?? true

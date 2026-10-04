@@ -44,21 +44,21 @@ private enum AppTab: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    var icon: String {
+    var iconAsset: String {
         switch self {
-        case .today: "sun.max"
-        case .pray: "book.closed"
-        case .calendar: "calendar"
-        case .intentions: "heart.text.square"
+        case .today: "TabTodayOutline"
+        case .pray: "TabLearnOutline"
+        case .calendar: "TabFeastsOutline"
+        case .intentions: "TabIntentionsOutline"
         }
     }
 
-    var selectedIcon: String {
+    var selectedIconAsset: String {
         switch self {
-        case .today: "sun.max.fill"
-        case .pray: "book.closed.fill"
-        case .calendar: "calendar"
-        case .intentions: "heart.text.square.fill"
+        case .today: "TabTodayFilled"
+        case .pray: "TabLearnFilled"
+        case .calendar: "TabFeastsFilled"
+        case .intentions: "TabIntentionsFilled"
         }
     }
 }
@@ -67,38 +67,60 @@ struct RootView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(SessionStore.self) private var session
     @Environment(OfferStore.self) private var offer
+    @Environment(AuthStore.self) private var auth
     @Environment(\.palette) private var palette
     @State private var prayLaunch: PrayLaunch?
     @State private var tab: AppTab = .today
 
     var body: some View {
-        TabView(selection: $tab) {
+        rootTabs
+            .tint(palette.accent)
+            .fullScreenCover(item: $prayLaunch) { launch in
+                ThemedRoot {
+                    PrayView(launch: launch)
+                }
+                .environment(settings)
+                .environment(session)
+                .environment(offer)
+                .environment(auth)
+                .preferredColorScheme(settings.appearance.colorScheme)
+            }
+    }
+
+    @ViewBuilder
+    private var rootTabs: some View {
+        let tabs = TabView(selection: $tab) {
             HomeView(prayLaunch: $prayLaunch)
-                .tabItem { Label(AppTab.today.title, systemImage: tab == .today ? AppTab.today.selectedIcon : AppTab.today.icon) }
+                .tabItem { tabLabel(.today) }
                 .tag(AppTab.today)
 
             PrayHubView(prayLaunch: $prayLaunch)
-                .tabItem { Label(AppTab.pray.title, systemImage: tab == .pray ? AppTab.pray.selectedIcon : AppTab.pray.icon) }
+                .tabItem { tabLabel(.pray) }
                 .tag(AppTab.pray)
 
             FeastsView(prayLaunch: $prayLaunch)
-                .tabItem { Label(AppTab.calendar.title, systemImage: AppTab.calendar.icon) }
+                .tabItem { tabLabel(.calendar) }
                 .tag(AppTab.calendar)
 
             OfferView(prayLaunch: $prayLaunch)
-                .tabItem { Label(AppTab.intentions.title, systemImage: tab == .intentions ? AppTab.intentions.selectedIcon : AppTab.intentions.icon) }
+                .tabItem { tabLabel(.intentions) }
                 .tag(AppTab.intentions)
-
         }
-        .tint(palette.accent)
-        .fullScreenCover(item: $prayLaunch) { launch in
-            ThemedRoot {
-                PrayView(launch: launch)
-            }
-            .environment(settings)
-            .environment(session)
-            .environment(offer)
-            .preferredColorScheme(settings.appearance.colorScheme)
+
+        if #available(iOS 18.0, *) {
+            tabs.tabViewStyle(.sidebarAdaptable)
+        } else {
+            tabs
+        }
+    }
+
+    @ViewBuilder
+    private func tabLabel(_ item: AppTab) -> some View {
+        Label {
+            Text(item.title)
+        } icon: {
+            Image(tab == item ? item.selectedIconAsset : item.iconAsset)
+                .renderingMode(.template)
         }
     }
 }
@@ -110,4 +132,5 @@ struct RootView: View {
     .environment(SettingsStore())
     .environment(SessionStore())
     .environment(OfferStore())
+    .environment(AuthStore())
 }

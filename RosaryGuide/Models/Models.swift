@@ -25,6 +25,10 @@ enum PrayerLanguage: String, CaseIterable, Codable, Identifiable {
     }
 
     var shortTitle: String { chip }
+
+    static var appCases: [PrayerLanguage] {
+        allCases
+    }
 }
 
 enum AppearancePreference: String, CaseIterable, Codable, Identifiable {

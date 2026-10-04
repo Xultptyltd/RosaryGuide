@@ -1,16 +1,27 @@
 import Foundation
+import FirebaseFirestore
 import Observation
 
 @Observable
+@MainActor
 final class OfferStore {
     private enum Keys {
         static let intentions = "offer.intentions"
+        static let migrationPrefix = "offer.firestoreMigrated."
     }
 
     private let defaults: UserDefaults
+    private let repository: IntentionRepository
+    private var listener: ListenerRegistration?
+    private var userID: String?
+    private var isApplyingRemoteSnapshot = false
+    private(set) var syncErrorMessage: String?
 
     var intentions: [OfferIntention] {
-        didSet { persistIntentions() }
+        didSet {
+            persistIntentions()
+            syncLocalChangeIfNeeded(oldValue: oldValue)
+        }
     }
 
     /// Active intentions only. Pinned first, then ones suggested for today's mystery, then recent.
@@ -30,10 +41,57 @@ final class OfferStore {
             }
     }
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, repository: IntentionRepository = IntentionRepositoryFactory.make()) {
         self.defaults = defaults
+        self.repository = repository
         intentions = Self.loadIntentions(defaults: defaults)
         pruneExpired()
+    }
+
+    func configureSync(for uid: String?) {
+        if uid == userID && listener != nil { return }
+
+        listener?.remove()
+        listener = nil
+        userID = uid
+
+        guard let uid else {
+            intentions = []
+            defaults.removeObject(forKey: Keys.intentions)
+            Task { [weak self] in
+                do {
+                    try await self?.repository.clearLocalCache()
+                } catch {
+                    await MainActor.run {
+                        self?.syncErrorMessage = "Private local cache could not be cleared."
+                    }
+                }
+            }
+            return
+        }
+
+        let localBeforeSync = intentions
+        Task { [weak self] in
+            await self?.migrateIfNeeded(localIntentions: localBeforeSync, uid: uid)
+            self?.startListening(uid: uid)
+        }
+    }
+
+    func deleteCloudDataForCurrentUser() async throws {
+        guard let userID else { return }
+        listener?.remove()
+        listener = nil
+        try await repository.deleteAll(uid: userID)
+        try await repository.clearLocalCache()
+    }
+
+    func reconnectSync() {
+        guard let userID else { return }
+        listener?.remove()
+        listener = nil
+        Task { [weak self] in
+            self?.startListening(uid: userID)
+        }
     }
 
     @discardableResult
@@ -108,6 +166,16 @@ final class OfferStore {
 
     func delete(id: UUID) {
         intentions.removeAll { $0.id == id }
+        guard let userID else { return }
+        Task {
+            do {
+                try await repository.delete(id: id, uid: userID)
+            } catch {
+                await MainActor.run {
+                    self.syncErrorMessage = "This intention could not be deleted from your account."
+                }
+            }
+        }
     }
 
     /// Removes every saved intention (Settings wipe).
@@ -175,5 +243,75 @@ final class OfferStore {
     private static func loadIntentions(defaults: UserDefaults) -> [OfferIntention] {
         guard let data = defaults.data(forKey: Keys.intentions) else { return [] }
         return (try? JSONDecoder().decode([OfferIntention].self, from: data)) ?? []
+    }
+
+    @MainActor
+    private func startListening(uid: String) {
+        guard uid == userID else { return }
+        listener = repository.listen(uid: uid) { [weak self] result in
+            Task { @MainActor in
+                guard let self, uid == self.userID else { return }
+                switch result {
+                case .success(let remoteIntentions):
+                    self.syncErrorMessage = nil
+                    self.isApplyingRemoteSnapshot = true
+                    self.intentions = remoteIntentions
+                    self.isApplyingRemoteSnapshot = false
+                case .failure:
+                    self.syncErrorMessage = "Intentions could not sync. Your local copy is still available."
+                }
+            }
+        }
+    }
+
+    private func migrateIfNeeded(localIntentions: [OfferIntention], uid: String) async {
+        let migrationKey = Keys.migrationPrefix + uid
+        if defaults.bool(forKey: migrationKey) { return }
+
+        do {
+            let remote = try await repository.fetchAll(uid: uid)
+            let remoteIds = Set(remote.map(\.id))
+            for intention in localIntentions where !remoteIds.contains(intention.id) {
+                try await repository.upsert(intention, uid: uid)
+            }
+            defaults.set(true, forKey: migrationKey)
+        } catch {
+            await MainActor.run {
+                self.syncErrorMessage = "Existing intentions could not finish syncing yet."
+            }
+            // Leave the migration marker unset so the next authenticated launch retries safely.
+        }
+    }
+
+    private func syncLocalChangeIfNeeded(oldValue: [OfferIntention]) {
+        guard !isApplyingRemoteSnapshot, let userID else { return }
+
+        let previous = Dictionary(uniqueKeysWithValues: oldValue.map { ($0.id, $0) })
+        let current = Dictionary(uniqueKeysWithValues: intentions.map { ($0.id, $0) })
+        let removed = Set(previous.keys).subtracting(current.keys)
+
+        for intention in intentions where previous[intention.id] != intention {
+            Task {
+                do {
+                    try await repository.upsert(intention, uid: userID)
+                } catch {
+                    await MainActor.run {
+                        self.syncErrorMessage = "This intention could not sync to your account."
+                    }
+                }
+            }
+        }
+
+        for id in removed {
+            Task {
+                do {
+                    try await repository.delete(id: id, uid: userID)
+                } catch {
+                    await MainActor.run {
+                        self.syncErrorMessage = "An intention could not be deleted from your account."
+                    }
+                }
+            }
+        }
     }
 }

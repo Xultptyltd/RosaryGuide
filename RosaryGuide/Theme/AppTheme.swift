@@ -8,13 +8,18 @@ enum AppTheme {
     /// The app's one explicit brand color. Everything else routes through
     /// Apple semantic colors so Light/Dark, contrast, and accessibility modes
     /// can do their work at the system layer.
-    static let brandAccent = Color(hex: 0x0054FF)
-    static let brandAccentHighContrast = Color(hex: 0x0054FF)
-    static let brandAccentDark = Color(hex: 0x568AF8)
-    static let brandAccentDarkHighContrast = Color(hex: 0x568AF8)
+    static let marianBlue = Color(hex: 0x0054FF)
+    static let marianBlueHighContrast = Color(hex: 0x0054FF)
+    static let marianBlueDark = marianBlue
+    static let marianBlueDarkHighContrast = marianBlueHighContrast
+    static let brandAccent = marianBlue
+    static let brandAccentHighContrast = marianBlueHighContrast
+    static let brandAccentDark = marianBlueDark
+    static let brandAccentDarkHighContrast = marianBlueDarkHighContrast
+    static let destructiveMenuRed = Color(hex: 0xFF3B30)
     /// Soft avatar fills — light/dark pairs from the product colour table.
     /// Shared by intention avatars and Learn mystery-set letter icons.
-    /// Green → Personal / Joyful; Blue → Someone else / Luminous;
+    /// Green → Personal / Joyful; Marian Blue → Someone else / Luminous;
     /// Purple → Church & world / Sorrowful; Peach → Glorious (fourth).
     static let intentionMintGreen = Color(light: 0xC3EDE6, dark: 0x0C615A)
     static let intentionSkyBlue = Color(light: 0xC0EAF7, dark: 0x005F78)
@@ -44,10 +49,14 @@ enum AppTheme {
     static let decadesGap: CGFloat = 32
     static let containerRadius: CGFloat = 20
     /// Site `--r-feature` — Home mystery rail cards.
-    static let featureRadius: CGFloat = 26
+    static let featureRadius: CGFloat = 24
     static let nestedRadius: CGFloat = 12
+    static let thumbnailRadius: CGFloat = 12
+    static let appIconRadius: CGFloat = 16
     static var capsule: Capsule { Capsule(style: .continuous) }
     static let controlSize: CGFloat = 40
+    /// Reserved bottom clearance for content behind the liquid tab bar.
+    static let tabBarContentClearance: CGFloat = 108
 
     static func gutter(for width: CGFloat) -> CGFloat {
         // Single source of truth: always `gutter` (16pt), including compact widths.
@@ -57,6 +66,17 @@ enum AppTheme {
 
     static func heroHeight(viewport: CGFloat) -> CGFloat {
         min(max(heroMin, viewport * 0.56), heroMax)
+    }
+
+    /// Home has a selector + primary CTA above the fold, so its hero reserves
+    /// more vertical space for controls above the tab bar. HomeView may add a
+    /// small measured adjustment per device to place the CTA precisely.
+    static func homeHeroHeight(viewport: CGFloat) -> CGFloat {
+        min(max(320, viewport * 0.46), 464)
+    }
+
+    static func grid(_ value: CGFloat, minimum: CGFloat = 4) -> CGFloat {
+        max(minimum, (value / 4).rounded() * 4)
     }
 
     /// `h1.title { font-size: clamp(2.7rem, 11.5vw, 3.5rem) }` with the 23.5rem small-phone override.
@@ -80,6 +100,15 @@ enum AppTheme {
         case .christmas, .easter: Color(hex: 0xE8E4D8)
         case .ordinary: Color(hex: 0x5C6B58)
         case .triduum: Color(hex: 0x8A4A44)
+        }
+    }
+
+    static func mysteryIndicatorColor(for set: MysterySetKind) -> Color {
+        switch set {
+        case .joyful: Color(hex: 0x1E1A15)
+        case .luminous: Color(hex: 0xEDC68D)
+        case .sorrowful: Color(hex: 0xDFA05D)
+        case .glorious: Color(hex: 0xD19A12)
         }
     }
 }
@@ -117,20 +146,19 @@ struct ThemePalette {
     var scheme: ColorScheme
     var contrast: ColorSchemeContrast = .standard
 
-    var bg: Color {
+    // MARK: Canonical foundation
+
+    var background: Color {
         scheme == .light
             ? Color(hex: 0xFEFEFE)
             : Color(hex: 0x090A0C)
     }
-    var prayBg: Color { bg }
-    /// Header + stage track on mystery plates only; body below keeps `prayBg`.
-    var plateChrome: Color { Color(uiColor: .secondarySystemBackground) }
-    var ink: Color { .primary }
-    var dim: Color { .secondary }
-    var secondaryText: Color { dim }
-    var faint: Color { Color(uiColor: .tertiaryLabel) }
-    var destructive: Color { Color(uiColor: .systemRed) }
-    var feastIndicator: Color { scheme == .light ? Color(hex: 0xC4922C) : Color(hex: 0xE2B75A) }
+
+    var textPrimary: Color { .primary }
+    /// The app's single secondary grey. Use this for all supporting,
+    /// disabled-looking, metadata, and explanatory copy.
+    var textSecondary: Color { .secondary }
+
     /// The app's single grouped/elevated surface color.
     ///
     /// Keep cards, accordions, grouped rows, sheets, and compact panels on this
@@ -138,12 +166,10 @@ struct ThemePalette {
     /// surfaces across screens.
     var surface: Color {
         scheme == .light
-            ? Color(hex: 0xF4F5F7)
+            ? Color(hex: 0xF0F1F4)
             : Color(hex: 0x191B1E)
     }
-    var card: Color { surface }
-    var card2: Color { surface }
-    var hair: Color { Color(uiColor: .separator) }
+
     var accent: Color {
         switch (scheme, contrast) {
         case (.light, .increased): AppTheme.brandAccentHighContrast
@@ -152,28 +178,115 @@ struct ThemePalette {
         default: AppTheme.brandAccent
         }
     }
-    var onAccent: Color { scheme == .dark ? Color.black : Color.white }
-    var panel: Color { surface }
-    var primaryButtonFill: Color { accent }
-    var primaryButtonText: Color { onAccent }
-    var secondaryButtonFill: Color { scheme == .dark ? Color.white : Color.black }
-    var secondaryButtonText: Color { scheme == .dark ? Color.black : Color.white }
-    var learnMoreButtonFill: Color { secondaryButtonFill }
-    var learnMoreButtonText: Color { secondaryButtonText }
+    var onAccent: Color { Color.white }
+    var destructive: Color { Color(uiColor: .systemRed) }
+
+    var buttonPrimaryFill: Color { accent }
+    var buttonPrimaryText: Color { onAccent }
+    var buttonSecondaryFill: Color { scheme == .dark ? Color.white : Color.black }
+    var buttonSecondaryText: Color { scheme == .dark ? Color.black : Color.white }
+    var todayPillFill: Color { Color.white }
+    var todayPillText: Color { Color.black }
+
+    var strokeSubtle: Color { textPrimary.opacity(scheme == .light ? 0.07 : 0.12) }
+    var strokeRegular: Color { textPrimary.opacity(scheme == .light ? 0.12 : 0.22) }
+    var strokeStrong: Color { textPrimary.opacity(0.28) }
+    var strokeSelected: Color { textPrimary.opacity(0.85) }
+
+    var scrim: Color { Color.black }
+
+    // MARK: Special domains
+
+    /// Header + stage track on mystery plates only; body below keeps `prayerBackground`.
+    var plateChrome: Color { Color(uiColor: .secondarySystemBackground) }
+    var prayerBackground: Color { background }
+    var feastIndicator: Color { scheme == .light ? Color(hex: 0xC4922C) : Color(hex: 0xE2B75A) }
     var accentTint: Color {
         scheme == .dark
             ? accent.opacity(0.20)
             : accent.opacity(0.12)
     }
-    var glassFill: Color { Color(uiColor: .secondarySystemBackground).opacity(0.92) }
-    var glassInk: Color { ink }
-    var glassEdge: Color { hair }
-    var fieldStroke: Color { ink.opacity(scheme == .light ? 0.12 : 0.22) }
-    var selectionStroke: Color { ink.opacity(scheme == .light ? 0.08 : 0.16) }
-    var cardStroke: Color { ink.opacity(scheme == .light ? 0.07 : 0.12) }
-    var subtleStroke: Color { ink.opacity(0.08) }
+    var inverseIcon: Color { scheme == .dark ? Color.black : Color.white }
+    var onImage: Color { Color.white }
+    /// Unselected segmented-control track. Keep this on the shared surface
+    /// pathway so UIKit and custom segmented controls render the same surface.
+    var segmentedControlTrack: Color { surface }
+    var selectedControlFill: Color { Color(uiColor: .systemBackground) }
     var selectedShadow: Color { accent.opacity(0.28) }
-    var scrim: Color { Color.black }
+
+    var ceremonyBackground: Color { Color(hex: 0x000000) }
+    var ceremonyTextPrimary: Color { Color.white.opacity(0.96) }
+    var ceremonyTextSecondary: Color { Color.white.opacity(0.48) }
+    var ceremonyTextTertiary: Color { Color.white.opacity(0.42) }
+
+    var beadHighlight: Color { Color.white }
+    var beadPulseFill: Color {
+        scheme == .light
+            ? accent.opacity(0.30)
+            : accent.opacity(0.36)
+    }
+    var beadPulseStroke: Color {
+        scheme == .light
+            ? accent.opacity(0.68)
+            : accent.opacity(0.78)
+    }
+    var beadMedalRim: Color {
+        scheme == .light
+            ? Color(hex: 0xC7C2B3)
+            : Color.white.opacity(0.55)
+    }
+    var beadMedalRimFuture: Color {
+        scheme == .light
+            ? beadMedalRim
+            : Color.white.opacity(0.32)
+    }
+    var beadMedalField: Color {
+        scheme == .light
+            ? Color(hex: 0x332E29)
+            : Color.black.opacity(0.55)
+    }
+    var beadMedalGlyph: Color {
+        Color.white.opacity(scheme == .light ? 0.55 : 0.70)
+    }
+    var feastArtworkFallbackGradient: [Color] {
+        scheme == .light
+            ? [Color(hex: 0xE8E2D6), Color(hex: 0xD4CBB8)]
+            : [Color(hex: 0x2A2620), Color(hex: 0x1A1713)]
+    }
+
+    // MARK: Compatibility aliases
+    // Keep existing screen code readable while routing it through the smaller
+    // design system above. New code should prefer the canonical names.
+
+    var bg: Color { background }
+    var prayBg: Color { prayerBackground }
+    var ink: Color { textPrimary }
+    var dim: Color { textSecondary }
+    var secondaryText: Color { textSecondary }
+    var faint: Color { textSecondary }
+    var card: Color { surface }
+    var card2: Color { surface }
+    var panel: Color { surface }
+    var hair: Color { Color(uiColor: .separator) }
+    var primaryButtonFill: Color { buttonPrimaryFill }
+    var primaryButtonText: Color { buttonPrimaryText }
+    var secondaryButtonFill: Color { buttonSecondaryFill }
+    var secondaryButtonText: Color { buttonSecondaryText }
+    var learnMoreButtonFill: Color { buttonSecondaryFill }
+    var learnMoreButtonText: Color { buttonSecondaryText }
+    var onImageSecondary: Color { Color.white.opacity(0.72) }
+    var fieldStroke: Color { strokeRegular }
+    var selectionStroke: Color { strokeSubtle }
+    var cardStroke: Color { strokeSubtle }
+    var subtleStroke: Color { strokeSubtle }
+    var strongStroke: Color { strokeStrong }
+    var selectedSwatchStroke: Color { strokeSelected }
+    var controlStroke: Color { Color(uiColor: .separator).opacity(0.55) }
+    var completionBackground: Color { ceremonyBackground }
+    var completionLabel: Color { ceremonyTextSecondary }
+    var completionTitle: Color { ceremonyTextPrimary }
+    var completionMeta: Color { ceremonyTextTertiary }
+    var completionMetaValue: Color { ceremonyTextPrimary.opacity(0.94) }
 }
 
 private struct ThemePaletteKey: EnvironmentKey {
@@ -257,7 +370,22 @@ enum GuideChrome {
         // its unselected track on the same surface token as the rest of the
         // app instead of UIKit's default system fill.
         let segmentedControl = UISegmentedControl.appearance()
-        segmentedControl.backgroundColor = UIColor(palette.surface)
+        segmentedControl.backgroundColor = UIColor(palette.segmentedControlTrack)
+        segmentedControl.selectedSegmentTintColor = UIColor(palette.selectedControlFill)
+        segmentedControl.setTitleTextAttributes(
+            [
+                .foregroundColor: dim,
+                .font: AppTheme.TypeRole.segmentedControlUIFont
+            ],
+            for: .normal
+        )
+        segmentedControl.setTitleTextAttributes(
+            [
+                .foregroundColor: ink,
+                .font: AppTheme.TypeRole.segmentedControlUIFont
+            ],
+            for: .selected
+        )
         #endif
     }
 }
@@ -383,7 +511,7 @@ struct MorphingNavTitle: View {
             let x = CollapsingTitleMetrics.lerp(xLeading, xCenter, t)
 
             Text(title)
-                .font(AppTheme.sans(size, weight: .regular))
+                .font(AppTheme.sans(size, weight: .regular, relativeTo: .largeTitle))
                 .foregroundStyle(palette.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
@@ -649,13 +777,38 @@ struct GuideDisplayTitle: View {
 }
 
 struct GuideSectionLabel: View {
+    enum Prominence {
+        case quiet
+        case strong
+    }
+
+    @Environment(\.palette) private var palette
     var text: String
-    var color: Color
+    var color: Color?
+    var prominence: Prominence = .quiet
 
     var body: some View {
         Text(text)
-            .font(AppTheme.TypeRole.sectionLabel)
-            .foregroundStyle(color)
+            .font(font)
+            .foregroundStyle(color ?? defaultColor)
+    }
+
+    private var font: Font {
+        switch prominence {
+        case .quiet:
+            AppTheme.TypeRole.sectionLabel
+        case .strong:
+            AppTheme.TypeRole.callout(weight: .semibold)
+        }
+    }
+
+    private var defaultColor: Color {
+        switch prominence {
+        case .quiet:
+            palette.textSecondary
+        case .strong:
+            palette.textPrimary
+        }
     }
 }
 
@@ -738,6 +891,41 @@ struct GuideReveal: ViewModifier {
     }
 }
 
+private struct GuideFloatingGlassModifier<GlassShape: Shape>: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    let shape: GlassShape
+    let palette: ThemePalette
+
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+                .background(palette.surface, in: shape)
+                .overlay {
+                    shape.stroke(palette.controlStroke, lineWidth: AppTheme.Component.panelStrokeWidth)
+                }
+        } else if #available(iOS 26.0, *) {
+            content.glassEffect(.regular, in: shape)
+        } else {
+            content
+                .background(.regularMaterial, in: shape)
+                .overlay {
+                    shape.stroke(palette.controlStroke, lineWidth: AppTheme.Component.panelStrokeWidth)
+                }
+        }
+    }
+}
+
+extension View {
+    /// Floating control material only. Use for controls layered above content
+    /// (nav affordances, overlay buttons), not for content cards.
+    func guideFloatingGlass<GlassShape: Shape>(
+        in shape: GlassShape,
+        palette: ThemePalette
+    ) -> some View {
+        modifier(GuideFloatingGlassModifier(shape: shape, palette: palette))
+    }
+}
+
 struct GuideCardChrome: ViewModifier {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
@@ -783,6 +971,7 @@ struct GuideSegmentedControl: ViewModifier {
         content
             .pickerStyle(.segmented)
             .controlSize(.large)
+            .font(AppTheme.TypeRole.segmentedControl)
             .frame(height: AppTheme.Component.segmentedControlHeight)
             .labelsHidden()
     }
@@ -847,19 +1036,65 @@ extension AppTheme {
         static let section: CGFloat = 44
     }
 
-    /// Type roles — Instrument Sans / Newsreader pairing from the site.
+    /// Type roles — 4pt typographic scale, with Instrument Sans / Newsreader pairing.
     enum TypeRole {
-        static var display: Font { AppTheme.sans(54, weight: .regular, relativeTo: .largeTitle) }
+        static var display: Font { AppTheme.sans(56, weight: .regular, relativeTo: .largeTitle) }
         static var title: Font { AppTheme.sans(40, weight: .regular, relativeTo: .title) }
-        static var titleSmall: Font { AppTheme.sans(24, weight: .semibold, relativeTo: .title3) }
-        static var body: Font { AppTheme.sans(19, relativeTo: .body) }
-        static var quoteAttribution: Font { AppTheme.sans(10, weight: .medium, relativeTo: .caption) }
-        static var bodySmall: Font { AppTheme.sans(17, relativeTo: .body) }
-        static var themeSummary: Font { AppTheme.sans(15, relativeTo: .body) }
+        static var title2: Font { AppTheme.sans(32, weight: .regular, relativeTo: .title) }
+        static var title3: Font { AppTheme.sans(28, weight: .regular, relativeTo: .title2) }
+        static var headline: Font { AppTheme.sans(24, weight: .semibold, relativeTo: .title3) }
+        static func headline(weight: Font.Weight = .semibold) -> Font {
+            AppTheme.sans(24, weight: weight, relativeTo: .title3)
+        }
+        static var body: Font { AppTheme.sans(20, relativeTo: .body) }
+        static func body(weight: Font.Weight = .regular) -> Font {
+            AppTheme.sans(20, weight: weight, relativeTo: .body)
+        }
         static var callout: Font { AppTheme.sans(16, relativeTo: .callout) }
-        static var label: Font { AppTheme.sans(13, weight: .medium, relativeTo: .subheadline) }
+        static func callout(weight: Font.Weight = .regular) -> Font {
+            AppTheme.sans(16, weight: weight, relativeTo: .callout)
+        }
         static var caption: Font { AppTheme.sans(12, weight: .regular, relativeTo: .caption) }
-        static var sectionLabel: Font { AppTheme.sans(12, weight: .medium, relativeTo: .caption) }
+        static func caption(weight: Font.Weight = .regular) -> Font {
+            AppTheme.sans(12, weight: weight, relativeTo: .caption)
+        }
+        static var serifSmall: Font { AppTheme.serif(16, opticalSize: 16, relativeTo: .body) }
+        static var serifBody: Font { AppTheme.serif(20, opticalSize: 20, relativeTo: .body) }
+        static var serifItalicBody: Font { AppTheme.serif(16, italic: true, opticalSize: 16, relativeTo: .body) }
+        static var serifTitle: Font { AppTheme.serif(24, opticalSize: 28, relativeTo: .title3) }
+        static var serifDisplay: Font { AppTheme.serif(40, opticalSize: 44, relativeTo: .largeTitle) }
+        static func avatarLetter(for size: CGFloat) -> Font {
+            AppTheme.sans(AppTheme.grid(size * 0.42, minimum: 12), weight: .semibold, relativeTo: .body)
+        }
+        static func prayerText(scale: CGFloat) -> Font {
+            AppTheme.sans(AppTheme.grid(20 * scale, minimum: 16), relativeTo: .body)
+        }
+
+        // Compatibility aliases. New code should use the simpler scale above.
+        static var screenTitle: Font { title2 }
+        static var modalTitle: Font { title3 }
+        static var sectionTitle: Font { title3 }
+        static var titleSmall: Font { headline }
+        static var cardTitle: Font { headline }
+        static func titleSmall(weight: Font.Weight = .semibold) -> Font { headline(weight: weight) }
+        static var bodySmall: Font { callout }
+        static func bodySmall(weight: Font.Weight = .regular) -> Font { callout(weight: weight) }
+        static var themeSummary: Font { callout }
+        static var label: Font { caption(weight: .medium) }
+        static func label(weight: Font.Weight = .medium) -> Font { caption(weight: weight) }
+        static var segmentedControl: Font { AppTheme.sans(14, weight: .medium, relativeTo: .callout) }
+#if canImport(UIKit)
+        static var segmentedControlUIFont: UIFont { FontRegistrar.sansUI(14, weight: .medium) }
+#endif
+        static var sectionLabel: Font { caption(weight: .medium) }
+        static var quoteAttribution: Font { caption(weight: .medium) }
+        static var settingsTitle: Font { AppTheme.sans(34, weight: .semibold, relativeTo: .largeTitle) }
+        static var settingsCardTitle: Font { AppTheme.sans(20, weight: .semibold, relativeTo: .title3) }
+        static var settingsRow: Font { AppTheme.sans(17, weight: .regular, relativeTo: .body) }
+        static func settingsRow(weight: Font.Weight = .regular) -> Font {
+            AppTheme.sans(17, weight: weight, relativeTo: .body)
+        }
+        static var settingsMeta: Font { AppTheme.sans(13, weight: .regular, relativeTo: .callout) }
     }
 
     /// Shared chrome measurements.
@@ -872,8 +1107,35 @@ extension AppTheme {
         static let panelStrokeOpacity: Double = 0.11
         /// Tracking for uppercase quote attributions.
         static let quoteAttributionTracking: CGFloat = 1.3
-        /// Shared height for compact segmented controls.
-        static let segmentedControlHeight: CGFloat = 40
+        /// Shared height for segmented controls; matches Apple minimum touch target.
+        static let segmentedControlHeight: CGFloat = Accessibility.minHitTarget
+        /// Home mystery selector keeps the larger, hero-control proportion.
+        static let mysterySelectorHeight: CGFloat = 52
+        static let segmentedControlInset: CGFloat = Space.xs
+        static var segmentedControlInnerHeight: CGFloat {
+            segmentedControlHeight - segmentedControlInset * 2
+        }
+        static var mysterySelectorInnerHeight: CGFloat {
+            mysterySelectorHeight - segmentedControlInset * 2
+        }
+        static let prayerFooterControlGap: CGFloat = Space.lg
+        static let prayerFooterButtonGap: CGFloat = Space.md
+        static let mysteryPlateActionCircle: CGFloat = 52
+        static let beadPulseCycle: TimeInterval = 1.12
+        static let beadPulseOpacity: Double = 0.72
+        static let beadPulseFillOpacity: Double = 0.44
+        static let largeIconButton: CGFloat = 42
+        static let profileRowHeight: CGFloat = 56
+        static let profileHeroSymbolSize: CGFloat = 84
+        static let profileHeroSymbolReserve: CGFloat = 92
+        static let profileChevronSize: CGFloat = 16
+        static let profileExternalLinkSymbol = "arrow.up.right"
+        static let profileExternalLinkSize: CGFloat = 16
+        static let profileSectionTracking: CGFloat = 3.6
+        static let profileBackgroundSymbolOpacity: Double = 0.12
+        static let profileDividerOpacity: Double = 0.72
+        static let profileTitleMinimumScale: CGFloat = 0.82
+        static let profileValueMinimumScale: CGFloat = 0.78
         /// Matches `GuideSectionLabel` tracking.
         static let sectionLabelTracking: CGFloat = 0
         static let hairline: CGFloat = 1 / 3

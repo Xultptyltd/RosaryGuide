@@ -42,10 +42,10 @@ struct HowToPrayView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            GuideSectionLabel(text: "Guide", color: palette.dim)
+        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+            GuideSectionLabel(text: "Guide", prominence: .strong)
             Text(HowToPrayContent.introduction.primary(for: settings.language))
-                .font(AppTheme.serif(18, opticalSize: 18))
+                .font(AppTheme.TypeRole.serifBody)
                 .foregroundStyle(palette.dim)
                 .lineSpacing(5)
                 .fixedSize(horizontal: false, vertical: true)
@@ -55,16 +55,16 @@ struct HowToPrayView: View {
 
     private var pathCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            GuideSectionLabel(text: "The path", color: palette.dim)
+            GuideSectionLabel(text: "The path", prominence: .strong)
                 .padding(.bottom, AppTheme.Space.lg)
             VStack(spacing: 0) {
                 ForEach(Array(pathOverview.enumerated()), id: \.offset) { index, item in
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                         Text(item.0)
-                            .font(AppTheme.serif(20, opticalSize: 28))
+                            .font(AppTheme.TypeRole.serifBody)
                             .foregroundStyle(palette.ink)
                         Text(item.1)
-                            .font(AppTheme.sans(15))
+                            .font(AppTheme.TypeRole.themeSummary)
                             .foregroundStyle(palette.dim)
                             .lineSpacing(3)
                     }
@@ -88,7 +88,7 @@ struct HowToPrayView: View {
 
     private var stepsCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            GuideSectionLabel(text: "Step by step", color: palette.dim)
+            GuideSectionLabel(text: "Step by step", prominence: .strong)
                 .padding(.bottom, AppTheme.Space.lg)
             VStack(spacing: 0) {
                 ForEach(Array(HowToPrayContent.steps.enumerated()), id: \.element.id) { index, step in
@@ -120,16 +120,16 @@ struct HowToPrayView: View {
                     openStep = isOpen ? nil : step.id
                 }
             } label: {
-                HStack(alignment: .top, spacing: 14) {
+                HStack(alignment: .top, spacing: AppTheme.Space.lg) {
                     Text("\(step.id)")
-                        .font(AppTheme.sans(13, weight: .medium))
+                        .font(AppTheme.TypeRole.label(weight: .medium))
                         .foregroundStyle(palette.faint)
                         .monospacedDigit()
-                        .frame(width: 22, alignment: .leading)
+                        .frame(width: 24, alignment: .leading)
                         .padding(.top, 3)
 
                     Text(step.title.primary(for: settings.language))
-                        .font(AppTheme.serif(19, opticalSize: 28))
+                        .font(AppTheme.TypeRole.serifBody)
                         .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -150,7 +150,7 @@ struct HowToPrayView: View {
 
             if isOpen {
                 Text(step.body)
-                    .font(AppTheme.serif(16, opticalSize: 16))
+                    .font(AppTheme.TypeRole.serifBody)
                     .foregroundStyle(palette.dim)
                     .lineSpacing(5)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -164,17 +164,17 @@ struct HowToPrayView: View {
 
     private var weekdayCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            GuideSectionLabel(text: "When to pray which mysteries", color: palette.dim)
+            GuideSectionLabel(text: "When to pray which mysteries", prominence: .strong)
                 .padding(.bottom, AppTheme.Space.lg)
             VStack(spacing: 0) {
                 ForEach(Array(HowToPrayContent.weekdayGuide.enumerated()), id: \.element.0) { index, pair in
                     HStack(alignment: .firstTextBaseline, spacing: 12) {
                         Text(pair.0)
-                            .font(AppTheme.serif(18, opticalSize: 28))
+                            .font(AppTheme.TypeRole.serifBody)
                             .foregroundStyle(palette.ink)
                             .frame(width: 96, alignment: .leading)
                         Text(pair.1)
-                            .font(AppTheme.sans(14))
+                            .font(AppTheme.TypeRole.label)
                             .foregroundStyle(palette.dim)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                             .multilineTextAlignment(.trailing)
@@ -198,10 +198,10 @@ struct HowToPrayView: View {
 
     private var beadsCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            GuideSectionLabel(text: "The beads", color: palette.dim)
+            GuideSectionLabel(text: "The beads", prominence: .strong)
                 .padding(.bottom, AppTheme.Space.md)
             Text(HowToPrayContent.beadsNote)
-                .font(AppTheme.serif(16, opticalSize: 16))
+                .font(AppTheme.TypeRole.serifBody)
                 .foregroundStyle(palette.dim)
                 .lineSpacing(5)
                 .padding(.bottom, AppTheme.Space.lg)
@@ -221,6 +221,6 @@ struct HowToPrayView: View {
     }
 
     private var panelStroke: Color {
-        colorScheme == .light ? Color(hex: 0x171512).opacity(0.07) : Color.clear
+        colorScheme == .light ? palette.cardStroke : .clear
     }
 }

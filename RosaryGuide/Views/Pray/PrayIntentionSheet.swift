@@ -53,15 +53,7 @@ struct PrayIntentionSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    radioCard(
-                        title: "No specific intention",
-                        subtitle: nil,
-                        selected: noneSelected
-                    ) {
-                        chooseNone()
-                    }
-
+                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                     ForEach(unadoptedPapalSuggestions) { item in
                         papalRadioCard(item)
                     }
@@ -78,6 +70,14 @@ struct PrayIntentionSheet: View {
                             onEdit: { editorRoute = .edit(item) },
                             onDelete: { deleteIntention(item) }
                         )
+                    }
+
+                    radioCard(
+                        title: "No specific intention",
+                        subtitle: nil,
+                        selected: noneSelected
+                    ) {
+                        chooseNone()
                     }
 
                     addIntentionCard
@@ -100,13 +100,17 @@ struct PrayIntentionSheet: View {
                         chosenTitle = saved.title
                         chosenNote = saved.note ?? ""
                         dismiss()
+                    },
+                    onDeleted: { deleted in
+                        if chosenId == deleted.id {
+                            chosenId = nil
+                            chosenTitle = ""
+                            chosenNote = ""
+                        }
                     }
                 )
                 .environment(offer)
                 .environment(\.palette, palette)
-            }
-            .task {
-                await popeStore.refreshIfNeeded()
             }
         }
         .presentationDetents(prefersLargeDetent ? [.large] : [.medium, .large])
@@ -116,19 +120,9 @@ struct PrayIntentionSheet: View {
     // MARK: - Rows
 
     private var addIntentionCard: some View {
-        Button {
+        PillButton(title: "Add an intention", filled: false) {
             editorRoute = .create
-        } label: {
-            Text("Add an intention")
-                .font(AppTheme.sans(16, weight: .semibold))
-                .foregroundStyle(palette.ink)
-                .padding(.horizontal, 28)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(palette.surface, in: Capsule())
         }
-        .buttonStyle(.plain)
-        .guidePressable()
         .accessibilityLabel("Add an intention")
         .padding(.top, 6)
     }
@@ -152,21 +146,20 @@ struct PrayIntentionSheet: View {
                 IntentionIconView(
                     accent: .purple,
                     emoji: "✝️",
-                    size: 36,
+                    size: 44,
                     usesPopePortrait: true
                 )
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Holy Father’s Intention")
-                        .font(AppTheme.sans(11, weight: .semibold))
-                        .foregroundStyle(palette.accent)
-                        .textCase(.uppercase)
-                        .tracking(0.8)
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     Text(item.title)
-                        .font(AppTheme.sans(16, weight: .semibold))
+                        .font(AppTheme.TypeRole.callout(weight: .semibold))
                         .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
+                    Text("Holy Father’s Intention")
+                        .font(AppTheme.TypeRole.label)
+                        .foregroundStyle(palette.dim)
+                        .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -203,14 +196,14 @@ struct PrayIntentionSheet: View {
                     .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     Text(title)
-                        .font(AppTheme.sans(16, weight: .semibold))
+                        .font(AppTheme.TypeRole.callout(weight: .semibold))
                         .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.leading)
                     if let subtitle, !subtitle.isEmpty {
                         Text(subtitle)
-                            .font(AppTheme.sans(13))
+                            .font(AppTheme.TypeRole.label)
                             .foregroundStyle(palette.dim)
                             .multilineTextAlignment(.leading)
                             .lineLimit(2)
@@ -326,11 +319,7 @@ private struct IntentionRadioRow: View {
     }
 
     private var subtitle: String? {
-        var parts: [String] = []
-        if item.isPapal { parts.append(item.categoryTitle) }
-        if !item.isNew, !item.carriedLabel.isEmpty { parts.append(item.carriedLabel) }
-        if !hidesText, let note = item.note, !note.isEmpty { parts.append(note) }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+        item.categoryTitle
     }
 
     var body: some View {
@@ -344,14 +333,14 @@ private struct IntentionRadioRow: View {
                 IntentionIconView(
                     accent: item.accent,
                     emoji: item.displayEmoji,
-                    size: 36,
+                    size: 44,
                     usesPopePortrait: item.isPapal
                 )
 
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                    HStack(spacing: AppTheme.Space.sm) {
                         Text(displayTitle)
-                            .font(AppTheme.sans(16, weight: .semibold))
+                            .font(AppTheme.TypeRole.callout(weight: .semibold))
                             .foregroundStyle(palette.ink)
                             .multilineTextAlignment(.leading)
                         if item.isPinned {
@@ -362,7 +351,7 @@ private struct IntentionRadioRow: View {
                     }
                     if let subtitle, !subtitle.isEmpty {
                         Text(subtitle)
-                            .font(AppTheme.sans(13))
+                            .font(AppTheme.TypeRole.label)
                             .foregroundStyle(palette.dim)
                             .multilineTextAlignment(.leading)
                             .lineLimit(2)
