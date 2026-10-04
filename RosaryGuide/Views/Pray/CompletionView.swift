@@ -10,10 +10,16 @@ struct CompletionView: View {
     var onDone: () -> Void
     var onMichael: (() -> Void)?
 
-    @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+
+    /// Always the dark ceremony palette. Reading the inherited palette would
+    /// follow the app scheme, and forcing that scheme with preferredColorScheme
+    /// is what froze the transition onto this screen.
+    private var palette: ThemePalette {
+        ThemePalette(scheme: .dark, contrast: colorSchemeContrast)
+    }
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
 
     @State private var contentPhase: ContentPhase = .hidden
@@ -62,7 +68,7 @@ struct CompletionView: View {
             let artH = artHeight(for: geo.size.height, compact: compactLayout)
 
             ZStack(alignment: .top) {
-                pageBg.ignoresSafeArea()
+                pageBg
 
                 // Hero artwork stays behind the complete, non-scrolling content block.
                 MysteryArtworkView(
@@ -87,7 +93,6 @@ struct CompletionView: View {
                         endPoint: .bottom
                     )
                 }
-                .ignoresSafeArea(edges: .top)
                 .accessibilityHidden(true)
 
                 // The content rests just above the pinned actions.
@@ -131,9 +136,17 @@ struct CompletionView: View {
                     .safeAreaPadding(.bottom)
                 }
             }
-            .frame(width: geo.size.width, height: geo.size.height)
-            .preferredColorScheme(.dark)
         }
+        // Draw under the status bar from outside the reader. Doing it inside
+        // (ignoresSafeArea + a frame locked to geo.size) makes the measured
+        // height and the insets chase each other until the main thread wedges.
+        .background(pageBg.ignoresSafeArea())
+        .ignoresSafeArea(edges: .top)
+        // Stay dark without preferredColorScheme. The app and the prayer cover
+        // already publish a scheme; a nested .dark preference fights them and
+        // retriggers layout forever when this screen is inserted.
+        .environment(\.colorScheme, .dark)
+        .environment(\.palette, palette)
         .onAppear { runEntrance() }
     }
 

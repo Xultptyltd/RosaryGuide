@@ -1047,7 +1047,13 @@ struct PrayView: View {
     private func showCompletionScreen() {
         lockCompletionIntentionIfNeeded()
         playHaptic()
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+        // Do not animate this swap. CompletionView changes safe area and the
+        // color-scheme environment; wrapping that in withAnimation keeps the
+        // closing-prayer tree and the finis tree in one transaction and the
+        // layout pass never settles.
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
             showingCompletion = true
         }
     }
