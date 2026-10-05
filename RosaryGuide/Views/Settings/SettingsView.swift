@@ -40,9 +40,9 @@ struct SettingsView: View {
         profileScroll
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
-        // Same compact bar as every pushed page; Close stays on the left.
+        // Same compact bar as every pushed page, with a back chevron on the left.
         .guideDetailChrome("Your profile")
-        .toolbar { closeToolbarItem }
+        .toolbar { backToolbarItem }
         .navigationDestination(for: SettingsDestination.self) { destination in
             destinationView(destination)
         }
@@ -229,14 +229,17 @@ struct SettingsView: View {
         }
     }
 
-    /// Settings root is presented, not pushed, so the leading slot holds Close.
+    /// Settings root is the root of the drawer's own NavigationStack, so there is
+    /// no native back button. This toolbar chevron mirrors it (same symbol, glass
+    /// circle and tint) and closes the drawer.
     @ToolbarContentBuilder
-    private var closeToolbarItem: some ToolbarContent {
+    private var backToolbarItem: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
             Button(action: close) {
-                Image(systemName: "xmark")
+                Image(systemName: "chevron.backward")
+                    .fontWeight(.medium)
             }
-            .accessibilityLabel("Close")
+            .accessibilityLabel("Back")
         }
     }
 
