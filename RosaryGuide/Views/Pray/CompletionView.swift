@@ -40,8 +40,10 @@ struct CompletionView: View {
     /// Resting icon. The ring is about half the 1024 canvas, so 88pt
     /// leaves a drawn tick about the size of the old emblem.
     private static let tickRest: CGFloat = 88
-    /// Screen margin around the playing composition so glow and beads stay inside.
-    private static let tickMargin: CGFloat = 40
+    /// Opening (centered) tick, sized so its bead circle matches the app-open
+    /// splash: splash canvas 144pt with beads at radius 290/1024; the tick's
+    /// beads sit at 250/1024, so 144 × 290 / 250 ≈ 167pt (circle ≈ 82pt wide).
+    private static let tickPlay: CGFloat = 144 * 290 / 250
     private static let morph = Animation.timingCurve(0.16, 1, 0.3, 1, duration: 0.98)
 
     private var resting: Bool { reduceMotion || settled }
@@ -159,9 +161,8 @@ struct CompletionView: View {
                 ? CGPoint(x: slot.midX, y: slot.midY)
                 : center
             let landed = resting && slot.width > 1
-            let fitted = min(proxy.size.width, proxy.size.height) - Self.tickMargin * 2
-            // First state only. About 30% smaller than the fitted canvas; the 88pt slot is unchanged.
-            let play = max(Self.tickRest, fitted * 0.7)
+            // First state only. Same circle size as the splash; the 88pt slot is unchanged.
+            let play = max(Self.tickRest, Self.tickPlay)
             RosaryTickPlayer(plays: true, hapticsEnabled: settings.hapticsEnabled, onComplete: morphIn)
                 .frame(width: play, height: play)
                 .scaleEffect(landed ? Self.tickRest / play : 1)
