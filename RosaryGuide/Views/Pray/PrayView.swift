@@ -698,10 +698,7 @@ struct PrayView: View {
     private func header(_ step: RosaryStep) -> some View {
         ZStack {
             HStack {
-                roundControl(label: "Aa") {
-                    settings.textSize = settings.textSize.next
-                }
-                .accessibilityLabel("Text size")
+                // Text size lives in Settings. Close stays trailing.
                 Spacer()
                 roundControl(system: "xmark") { dismiss() }
                     .accessibilityLabel("Close")
@@ -1099,10 +1096,7 @@ struct PrayView: View {
     /// Same chrome as a rosary prayer page: text-size, close, no stage track.
     private var michaelHeader: some View {
         HStack {
-            roundControl(label: "Aa") {
-                settings.textSize = settings.textSize.next
-            }
-            .accessibilityLabel("Text size")
+            // Text size lives in Settings. Close stays trailing.
             Spacer()
             roundControl(system: "xmark") {
                 returnToFinishScreen()
