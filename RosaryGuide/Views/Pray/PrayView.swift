@@ -980,120 +980,126 @@ struct PrayView: View {
         michaelContentHeight > michaelViewportHeight + 6 && !michaelActionLocked
     }
 
-    /// Both stays two columns. A slightly smaller size and the shared column
-    /// gap keep the lines even, instead of the cramped centered pair.
-    @ViewBuilder
-    private var michaelPrayerBody: some View {
-        let font = AppTheme.TypeRole.prayerText(scale: settings.textSize.scale)
-        let size = 21 * settings.textSize.scale
-        if language == .bilingual {
-            let columnScale = settings.textSize.scale * (17.0 / 21.0)
-            BilingualStack(
-                text: PrayerCatalog.saintMichael.text,
-                language: .bilingual,
-                font: AppTheme.TypeRole.prayerText(scale: columnScale),
-                pointSize: 17 * settings.textSize.scale,
-                alignment: .leading
-            )
-            .frame(maxWidth: .infinity, alignment: .leading)
-        } else {
-            BilingualStack(
-                text: PrayerCatalog.saintMichael.text,
-                language: language,
-                font: font,
-                pointSize: size,
-                alignment: .leading
-            )
-            .frame(maxWidth: .infinity, alignment: .leading)
+    /// Same chrome as a rosary prayer page: text-size, close, no stage track.
+    private var michaelHeader: some View {
+        HStack {
+            roundControl(label: "Aa") {
+                settings.textSize = settings.textSize.next
+            }
+            .accessibilityLabel("Text size")
+            Spacer()
+            roundControl(system: "xmark") {
+                returnToFinishScreen()
+            }
+            .accessibilityLabel("Close")
         }
+        .padding(.horizontal, AppTheme.Space.lg)
+        .padding(.top, AppTheme.Space.xs)
+        .padding(.bottom, AppTheme.Space.xs)
+    }
+
+    /// Same title block as `locus` on a non-plate prayer.
+    private var michaelLocus: some View {
+        let prayer = PrayerCatalog.saintMichael
+        return VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+            Text(prayer.title.primary(for: language))
+                .font(AppTheme.TypeRole.modalTitle)
+                .foregroundStyle(palette.ink)
+                .tracking(-0.2)
+            if language == .bilingual {
+                Text(prayer.title.latin)
+                    .font(AppTheme.TypeRole.bodySmall)
+                    .foregroundStyle(palette.dim)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 2)
+        .padding(.bottom, 22)
     }
 
     private var michaelLayer: some View {
         VStack(spacing: 0) {
-            HStack {
-                Spacer()
-                roundControl(system: "xmark") {
-                    returnToFinishScreen()
-                }
-            }
-            .padding(.horizontal, AppTheme.Space.lg)
-            .padding(.top, AppTheme.Space.sm)
+            michaelHeader
 
             ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                        Text(PrayerCatalog.saintMichael.title.primary(for: language))
-                            .font(AppTheme.TypeRole.titleSmall(weight: .regular))
-                            .foregroundStyle(palette.ink)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .fixedSize(horizontal: false, vertical: true)
+                VStack(spacing: 0) {
+                    GeometryReader { scrollGeo in
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                Spacer(minLength: 0)
+                                VStack(alignment: .leading, spacing: 0) {
+                                    michaelLocus
+                                    BilingualStack(
+                                        text: PrayerCatalog.saintMichael.text,
+                                        language: language,
+                                        font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
+                                        pointSize: 21 * settings.textSize.scale
+                                    )
+                                }
+                                .padding(.horizontal, AppTheme.gutter)
+                                .padding(.top, 4)
+                                .padding(.bottom, AppTheme.Space.lg)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                Spacer(minLength: 0)
 
-                        michaelPrayerBody
-                    }
-                    .padding(.horizontal, AppTheme.gutter)
-                    .padding(.top, AppTheme.Space.md)
-                    .padding(.bottom, AppTheme.Space.lg)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background {
-                        GeometryReader { geo in
-                            Color.clear.preference(key: MichaelContentHeightKey.self, value: geo.size.height)
+                                Color.clear
+                                    .frame(height: 1)
+                                    .id(MichaelScrollAnchor.bottom)
+                            }
+                            .frame(minHeight: scrollGeo.size.height, alignment: .top)
+                            .frame(maxWidth: .infinity)
+                            .background {
+                                GeometryReader { geo in
+                                    Color.clear.preference(key: MichaelContentHeightKey.self, value: geo.size.height)
+                                }
+                            }
+                        }
+                        .background {
+                            GeometryReader { geo in
+                                Color.clear.preference(key: MichaelViewportHeightKey.self, value: geo.size.height)
+                            }
+                        }
+                        .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
+                        PlateScrollMetrics(
+                            offsetY: geometry.contentOffset.y,
+                            contentHeight: geometry.contentSize.height,
+                            viewportHeight: geometry.containerSize.height
+                        )
+                    } action: { _, newValue in
+                        let y = max(0, newValue.offsetY)
+                        if newValue.contentHeight > 1 {
+                            michaelContentHeight = max(michaelContentHeight, newValue.contentHeight)
+                        }
+                        if newValue.viewportHeight > 1 {
+                            michaelViewportHeight = newValue.viewportHeight
+                        }
+                        let contentH = max(michaelContentHeight, newValue.contentHeight)
+                        let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : michaelViewportHeight
+                        let maxOffset = max(0, contentH - viewH)
+                        let shouldSettle = maxOffset > 8 && y >= maxOffset - 56
+                        let shouldUnlock = maxOffset > 8 && y < maxOffset - 112
+                        if shouldSettle, !michaelActionLocked {
+                            michaelActionLocked = true
+                            withAnimation(reduceMotion ? nil : MotionTokens.soft) {
+                                proxy.scrollTo(MichaelScrollAnchor.bottom, anchor: .bottom)
+                            }
+                        } else if shouldUnlock, michaelActionLocked {
+                            michaelActionLocked = false
                         }
                     }
-
-                    Color.clear
-                        .frame(height: 1)
-                        .id(MichaelScrollAnchor.bottom)
-                }
-                .scrollIndicators(.hidden)
-                .scrollBounceBehavior(.basedOnSize)
-                .background {
-                    GeometryReader { geo in
-                        Color.clear.preference(key: MichaelViewportHeightKey.self, value: geo.size.height)
-                    }
-                }
-                .onPreferenceChange(MichaelContentHeightKey.self) { height in
-                    if height > 1 { michaelContentHeight = height }
-                }
-                .onPreferenceChange(MichaelViewportHeightKey.self) { height in
-                    if height > 1 { michaelViewportHeight = height }
-                }
-                .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
-                    PlateScrollMetrics(
-                        offsetY: geometry.contentOffset.y,
-                        contentHeight: geometry.contentSize.height,
-                        viewportHeight: geometry.containerSize.height
-                    )
-                } action: { _, newValue in
-                    let y = max(0, newValue.offsetY)
-                    if newValue.contentHeight > 1 {
-                        michaelContentHeight = max(michaelContentHeight, newValue.contentHeight)
-                    }
-                    if newValue.viewportHeight > 1 {
-                        michaelViewportHeight = newValue.viewportHeight
-                    }
-                    let contentH = max(michaelContentHeight, newValue.contentHeight)
-                    let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : michaelViewportHeight
-                    let maxOffset = max(0, contentH - viewH)
-                    let shouldSettle = maxOffset > 8 && y >= maxOffset - 56
-                    let shouldUnlock = maxOffset > 8 && y < maxOffset - 112
-                    if shouldSettle, !michaelActionLocked {
-                        michaelActionLocked = true
-                        withAnimation(reduceMotion ? nil : MotionTokens.soft) {
-                            proxy.scrollTo(MichaelScrollAnchor.bottom, anchor: .bottom)
+                        .onChange(of: settings.language) {
+                            michaelActionLocked = false
+                            michaelContentHeight = 0
                         }
-                    } else if shouldUnlock, michaelActionLocked {
-                        michaelActionLocked = false
                     }
-                }
-                .onChange(of: settings.language) {
-                    michaelActionLocked = false
-                    michaelContentHeight = 0
-                }
-                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    .onPreferenceChange(MichaelContentHeightKey.self) { height in
+                        if height > 1 { michaelContentHeight = height }
+                    }
+                    .onPreferenceChange(MichaelViewportHeightKey.self) { height in
+                        if height > 1 { michaelViewportHeight = height }
+                    }
+
                     VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
-                        languageChips
-                            .padding(.horizontal, AppTheme.gutter)
                         michaelActionChrome {
                             HapticService.play(.light, enabled: settings.hapticsEnabled)
                             michaelActionLocked = true
@@ -1101,8 +1107,11 @@ struct PrayView: View {
                                 proxy.scrollTo(MichaelScrollAnchor.bottom, anchor: .bottom)
                             }
                         }
+                        languageChips
                     }
-                    .padding(.top, AppTheme.Space.sm)
+                    .padding(.horizontal, AppTheme.gutter)
+                    .padding(.bottom, AppTheme.Space.lg)
+                    .padding(.top, AppTheme.Space.md)
                     .background(palette.prayBg)
                 }
             }
@@ -1110,7 +1119,7 @@ struct PrayView: View {
         .background(palette.prayBg.ignoresSafeArea())
     }
 
-    /// Same circle-to-pill morph as the mystery plate. The circle scrolls; the pill is Done.
+    /// Mystery-plate circle, in the prayer footer. It becomes Done at the end of the scroll.
     private func michaelActionChrome(scrollToBottom: @escaping () -> Void) -> some View {
         let showScroll = michaelCanScrollFurther
         let animation = reduceMotion ? nil : Animation.spring(response: 0.42, dampingFraction: 0.84)
@@ -1155,9 +1164,6 @@ struct PrayView: View {
             .accessibilityLabel(showScroll ? "Scroll to read the prayer" : "Done")
         }
         .animation(animation, value: showScroll)
-        .padding(.horizontal, AppTheme.gutter)
-        .padding(.top, 8)
-        .padding(.bottom, AppTheme.Space.lg)
     }
 
     // MARK: - Navigation
