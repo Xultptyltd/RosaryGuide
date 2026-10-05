@@ -54,6 +54,7 @@ struct RosaryStep: Identifiable, Hashable {
         switch kind {
         case .mysteryAnnouncement: "Continue"
         case .completion: "Amen"
+        case .concludingPrayer: "Finish"
         default: "Next"
         }
     }
