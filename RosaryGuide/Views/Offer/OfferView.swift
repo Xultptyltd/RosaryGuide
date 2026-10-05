@@ -244,7 +244,8 @@ struct OfferView: View {
                     PrayerRhythmCard(rhythm: PrayerRhythm(prayedDayStarts: sessionStore.completedDayStarts))
 
                     intentionsSectionHeader
-                        .padding(.top, AppTheme.sectionGap)
+                        // Rhythm card to the heading: tighter than sectionGap (44) on this screen.
+                        .padding(.top, 36)
 
                     syncWarning
                         .padding(.horizontal, AppTheme.gutter)
