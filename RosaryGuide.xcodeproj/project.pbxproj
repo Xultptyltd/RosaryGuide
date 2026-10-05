@@ -58,6 +58,8 @@
 			A9F00101A1B2C3D4E5F6100D /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A9F00101A1B2C3D4E5F6100E /* GoogleSignIn */; };
 			A9F00101A1B2C3D4E5F61014 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = A9F00101A1B2C3D4E5F61015 /* FirebaseFirestore */; };
 			A9F00101A1B2C3D4E5F61016 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = A9F00101A1B2C3D4E5F61017 /* FirebaseAppCheck */; };
+			A9F00101A1B2C3D4E5F61032 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = A9F00101A1B2C3D4E5F61031 /* Lottie */; };
+			A9F00101A1B2C3D4E5F61034 /* RosaryTickPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F00101A1B2C3D4E5F61033 /* RosaryTickPlayer.swift */; };
 			A9F00101A1B2C3D4E5F61012 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A9F00101A1B2C3D4E5F61013 /* GoogleService-Info.plist */; };
 		B2C3D4E5F60718293A4B5C6D /* HomeSettingsDrawer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* HomeSettingsDrawer.swift */; };
 		BC96C621E125FD05CB52BE42 /* CompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F839B24D2EBDDA7A625663F3 /* CompletionView.swift */; };
@@ -143,6 +145,7 @@
 		F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MysteryCatalog.swift; sourceTree = "<group>"; };
 		F80C04FFC2A7544537A58C73 /* OfferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferView.swift; sourceTree = "<group>"; };
 		F839B24D2EBDDA7A625663F3 /* CompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionView.swift; sourceTree = "<group>"; };
+		A9F00101A1B2C3D4E5F61033 /* RosaryTickPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosaryTickPlayer.swift; sourceTree = "<group>"; };
 		F91288DB192297DC903FE08C /* RosaryGuide.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RosaryGuide.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FC2132B969E266BCD4A50F87 /* PopeIntentions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = PopeIntentions.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -164,6 +167,7 @@
 					A9F00101A1B2C3D4E5F61014 /* FirebaseFirestore in Frameworks */,
 					A9F00101A1B2C3D4E5F61016 /* FirebaseAppCheck in Frameworks */,
 					A9F00101A1B2C3D4E5F6100D /* GoogleSignIn in Frameworks */,
+					A9F00101A1B2C3D4E5F61032 /* Lottie in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -213,6 +217,7 @@
 				4CD4D5E7D72C9B8A8331506A /* PrayIntentionSheet.swift */,
 				BD36BF90207B9099879DC954 /* BeadRailView.swift */,
 				F839B24D2EBDDA7A625663F3 /* CompletionView.swift */,
+				A9F00101A1B2C3D4E5F61033 /* RosaryTickPlayer.swift */,
 				0D14D5C74E932FBB6FE0784F /* PrayHubView.swift */,
 				8589A7E167BB2CC661B8B1E9 /* PrayView.swift */,
 			);
@@ -388,6 +393,7 @@
 					A9F00101A1B2C3D4E5F61015 /* FirebaseFirestore */,
 					A9F00101A1B2C3D4E5F61017 /* FirebaseAppCheck */,
 					A9F00101A1B2C3D4E5F6100E /* GoogleSignIn */,
+					A9F00101A1B2C3D4E5F61031 /* Lottie */,
 			);
 			productName = RosaryGuide;
 			productReference = F91288DB192297DC903FE08C /* RosaryGuide.app */;
@@ -441,6 +447,7 @@
 			packageReferences = (
 				A9F00101A1B2C3D4E5F61010 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				A9F00101A1B2C3D4E5F61011 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				A9F00101A1B2C3D4E5F61030 /* XCRemoteSwiftPackageReference "lottie-ios" */,
 			);
 			productRefGroup = 1D5F545FBA1B7116946BB4C6 /* Products */;
 			projectDirPath = "";
@@ -528,6 +535,7 @@
 				A21E8071973B2454C07D064D /* HowToPrayView.swift in Sources */,
 				BE13802B23DF384111053919 /* BeadRailView.swift in Sources */,
 				BC96C621E125FD05CB52BE42 /* CompletionView.swift in Sources */,
+				A9F00101A1B2C3D4E5F61034 /* RosaryTickPlayer.swift in Sources */,
 				004406578DA6DEABB8614015 /* PrayHubView.swift in Sources */,
 				7165D260E520AAAB913AEBEC /* PrayView.swift in Sources */,
 				C4E6091F6E846D2945504B42 /* SettingsView.swift in Sources */,
@@ -824,6 +832,14 @@
 				minimumVersion = 8.0.0;
 			};
 		};
+		A9F00101A1B2C3D4E5F61030 /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -851,6 +867,11 @@
 				isa = XCSwiftPackageProductDependency;
 				package = A9F00101A1B2C3D4E5F61010 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 				productName = FirebaseAppCheck;
+			};
+			A9F00101A1B2C3D4E5F61031 /* Lottie */ = {
+				isa = XCSwiftPackageProductDependency;
+				package = A9F00101A1B2C3D4E5F61030 /* XCRemoteSwiftPackageReference "lottie-ios" */;
+				productName = Lottie;
 			};
 /* End XCSwiftPackageProductDependency section */
 	};

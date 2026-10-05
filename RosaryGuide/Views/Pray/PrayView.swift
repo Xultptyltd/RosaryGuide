@@ -87,6 +87,8 @@ struct PrayView: View {
     @State private var completionQuote: CompletionQuote?
     /// Stops the bead TimelineView before the finis screen is inserted.
     @State private var beadTimelinePaused = false
+    /// Black veil over the closing prayer. Beads keep running underneath until this covers them.
+    @State private var finishBlack: Double = 0
 
     private var language: PrayerLanguage { settings.language }
     private var current: RosaryStep? {
@@ -106,6 +108,13 @@ struct PrayView: View {
                 } else {
                     prayLayer(current)
                 }
+            }
+            if finishBlack > 0, !showingCompletion, !showingMichael {
+                Color.black
+                    .opacity(finishBlack)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(finishBlack > 0.05)
+                    .accessibilityHidden(true)
             }
         }
         .foregroundStyle(palette.ink)
@@ -1015,6 +1024,7 @@ struct PrayView: View {
             completionIntentionTitle = nil
             completionQuote = nil
             beadTimelinePaused = false
+            finishBlack = 0
             showingCompletion = false
         case .resume(let session):
             freshSetPending = nil
@@ -1034,6 +1044,7 @@ struct PrayView: View {
             completionIntentionTitle = nil
             completionQuote = nil
             beadTimelinePaused = false
+            finishBlack = 0
             showingCompletion = false
         }
         playHaptic()
@@ -1062,16 +1073,26 @@ struct PrayView: View {
         // scene-update logs (0x8BADF00D) show the main thread still inside
         // that update 10s later — ButtonBehavior, then Core Text variation
         // fonts — so the bead TimelineView stops with the rest of the UI.
-        let title = resolvedIntentionTitleForCompletion()
-        let quote = QuoteCatalog.selectCompletionQuote()
+        // Beads keep running until the fade below actually starts.
         DispatchQueue.main.async {
-            beadTimelinePaused = true
-            DispatchQueue.main.async {
-                if completionIntentionTitle == nil {
-                    completionIntentionTitle = title
+            let title = resolvedIntentionTitleForCompletion()
+            let quote = QuoteCatalog.selectCompletionQuote()
+            RosaryTickLibrary.preload()
+            let fade = reduceMotion ? 0.01 : 0.62
+            withAnimation(.easeInOut(duration: fade)) {
+                finishBlack = 1
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + fade) {
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    if completionIntentionTitle == nil {
+                        completionIntentionTitle = title
+                    }
+                    completionQuote = quote
+                    showingCompletion = true
+                    finishBlack = 0
                 }
-                completionQuote = quote
-                showingCompletion = true
                 DispatchQueue.main.async {
                     QuoteCatalog.rememberCompletionQuote(quote)
                 }

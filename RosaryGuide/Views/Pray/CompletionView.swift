@@ -23,16 +23,17 @@ struct CompletionView: View {
     }
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
 
-    @State private var contentPhase: ContentPhase = .hidden
+    /// True once the tick has landed in the icon slot. Reduce Motion starts here.
+    @State private var settled = false
+    /// Icon slot in the finish coordinate space. Written only when it actually moves.
+    @State private var slot: CGRect = .zero
 
-    private enum ContentPhase: Int, Comparable {
-        case hidden = 0
-        case symbol = 1
-        case title = 2
-        case rest = 3
+    /// Centerpiece size while the tick plays, and the slot it shrinks into.
+    private static let tickPlay: CGFloat = 272
+    private static let tickRest: CGFloat = 64
+    private static let morph = Animation.timingCurve(0.16, 1, 0.3, 1, duration: 0.98)
 
-        static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
-    }
+    private var resting: Bool { reduceMotion || settled }
 
     /// Ceremonial page ground, routed through the app palette even though this
     /// screen intentionally stays dark.
@@ -65,57 +66,105 @@ struct CompletionView: View {
     var body: some View {
         // One finite scroll. The previous layout measured itself with a
         // GeometryReader, then ignored the safe area and locked a frame to
-        // that measurement. On device that re-entered body until the main
-        // thread never returned (scene-update watchdog inside this getter).
-        ScrollView {
-            VStack(spacing: 0) {
-                MysteryArtworkView(
-                    set: mysterySet,
-                    mysteryNumber: nil,
-                    slug: nil,
-                    kind: .heroTall
-                )
-                .frame(height: prefersCompactType ? 220 : 300)
-                .frame(maxWidth: .infinity)
-                .clipped()
-                .overlay { heroFade }
-                .accessibilityHidden(true)
+        // that measurement. The icon slot below is a fixed frame; its
+        // background reader does not change that size.
+        ZStack {
+            ScrollView {
+                VStack(spacing: 0) {
+                    MysteryArtworkView(
+                        set: mysterySet,
+                        mysteryNumber: nil,
+                        slug: nil,
+                        kind: .heroTall
+                    )
+                    .frame(height: prefersCompactType ? 220 : 300)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                    .overlay { heroFade }
+                    .opacity(resting ? 1 : 0)
+                    .offset(y: resting ? 0 : 28)
+                    .accessibilityHidden(true)
 
-                completionContent(compact: prefersCompactType)
-                    .padding(.horizontal, AppTheme.gutter)
-                    .padding(.top, prefersCompactType ? 12 : 20)
+                    iconSlot
+                        .padding(.top, prefersCompactType ? 12 : 20)
+                        .padding(.bottom, prefersCompactType ? 12 : 18)
 
-                VStack(spacing: prefersCompactType ? 12 : 18) {
-                    PillButton(title: "Done", action: onDone)
-                        .accessibilityLabel("Done")
+                    completionContent(compact: prefersCompactType)
+                        .padding(.horizontal, AppTheme.gutter)
+                        .offset(y: resting ? 0 : 108)
+                        .opacity(resting ? 1 : 0)
 
-                    if let onMichael {
-                        Button(action: onMichael) {
-                            let secondary = ThemePalette(scheme: .dark)
-                            Text("Saint Michael Prayer")
-                                .font(AppTheme.TypeRole.callout(weight: .semibold))
-                                .foregroundStyle(secondary.secondaryButtonText)
-                                .padding(.horizontal, 28)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: AppTheme.Component.pillHeight)
-                                .background(secondary.secondaryButtonFill, in: Capsule())
-                        }
-                        .buttonStyle(.plain)
-                        .guidePressable()
-                        .accessibilityLabel("Saint Michael Prayer")
-                        .accessibilityAddTraits(.isButton)
-                    }
+                    actions(compact: prefersCompactType)
+                        .offset(y: resting ? 0 : 108)
+                        .opacity(resting ? 1 : 0)
                 }
-                .opacity(opacity(for: .rest))
-                .padding(.horizontal, AppTheme.gutter)
-                .padding(.top, 8)
-                .padding(.bottom, 28)
+                .frame(maxWidth: .infinity)
+                .animation(Self.morph, value: resting)
             }
-            .frame(maxWidth: .infinity)
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollDisabled(!resting)
+
+            if !reduceMotion {
+                tickJourney
+            }
         }
-        .scrollBounceBehavior(.basedOnSize)
+        .coordinateSpace(name: "finis")
         .background(pageBg.ignoresSafeArea())
-        .onAppear { runEntrance() }
+        .onPreferenceChange(SlotFrameKey.self) { rect in
+            guard rect.width > 1, rect.height > 1 else { return }
+            guard abs(rect.minX - slot.minX) > 0.5
+                    || abs(rect.minY - slot.minY) > 0.5
+                    || abs(rect.width - slot.width) > 0.5 else { return }
+            slot = rect
+        }
+    }
+
+    /// Fixed hole where the drawn emblem used to be. The same Lottie view
+    /// lands here, so the resting screen does not draw a second icon.
+    private var iconSlot: some View {
+        Group {
+            if reduceMotion {
+                RosaryTickPlayer(plays: false, onComplete: {})
+                    .frame(width: Self.tickRest, height: Self.tickRest)
+            } else {
+                Color.clear
+                    .frame(width: Self.tickRest, height: Self.tickRest)
+            }
+        }
+        .background {
+            GeometryReader { geo in
+                Color.clear.preference(
+                    key: SlotFrameKey.self,
+                    value: geo.frame(in: .named("finis"))
+                )
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private var tickJourney: some View {
+        GeometryReader { proxy in
+            let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
+            let target = slot.width > 1
+                ? CGPoint(x: slot.midX, y: slot.midY)
+                : center
+            let landed = resting && slot.width > 1
+            RosaryTickPlayer(plays: true, onComplete: morphIn)
+                .frame(width: Self.tickPlay, height: Self.tickPlay)
+                .scaleEffect(landed ? Self.tickRest / Self.tickPlay : 1)
+                .position(landed ? target : center)
+                .animation(Self.morph, value: landed)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func morphIn() {
+        guard !settled else { return }
+        withAnimation(Self.morph) {
+            settled = true
+        }
     }
 
     private var heroFade: some View {
@@ -136,25 +185,14 @@ struct CompletionView: View {
     @ViewBuilder
     private func completionContent(compact: Bool) -> some View {
         VStack(spacing: 0) {
-            FinisEmblem()
-                .foregroundStyle(palette.accent.opacity(0.95))
-                .opacity(opacity(for: .symbol))
-                .offset(y: offset(for: .symbol))
-                .padding(.bottom, compact ? 12 : 18)
-                .accessibilityHidden(true)
-
-            // Completion label (metadata, not headline)
             Text("ROSARY COMPLETE")
                 .font(AppTheme.TypeRole.caption(weight: .medium))
                 .tracking(1.6)
                 .foregroundStyle(palette.completionLabel)
                 .multilineTextAlignment(.center)
-                .opacity(opacity(for: .title))
-                .offset(y: offset(for: .title))
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityLabel("Rosary complete")
 
-            // Mystery title
             Text(mysteryHeadline)
                 .font(compact ? AppTheme.TypeRole.screenTitle : AppTheme.TypeRole.title)
                 .foregroundStyle(palette.completionTitle)
@@ -163,11 +201,7 @@ struct CompletionView: View {
                 .minimumScaleFactor(0.78)
                 .accessibilityLabel(mysterySet.name.english)
                 .padding(.top, compact ? 8 : 10)
-                .opacity(opacity(for: .title))
-                .offset(y: offset(for: .title))
 
-            // Offered for — between the mystery title and quote surface.
-            // Exact stored title only (never auto-prefix "For").
             if hasIntention {
                 VStack(spacing: AppTheme.Space.sm) {
                     Text("OFFERED FOR")
@@ -184,12 +218,10 @@ struct CompletionView: View {
                 }
                 .padding(.top, compact ? 20 : 28)
                 .layoutPriority(1)
-                .opacity(opacity(for: .rest))
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Offered for \(displayIntentionTitle)")
             }
 
-            // Short contemplative quote on the same surface treatment used elsewhere.
             VStack(spacing: compact ? AppTheme.Space.sm : AppTheme.Space.md) {
                 Text("“\(quote.text)”")
                     .font(compact ? AppTheme.TypeRole.body : AppTheme.TypeRole.bodySmall)
@@ -207,87 +239,45 @@ struct CompletionView: View {
             .padding(compact ? AppTheme.Space.md : AppTheme.Space.lg)
             .guideCard(fill: palette.surface)
             .padding(.top, compact ? AppTheme.Space.xl : AppTheme.Space.xxl)
-            .opacity(opacity(for: .rest))
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(quote.text), \(quote.attribution)")
 
-            // Small breathing room before the pinned actions.
             Color.clear.frame(height: compact ? 16 : 24)
         }
     }
 
-    private func opacity(for phase: ContentPhase) -> Double {
-        contentPhase >= phase ? 1 : 0
-    }
+    private func actions(compact: Bool) -> some View {
+        VStack(spacing: compact ? 12 : 18) {
+            PillButton(title: "Done", action: onDone)
+                .accessibilityLabel("Done")
 
-    private func offset(for phase: ContentPhase) -> CGFloat {
-        if reduceMotion { return 0 }
-        return contentPhase >= phase ? 0 : 8
-    }
-
-    private func runEntrance() {
-        guard !reduceMotion else {
-            contentPhase = .rest
-            return
+            if let onMichael {
+                Button(action: onMichael) {
+                    let secondary = ThemePalette(scheme: .dark)
+                    Text("Saint Michael Prayer")
+                        .font(AppTheme.TypeRole.callout(weight: .semibold))
+                        .foregroundStyle(secondary.secondaryButtonText)
+                        .padding(.horizontal, 28)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: AppTheme.Component.pillHeight)
+                        .background(secondary.secondaryButtonFill, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .guidePressable()
+                .accessibilityLabel("Saint Michael Prayer")
+                .accessibilityAddTraits(.isButton)
+            }
         }
-        contentPhase = .hidden
-        withAnimation(.easeOut(duration: 0.45).delay(0.12)) {
-            contentPhase = .symbol
-        }
-        withAnimation(.easeOut(duration: 0.50).delay(0.32)) {
-            contentPhase = .title
-        }
-        withAnimation(.easeOut(duration: 0.45).delay(0.52)) {
-            contentPhase = .rest
-        }
+        .padding(.horizontal, AppTheme.gutter)
+        .padding(.top, 8)
+        .padding(.bottom, 28)
     }
 }
 
-// MARK: - Finis chrome (completed rosary emblem)
-
-private struct FinisEmblem: View {
-    var body: some View {
-        Canvas { ctx, size in
-            let sx = size.width / 60
-            let sy = size.height / 70
-            func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x * sx, y: y * sy) }
-
-            let n = 22
-            let r: CGFloat = 17
-            let cx: CGFloat = 30
-            let cy: CGFloat = 26
-            for i in 0..<n {
-                let a = (CGFloat(i) / CGFloat(n)) * 2 * .pi - .pi / 2
-                let c = p(cx + cos(a) * r, cy + sin(a) * r)
-                let rad = 1.5 * sx
-                ctx.fill(Path(ellipseIn: CGRect(x: c.x - rad, y: c.y - rad, width: rad * 2, height: rad * 2)), with: .foreground)
-            }
-
-            var star = Path()
-            let sc = p(30, 26)
-            let outer: CGFloat = 5.4 * sx
-            let inner: CGFloat = 2.2 * sx
-            for i in 0..<8 {
-                let a = CGFloat(i) * .pi / 4 - .pi / 2
-                let rad = i.isMultiple(of: 2) ? outer : inner
-                let pt = CGPoint(x: sc.x + cos(a) * rad, y: sc.y + sin(a) * rad)
-                if i == 0 { star.move(to: pt) } else { star.addLine(to: pt) }
-            }
-            star.closeSubpath()
-            ctx.fill(star, with: .foreground)
-
-            for y in [46.5, 52.0] as [CGFloat] {
-                let c = p(30, y)
-                let rad = 1.5 * sx
-                ctx.fill(Path(ellipseIn: CGRect(x: c.x - rad, y: c.y - rad, width: rad * 2, height: rad * 2)), with: .foreground)
-            }
-
-            var cross = Path()
-            cross.move(to: p(30, 56)); cross.addLine(to: p(30, 67))
-            cross.move(to: p(25.5, 60)); cross.addLine(to: p(34.5, 60))
-            ctx.stroke(cross, with: .foreground, style: StrokeStyle(lineWidth: 1.6 * sx, lineCap: .round))
-        }
-        .frame(width: 48, height: 56)
-        .accessibilityHidden(true)
+private struct SlotFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        let next = nextValue()
+        if next.width > 1 { value = next }
     }
 }
