@@ -168,3 +168,34 @@ final class VersicleLineTests: XCTestCase {
         XCTAssertEqual(BilingualStack.joinedLines("Hail Mary,\nfull of grace"), "Hail Mary, full of grace")
     }
 }
+
+final class LicenseTextTests: XCTestCase {
+    func testJoinsHardWrappedLinesButKeepsTitlesAndListItems() {
+        let raw = """
+                                 Apache License
+                           Version 2.0, January 2004
+
+        Permission is hereby granted, free of charge, to any person obtaining a copy of
+        this software and associated documentation files (the "Software"), to deal in
+        the Software without restriction.
+
+        1. The origin of this software must not be misrepresented; you must not claim
+           that you wrote the original software.
+        2. Altered source versions must be plainly marked as such, and must not be
+           misrepresented as being the original software.
+
+        ================================================================================
+        """
+        let text = LicenseText.reflow(raw)
+        XCTAssertTrue(text.hasPrefix("Apache License\nVersion 2.0, January 2004\n\n"))
+        XCTAssertTrue(text.contains("obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction."))
+        XCTAssertTrue(text.contains("must not claim that you wrote the original software.\n2. Altered"))
+        XCTAssertTrue(text.hasSuffix("\n\n================================================================================"))
+    }
+
+    func testBundledLicencesAreSortedAndNonEmpty() {
+        let names = LicenseCatalog.all.map(\.name)
+        XCTAssertEqual(names, names.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending })
+        XCTAssertTrue(LicenseCatalog.all.allSatisfy { !$0.license.isEmpty })
+    }
+}

@@ -17,6 +17,7 @@
 		28C9577CEB49FB4EFCC102BF /* HowToPrayContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B7278C515BF0D95EE40796 /* HowToPrayContent.swift */; };
 		2B1F0975A78C45248878D4B4 /* FeastNarratives.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73615B296B0C41CFA92F7797 /* FeastNarratives.swift */; };
 		2ECA4A85B436EA08CA5456DC /* PopeIntentions.json in Resources */ = {isa = PBXBuildFile; fileRef = FC2132B969E266BCD4A50F87 /* PopeIntentions.json */; };
+		CEFCA3332CB99E8E2E8F552C /* Licenses.json in Resources */ = {isa = PBXBuildFile; fileRef = 23BA9EEC77C898EF9CED79E7 /* Licenses.json */; };
 		33C9C8A63321FD903306F010 /* RosaryGuideApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDB06CBDA53DED71FAAB4CC3 /* RosaryGuideApp.swift */; };
 		443FF4F01F38FE1DC8B240C1 /* MysteryCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC7688092076D0FC5DE763D0 /* MysteryCalendarTests.swift */; };
 		57FAA2A412A56E18EE6BC727 /* OfferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80C04FFC2A7544537A58C73 /* OfferView.swift */; };
@@ -148,6 +149,7 @@
 		A9F00101A1B2C3D4E5F61033 /* RosaryTickPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosaryTickPlayer.swift; sourceTree = "<group>"; };
 		F91288DB192297DC903FE08C /* RosaryGuide.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RosaryGuide.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FC2132B969E266BCD4A50F87 /* PopeIntentions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = PopeIntentions.json; sourceTree = "<group>"; };
+		23BA9EEC77C898EF9CED79E7 /* Licenses.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Licenses.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -281,6 +283,7 @@
 			isa = PBXGroup;
 			children = (
 				FC2132B969E266BCD4A50F87 /* PopeIntentions.json */,
+				23BA9EEC77C898EF9CED79E7 /* Licenses.json */,
 				5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */,
 				73615B296B0C41CFA92F7797 /* FeastNarratives.swift */,
 				AA8200BBF10943DA9B385CE9 /* FeastScriptures.swift */,
@@ -465,6 +468,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2ECA4A85B436EA08CA5456DC /* PopeIntentions.json in Resources */,
+				CEFCA3332CB99E8E2E8F552C /* Licenses.json in Resources */,
 				A9F00101A1B2C3D4E5F61012 /* GoogleService-Info.plist in Resources */,
 				68FAC2550EF5E8F91919F963 /* Assets.xcassets in Resources */,
 				69AB1C253F476ED63D9F71F1 /* PrivacyInfo.xcprivacy in Resources */,
