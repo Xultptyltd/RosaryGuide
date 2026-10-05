@@ -216,7 +216,15 @@ struct PrayView: View {
             let artHeight = min(geo.size.width, geo.size.height * 0.48, 520)
 
             if step.isPlate, let mystery = step.mystery {
-                plateLayer(step, mystery: mystery, artHeight: artHeight)
+                // Mystery text starts at 3/7 of the full screen height (incl. safe areas).
+                let frame = geo.frame(in: .global)
+                let screenHeight = frame.maxY + geo.safeAreaInsets.bottom
+                plateLayer(
+                    step,
+                    mystery: mystery,
+                    artHeight: artHeight,
+                    contentTop: max(0, screenHeight * 3 / 7 - frame.minY)
+                )
             } else {
                 VStack(spacing: 0) {
                     VStack(spacing: 0) {
@@ -273,13 +281,16 @@ struct PrayView: View {
     private func plateLayer(
         _ step: RosaryStep,
         mystery: Mystery,
-        artHeight: CGFloat
+        artHeight: CGFloat,
+        contentTop: CGFloat
     ) -> some View {
         let progress = plateScrollProgress
         let chromeH = max(plateChromeHeight, 88)
         let heroHeight = artHeight + chromeH
-        // Spacer clears floating chrome + visible art band before Scripture.
-        let heroSpacer = heroHeight + 8
+        // Spacer puts the mystery text's top edge at `contentTop` (3/7 of the screen),
+        // measured from the top of the scroll view; 4pt is the text block's top padding.
+        let textTopPadding: CGFloat = 4
+        let heroSpacer = max(0, contentTop - textTopPadding)
         let readingBottomPad: CGFloat = 28
 
         return ZStack(alignment: .top) {
@@ -306,7 +317,7 @@ struct PrayView: View {
                             announceBody(step)
                         }
                         .padding(.horizontal, AppTheme.gutter)
-                        .padding(.top, 4)
+                        .padding(.top, textTopPadding)
                         .padding(.bottom, AppTheme.Space.lg + readingBottomPad)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityElement(children: .contain)
