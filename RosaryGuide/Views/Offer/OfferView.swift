@@ -288,7 +288,10 @@ struct OfferView: View {
                         .padding(.top, currentIntention == nil ? 0 : AppTheme.Space.md)
                     }
 
-                    addIntentionButton(title: "Add an intention", matchesLearnStyle: true)
+                    // Tertiary pill, same as Complete decade in the rosary flow.
+                    PillButton(title: "Add an intention", filled: false, tertiary: true) {
+                        editor = .create
+                    }
                         .guideNavList(pageGutter: AppTheme.gutter)
                         // Featured / Pope's card to the Add button.
                         .padding(.top, (currentIntention == nil && papalSuggestion == nil) ? 0 : AppTheme.Space.md)
@@ -453,12 +456,8 @@ private struct CurrentIntentionHero: View {
                     .accessibilityHidden(true)
             }
             .padding(AppTheme.Space.lg)
+            // Flat surface like every card on My prayer (no border or shadow).
             .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .strokeBorder(palette.cardStroke, lineWidth: AppTheme.Component.panelStrokeWidth)
-            }
-            .guideSoftShadow(elevated: colorScheme == .light)
             .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -478,18 +477,8 @@ private struct CurrentIntentionHero: View {
         }
         .overlay(alignment: .bottom) {
             // Outside the card Button so pray does not also open detail.
-            Button(action: onPray) {
-                HStack(spacing: 8) {
-                    Text("Offer my next Rosary")
-                    Image(systemName: "arrow.right")
-                }
-                .font(AppTheme.TypeRole.callout(weight: .semibold))
-                .foregroundStyle(palette.primaryButtonText)
-                .frame(maxWidth: .infinity)
-                .frame(height: AppTheme.Component.pillHeight)
-                .background(actionFill, in: Capsule())
-            }
-            .buttonStyle(.plain)
+            // Secondary pill, same as Next in the rosary flow.
+            PillButton(title: "Offer my next Rosary", filled: false, action: onPray)
             .padding(.horizontal, AppTheme.Space.lg)
             .padding(.bottom, AppTheme.Space.lg)
         }
@@ -501,9 +490,6 @@ private struct CurrentIntentionHero: View {
         }
     }
 
-    private var actionFill: Color {
-        palette.primaryButtonFill
-    }
 }
 
 private struct EmptyPapalIntentionCard: View {
@@ -594,7 +580,6 @@ private struct PapalMonthCard: View {
         }
         .buttonStyle(.plain)
         .guidePressable()
-        .guideSoftShadow(elevated: colorScheme == .light)
         .accessibilityLabel("\(monthLabel), \(item.title)")
         .accessibilityHint("Opens the Pope’s intention")
         .accessibilityElement(children: .combine)

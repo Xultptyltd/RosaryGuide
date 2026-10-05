@@ -178,32 +178,10 @@ struct PrayerRhythmCard: View {
 
     // MARK: Surface
 
-    /// Surface token with a faint top sheen and a hairline edge that fades toward the bottom.
+    /// Flat surface token, same as the other cards on My prayer.
     private var cardSurface: some View {
-        let shape = RoundedRectangle(cornerRadius: Metric.radius, style: .continuous)
-        return shape
+        RoundedRectangle(cornerRadius: Metric.radius, style: .continuous)
             .fill(palette.surface)
-            .overlay {
-                shape.fill(LinearGradient(
-                    colors: isDark
-                        ? [Color.white.opacity(0.045), Color.white.opacity(0.0)]
-                        : [Color.white.opacity(0.65), Color.white.opacity(0.0)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                ))
-            }
-            .overlay {
-                shape.strokeBorder(
-                    LinearGradient(
-                        colors: isDark
-                            ? [Color.white.opacity(0.08), Color.white.opacity(0.035)]
-                            : [Color.black.opacity(0.07), Color.black.opacity(0.04)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 1
-                )
-            }
     }
 
     // MARK: Left column
