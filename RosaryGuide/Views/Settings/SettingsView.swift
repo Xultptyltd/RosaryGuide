@@ -488,8 +488,7 @@ private struct SettingsMailComposer: UIViewControllerRepresentable {
     }
 }
 
-/// Toolbar icon button for screens using the collapsing title (Settings, All intentions).
-struct SettingsToolbarButton: View {
+private struct SettingsToolbarButton: View {
     @Environment(\.palette) private var palette
     let symbol: String
     let label: String
@@ -882,7 +881,7 @@ private struct SettingsDetailScaffold<Content: View>: View {
 /// Keeps the edge-swipe back gesture working on Settings pages, which hide the
 /// system navigation bar to use the collapsing large title. Only allows the
 /// swipe when there is a page to go back to.
-struct SettingsSwipeBackEnabler: UIViewControllerRepresentable {
+private struct SettingsSwipeBackEnabler: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> Controller { Controller() }
     func updateUIViewController(_ uiViewController: Controller, context: Context) {}
 

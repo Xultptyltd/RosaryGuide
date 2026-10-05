@@ -862,7 +862,7 @@ private struct ClosedEyeLashes: Shape {
 }
 
 /// Every intention (featured first, via OfferStore's sort) as list rows, pushed from
-/// My prayer's "See all". Rows behave exactly as on My prayer: open detail, menu to
+/// My prayer's "See all", with the standard level-2 compact bar. Rows behave exactly as on My prayer: open detail, menu to
 /// feature, edit or delete. Pops back if the list empties.
 private struct AllIntentionsView: View {
     @Environment(OfferStore.self) private var offer
@@ -873,15 +873,10 @@ private struct AllIntentionsView: View {
     let onEdit: (OfferIntention) -> Void
     let onPray: (OfferIntention) -> Void
 
-    @State private var titleScrollOffset: CGFloat = 0
-
     var body: some View {
         let items = offer.sortedIntentions
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                // Standard large-title space; rows start sectionTitleGap below the H1.
-                CollapsingTitleSpacer(height: CollapsingTitleMetrics.spacerHeight(gapBelowTitle: AppTheme.sectionTitleGap))
-
                 VStack(spacing: 0) {
                     ForEach(items) { item in
                         IntentionSecondaryRow(
@@ -902,22 +897,13 @@ private struct AllIntentionsView: View {
                 }
             }
             .padding(.horizontal, AppTheme.gutter)
+            // Rows start Space.lg under the compact bar.
+            .padding(.top, AppTheme.Space.lg)
             .padding(.bottom, 108)
         }
-        .scrollContentBackground(.hidden)
-        .background(palette.bg.ignoresSafeArea())
-        .guidePageChrome()
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
-        .collapsingTitleChrome("All intentions", scrollOffset: $titleScrollOffset) {
-            SettingsToolbarButton(symbol: "chevron.left", label: "Back") {
-                dismiss()
-            }
-        } trailing: {
-            EmptyView()
-        }
-        .navigationTitle("All intentions")
-        .background(SettingsSwipeBackEnabler())
+        .background(palette.bg)
+        // Standard level-2 chrome: native inline title, system back button and edge swipe.
+        .guideDetailChrome("All intentions")
         .onChange(of: items.isEmpty) { _, isEmpty in
             if isEmpty { dismiss() }
         }
