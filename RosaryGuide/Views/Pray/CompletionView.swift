@@ -230,7 +230,7 @@ struct CompletionView: View {
 
             if hasIntention {
                 offeredForSurface
-                    .padding(.top, 12)
+                    .padding(.top, 24)
                     .layoutPriority(1)
             }
 
