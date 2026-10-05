@@ -1086,13 +1086,20 @@ struct PrayView: View {
                             michaelLastDrag = Date()
                         }
                         michaelScrollY = y
-                        // Only after Done is showing. The downward tap-scroll
-                        // stays armed, so a position update cannot cancel it.
-                        guard michaelActionLocked, !michaelArrowArmed else { return }
-                        let contentH = max(michaelContentHeight, newValue.contentHeight)
+                        // Live scroll range. The stored height only grows, so it
+                        // can sit past the offset the scroll view can actually reach.
+                        let contentH = newValue.contentHeight > 1 ? newValue.contentHeight : michaelContentHeight
                         let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : michaelViewportHeight
                         let maxOffset = max(0, contentH - viewH)
-                        if maxOffset > 8, y < maxOffset - 112 {
+                        guard maxOffset > 8 else { return }
+                        if y >= maxOffset - 36 {
+                            // Dragging to the bottom expands the circle. A tap
+                            // locks at the start of its own scroll, and stays
+                            // armed so these updates cannot cancel that motion.
+                            if !michaelActionLocked {
+                                michaelActionLocked = true
+                            }
+                        } else if michaelActionLocked, !michaelArrowArmed, y < maxOffset - 112 {
                             michaelActionLocked = false
                         }
                     }
