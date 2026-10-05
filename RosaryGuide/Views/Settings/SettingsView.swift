@@ -109,12 +109,23 @@ struct SettingsView: View {
                 }
                 .padding(.top, AppTheme.sectionGap - AppTheme.Space.xl)
 
-                Text("Version \(appVersion)")
-                    .font(AppTheme.TypeRole.settingsMeta)
-                    .foregroundStyle(palette.dim)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, AppTheme.Space.xl)
-                    .padding(.bottom, AppTheme.Space.xxl)
+                VStack(spacing: AppTheme.Space.md) {
+                    Image("LogoMark")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 52)
+                        .foregroundStyle(palette.ink)
+                        .accessibilityHidden(true)
+
+                    Text("Version \(appVersion)")
+                        .font(AppTheme.TypeRole.settingsMeta)
+                        .foregroundStyle(palette.dim)
+                }
+                .frame(maxWidth: .infinity)
+                // 40pt from the last row's divider to the top of the logo (the stack adds Space.xl).
+                .padding(.top, 40 - AppTheme.Space.xl)
+                .padding(.bottom, AppTheme.Space.xxl)
             }
             .padding(.horizontal, AppTheme.gutter)
         }
