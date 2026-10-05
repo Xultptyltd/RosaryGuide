@@ -115,8 +115,8 @@ struct SettingsView: View {
                     }
 
                     if auth.isSignedIn {
-                        // sectionGap (44pt) above, like the Account page styled these rows.
-                        VStack(spacing: 0) {
+                        // sectionGap (44pt) above, same header as the other sections.
+                        SettingsSection(title: "Manage account") {
                             SettingsActionRow(title: "Sign out", icon: "rectangle.portrait.and.arrow.right") {
                                 auth.signOut()
                                 dismiss()
