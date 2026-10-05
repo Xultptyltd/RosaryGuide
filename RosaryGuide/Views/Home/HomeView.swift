@@ -239,7 +239,7 @@ struct HomeView: View {
                 showSettingsDrawer = true
             }
         } label: {
-            Image(systemName: "line.3.horizontal")
+            Image(systemName: "person")
                 .guideSymbol(size: 17, weight: .medium)
                 .foregroundStyle(palette.ink)
                 .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
@@ -252,7 +252,7 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
         .guidePressable()
-        .accessibilityLabel("Menu")
+        .accessibilityLabel("Profile and settings")
         .accessibilityHint("Opens settings")
     }
 
