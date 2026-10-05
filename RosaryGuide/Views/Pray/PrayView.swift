@@ -78,6 +78,12 @@ struct PrayView: View {
     @State private var prayerScrollY: CGFloat = 0
     @State private var prayerScrollPosition = ScrollPosition(edge: .top)
     @State private var prayerLastDrag = Date.distantPast
+    /// Two-button steps only (decade Hail Marys 1–9). Next shows as a pill.
+    @State private var pairNextExpanded = false
+    /// Complete decade is in its slot. Follows Next out, leaves before it.
+    @State private var pairSecondShown = false
+    /// Bumped on every change so a stale staggered step never lands.
+    @State private var pairGeneration = 0
     @State private var showingCompletion = false
     @State private var freshSetPending: MysterySetKind?
 
@@ -1368,6 +1374,49 @@ struct PrayView: View {
         prayerScrollY = 0
         prayerLastDrag = .distantPast
         prayerScrollPosition = ScrollPosition(edge: .top)
+        resetPairChoreography()
+    }
+
+    /// Straight back to the circle, no animation (new step, language, size).
+    private func resetPairChoreography() {
+        pairGeneration &+= 1
+        var reset = Transaction()
+        reset.disablesAnimations = true
+        withTransaction(reset) {
+            pairNextExpanded = false
+            pairSecondShown = false
+        }
+    }
+
+    /// Expand: circle stretches into Next, then Complete decade follows.
+    /// Collapse: Complete decade tucks away, then Next shrinks to the circle.
+    private func runPairChoreography(expand: Bool) {
+        pairGeneration &+= 1
+        let generation = pairGeneration
+        if reduceMotion {
+            pairNextExpanded = expand
+            pairSecondShown = expand
+            return
+        }
+        if expand {
+            guard !pairNextExpanded || !pairSecondShown else { return }
+            withAnimation(MotionTokens.reveal) { pairNextExpanded = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + PairMotion.stagger) {
+                guard generation == pairGeneration, pairNextExpanded else { return }
+                withAnimation(PairMotion.secondIn) { pairSecondShown = true }
+            }
+        } else {
+            guard pairNextExpanded || pairSecondShown else { return }
+            if pairSecondShown {
+                withAnimation(PairMotion.secondOut) { pairSecondShown = false }
+                DispatchQueue.main.asyncAfter(deadline: .now() + PairMotion.stagger) {
+                    guard generation == pairGeneration else { return }
+                    withAnimation(MotionTokens.reveal) { pairNextExpanded = false }
+                }
+            } else {
+                withAnimation(MotionTokens.reveal) { pairNextExpanded = false }
+            }
+        }
     }
 
     /// Backstop: a tap's scroll never keeps the control from collapsing.
@@ -1399,7 +1448,42 @@ struct PrayView: View {
         let nextTitle = step.nextLabel == "Continue" ? "Next" : step.nextLabel
         let showCompleteDecade = step.kind == .hailMary && step.decadeNumber != nil && step.hailMaryNumber != 10
         VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
-            HStack(spacing: AppTheme.Component.prayerFooterButtonGap) {
+            if showCompleteDecade {
+                // Two buttons: staggered, see `runPairChoreography`.
+                HStack(spacing: pairSecondShown ? AppTheme.Component.prayerFooterButtonGap : 0) {
+                    scrollActionChrome(
+                        showScroll: !pairNextExpanded,
+                        expandedTitle: nextTitle,
+                        scrollLabel: "Scroll to read the prayer",
+                        onScroll: { scrollPrayerToBottom() },
+                        onAdvance: { advance() }
+                    )
+                    // Next stays on top so Complete decade comes out from behind it.
+                    .zIndex(1)
+                    if pairSecondShown {
+                        PillButton(title: "Complete decade", filled: false, tertiary: true) {
+                            skipDecadeHailMarys()
+                        }
+                        .transition(.modifier(
+                            active: PairSlotEffect(offset: -PairMotion.slide, cover: 1, scale: 0.96),
+                            identity: PairSlotEffect(offset: 0, cover: 0, scale: 1)
+                        ))
+                        .zIndex(0)
+                    }
+                }
+                .onAppear {
+                    // Already expanded or not, start in the matching state.
+                    var sync = Transaction()
+                    sync.disablesAnimations = true
+                    withTransaction(sync) {
+                        pairNextExpanded = !prayerCanScrollFurther
+                        pairSecondShown = !prayerCanScrollFurther
+                    }
+                }
+                .onChange(of: prayerCanScrollFurther) { _, canScroll in
+                    runPairChoreography(expand: !canScroll)
+                }
+            } else {
                 scrollActionChrome(
                     showScroll: prayerCanScrollFurther,
                     expandedTitle: nextTitle,
@@ -1407,11 +1491,6 @@ struct PrayView: View {
                     onScroll: { scrollPrayerToBottom() },
                     onAdvance: { advance() }
                 )
-                if !prayerCanScrollFurther, showCompleteDecade {
-                    PillButton(title: "Complete decade", filled: false, tertiary: true) {
-                        skipDecadeHailMarys()
-                    }
-                }
             }
             languageChips
         }
@@ -1602,6 +1681,40 @@ private struct PrayerTextHeightKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
+    }
+}
+
+/// Two-button scroll chrome timing. Springs sit with `MotionTokens.reveal`.
+private enum PairMotion {
+    /// Gap between Next and Complete decade, both directions.
+    static let stagger: TimeInterval = 0.1
+    /// Complete decade settles in; Next eases over in the same spring.
+    static let secondIn = Animation.spring(response: 0.42, dampingFraction: 0.86)
+    /// Quicker out so Next can start shrinking soon after.
+    static let secondOut = Animation.spring(response: 0.3, dampingFraction: 0.9)
+    /// Complete decade slides out from under Next by this much.
+    static let slide: CGFloat = 18
+}
+
+/// Complete decade slot. The pill stays solid the whole time: its label
+/// fades up from a plain surface-coloured capsule while it slides and scales.
+private struct PairSlotEffect: ViewModifier {
+    @Environment(\.palette) private var palette
+    var offset: CGFloat
+    /// 1 = a plain surface capsule over the label, 0 = label fully shown.
+    var cover: Double
+    var scale: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .overlay {
+                Capsule()
+                    .fill(palette.tertiaryButtonFill)
+                    .opacity(cover)
+                    .allowsHitTesting(false)
+            }
+            .scaleEffect(scale, anchor: .leading)
+            .offset(x: offset)
     }
 }
 
