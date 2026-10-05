@@ -100,12 +100,14 @@ enum RosarySequenceBuilder {
         append(.versicle, haptic: .medium, stage: .closing, bead: .closing)
         append(.concludingPrayer, haptic: .medium, stage: .closing, bead: .closing)
 
-        let quote = QuoteCatalog.freshCompletionQuote()
+        // The finis screen picks its own quote. Do not call freshCompletionQuote
+        // here: it writes UserDefaults, and this builder runs from view bodies
+        // (resume titles). That write invalidates @AppStorage and rebuilds forever.
         append(
             .completion,
             title: BilingualText(english: "Rosary complete", latin: "Rosarium completum est."),
-            body: BilingualText(english: quote.text, latin: quote.text),
-            subtitle: BilingualText(english: quote.attribution, latin: quote.attribution),
+            body: BilingualText(english: "", latin: ""),
+            subtitle: nil,
             haptic: .success,
             stage: .closing
         )

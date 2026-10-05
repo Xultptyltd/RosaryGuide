@@ -63,91 +63,74 @@ struct CompletionView: View {
     }
 
     var body: some View {
-        GeometryReader { geo in
-            let compactLayout = prefersCompactType || geo.size.height < 700
-            let artH = artHeight(for: geo.size.height, compact: compactLayout)
-
-            ZStack(alignment: .top) {
-                pageBg
-
-                // Hero artwork stays behind the complete, non-scrolling content block.
+        // One finite scroll. The previous layout measured itself with a
+        // GeometryReader, then ignored the safe area and locked a frame to
+        // that measurement. On device that re-entered body until the main
+        // thread never returned (scene-update watchdog inside this getter).
+        ScrollView {
+            VStack(spacing: 0) {
                 MysteryArtworkView(
                     set: mysterySet,
                     mysteryNumber: nil,
                     slug: nil,
                     kind: .heroTall
                 )
-                .frame(height: artH)
+                .frame(height: prefersCompactType ? 220 : 300)
                 .frame(maxWidth: .infinity)
                 .clipped()
-                .overlay {
-                    LinearGradient(
-                        stops: [
-                            .init(color: pageBg.opacity(0.12), location: 0),
-                            .init(color: pageBg.opacity(0.28), location: 0.35),
-                            .init(color: pageBg.opacity(0.72), location: 0.68),
-                            .init(color: pageBg.opacity(0.94), location: 0.88),
-                            .init(color: pageBg, location: 1)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
+                .overlay { heroFade }
                 .accessibilityHidden(true)
 
-                // The content rests just above the pinned actions.
-                VStack(spacing: 0) {
-                    ZStack {
-                        completionContent(compact: compactLayout)
-                            .frame(maxWidth: .infinity)
-                            .padding(.horizontal, AppTheme.gutter)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                    .padding(.bottom, compactLayout ? 12 : 18)
-
-                    // Done remains the primary action and both actions stay at the bottom.
-                    VStack(spacing: compactLayout ? 12 : 18) {
-                        PillButton(title: "Done", action: onDone)
-                            .environment(\.colorScheme, .dark)
-                            .accessibilityLabel("Done")
-
-                        if let onMichael {
-                            Button(action: onMichael) {
-                                let secondary = ThemePalette(scheme: .dark)
-                                Text("Saint Michael Prayer")
-                                    .font(AppTheme.TypeRole.callout(weight: .semibold))
-                                    .foregroundStyle(secondary.secondaryButtonText)
-                                    .padding(.horizontal, 28)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: AppTheme.Component.pillHeight)
-                                    .background(secondary.secondaryButtonFill, in: Capsule())
-                            }
-                            .buttonStyle(.plain)
-                            .guidePressable()
-                            .accessibilityLabel("Saint Michael Prayer")
-                            .accessibilityAddTraits(.isButton)
-                        }
-                    }
-                    .opacity(opacity(for: .rest))
-                    .frame(maxWidth: .infinity)
+                completionContent(compact: prefersCompactType)
                     .padding(.horizontal, AppTheme.gutter)
-                    .padding(.top, 4)
-                    .padding(.bottom, compactLayout ? AppTheme.Space.sm : AppTheme.Space.md)
-                    .safeAreaPadding(.bottom)
+                    .padding(.top, prefersCompactType ? 12 : 20)
+
+                VStack(spacing: prefersCompactType ? 12 : 18) {
+                    PillButton(title: "Done", action: onDone)
+                        .accessibilityLabel("Done")
+
+                    if let onMichael {
+                        Button(action: onMichael) {
+                            let secondary = ThemePalette(scheme: .dark)
+                            Text("Saint Michael Prayer")
+                                .font(AppTheme.TypeRole.callout(weight: .semibold))
+                                .foregroundStyle(secondary.secondaryButtonText)
+                                .padding(.horizontal, 28)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: AppTheme.Component.pillHeight)
+                                .background(secondary.secondaryButtonFill, in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .guidePressable()
+                        .accessibilityLabel("Saint Michael Prayer")
+                        .accessibilityAddTraits(.isButton)
+                    }
                 }
+                .opacity(opacity(for: .rest))
+                .padding(.horizontal, AppTheme.gutter)
+                .padding(.top, 8)
+                .padding(.bottom, 28)
             }
+            .frame(maxWidth: .infinity)
         }
-        // Draw under the status bar from outside the reader. Doing it inside
-        // (ignoresSafeArea + a frame locked to geo.size) makes the measured
-        // height and the insets chase each other until the main thread wedges.
+        .scrollBounceBehavior(.basedOnSize)
         .background(pageBg.ignoresSafeArea())
-        .ignoresSafeArea(edges: .top)
-        // Stay dark without preferredColorScheme. The app and the prayer cover
-        // already publish a scheme; a nested .dark preference fights them and
-        // retriggers layout forever when this screen is inserted.
-        .environment(\.colorScheme, .dark)
-        .environment(\.palette, palette)
         .onAppear { runEntrance() }
+    }
+
+    private var heroFade: some View {
+        LinearGradient(
+            stops: [
+                .init(color: pageBg.opacity(0.12), location: 0),
+                .init(color: pageBg.opacity(0.28), location: 0.35),
+                .init(color: pageBg.opacity(0.72), location: 0.68),
+                .init(color: pageBg.opacity(0.94), location: 0.88),
+                .init(color: pageBg, location: 1)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .allowsHitTesting(false)
     }
 
     @ViewBuilder
@@ -231,12 +214,6 @@ struct CompletionView: View {
             // Small breathing room before the pinned actions.
             Color.clear.frame(height: compact ? 16 : 24)
         }
-    }
-
-    private func artHeight(for screenHeight: CGFloat, compact: Bool) -> CGFloat {
-        // ~42–46% of screen; floor so small phones keep subjects visible.
-        let ratio: CGFloat = compact ? 0.36 : 0.44
-        return min(max(screenHeight * ratio, 168), screenHeight * 0.46)
     }
 
     private func opacity(for phase: ContentPhase) -> Double {
