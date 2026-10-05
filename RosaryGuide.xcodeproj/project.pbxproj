@@ -55,6 +55,7 @@
 		A21E8071973B2454C07D064D /* HowToPrayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD04A739CD276BFD692104B7 /* HowToPrayView.swift */; };
 		A637113F6A3490A31C8197DA /* LiturgicalCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49068D79F0B6F85C616BB1E5 /* LiturgicalCalendar.swift */; };
 		A7C10007A1B2C3D4E5F60007 /* ThemeTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C10006A1B2C3D4E5F60006 /* ThemeTokenTests.swift */; };
+		A7C1000FA1B2C3D4E5F6000F /* PrayerRhythmTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C1000EA1B2C3D4E5F6000E /* PrayerRhythmTests.swift */; };
 		A9F00101A1B2C3D4E5F61001 /* LaunchSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F00101A1B2C3D4E5F61002 /* LaunchSplashView.swift */; };
 		A9F00101A1B2C3D4E5F61003 /* Animations in Resources */ = {isa = PBXBuildFile; fileRef = A9F00101A1B2C3D4E5F61004 /* Animations */; };
 		A9F00101A1B2C3D4E5F61005 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F00101A1B2C3D4E5F61006 /* OnboardingView.swift */; };
@@ -130,6 +131,7 @@
 		A1C00101A1B2C3D4E5F60115 /* AppIconWhite.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppIconWhite.png; sourceTree = "<group>"; };
 		A1C00101A1B2C3D4E5F60116 /* AppIconBlue.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppIconBlue.png; sourceTree = "<group>"; };
 		A7C10006A1B2C3D4E5F60006 /* ThemeTokenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeTokenTests.swift; sourceTree = "<group>"; };
+		A7C1000EA1B2C3D4E5F6000E /* PrayerRhythmTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerRhythmTests.swift; sourceTree = "<group>"; };
 		A9F00101A1B2C3D4E5F61002 /* LaunchSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchSplashView.swift; sourceTree = "<group>"; };
 		A9F00101A1B2C3D4E5F61004 /* Animations */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Animations; sourceTree = "<group>"; };
 		A9F00101A1B2C3D4E5F61006 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -271,6 +273,7 @@
 				B3E6BD2027DE74F3262A8F28 /* LiturgicalCalendarTests.swift */,
 				DC7688092076D0FC5DE763D0 /* MysteryCalendarTests.swift */,
 				A7C10006A1B2C3D4E5F60006 /* ThemeTokenTests.swift */,
+				A7C1000EA1B2C3D4E5F6000E /* PrayerRhythmTests.swift */,
 			);
 			path = RosaryGuideTests;
 			sourceTree = "<group>";
@@ -512,6 +515,7 @@
 				F47D85D5383CB8F901559461 /* LiturgicalCalendarTests.swift in Sources */,
 				443FF4F01F38FE1DC8B240C1 /* MysteryCalendarTests.swift in Sources */,
 				A7C10007A1B2C3D4E5F60007 /* ThemeTokenTests.swift in Sources */,
+				A7C1000FA1B2C3D4E5F6000F /* PrayerRhythmTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

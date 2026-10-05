@@ -1,13 +1,30 @@
 import SwiftUI
 
-/// Streak and month summary derived from the prayed-day history.
+/// Streak, caption and month summary derived from the prayed-day history.
+///
+/// Big number: a daily run of 3+ days shows "N days"; otherwise the run of calendar
+/// weeks (user's `firstWeekday`) with at least one prayed day shows "N weeks".
+/// Captions follow a first-match rule table (see `caption`).
 struct PrayerRhythm: Equatable {
+    enum Unit: Equatable { case day, week }
+
     /// Consecutive prayed days ending today, or yesterday when today is not prayed yet.
-    var streak: Int
+    var dailyRun: Int
+    /// Consecutive calendar weeks with at least one prayed day, ending this week, or
+    /// last week when nothing is prayed yet this week.
+    var weekRun: Int
     var prayedToday: Bool
-    /// Every day of this week so far (locale's first weekday through today) is prayed,
-    /// and at least two days of the week have passed.
-    var prayedEachDayThisWeek: Bool
+    /// Distinct prayed days in the current calendar week (through today).
+    var prayedDaysThisWeek: Int
+    /// Any prayed day on or before today.
+    var hasEverPrayed: Bool
+    /// Prayed this week, nothing last week, and some prayer before that.
+    var isWelcomeBack: Bool
+    /// The number and unit the card shows big.
+    var bigNumber: Int
+    var unit: Unit
+    var caption: String
+
     var monthName: String
     var prayedDaysThisMonth: Int
     /// Month grid in weeks of 7 cells; nil cells are blank (before the 1st / after the last day).
@@ -22,33 +39,86 @@ struct PrayerRhythm: Equatable {
 
     init(prayedDayStarts: Set<TimeInterval>, now: Date = Date(), calendar: Calendar = .current) {
         let today = calendar.startOfDay(for: now)
+        let todayStart = today.timeIntervalSince1970
+        // Normalise to day starts; ignore anything after today.
+        let prayedDays: Set<TimeInterval> = Set(prayedDayStarts.compactMap { start in
+            let day = calendar.startOfDay(for: Date(timeIntervalSince1970: start)).timeIntervalSince1970
+            return day <= todayStart ? day : nil
+        })
         func prayed(_ day: Date) -> Bool {
-            prayedDayStarts.contains(calendar.startOfDay(for: day).timeIntervalSince1970)
+            prayedDays.contains(calendar.startOfDay(for: day).timeIntervalSince1970)
+        }
+        func addDays(_ n: Int, to date: Date) -> Date {
+            calendar.date(byAdding: .day, value: n, to: date) ?? date
+        }
+        func weekStart(_ date: Date) -> Date {
+            calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? calendar.startOfDay(for: date)
+        }
+        func addWeeks(_ n: Int, to date: Date) -> Date {
+            calendar.date(byAdding: .weekOfYear, value: n, to: date) ?? date
         }
 
+        hasEverPrayed = !prayedDays.isEmpty
+
+        // Daily run.
         prayedToday = prayed(today)
-        var cursor = prayedToday ? today : (calendar.date(byAdding: .day, value: -1, to: today) ?? today)
-        var count = 0
-        while prayed(cursor), count < 400 {
-            count += 1
-            guard let previous = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
-            cursor = previous
+        var cursor = prayedToday ? today : addDays(-1, to: today)
+        var days = 0
+        while prayed(cursor), days < 400 {
+            days += 1
+            cursor = addDays(-1, to: cursor)
         }
-        streak = count
+        dailyRun = days
+        let dailyRunStart = addDays(1, to: cursor)
 
-        if let weekStart = calendar.dateInterval(of: .weekOfYear, for: today)?.start {
-            let daysSoFar = (calendar.dateComponents([.day], from: weekStart, to: today).day ?? 0) + 1
-            prayedEachDayThisWeek = daysSoFar >= 2 && streak >= daysSoFar
-        } else {
-            prayedEachDayThisWeek = false
+        // Week run (calendar weeks with >= 1 prayed day).
+        let prayedWeeks = Set(prayedDays.map { weekStart(Date(timeIntervalSince1970: $0)).timeIntervalSince1970 })
+        let thisWeek = weekStart(today)
+        prayedDaysThisWeek = prayedDays.filter { $0 >= thisWeek.timeIntervalSince1970 }.count
+        let prayedThisWeek = prayedDaysThisWeek > 0
+        var weekCursor = prayedThisWeek ? thisWeek : addWeeks(-1, to: thisWeek)
+        var weeksCount = 0
+        while prayedWeeks.contains(weekCursor.timeIntervalSince1970), weeksCount < 60 {
+            weeksCount += 1
+            weekCursor = addWeeks(-1, to: weekCursor)
         }
+        weekRun = weeksCount
+        let weekRunStartWeek = addWeeks(1, to: weekCursor).timeIntervalSince1970
+        // First prayed day of the week run (for "Every week since <month>").
+        let weekRunFirstDay = prayedDays.filter { $0 >= weekRunStartWeek }.min()
+            .map { Date(timeIntervalSince1970: $0) } ?? today
 
-        let formatter = DateFormatter()
-        formatter.calendar = calendar
-        formatter.locale = calendar.locale ?? .current
-        formatter.setLocalizedDateFormatFromTemplate("LLLL")
-        monthName = formatter.string(from: today)
+        let hasPrayerBeforeThisWeek = prayedDays.contains { $0 < thisWeek.timeIntervalSince1970 }
+        isWelcomeBack = prayedThisWeek && weekRun == 1 && hasPrayerBeforeThisWeek
 
+        let monthFormatter = DateFormatter()
+        monthFormatter.calendar = calendar
+        monthFormatter.locale = calendar.locale ?? .current
+        monthFormatter.setLocalizedDateFormatFromTemplate("LLLL")
+        let dayMonthFormatter = DateFormatter()
+        dayMonthFormatter.calendar = calendar
+        dayMonthFormatter.locale = calendar.locale ?? .current
+        dayMonthFormatter.setLocalizedDateFormatFromTemplate("dMMM")
+        monthName = monthFormatter.string(from: today)
+
+        // Big number + caption: first matching rule wins.
+        let result = Self.rule(
+            hasEverPrayed: hasEverPrayed,
+            dailyRun: dailyRun,
+            prayedToday: prayedToday,
+            weekRun: weekRun,
+            prayedThisWeek: prayedThisWeek,
+            prayedDaysThisWeek: prayedDaysThisWeek,
+            isWelcomeBack: isWelcomeBack,
+            dailyRunStartDay: dayMonthFormatter.string(from: dailyRunStart),
+            dailyRunStartMonth: monthFormatter.string(from: dailyRunStart),
+            weekRunStartMonth: monthFormatter.string(from: weekRunFirstDay)
+        )
+        bigNumber = result.number
+        unit = result.unit
+        caption = result.caption
+
+        // Month grid.
         var cells: [Day?] = []
         var monthCount = 0
         if let month = calendar.dateInterval(of: .month, for: today),
@@ -73,22 +143,92 @@ struct PrayerRhythm: Equatable {
         weeks = stride(from: 0, to: cells.count, by: 7).map { Array(cells[$0..<min($0 + 7, cells.count)]) }
     }
 
-    /// Some prayer to show: a prayed day in the shown month or a live streak.
-    /// Drives the tick in the card's calendar icon.
-    var hasPrayed: Bool { streak > 0 || prayedDaysThisMonth > 0 }
+    /// The caption rule table. Captions have no full stops.
+    static func rule(
+        hasEverPrayed: Bool,
+        dailyRun: Int,
+        prayedToday: Bool,
+        weekRun: Int,
+        prayedThisWeek: Bool,
+        prayedDaysThisWeek: Int,
+        isWelcomeBack: Bool,
+        dailyRunStartDay: String,
+        dailyRunStartMonth: String,
+        weekRunStartMonth: String
+    ) -> (number: Int, unit: Unit, caption: String) {
+        // 1. Never prayed.
+        guard hasEverPrayed else { return (0, .day, "Start your rhythm this week") }
 
-    var streakText: String { streak == 1 ? "1 day" : "\(streak) days" }
+        // 2. Daily mode (3+ days in a row); milestones only on the day they're reached.
+        if dailyRun >= 3 {
+            let milestone: String? = prayedToday ? {
+                switch dailyRun {
+                case 3: return "Three days in a row"
+                case 5: return "Finding your rhythm"
+                case 7: return "Every day this week"
+                case 10: return "Every day since \(dailyRunStartDay)"
+                case 14: return "A fortnight of prayer"
+                case 30, 60, 100: return "Every day since \(dailyRunStartMonth)"
+                case 40: return "Forty days, like Lent"
+                case 54: return "A full novena"
+                case 90: return "A whole season"
+                default: return nil
+                }
+            }() : nil
+            return (dailyRun, .day, milestone ?? (prayedToday ? "See you tomorrow" : "Pray today to keep it"))
+        }
 
-    var caption: String {
-        if streak == 0 { return "Start your rhythm today" }
-        if prayedToday && prayedEachDayThisWeek { return "Every day this week" }
-        if prayedToday { return "See you tomorrow" }
-        return "Pray today to keep it"
+        // Lapsed: prayed before, but not this week or last week.
+        guard weekRun > 0 else { return (0, .week, "Start your rhythm this week") }
+
+        // 3. Welcome back after a gap of at least one empty week.
+        if isWelcomeBack { return (1, .week, "Welcome back") }
+
+        // 4. Getting started: first week of the run, by distinct prayed days this week.
+        if weekRun == 1 && prayedThisWeek {
+            switch prayedDaysThisWeek {
+            case 1: return (1, .day, "This week's Rosary prayed")
+            case 2: return (1, .week, "Two days this week")
+            case 3: return (1, .week, "Three days this week")
+            case 4: return (1, .week, "Four days this week")
+            case 5: return (1, .week, "Five days this week")
+            case 6: return (1, .week, "Six days this week")
+            default: break
+            }
+        }
+
+        // 5. Week milestones, during the week they're reached.
+        if prayedThisWeek {
+            let milestone: String? = {
+                switch weekRun {
+                case 2: return "Two weeks running"
+                case 3: return "Becoming a habit"
+                case 4: return "A month of weeks"
+                case 8: return "Every week since \(weekRunStartMonth)"
+                case 12: return "Three months steady"
+                case 26: return "Half a year faithful"
+                case 52: return "A year of prayer"
+                default: return nil
+                }
+            }()
+            if let milestone { return (weekRun, .week, milestone) }
+        }
+
+        // 6. Week mode otherwise.
+        return (weekRun, .week, prayedThisWeek ? "See you next week" : "Pray this week to keep it")
     }
+
+    /// Some prayer to show: a prayed day in the shown month or a live run.
+    /// Drives the tick in the card's calendar icon.
+    var hasPrayed: Bool { dailyRun > 0 || weekRun > 0 || prayedDaysThisMonth > 0 }
+
+    private var unitWord: String { unit == .day ? "day" : "week" }
+
+    var streakText: String { bigNumber == 1 ? "1 \(unitWord)" : "\(bigNumber) \(unitWord)s" }
 
     var accessibilityLabel: String {
         let days = prayedDaysThisMonth == 1 ? "1 day" : "\(prayedDaysThisMonth) days"
-        return "Prayer rhythm, \(streak) day streak, prayed \(days) in \(monthName). \(caption)."
+        return "Prayer rhythm, \(bigNumber) \(unitWord) streak, prayed \(days) in \(monthName). \(caption)."
     }
 }
 
