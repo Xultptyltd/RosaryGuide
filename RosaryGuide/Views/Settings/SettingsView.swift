@@ -45,79 +45,82 @@ struct SettingsView: View {
                     placeholderMessage = "Premium trials will be available when subscriptions are configured."
                 }
 
-                SettingsSection(title: "Personalize") {
-                    SettingsNavigationRow(title: "About you", destination: .aboutYou)
-                    SettingsNavigationRow(title: "Preferences", destination: .preferences)
-                    SettingsNavigationRow(title: "Appearance", value: settings.appearance.title, destination: .appearance)
+                VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
+                    SettingsSection(title: "Personalize") {
+                        SettingsNavigationRow(title: "About you", icon: "person", destination: .aboutYou)
+                        SettingsNavigationRow(title: "Preferences", icon: "slider.horizontal.3", destination: .preferences)
+                        SettingsNavigationRow(title: "Appearance", icon: "circle.lefthalf.filled", value: settings.appearance.title, destination: .appearance)
 
-                    SettingsMenuRow(title: "Language", value: settings.language.title) {
-                        Picker("Language", selection: $settings.language) {
-                            ForEach(PrayerLanguage.appCases) { option in
-                                Text(option.title).tag(option)
+                        SettingsMenuRow(title: "Language", icon: "globe", value: settings.language.title) {
+                            Picker("Language", selection: $settings.language) {
+                                ForEach(PrayerLanguage.appCases) { option in
+                                    Text(option.title).tag(option)
+                                }
                             }
                         }
                     }
-                }
 
-                SettingsSection(title: "App icon") {
-                    AppIconChoices()
-                }
+                    SettingsSection(title: "App icon") {
+                        AppIconChoices()
+                    }
 
-                SettingsSection(title: "Account") {
-                    SettingsValueOnlyRow(title: "Signed in", value: auth.provider.rawValue)
-                    SettingsNavigationRow(title: "Your Data", destination: .yourData)
-                    SettingsActionRow(title: "Notifications") {
-                        placeholderMessage = "Rosary reminders and feast notifications are coming soon."
+                    SettingsSection(title: "Account") {
+                        SettingsValueOnlyRow(title: "Signed in", icon: "person.badge.key", value: auth.provider.rawValue)
+                        SettingsNavigationRow(title: "Your Data", icon: "folder", destination: .yourData)
+                        SettingsActionRow(title: "Notifications", icon: "bell") {
+                            placeholderMessage = "Rosary reminders and feast notifications are coming soon."
+                        }
                     }
-                }
 
-                SettingsSection(title: "Premium") {
-                    SettingsNavigationRow(title: "About Premium", destination: .aboutPremium)
-                    SettingsActionRow(title: "Restore Purchase") {
-                        placeholderMessage = "Purchases are not configured yet."
+                    SettingsSection(title: "Premium") {
+                        SettingsNavigationRow(title: "About Premium", icon: "crown", destination: .aboutPremium)
+                        SettingsActionRow(title: "Restore Purchase", icon: "arrow.clockwise") {
+                            placeholderMessage = "Purchases are not configured yet."
+                        }
                     }
-                }
 
-                SettingsSection(title: "Help & Support") {
-                    SettingsNavigationRow(title: "Frequently Asked Questions", destination: .faqs)
-                    SettingsActionRow(title: "Suggest a Feature", accessory: .externalLink) {
-                        open("https://xult.ltd/contact/")
+                    SettingsSection(title: "Help & Support") {
+                        SettingsNavigationRow(title: "Frequently Asked Questions", icon: "questionmark.circle", destination: .faqs)
+                        SettingsActionRow(title: "Suggest a Feature", icon: "lightbulb", accessory: .externalLink) {
+                            open("https://xult.ltd/contact/")
+                        }
+                        SettingsActionRow(title: "Report a Bug", icon: "ladybug") {
+                            composeSupportEmail(.bug)
+                        }
+                        SettingsActionRow(title: "Report a Translation Bug", icon: "character.bubble") {
+                            composeSupportEmail(.translation)
+                        }
+                        SettingsActionRow(title: "Leave Review on App Store", icon: "star") {
+                            requestReview()
+                        }
                     }
-                    SettingsActionRow(title: "Report a Bug") {
-                        composeSupportEmail(.bug)
-                    }
-                    SettingsActionRow(title: "Report a Translation Bug") {
-                        composeSupportEmail(.translation)
-                    }
-                    SettingsActionRow(title: "Leave Review on App Store") {
-                        requestReview()
-                    }
-                }
 
-                SettingsSection(title: "Application") {
-                    SettingsNavigationRow(title: "Widgets", destination: .widgets)
-                    SettingsActionRow(title: "Onboarding") {
-                        showOnboardingPreview = true
+                    SettingsSection(title: "Application") {
+                        SettingsNavigationRow(title: "Widgets", icon: "square.grid.2x2", destination: .widgets)
+                        SettingsActionRow(title: "Onboarding", icon: "sparkles") {
+                            showOnboardingPreview = true
+                        }
+                        SettingsActionRow(title: "Terms of Service", icon: "doc.text", accessory: .externalLink) {
+                            open("https://xult.ltd/terms/")
+                        }
+                        SettingsActionRow(title: "Privacy", icon: "hand.raised", accessory: .externalLink) {
+                            open("https://xult.ltd/privacy/")
+                        }
+                        SettingsNavigationRow(title: "Acknowledgements", icon: "heart", destination: .acknowledgements)
                     }
-                    SettingsActionRow(title: "Terms of Service", accessory: .externalLink) {
-                        open("https://xult.ltd/terms/")
-                    }
-                    SettingsActionRow(title: "Privacy", accessory: .externalLink) {
-                        open("https://xult.ltd/privacy/")
-                    }
-                    SettingsNavigationRow(title: "Acknowledgements", destination: .acknowledgements)
-                }
 
-                SettingsSection(title: "Account Management") {
-                    SettingsActionRow(title: "Sign out") {
-                        auth.signOut()
-                        dismiss()
+                    SettingsSection(title: "Account Management") {
+                        SettingsActionRow(title: "Sign out", icon: "rectangle.portrait.and.arrow.right") {
+                            auth.signOut()
+                            dismiss()
+                        }
+                        SettingsActionRow(title: auth.isWorking ? "Deleting..." : "Delete account", icon: "person.crop.circle.badge.xmark", destructive: true) {
+                            confirmDeleteAccount = true
+                        }
+                        .disabled(auth.isWorking)
                     }
-                    SettingsActionRow(title: auth.isWorking ? "Deleting..." : "Delete account", destructive: true) {
-                        confirmDeleteAccount = true
-                    }
-                    .disabled(auth.isWorking)
                 }
+                .padding(.top, AppTheme.sectionGap - AppTheme.Space.xl)
 
                 Text("Rosary Guide version \(appVersion)")
                     .font(AppTheme.TypeRole.settingsMeta)
@@ -475,36 +478,33 @@ private struct UnlockTrialCard: View {
 }
 
 private struct SettingsSection<Content: View>: View {
-    @Environment(\.palette) private var palette
     let title: String
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            Text(title.uppercased())
-                .font(AppTheme.TypeRole.sectionLabel)
-                .tracking(AppTheme.Component.profileSectionTracking)
-                .foregroundStyle(palette.dim)
-                .padding(.horizontal, AppTheme.Space.lg)
+        VStack(alignment: .leading, spacing: 0) {
+            GuideSectionLabel(text: title, prominence: .strong)
+                .accessibilityAddTraits(.isHeader)
+                .padding(.bottom, AppTheme.sectionTitleGap)
 
             VStack(spacing: 0) {
                 content()
             }
-            .guideRowGroup(radius: AppTheme.containerRadius)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
 private struct SettingsActionRow: View {
-    @Environment(\.palette) private var palette
     let title: String
+    var icon: String?
     var destructive = false
     var accessory: SettingsRowAccessory = .chevron
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            SettingsRowChrome(title: title, value: nil, destructive: destructive, accessory: accessory)
+            SettingsRowChrome(title: title, icon: icon, value: nil, destructive: destructive, accessory: accessory)
         }
         .buttonStyle(.plain)
     }
@@ -512,12 +512,13 @@ private struct SettingsActionRow: View {
 
 private struct SettingsNavigationRow: View {
     let title: String
+    var icon: String?
     var value: String?
     let destination: SettingsDestination
 
     var body: some View {
         NavigationLink(value: destination) {
-            SettingsRowChrome(title: title, value: value, accessory: .chevron)
+            SettingsRowChrome(title: title, icon: icon, value: value, accessory: .chevron)
         }
         .buttonStyle(.plain)
     }
@@ -525,12 +526,13 @@ private struct SettingsNavigationRow: View {
 
 private struct SettingsValueActionRow: View {
     let title: String
+    var icon: String?
     let value: String
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            SettingsRowChrome(title: title, value: value, accessory: .chevron)
+            SettingsRowChrome(title: title, icon: icon, value: value, accessory: .chevron)
         }
         .buttonStyle(.plain)
     }
@@ -538,6 +540,7 @@ private struct SettingsValueActionRow: View {
 
 private struct SettingsMenuRow<Content: View>: View {
     let title: String
+    var icon: String?
     let value: String
     @ViewBuilder var content: () -> Content
 
@@ -545,7 +548,7 @@ private struct SettingsMenuRow<Content: View>: View {
         Menu {
             content()
         } label: {
-            SettingsRowChrome(title: title, value: value, accessory: .chevron)
+            SettingsRowChrome(title: title, icon: icon, value: value, accessory: .chevron)
         }
         .buttonStyle(.plain)
     }
@@ -554,16 +557,21 @@ private struct SettingsMenuRow<Content: View>: View {
 private struct SettingsToggleRow: View {
     @Environment(\.palette) private var palette
     let title: String
+    var icon: String?
     @Binding var isOn: Bool
 
     var body: some View {
         Toggle(isOn: $isOn) {
-            Text(title)
-                .font(AppTheme.TypeRole.settingsRow)
-                .foregroundStyle(palette.ink)
+            HStack(spacing: AppTheme.Space.lg) {
+                if let icon {
+                    SettingsRowIcon(symbol: icon, tint: palette.ink)
+                }
+                Text(title)
+                    .font(AppTheme.TypeRole.settingsRow)
+                    .foregroundStyle(palette.ink)
+            }
         }
         .tint(palette.accent)
-        .padding(.horizontal, AppTheme.Space.lg)
         .frame(minHeight: AppTheme.Component.profileRowHeight)
         .overlay(alignment: .bottom) { SettingsDivider() }
     }
@@ -571,10 +579,11 @@ private struct SettingsToggleRow: View {
 
 private struct SettingsValueOnlyRow: View {
     let title: String
+    var icon: String?
     let value: String
 
     var body: some View {
-        SettingsRowChrome(title: title, value: value, accessory: .none)
+        SettingsRowChrome(title: title, icon: icon, value: value, accessory: .none)
     }
 }
 
@@ -584,27 +593,50 @@ private enum SettingsRowAccessory {
     case externalLink
 }
 
+/// Leading line icon in a fixed-width column so every row label lines up.
+private struct SettingsRowIcon: View {
+    let symbol: String
+    let tint: Color
+
+    var body: some View {
+        Image(systemName: symbol)
+            .guideSymbol(size: 20, weight: .light)
+            .foregroundStyle(tint)
+            .frame(width: AppTheme.Space.xl, alignment: .center)
+            .accessibilityHidden(true)
+    }
+}
+
 private struct SettingsRowChrome: View {
     @Environment(\.palette) private var palette
     let title: String
+    var icon: String?
     let value: String?
     var destructive = false
     var accessory: SettingsRowAccessory = .chevron
 
     var body: some View {
+        let tint = destructive ? palette.destructive : palette.ink
+
         HStack(spacing: AppTheme.Space.md) {
-            Text(title)
-                .font(AppTheme.TypeRole.settingsRow)
-                .foregroundStyle(destructive ? palette.destructive : palette.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(AppTheme.Component.profileTitleMinimumScale)
+            HStack(spacing: AppTheme.Space.lg) {
+                if let icon {
+                    SettingsRowIcon(symbol: icon, tint: tint)
+                }
+
+                Text(title)
+                    .font(AppTheme.TypeRole.settingsRow)
+                    .foregroundStyle(tint)
+                    .lineLimit(1)
+                    .minimumScaleFactor(AppTheme.Component.profileTitleMinimumScale)
+            }
 
             Spacer(minLength: AppTheme.Space.md)
 
             if let value {
                 Text(value)
-                    .font(AppTheme.TypeRole.settingsRow(weight: .semibold))
-                    .foregroundStyle(palette.ink)
+                    .font(AppTheme.TypeRole.settingsRow)
+                    .foregroundStyle(palette.dim)
                     .lineLimit(1)
                     .minimumScaleFactor(AppTheme.Component.profileValueMinimumScale)
             }
@@ -622,13 +654,13 @@ private struct SettingsRowChrome: View {
                     .foregroundStyle(palette.dim)
             }
         }
-        .padding(.horizontal, AppTheme.Space.lg)
         .frame(minHeight: AppTheme.Component.profileRowHeight)
         .contentShape(Rectangle())
         .overlay(alignment: .bottom) { SettingsDivider() }
     }
 }
 
+/// Hairline under each row, spanning the full content width inside the page gutter.
 private struct SettingsDivider: View {
     @Environment(\.palette) private var palette
 
@@ -636,7 +668,6 @@ private struct SettingsDivider: View {
         Rectangle()
             .fill(palette.hair.opacity(AppTheme.Component.profileDividerOpacity))
             .frame(height: AppTheme.Component.hairline)
-            .padding(.leading, AppTheme.Space.lg)
     }
 }
 
@@ -647,7 +678,7 @@ private struct SettingsDetailScaffold<Content: View>: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+            VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
                 Text(title)
                     .font(AppTheme.TypeRole.settingsTitle)
                     .foregroundStyle(palette.ink)
@@ -672,13 +703,13 @@ private struct SettingsAboutYouScreen: View {
     var body: some View {
         SettingsDetailScaffold(title: "about you.") {
             SettingsSection(title: "Account") {
-                SettingsValueOnlyRow(title: "Signed in with", value: auth.provider.rawValue)
-                SettingsValueOnlyRow(title: "Sync", value: auth.isSignedIn ? "On" : "Off")
+                SettingsValueOnlyRow(title: "Signed in with", icon: "person.badge.key", value: auth.provider.rawValue)
+                SettingsValueOnlyRow(title: "Sync", icon: "arrow.triangle.2.circlepath", value: auth.isSignedIn ? "On" : "Off")
             }
 
             SettingsSection(title: "Profile") {
-                SettingsValueOnlyRow(title: "Name", value: "Not set")
-                SettingsValueOnlyRow(title: "Prayer story", value: "Not set")
+                SettingsValueOnlyRow(title: "Name", icon: "person", value: "Not set")
+                SettingsValueOnlyRow(title: "Prayer story", icon: "text.book.closed", value: "Not set")
             }
 
             SettingsFootnote(
@@ -696,7 +727,7 @@ private struct SettingsPreferencesScreen: View {
 
         SettingsDetailScaffold(title: "preferences.") {
             SettingsSection(title: "Prayer") {
-                SettingsMenuRow(title: "Language", value: settings.language.title) {
+                SettingsMenuRow(title: "Language", icon: "globe", value: settings.language.title) {
                     Picker("Language", selection: $settings.language) {
                         ForEach(PrayerLanguage.appCases) { option in
                             Text(option.title).tag(option)
@@ -704,7 +735,7 @@ private struct SettingsPreferencesScreen: View {
                     }
                 }
 
-                SettingsMenuRow(title: "Text size", value: settings.textSize.title) {
+                SettingsMenuRow(title: "Text size", icon: "textformat.size", value: settings.textSize.title) {
                     Picker("Text size", selection: $settings.textSize) {
                         ForEach(PrayerTextSize.allCases) { option in
                             Text(option.title).tag(option)
@@ -712,8 +743,8 @@ private struct SettingsPreferencesScreen: View {
                     }
                 }
 
-                SettingsToggleRow(title: "Haptics", isOn: $settings.hapticsEnabled)
-                SettingsToggleRow(title: "Saint Michael prayer", isOn: $settings.includeSaintMichael)
+                SettingsToggleRow(title: "Haptics", icon: "iphone.radiowaves.left.and.right", isOn: $settings.hapticsEnabled)
+                SettingsToggleRow(title: "Saint Michael prayer", icon: "shield", isOn: $settings.includeSaintMichael)
             }
         }
     }
@@ -728,7 +759,7 @@ private struct SettingsAppearanceScreen: View {
 
         SettingsDetailScaffold(title: "appearance.") {
             SettingsSection(title: "General") {
-                SettingsMenuRow(title: "Color theme", value: settings.appearance.title) {
+                SettingsMenuRow(title: "Color theme", icon: "circle.lefthalf.filled", value: settings.appearance.title) {
                     Picker("Color theme", selection: $settings.appearance) {
                         ForEach(AppearancePreference.allCases) { option in
                             Text(option.title).tag(option)
@@ -738,7 +769,7 @@ private struct SettingsAppearanceScreen: View {
 
                 AppIconChoices()
 
-                SettingsMenuRow(title: "Text size", value: settings.textSize.title) {
+                SettingsMenuRow(title: "Text size", icon: "textformat.size", value: settings.textSize.title) {
                     Picker("Text size", selection: $settings.textSize) {
                         ForEach(PrayerTextSize.allCases) { option in
                             Text(option.title).tag(option)
@@ -748,7 +779,7 @@ private struct SettingsAppearanceScreen: View {
             }
 
             SettingsSection(title: "Display") {
-                SettingsActionRow(title: "Rosary visual style") {
+                SettingsActionRow(title: "Rosary visual style", icon: "paintbrush") {
                     placeholderMessage = "Additional Rosary visual styles are coming soon."
                 }
             }
@@ -764,15 +795,15 @@ private struct SettingsDataScreen: View {
     var body: some View {
         SettingsDetailScaffold(title: "your data.") {
             SettingsSection(title: "Sync") {
-                SettingsValueOnlyRow(title: "Cloud sync", value: auth.isSignedIn ? "On" : "Off")
-                SettingsValueOnlyRow(title: "Provider", value: auth.provider.rawValue)
+                SettingsValueOnlyRow(title: "Cloud sync", icon: "icloud", value: auth.isSignedIn ? "On" : "Off")
+                SettingsValueOnlyRow(title: "Provider", icon: "person.badge.key", value: auth.provider.rawValue)
             }
 
             SettingsSection(title: "Privacy") {
-                SettingsActionRow(title: "Delete local data", destructive: true) {
+                SettingsActionRow(title: "Delete local data", icon: "trash", destructive: true) {
                     confirmDeleteHistory = true
                 }
-                SettingsActionRow(title: auth.isWorking ? "Deleting..." : "Delete account", destructive: true) {
+                SettingsActionRow(title: auth.isWorking ? "Deleting..." : "Delete account", icon: "person.crop.circle.badge.xmark", destructive: true) {
                     confirmDeleteAccount = true
                 }
                 .disabled(auth.isWorking)
@@ -795,10 +826,10 @@ private struct SettingsPremiumScreen: View {
             }
 
             SettingsSection(title: "Premium") {
-                SettingsValueActionRow(title: "Lifetime Premium", value: "save 40%") {
+                SettingsValueActionRow(title: "Lifetime Premium", icon: "infinity", value: "save 40%") {
                     placeholderMessage = "Lifetime Premium is not available yet."
                 }
-                SettingsActionRow(title: "Restore Purchase") {
+                SettingsActionRow(title: "Restore Purchase", icon: "arrow.clockwise") {
                     placeholderMessage = "Purchases are not configured yet."
                 }
             }
@@ -810,9 +841,9 @@ private struct SettingsFAQScreen: View {
     var body: some View {
         SettingsDetailScaffold(title: "frequently asked questions.") {
             SettingsSection(title: "Rosary Guide") {
-                SettingsValueOnlyRow(title: "Do intentions sync?", value: "Yes")
-                SettingsValueOnlyRow(title: "Can I pray offline?", value: "Yes")
-                SettingsValueOnlyRow(title: "Can I use Latin?", value: "Yes")
+                SettingsValueOnlyRow(title: "Do intentions sync?", icon: "questionmark.circle", value: "Yes")
+                SettingsValueOnlyRow(title: "Can I pray offline?", icon: "questionmark.circle", value: "Yes")
+                SettingsValueOnlyRow(title: "Can I use Latin?", icon: "questionmark.circle", value: "Yes")
             }
 
             SettingsFootnote(
@@ -826,8 +857,8 @@ private struct SettingsWidgetsScreen: View {
     var body: some View {
         SettingsDetailScaffold(title: "widgets.") {
             SettingsSection(title: "Widgets") {
-                SettingsValueOnlyRow(title: "Daily mysteries", value: "Coming soon")
-                SettingsValueOnlyRow(title: "Feast days", value: "Coming soon")
+                SettingsValueOnlyRow(title: "Daily mysteries", icon: "sun.max", value: "Coming soon")
+                SettingsValueOnlyRow(title: "Feast days", icon: "calendar", value: "Coming soon")
             }
 
             SettingsFootnote(
@@ -843,16 +874,16 @@ private struct SettingsAcknowledgementsScreen: View {
     var body: some View {
         SettingsDetailScaffold(title: "acknowledgements.") {
             SettingsSection(title: "Libraries") {
-                SettingsActionRow(title: "Firebase") {
+                SettingsActionRow(title: "Firebase", icon: "flame") {
                     placeholderMessage = "Firebase is used for private account sign-in and synced intentions."
                 }
-                SettingsActionRow(title: "Google Sign-In") {
+                SettingsActionRow(title: "Google Sign-In", icon: "g.circle") {
                     placeholderMessage = "Google Sign-In is used as an optional account provider."
                 }
-                SettingsActionRow(title: "Lottie") {
+                SettingsActionRow(title: "Lottie", icon: "play.circle") {
                     placeholderMessage = "Lottie powers launch and motion artwork."
                 }
-                SettingsActionRow(title: "Apple frameworks") {
+                SettingsActionRow(title: "Apple frameworks", icon: "swift") {
                     placeholderMessage = "Rosary Guide is built with SwiftUI and Apple platform frameworks."
                 }
             }
@@ -890,8 +921,8 @@ private struct AppIconChoices: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, AppTheme.Space.lg)
         .padding(.vertical, AppTheme.Space.lg)
+        .overlay(alignment: .bottom) { SettingsDivider() }
         .onAppear { appIcon.refreshFromSystem() }
         .accessibilityElement(children: .contain)
     }
@@ -946,7 +977,7 @@ private struct SettingsFootnote: View {
             .font(AppTheme.TypeRole.settingsMeta)
             .foregroundStyle(palette.dim)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, AppTheme.Space.lg)
+            .padding(.top, AppTheme.Space.lg - AppTheme.sectionGap)
     }
 }
 
