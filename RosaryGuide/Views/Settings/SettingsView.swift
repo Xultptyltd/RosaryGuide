@@ -747,7 +747,7 @@ private struct AppIconChoices: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
             HStack(spacing: AppTheme.Space.lg) {
                 SettingsRowIcon(symbol: "app", tint: palette.ink)
                 Text("App icon")
