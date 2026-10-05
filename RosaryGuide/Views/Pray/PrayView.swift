@@ -294,6 +294,15 @@ struct PrayView: View {
         let textTopPadding: CGFloat = 4
         let heroSpacer = max(0, textTop - scrollTop - textTopPadding)
         let readingBottomPad: CGFloat = 28
+        // Floating action top sits pill height + its bottom padding above the scroll bottom.
+        let plateActionClearance = AppTheme.Component.pillHeight + AppTheme.Space.lg
+        let plateTextToActionGap: CGFloat = 60
+        let plateBottomAnchorHeight: CGFloat = 1
+        let plateEndSpacer = max(
+            0,
+            plateActionClearance + plateTextToActionGap
+                - (AppTheme.Space.lg + readingBottomPad) - plateBottomAnchorHeight
+        )
 
         return ZStack(alignment: .top) {
             // Continuous hero under status bar + Aa/title/close + progress track.
@@ -325,12 +334,13 @@ struct PrayView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityElement(children: .contain)
 
-                        // Room so the last lines can clear the floating action.
+                        // Room so the last line (Fruit) ends exactly `plateTextToActionGap`
+                        // above the floating action when scrolled to the bottom.
                         Color.clear
-                            .frame(height: 108)
+                            .frame(height: plateEndSpacer)
                             .accessibilityHidden(true)
                         Color.clear
-                            .frame(height: 1)
+                            .frame(height: plateBottomAnchorHeight)
                             .id(PlateScrollAnchor.bottom)
                             .accessibilityHidden(true)
                     }
