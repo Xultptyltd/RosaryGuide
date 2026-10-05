@@ -215,4 +215,22 @@ final class SettingsStore {
     func stampPreferences() {
         preferencesUpdatedAt = Date().syncRounded
     }
+
+    /// Restores synced preferences to defaults while keeping the Home Screen icon
+    /// already on the device (changing it would show a system alert). Assignments
+    /// go through the property setters so the wipe is persisted and synced.
+    func resetLocalPreferences(keepingAppIcon icon: AppIconOption) {
+        language = .english
+        rosaryLanguage = .english
+        appearance = .system
+        includeSaintMichael = false
+        textSize = .medium
+        dailyReminderEnabled = false
+        dailyReminderMinutes = 19 * 60
+        feastAlertsEnabled = false
+        feastAlertMinutes = SyncedPreferences.defaultFeastAlertMinutes
+        hideIntentionText = false
+        appIconChoice = icon
+        preferencesUpdatedAt = Date().syncRounded
+    }
 }

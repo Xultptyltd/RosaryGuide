@@ -1,26 +1,24 @@
 import SwiftUI
 
-/// "Rosary Guide+" upsell row: thin gold crown, gold title in the app sans, short pitch
-/// plus a dim "7-day free trial" line on the standard surface with a faint gold hairline.
-/// Dark: dark surface with warm gold. Light: light surface with a deeper, richer gold
-/// so the title, crown and edge keep contrast.
+/// "Rosary Guide+" upsell: thin gold crown, gold title, pitch, and a secondary
+/// "7-day free trial" pill (same style as "Offer my next Rosary"). No chevron.
+/// Dark: dark surface with warm gold. Light: light surface with a deeper gold.
 struct PremiumUpsellCard: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
 
     var title = "Rosary Guide+"
     var subtitle = "Guided novenas, prayer tracking, full history and more."
-    var trialLine = "7-day free trial"
+    var trialTitle = "7-day free trial"
     var action: () -> Void
 
     private var isDark: Bool { colorScheme == .dark }
 
-    /// Title and crown gold.
     private var gold: Color { isDark ? Color(hex: 0xE2C489) : Color(hex: 0x8A6322) }
     private var borderGold: Color { isDark ? Color(hex: 0xD9B56E) : Color(hex: 0xA97F35) }
 
     var body: some View {
-        Button(action: action) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
             HStack(alignment: .center, spacing: AppTheme.Space.lg) {
                 Image(systemName: "crown")
                     .font(.system(size: 26, weight: .light))
@@ -37,23 +35,19 @@ struct PremiumUpsellCard: View {
                         .foregroundStyle(palette.ink.opacity(isDark ? 0.86 : 0.78))
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(trialLine)
-                        .font(AppTheme.sans(13, relativeTo: .caption))
-                        .foregroundStyle(palette.dim)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, AppTheme.Space.xl)
-            .padding(.vertical, AppTheme.Space.xl)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background { surface }
-            .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+
+            // Secondary pill — same token as "Offer my next Rosary".
+            PillButton(title: trialTitle, filled: false, action: action)
         }
-        .buttonStyle(.plain)
-        .guidePressable()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title). \(subtitle). \(trialLine).")
-        .accessibilityAddTraits(.isButton)
+        .padding(.horizontal, AppTheme.Space.xl)
+        .padding(.vertical, AppTheme.Space.xl)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background { surface }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(title). \(subtitle)")
     }
 
     private var surface: some View {

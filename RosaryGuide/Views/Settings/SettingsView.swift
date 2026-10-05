@@ -674,6 +674,13 @@ private struct AppIconChoices: View {
     @Environment(AppIconService.self) private var appIcon
     @Environment(\.palette) private var palette
 
+    #if DEBUG
+    @Bindable private var premium = PremiumDebugOverride.shared
+    private var isPremium: Bool { premium.isPremium }
+    #else
+    private var isPremium: Bool { false }
+    #endif
+
     private let previewSize: CGFloat = 64
     private let tileSpacing = AppTheme.Space.md
     /// Leading edge of the "App icon" label: icon column + icon/label spacing.
@@ -706,8 +713,6 @@ private struct AppIconChoices: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            // Width stays the full row width (leading/trailing padding cancel), so
-            // measuring here does not feed back into the shift.
             .onGeometryChange(for: CGFloat.self) { proxy in
                 proxy.size.width
             } action: { width in
@@ -722,40 +727,59 @@ private struct AppIconChoices: View {
         .accessibilityElement(children: .contain)
     }
 
+    @ViewBuilder
     private func iconCell(_ option: AppIconOption) -> some View {
         let selected = appIcon.current == option
-        return Button {
-            appIcon.select(option)
-        } label: {
-            VStack(spacing: AppTheme.Space.sm) {
-                Image(option.previewImageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: previewSize, height: previewSize)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(
-                                selected ? palette.accent : palette.selectionStroke,
-                                lineWidth: selected ? 2.5 : AppTheme.Component.panelStrokeWidth
-                            )
-                    }
-                    .shadow(
-                        color: selected ? palette.selectedShadow : .clear,
-                        radius: selected ? 6 : 0,
-                        y: selected ? 2 : 0
-                    )
-
-                Text(option.title)
-                    .font(AppTheme.TypeRole.themeSummary)
-                    .foregroundStyle(selected ? palette.accent : palette.dim)
+        // Free users can see the current icon but cannot switch; other tiles open Premium.
+        let locked = !isPremium && !selected
+        let label = iconLabel(option, selected: selected, dimmed: locked)
+        if locked {
+            NavigationLink(value: SettingsDestination.aboutPremium) {
+                label
             }
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(option.title) app icon, Rosary Guide+")
+            .accessibilityHint("Opens Premium")
+        } else {
+            Button {
+                if !selected { appIcon.select(option) }
+            } label: {
+                label
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(option.title) app icon")
+            .accessibilityAddTraits(selected ? [.isSelected] : [])
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(option.title) app icon")
-        .accessibilityAddTraits(selected ? [.isSelected] : [])
+    }
+
+    private func iconLabel(_ option: AppIconOption, selected: Bool, dimmed: Bool) -> some View {
+        VStack(spacing: AppTheme.Space.sm) {
+            Image(option.previewImageName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: previewSize, height: previewSize)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(
+                            selected ? palette.accent : palette.selectionStroke,
+                            lineWidth: selected ? 2.5 : AppTheme.Component.panelStrokeWidth
+                        )
+                }
+                .shadow(
+                    color: selected ? palette.selectedShadow : .clear,
+                    radius: selected ? 6 : 0,
+                    y: selected ? 2 : 0
+                )
+                .opacity(dimmed ? 0.55 : 1)
+
+            Text(option.title)
+                .font(AppTheme.TypeRole.themeSummary)
+                .foregroundStyle(selected ? palette.accent : palette.dim)
+                .opacity(dimmed ? 0.7 : 1)
+        }
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
     }
 }
 
@@ -800,17 +824,22 @@ private struct SettingsAccountScreen: View {
     @Environment(AuthStore.self) private var auth
     @Environment(SettingsStore.self) private var settings
     @Environment(SessionStore.self) private var session
+    @Environment(OfferStore.self) private var offer
+    @Environment(AppIconService.self) private var appIcon
     // Alerts must live on this pushed page — attaching them to SettingsView (the
     // drawer root) means they only appear after the user swipes back.
-    @State private var confirmDeleteHistory = false
-    @State private var didDeleteHistory = false
+    @State private var confirmClearAppHistory = false
+    @State private var didClearAppHistory = false
 
     var body: some View {
         SettingsDetailScaffold(title: "Account") {
             DividedRows {
                 if auth.isSignedIn {
-                    SettingsValueOnlyRow(title: "Name", icon: "person", value: auth.displayName ?? "Not set")
-                    SettingsValueOnlyRow(title: "Signed in with", icon: "person.badge.key", value: auth.provider.rawValue)
+                    SettingsValueOnlyRow(
+                        title: "Signed in with",
+                        icon: "person.badge.key",
+                        value: auth.provider.rawValue
+                    )
                 } else {
                     SettingsActionRow(
                         title: auth.isWorking ? "Signing in..." : "Continue with Apple",
@@ -829,8 +858,8 @@ private struct SettingsAccountScreen: View {
                     .disabled(auth.isWorking)
                 }
 
-                SettingsActionRow(title: "Delete prayer history", icon: "trash", destructive: true) {
-                    confirmDeleteHistory = true
+                SettingsActionRow(title: "Clear app history", icon: "trash", destructive: true) {
+                    confirmClearAppHistory = true
                 }
             }
 
@@ -838,19 +867,30 @@ private struct SettingsAccountScreen: View {
                 SettingsFootnote(message)
             }
         }
-        .alert("Delete prayer history?", isPresented: $confirmDeleteHistory) {
+        .alert("Clear app history?", isPresented: $confirmClearAppHistory) {
             Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
-                session.clearHistoryAndData()
-                didDeleteHistory = true
+            Button("Clear", role: .destructive) {
+                clearAppHistory()
+                didClearAppHistory = true
             }
         } message: {
-            Text("This clears your prayer progress and prayer history on this device and in your account. Your intentions and settings are not affected.")
+            Text("This clears your prayer progress, prayer history, intentions and settings on this device. When signed in, the wipe also reaches your account. Your sign-in stays.")
         }
-        .alert("Prayer history deleted", isPresented: $didDeleteHistory) {
+        .alert("App history cleared", isPresented: $didClearAppHistory) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Your prayer progress and prayer history have been deleted.")
+            Text("Your prayer progress, intentions and settings have been cleared from this device.")
+        }
+    }
+
+    /// Full local wipe: prayers/streak, in-progress rosary, intentions, and preferences
+    /// (icon on the Home Screen is kept). Uses existing store clear helpers.
+    private func clearAppHistory() {
+        session.clearHistoryAndData()
+        offer.clearAll()
+        settings.resetLocalPreferences(keepingAppIcon: appIcon.current)
+        Task {
+            await NotificationService.reschedule(settings.notificationPlan)
         }
     }
 }
