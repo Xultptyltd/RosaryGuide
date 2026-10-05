@@ -213,17 +213,17 @@ struct PrayView: View {
     private func prayLayer(_ step: RosaryStep) -> some View {
         GeometryReader { geo in
             let showBeads = shouldShowBeads(step)
-            let artHeight = min(geo.size.width, geo.size.height * 0.48, 520)
 
             if step.isPlate, let mystery = step.mystery {
-                // Mystery text starts at 3/7 of the full screen height (incl. safe areas).
+                // Mystery text starts at 3/7 of the full screen height (incl. safe areas);
+                // the painting ends there too.
                 let frame = geo.frame(in: .global)
                 let screenHeight = frame.maxY + geo.safeAreaInsets.bottom
                 plateLayer(
                     step,
                     mystery: mystery,
-                    artHeight: artHeight,
-                    contentTop: max(0, screenHeight * 3 / 7 - frame.minY)
+                    textTop: screenHeight * 3 / 7,
+                    scrollTop: frame.minY
                 )
             } else {
                 VStack(spacing: 0) {
@@ -281,16 +281,18 @@ struct PrayView: View {
     private func plateLayer(
         _ step: RosaryStep,
         mystery: Mystery,
-        artHeight: CGFloat,
-        contentTop: CGFloat
+        textTop: CGFloat,
+        scrollTop: CGFloat
     ) -> some View {
         let progress = plateScrollProgress
         let chromeH = max(plateChromeHeight, 88)
-        let heroHeight = artHeight + chromeH
-        // Spacer puts the mystery text's top edge at `contentTop` (3/7 of the screen),
-        // measured from the top of the scroll view; 4pt is the text block's top padding.
+        // The hero starts at the screen top and ends where the text starts, so the
+        // painting is scaled to that band and fully dissolved by the first line.
+        let heroHeight = max(textTop, scrollTop + chromeH + 1)
+        // Spacer puts the mystery text's top edge at `textTop` (3/7 of the screen);
+        // the scroll view starts at `scrollTop`; 4pt is the text block's top padding.
         let textTopPadding: CGFloat = 4
-        let heroSpacer = max(0, contentTop - textTopPadding)
+        let heroSpacer = max(0, textTop - scrollTop - textTopPadding)
         let readingBottomPad: CGFloat = 28
 
         return ZStack(alignment: .top) {
@@ -298,7 +300,8 @@ struct PrayView: View {
             plateHeroImage(
                 mystery: mystery,
                 artHeight: heroHeight,
-                underlayHeight: chromeH,
+                // Chrome bottom in hero coordinates (hero runs under the status bar).
+                underlayHeight: scrollTop + chromeH,
                 progress: progress
             )
             .frame(height: heroHeight)
@@ -505,11 +508,16 @@ struct PrayView: View {
         let scale: CGFloat = reduceMotion ? 1.0 : 1.0 + progress * 0.025
         let yShift: CGFloat = reduceMotion ? 0 : -progress * 24
         // Keep the bottom dissolve in the visible art band (below floating chrome).
-        let underFrac = min(0.55, max(0, underlayHeight / max(artHeight, 1)))
-        let visibleClear = max(0.08, 0.52 - progress * 0.42)
-        let visibleMid = max(0.22, 0.70 - progress * 0.38)
-        let clearEnd = underFrac + (1 - underFrac) * visibleClear
-        let midFade = underFrac + (1 - underFrac) * visibleMid
+        // Fractions of the visible band below the chrome: clear until 40%, then
+        // 40% → 85% → fully page colour by 97%, so the text start is never over art.
+        let underFrac = min(0.70, max(0, underlayHeight / max(artHeight, 1)))
+        let band = 1 - underFrac
+        let visibleClear = max(0.06, 0.40 - progress * 0.30)
+        let visibleMid = max(0.20, 0.68 - progress * 0.40)
+        let clearEnd = underFrac + band * visibleClear
+        let midFade = underFrac + band * visibleMid
+        let nearFull = min(0.97, underFrac + band * (visibleMid + 0.20))
+        let fullFade = min(1, underFrac + band * 0.97)
         // Extra vertical overscan so parallax/scale never flash empty edges;
         // bias upward so motion can travel behind the top chrome.
         let topOverscan: CGFloat = 40
@@ -535,8 +543,9 @@ struct PrayView: View {
                 stops: [
                     .init(color: .clear, location: 0),
                     .init(color: .clear, location: clearEnd),
-                    .init(color: palette.prayBg.opacity(0.25 + progress * 0.35), location: midFade),
-                    .init(color: palette.prayBg.opacity(0.88 + progress * 0.1), location: min(1, midFade + 0.18)),
+                    .init(color: palette.prayBg.opacity(0.40 + progress * 0.30), location: midFade),
+                    .init(color: palette.prayBg.opacity(0.85 + progress * 0.10), location: nearFull),
+                    .init(color: palette.prayBg, location: fullFade),
                     .init(color: palette.prayBg, location: 1)
                 ],
                 startPoint: .top,
