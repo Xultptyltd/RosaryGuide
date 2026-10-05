@@ -940,6 +940,25 @@ private struct SettingsAccountScreen: View {
     }
 }
 
+/// The Settings Premium screen for pushing from outside Settings (e.g. the
+/// Rosary Guide+ card on My prayer). Owns its own "Coming soon" alert, which
+/// SettingsView otherwise provides.
+struct PremiumScreen: View {
+    @State private var placeholderMessage: String?
+
+    var body: some View {
+        SettingsPremiumScreen(placeholderMessage: $placeholderMessage)
+            .alert("Coming soon", isPresented: Binding(
+                get: { placeholderMessage != nil },
+                set: { if !$0 { placeholderMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(placeholderMessage ?? "This will be available in a future update.")
+            }
+    }
+}
+
 private struct SettingsPremiumScreen: View {
     @Binding var placeholderMessage: String?
 

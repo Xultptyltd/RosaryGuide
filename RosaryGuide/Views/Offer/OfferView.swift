@@ -15,6 +15,7 @@ struct OfferView: View {
     @State private var navigationPath = NavigationPath()
     @State private var popeStore = PopeIntentionStore.shared
     @State private var intentionDetail: OfferIntention?
+    @State private var showingPremium = false
     /// Banking-style privacy: when true, mask personal intention titles on the list surface.
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
     private var todaySet: MysterySetKind {
@@ -68,6 +69,9 @@ struct OfferView: View {
                     onPray: { prayWith(item) }
                 )
             }
+            .navigationDestination(isPresented: $showingPremium) {
+                PremiumScreen()
+            }
             .onAppear { offer.pruneExpired() }
         }
     }
@@ -106,6 +110,10 @@ struct OfferView: View {
                             papalDetail = papalSuggestion
                         }
                     }
+
+                    PremiumUpsellCard { showingPremium = true }
+                        // sectionGap above (the stack already adds Space.lg).
+                        .padding(.top, AppTheme.sectionGap - AppTheme.Space.lg)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, AppTheme.gutter)
@@ -305,6 +313,10 @@ struct OfferView: View {
                     // Add button to the secondary rows (unchanged).
                     .padding(.top, 12)
                 }
+
+                // No entitlement flag exists yet, so the upsell always shows.
+                PremiumUpsellCard { showingPremium = true }
+                    .padding(.top, AppTheme.sectionGap)
                 // "Your intentions" heading to the first card.
                 .padding(.top, AppTheme.sectionTitleGap)
             }
