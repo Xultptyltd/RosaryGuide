@@ -62,6 +62,8 @@ struct PrayView: View {
     /// Tap has started the scroll. The circle stays put until the bottom arrives.
     @State private var michaelArrowArmed = false
     @State private var michaelScrollY: CGFloat = 0
+    /// Last time the prayer actually moved. A scroll that ends on the circle is not a tap.
+    @State private var michaelLastDrag = Date.distantPast
     @State private var showingCompletion = false
     @State private var freshSetPending: MysterySetKind?
 
@@ -1078,6 +1080,9 @@ struct PrayView: View {
                             michaelViewportHeight = newValue.viewportHeight
                         }
                         let y = max(0, newValue.offsetY)
+                        if abs(y - michaelScrollY) > 0.5 {
+                            michaelLastDrag = Date()
+                        }
                         michaelScrollY = y
                         // Only after Done is showing. The downward tap-scroll
                         // stays armed, so a position update cannot cancel it.
@@ -1096,7 +1101,12 @@ struct PrayView: View {
                         }
                     }
                     .onPreferenceChange(MichaelContentHeightKey.self) { height in
-                        if height > 1 { michaelContentHeight = height }
+                        // Only grow. A layout pass while scrolled can report the
+                        // viewport, and assigning that turns the circle into Done
+                        // with no tap.
+                        if height > michaelContentHeight {
+                            michaelContentHeight = height
+                        }
                     }
                     .onPreferenceChange(MichaelViewportHeightKey.self) { height in
                         if height > 1 { michaelViewportHeight = height }
@@ -1104,6 +1114,8 @@ struct PrayView: View {
                     .overlay(alignment: .bottom) {
                         VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
                             michaelActionChrome {
+                                // Finger-scrolls that lift on the circle are not taps.
+                                guard Date().timeIntervalSince(michaelLastDrag) > 0.25 else { return }
                                 HapticService.play(.light, enabled: settings.hapticsEnabled)
                                 let contentH = michaelContentHeight
                                 let viewH = michaelViewportHeight
