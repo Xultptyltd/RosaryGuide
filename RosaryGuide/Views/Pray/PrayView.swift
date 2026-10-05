@@ -559,7 +559,10 @@ struct PrayView: View {
                             )
                         }
                         .padding(.horizontal, AppTheme.gutter)
-                        .padding(.top, 4)
+                        // At least 48pt from the close button to this title.
+                        // The in-flow stage track already covers most of that;
+                        // this pad is the rest (and never less than the old 4pt).
+                        .padding(.top, prayerTitleTopPadding)
                         .padding(.bottom, AppTheme.Space.lg)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         if !pinTop { Spacer(minLength: 0) }
@@ -597,6 +600,15 @@ struct PrayView: View {
         .allowsHitTesting(true)
     }
 
+
+    /// Top inset for a prayer title in the shared column.
+    /// Header bottom pad + stage track are already between the close button and the title.
+    private var prayerTitleTopPadding: CGFloat {
+        let locusTop: CGFloat = 2
+        let shortfall = PrayerTitleChrome.belowClose - PrayerTitleChrome.belowCloseBeforeColumn - locusTop
+        // Keep the previous 4pt when the track already clears 48.
+        return max(4, shortfall)
+    }
 
     private func header(_ step: RosaryStep) -> some View {
         ZStack {
@@ -1018,8 +1030,8 @@ struct PrayView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        // 48pt from the close button's bottom edge to this title.
-        .padding(.top, 48)
+        // 48pt from the close button's bottom edge to this title. No stage track on this page.
+        .padding(.top, PrayerTitleChrome.belowClose)
         .padding(.bottom, 22)
     }
 
@@ -1372,6 +1384,13 @@ private struct PlateScrollMetrics: Equatable {
 
 private enum PlateScrollAnchor {
     static let bottom = "plate-scroll-bottom"
+}
+
+private enum PrayerTitleChrome {
+    /// Prayer titles start at least this far below the close button.
+    static let belowClose: CGFloat = 48
+    /// `header` bottom padding (4) + `SevenStageTrack` (44pt row + 14pt bottom).
+    static let belowCloseBeforeColumn: CGFloat = AppTheme.Space.xs + AppTheme.Accessibility.minHitTarget + 14
 }
 
 private enum MichaelScrollAnchor {
