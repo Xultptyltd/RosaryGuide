@@ -72,6 +72,8 @@ struct PrayView: View {
     @State private var prayerContentHeight: CGFloat = 0
     /// Last measured in-flow footer height (Next + language chips).
     @State private var prayerFooterHeight: CGFloat = 128
+    /// Rosary bead shelf height (with its padding), measured wherever it is drawn.
+    @State private var prayerBeadShelfHeight: CGFloat = 0
     @State private var prayerUsesScrollTemplate = false
     @State private var prayerActionLocked = false
     @State private var prayerArrowArmed = false
@@ -231,12 +233,10 @@ struct PrayView: View {
                             standardPrayColumn(step, scrollHeight: geo.size.height)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                            if showBeads, let bead = step.bead {
-                                RosaryBeadMapView(locus: bead, animationPaused: beadTimelinePaused)
-                                    .padding(.horizontal, AppTheme.Space.md)
-                                    .padding(.top, AppTheme.Space.xl)
-                                    .padding(.bottom, AppTheme.Space.sm)
-                                    .frame(maxWidth: .infinity)
+                            // Long (scrolling) prayers carry the shelf inside the prayer
+                            // content instead, so it never sits below the language toggle.
+                            if showBeads, !prayerUsesScrollTemplate, let bead = step.bead {
+                                beadShelf(bead)
                             }
                         }
 
@@ -250,10 +250,9 @@ struct PrayView: View {
                 }
                 .overlay(alignment: .bottom) {
                     if prayerUsesScrollTemplate {
-                        // Bead shelf stays in flow. The circle floats on the prayer,
-                        // just above that shelf, not on a black bar.
+                        // The circle and language toggle float on the prayer, not on a
+                        // black bar. The bead shelf scrolls with the prayer text.
                         prayerScrollChrome(step)
-                            .padding(.bottom, showBeads ? 142 : 0)
                     }
                 }
             }
@@ -589,6 +588,10 @@ struct PrayView: View {
                                 Color.clear.preference(key: PrayerTextHeightKey.self, value: geo.size.height)
                             }
                         }
+                        if prayerUsesScrollTemplate, shouldShowBeads(step), let bead = step.bead {
+                            // Same position as on short prayers: right after the text.
+                            beadShelf(bead)
+                        }
                         if !pinTop { Spacer(minLength: 0) }
                         if prayerUsesScrollTemplate {
                             Color.clear.frame(height: 132)
@@ -659,6 +662,20 @@ struct PrayView: View {
             // Rosary shelf lives in `prayLayer`, above the in-flow footer (web phone parity).
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Rosary bead map under the prayer text (same spacing in both templates).
+    private func beadShelf(_ bead: BeadLocus) -> some View {
+        RosaryBeadMapView(locus: bead, animationPaused: beadTimelinePaused)
+            .padding(.horizontal, AppTheme.Space.md)
+            .padding(.top, AppTheme.Space.xl)
+            .padding(.bottom, AppTheme.Space.sm)
+            .frame(maxWidth: .infinity)
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.height
+            } action: { height in
+                if height > 1 { prayerBeadShelfHeight = height }
+            }
     }
 
     /// Outer ~15% of the pray column steps back / forward (was 25%; narrowed so body stays tappable).
@@ -1343,7 +1360,11 @@ struct PrayView: View {
     /// Compares the text to the room it would have with the footer showing.
     private func updatePrayerScrollTemplate(viewport: CGFloat) {
         guard prayerTextHeight > 1, viewport > 1 else { return }
-        let roomWithFooter = prayerUsesScrollTemplate ? viewport - prayerFooterHeight : viewport
+        // In the scroll template the footer and bead shelf are not below the column, so the
+        // column is taller; take them off again to compare like with like (no flip-flop).
+        let beadsInColumn = current.map { shouldShowBeads($0) && $0.bead != nil } ?? false
+        let beadRoom = beadsInColumn ? prayerBeadShelfHeight : 0
+        let roomWithFooter = prayerUsesScrollTemplate ? viewport - prayerFooterHeight - beadRoom : viewport
         if prayerUsesScrollTemplate {
             if prayerTextHeight <= roomWithFooter - 8 {
                 prayerUsesScrollTemplate = false
