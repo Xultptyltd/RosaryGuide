@@ -70,22 +70,11 @@ struct SettingsView: View {
                             }
                         }
 
-                        if appIcon.supportsAlternateIcons {
-                            // Picking an icon also records the synced appIcon preference
-                            // (AppIconService.onUserSelect -> SettingsStore.appIconChoice).
-                            SettingsMenuRow(title: "App icon", icon: "app", value: appIcon.current.title) {
-                                Picker("App icon", selection: Binding(
-                                    get: { appIcon.current },
-                                    set: { appIcon.select($0) }
-                                )) {
-                                    ForEach(AppIconOption.allCases) { option in
-                                        Text(option.title).tag(option)
-                                    }
-                                }
-                            }
-                        }
-
                         SettingsNavigationRow(title: "Notifications", icon: "bell", value: notificationsSummary, destination: .notifications)
+
+                        if appIcon.supportsAlternateIcons {
+                            AppIconChoices()
+                        }
                     }
 
                     SettingsSection(title: "Account") {
@@ -733,6 +722,77 @@ private struct SettingsRowChrome: View {
         .frame(minHeight: AppTheme.Component.profileRowHeight)
         .contentShape(Rectangle())
         .overlay(alignment: .bottom) { SettingsDivider() }
+    }
+}
+
+/// The icon tiles picker (as before 7433662), as one flat row in General.
+/// Picking an icon also records the synced appIcon preference
+/// (AppIconService.onUserSelect -> SettingsStore.appIconChoice). Errors show as an alert
+/// on SettingsView.
+private struct AppIconChoices: View {
+    @Environment(AppIconService.self) private var appIcon
+    @Environment(\.palette) private var palette
+
+    private let previewSize: CGFloat = 64
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+            HStack(spacing: AppTheme.Space.lg) {
+                SettingsRowIcon(symbol: "app", tint: palette.ink)
+                Text("App icon")
+                    .font(AppTheme.TypeRole.settingsRow)
+                    .foregroundStyle(palette.ink)
+                    .lineLimit(1)
+            }
+            .accessibilityAddTraits(.isHeader)
+
+            HStack(spacing: AppTheme.Space.md) {
+                ForEach(AppIconOption.allCases) { option in
+                    iconCell(option)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.vertical, AppTheme.Space.lg)
+        .overlay(alignment: .bottom) { SettingsDivider() }
+        .onAppear { appIcon.refreshFromSystem() }
+        .accessibilityElement(children: .contain)
+    }
+
+    private func iconCell(_ option: AppIconOption) -> some View {
+        let selected = appIcon.current == option
+        return Button {
+            appIcon.select(option)
+        } label: {
+            VStack(spacing: AppTheme.Space.sm) {
+                Image(option.previewImageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: previewSize, height: previewSize)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(
+                                selected ? palette.accent : palette.selectionStroke,
+                                lineWidth: selected ? 2.5 : AppTheme.Component.panelStrokeWidth
+                            )
+                    }
+                    .shadow(
+                        color: selected ? palette.selectedShadow : .clear,
+                        radius: selected ? 6 : 0,
+                        y: selected ? 2 : 0
+                    )
+
+                Text(option.title)
+                    .font(AppTheme.TypeRole.themeSummary)
+                    .foregroundStyle(selected ? palette.accent : palette.dim)
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(option.title) app icon")
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
     }
 }
 
