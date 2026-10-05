@@ -944,10 +944,12 @@ private struct SettingsAccountScreen: View {
 /// Rosary Guide+ card on My prayer). Owns its own "Coming soon" alert, which
 /// SettingsView otherwise provides.
 struct PremiumScreen: View {
+    /// Optional context line shown at the top (e.g. why the user landed here).
+    var note: String? = nil
     @State private var placeholderMessage: String?
 
     var body: some View {
-        SettingsPremiumScreen(placeholderMessage: $placeholderMessage)
+        SettingsPremiumScreen(placeholderMessage: $placeholderMessage, note: note)
             .alert("Coming soon", isPresented: Binding(
                 get: { placeholderMessage != nil },
                 set: { if !$0 { placeholderMessage = nil } }
@@ -961,9 +963,14 @@ struct PremiumScreen: View {
 
 private struct SettingsPremiumScreen: View {
     @Binding var placeholderMessage: String?
+    var note: String? = nil
 
     var body: some View {
         SettingsDetailScaffold(title: "Premium") {
+            if let note {
+                SettingsFootnote(note)
+            }
+
             UnlockTrialCard {
                 placeholderMessage = "Premium trials will be available when subscriptions are configured."
             }

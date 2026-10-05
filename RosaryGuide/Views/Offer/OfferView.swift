@@ -16,6 +16,8 @@ struct OfferView: View {
     @State private var popeStore = PopeIntentionStore.shared
     @State private var intentionDetail: OfferIntention?
     @State private var showingPremium = false
+    /// Set when Premium opens because the free intention limit was hit.
+    @State private var premiumNote: String?
     /// Banking-style privacy: when true, mask personal intention titles on the list surface.
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
     /// Space an IntentionListRow leaves under its icon (its vertical padding).
@@ -72,7 +74,10 @@ struct OfferView: View {
                 )
             }
             .navigationDestination(isPresented: $showingPremium) {
-                PremiumScreen()
+                PremiumScreen(note: premiumNote)
+            }
+            .onChange(of: showingPremium) { _, showing in
+                if !showing { premiumNote = nil }
             }
             .onAppear { offer.pruneExpired() }
         }
@@ -132,7 +137,7 @@ struct OfferView: View {
         showsIcon: Bool = true
     ) -> some View {
         Button {
-            editor = .create
+            startAddingIntention()
         } label: {
             if matchesLearnStyle {
                 Text(title)
@@ -322,7 +327,7 @@ struct OfferView: View {
 
                     // Tertiary pill, same as Complete decade in the rosary flow.
                     PillButton(title: "Add an intention", filled: false, tertiary: true) {
-                        editor = .create
+                        startAddingIntention()
                     }
                         .guideNavList(pageGutter: AppTheme.gutter)
                         // Featured / Pope's card to the Add button.
@@ -411,6 +416,10 @@ struct OfferView: View {
             }
             // Already in the list — editable from the row menu; don't force the editor open.
         } else {
+            guard papal || offer.canAddIntention else {
+                showIntentionLimitPremium()
+                return
+            }
             _ = offer.add(
                 title: item.title,
                 note: item.note,
@@ -430,6 +439,20 @@ struct OfferView: View {
 
     private func prayWith(_ item: OfferIntention) {
         prayLaunch = .fresh(item.prayMystery(today: todaySet), intentionId: item.id)
+    }
+
+    /// Add flow entry: the editor, or Rosary Guide+ when a free user is at the limit.
+    private func startAddingIntention() {
+        if offer.canAddIntention {
+            editor = .create
+        } else {
+            showIntentionLimitPremium()
+        }
+    }
+
+    private func showIntentionLimitPremium() {
+        premiumNote = IntentionLimit.premiumNote
+        showingPremium = true
     }
 }
 
@@ -1507,6 +1530,13 @@ struct IntentionIconView: View {
     }
 }
 
+/// Copy for the free intention limit, shared by My prayer and the in-rosary sheet.
+enum IntentionLimit {
+    static var premiumNote: String {
+        "Free accounts can keep \(PremiumStatus.freeIntentionLimit) intentions. Rosary Guide+ removes the limit. The Pope's monthly intention never counts."
+    }
+}
+
 enum EditorRoute: Identifiable, Hashable {
     case create
     case edit(OfferIntention)
@@ -2085,7 +2115,8 @@ struct IntentionEditorSheet: View {
             let priorCurrentId: UUID? = makeCurrent
                 ? nil
                 : offer.sortedIntentions.first(where: \.isPinned)?.id
-            let created = offer.add(
+            // nil when a free user is at the limit (entry points normally route to Premium first).
+            guard let created = offer.add(
                 title: title,
                 note: note,
                 pin: makeCurrent,
@@ -2094,7 +2125,10 @@ struct IntentionEditorSheet: View {
                 accent: accent,
                 emoji: resolvedEmoji,
                 suggestOn: Array(suggestOn).filter { MysterySetKind.displayOrder.contains($0) }
-            )
+            ) else {
+                dismiss()
+                return
+            }
             if let priorCurrentId {
                 offer.setCurrent(id: priorCurrentId)
             }

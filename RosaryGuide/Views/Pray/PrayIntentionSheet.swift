@@ -15,6 +15,7 @@ struct PrayIntentionSheet: View {
 
     @State private var popeStore = PopeIntentionStore.shared
     @State private var editorRoute: EditorRoute?
+    @State private var showingPremium = false
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
 
     private var suggestions: [SuggestedIntention] { IntentionSuggestions.forDay(popeStore: popeStore) }
@@ -113,6 +114,12 @@ struct PrayIntentionSheet: View {
                 .environment(\.palette, palette)
             }
         }
+        .sheet(isPresented: $showingPremium) {
+            NavigationStack {
+                PremiumScreen(note: IntentionLimit.premiumNote)
+            }
+            .environment(\.palette, palette)
+        }
         .presentationDetents(prefersLargeDetent ? [.large] : [.medium, .large])
         .presentationDragIndicator(.visible)
     }
@@ -121,7 +128,12 @@ struct PrayIntentionSheet: View {
 
     private var addIntentionCard: some View {
         PillButton(title: "Add an intention", filled: false) {
-            editorRoute = .create
+            // Free users at the intention limit go to Rosary Guide+ instead of the editor.
+            if offer.canAddIntention {
+                editorRoute = .create
+            } else {
+                showingPremium = true
+            }
         }
         .accessibilityLabel("Add an intention")
         .padding(.top, 6)
@@ -277,14 +289,18 @@ struct PrayIntentionSheet: View {
             chosenTitle = existing.title
             chosenNote = existing.note ?? item.note ?? ""
         } else {
-            let created = offer.add(
+            guard let created = offer.add(
                 title: item.title,
                 note: item.note,
                 sourceId: papal ? item.id : nil,
                 category: papal ? .world : .personal,
                 accent: papal ? .purple : .mintGreen,
                 emoji: papal ? "✝️" : nil
-            )
+            ) else {
+                // Non-papal suggestion while a free user is at the limit.
+                showingPremium = true
+                return
+            }
             chosenId = created.id
             chosenTitle = created.title
             chosenNote = created.note ?? ""

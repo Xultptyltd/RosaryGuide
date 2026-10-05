@@ -152,6 +152,22 @@ final class OfferStore {
         }
     }
 
+    /// Active intentions that count toward the free limit (papal ones don't).
+    var limitedIntentionCount: Int {
+        intentions.filter { !$0.isExpired && !$0.isPapal }.count
+    }
+
+    /// Whether a new non-papal intention can be added on the current tier.
+    var canAddIntention: Bool {
+        PremiumStatus.isPremium || limitedIntentionCount < PremiumStatus.freeIntentionLimit
+    }
+
+    /// Papal (`pope-…`) intentions are always allowed; anything else needs `canAddIntention`.
+    func canAdd(sourceId: String?) -> Bool {
+        sourceId?.hasPrefix("pope-") == true || canAddIntention
+    }
+
+    /// Returns nil (and adds nothing) when a free user is at the intention limit.
     @discardableResult
     func add(
         title: String,
@@ -163,7 +179,8 @@ final class OfferStore {
         accent: IntentionAccent = .skyBlue,
         emoji: String? = nil,
         suggestOn: [MysterySetKind] = []
-    ) -> OfferIntention {
+    ) -> OfferIntention? {
+        guard canAdd(sourceId: sourceId) else { return nil }
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedEmoji = emoji?.trimmingCharacters(in: .whitespacesAndNewlines)

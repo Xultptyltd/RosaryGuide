@@ -30,6 +30,7 @@
 		7522C3875650AD15B90F7C80 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1EFCA22FB596D08D814D6C /* HapticService.swift */; };
 		304469E58BDCF71695967946 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B278BD59725C709646CDD918 /* NotificationService.swift */; };
 		7618145F79B5BCF6F9F1B5B7 /* OfferStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43198FB81B224B7B29B7D24D /* OfferStore.swift */; };
+		369122FAEDD5AB11145F35C3 /* PremiumStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114F095047B51D91ED75C102 /* PremiumStatus.swift */; };
 		A9F00101A1B2C3D4E5F6A502 /* AccountSyncStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F00101A1B2C3D4E5F6A501 /* AccountSyncStore.swift */; };
 		780D2F681F67657B70F8EF92 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D6BFA1CB98A02A8F760C6D /* HomeView.swift */; };
 		79F3B928E4ADFC008CFD22CA /* PrayIntentionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD4D5E7D72C9B8A8331506A /* PrayIntentionSheet.swift */; };
@@ -101,6 +102,7 @@
 		34B7278C515BF0D95EE40796 /* HowToPrayContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToPrayContent.swift; sourceTree = "<group>"; };
 		4019C8E56EEFC74D6BD9D92D /* PrayerCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerCatalog.swift; sourceTree = "<group>"; };
 		43198FB81B224B7B29B7D24D /* OfferStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferStore.swift; sourceTree = "<group>"; };
+		114F095047B51D91ED75C102 /* PremiumStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumStatus.swift; sourceTree = "<group>"; };
 		A9F00101A1B2C3D4E5F6A501 /* AccountSyncStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSyncStore.swift; sourceTree = "<group>"; };
 		49068D79F0B6F85C616BB1E5 /* LiturgicalCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiturgicalCalendar.swift; sourceTree = "<group>"; };
 		4CD4D5E7D72C9B8A8331506A /* PrayIntentionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayIntentionSheet.swift; sourceTree = "<group>"; };
@@ -192,6 +194,7 @@
 				E29D3303E3C2BF17A182A233 /* PopeIntentionStore.swift */,
 				66C5E677CA4145DB823FC9DA /* IntentionSuggestions.swift */,
 				43198FB81B224B7B29B7D24D /* OfferStore.swift */,
+				114F095047B51D91ED75C102 /* PremiumStatus.swift */,
 				A9F00101A1B2C3D4E5F6A501 /* AccountSyncStore.swift */,
 				6A1EFCA22FB596D08D814D6C /* HapticService.swift */,
 				B278BD59725C709646CDD918 /* NotificationService.swift */,
@@ -520,6 +523,7 @@
 				8F878F57D693A3DE796BB485 /* IntentionSuggestions.swift in Sources */,
 				95590D86845CE1AA6A25E770 /* OfferIntention.swift in Sources */,
 					7618145F79B5BCF6F9F1B5B7 /* OfferStore.swift in Sources */,
+					369122FAEDD5AB11145F35C3 /* PremiumStatus.swift in Sources */,
 					A9F00101A1B2C3D4E5F6A502 /* AccountSyncStore.swift in Sources */,
 					A9F00101A1B2C3D4E5F61007 /* AuthStore.swift in Sources */,
 					A9F00101A1B2C3D4E5F61018 /* IntentionRepository.swift in Sources */,
