@@ -113,7 +113,7 @@ struct OfferView: View {
                         }
                     }
 
-                    PremiumUpsellCard { showingPremium = true }
+                    prayerJourneysSection
                         // sectionGap above (the stack already adds Space.lg).
                         .padding(.top, AppTheme.sectionGap - AppTheme.Space.lg)
                 }
@@ -229,6 +229,19 @@ struct OfferView: View {
         .guidePressable()
         .accessibilityLabel(hideIntentionText ? "Show intentions" : "Hide intentions")
     }
+    /// "Prayer journeys" section: title, sectionTitleGap, then the Rosary Guide+ card.
+    /// No entitlement flag exists yet, so the upsell always shows.
+    private var prayerJourneysSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            GuideSectionLabel(text: "Prayer journeys", prominence: .strong)
+                .accessibilityAddTraits(.isHeader)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            PremiumUpsellCard { showingPremium = true }
+                .padding(.top, AppTheme.sectionTitleGap)
+        }
+    }
+
     /// "Your intentions" section title with the hide/show intentions toggle on the right.
     /// The 44pt toggle is an overlay so it doesn't add height to the title row; it is
     /// nudged right so the eye glyph lines up with the cards' trailing edge.
@@ -321,8 +334,7 @@ struct OfferView: View {
                 // "Your intentions" heading to the first card.
                 .padding(.top, AppTheme.sectionTitleGap)
 
-                // No entitlement flag exists yet, so the upsell always shows.
-                PremiumUpsellCard { showingPremium = true }
+                prayerJourneysSection
                     // Visible sectionGap: intention rows carry their own bottom inset.
                     .padding(.top, AppTheme.sectionGap - (secondaryIntentions.isEmpty ? 0 : Self.intentionRowBottomInset))
             }
