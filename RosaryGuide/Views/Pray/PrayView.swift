@@ -365,14 +365,17 @@ struct PrayView: View {
                     if height > 1 { plateViewportHeight = height }
                 }
                 .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
+                    // The plate scroll view runs under the status bar and home indicator,
+                    // so its offset rests at -contentInsets.top. Measure from that rest
+                    // position so 0 is the top and maxOffset is the real bottom.
                     PlateScrollMetrics(
-                        offsetY: geometry.contentOffset.y,
+                        offsetY: geometry.contentOffset.y + geometry.contentInsets.top,
                         contentHeight: geometry.contentSize.height,
                         viewportHeight: geometry.containerSize.height
                     )
                 } action: { _, newValue in
                     if newValue.contentHeight > 1 {
-                        plateContentHeight = max(plateContentHeight, newValue.contentHeight)
+                        plateContentHeight = newValue.contentHeight
                     }
                     if newValue.viewportHeight > 1 {
                         plateViewportHeight = newValue.viewportHeight
