@@ -61,6 +61,10 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(UIColor(dark.learnMoreButtonFill), UIColor(dark.secondaryButtonFill))
         XCTAssertEqual(UIColor(light.learnMoreButtonText), UIColor(light.secondaryButtonText))
         XCTAssertEqual(UIColor(dark.learnMoreButtonText), UIColor(dark.secondaryButtonText))
+        XCTAssertEqual(UIColor(light.tertiaryButtonFill), UIColor(light.surface))
+        XCTAssertEqual(UIColor(dark.tertiaryButtonFill), UIColor(dark.surface))
+        XCTAssertEqual(UIColor(light.buttonTertiaryFill), UIColor(light.surface))
+        XCTAssertEqual(UIColor(dark.buttonTertiaryFill), UIColor(dark.surface))
     }
 
 

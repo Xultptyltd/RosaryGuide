@@ -97,7 +97,7 @@ struct CompletionView: View {
 
                 iconSlot
                     .padding(.top, 8)
-                    .padding(.bottom, 4)
+                    .padding(.bottom, -14)
 
                 completionContent()
                     .padding(.horizontal, AppTheme.gutter)
@@ -185,10 +185,12 @@ struct CompletionView: View {
     private var heroFade: some View {
         LinearGradient(
             stops: [
-                .init(color: pageBg.opacity(0.20), location: 0),
-                .init(color: pageBg.opacity(0), location: 0.16),
-                .init(color: pageBg.opacity(0), location: 0.70),
-                .init(color: pageBg.opacity(0.55), location: 0.86),
+                .init(color: pageBg.opacity(0.18), location: 0),
+                .init(color: pageBg.opacity(0), location: 0.12),
+                .init(color: pageBg.opacity(0), location: 0.46),
+                .init(color: pageBg.opacity(0.16), location: 0.62),
+                .init(color: pageBg.opacity(0.40), location: 0.76),
+                .init(color: pageBg.opacity(0.72), location: 0.90),
                 .init(color: pageBg, location: 1)
             ],
             startPoint: .top,
@@ -201,9 +203,9 @@ struct CompletionView: View {
     private func completionContent() -> some View {
         VStack(spacing: 0) {
             Text("ROSARY COMPLETE")
-                .font(AppTheme.TypeRole.caption(weight: .medium))
-                .tracking(1.6)
-                .foregroundStyle(palette.completionLabel)
+                .font(AppTheme.TypeRole.caption(weight: .regular))
+                .tracking(1.4)
+                .foregroundStyle(palette.completionMeta)
                 .multilineTextAlignment(.center)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityLabel("Rosary complete")
@@ -219,7 +221,7 @@ struct CompletionView: View {
 
             if hasIntention {
                 offeredForSurface
-                    .padding(.top, 24)
+                    .padding(.top, 36)
                     .layoutPriority(1)
             }
 
@@ -285,28 +287,59 @@ struct CompletionView: View {
 
     private func actions() -> some View {
         VStack(spacing: 12) {
-            PillButton(title: "Done", action: onDone)
-                .accessibilityLabel("Done")
+            ceremonyButton(
+                title: "Done",
+                fill: palette.secondaryButtonFill,
+                text: palette.secondaryButtonText,
+                haptic: true,
+                action: onDone
+            )
+            .accessibilityLabel("Done")
 
             if let onMichael {
-                Button(action: onMichael) {
-                    let secondary = ThemePalette(scheme: .dark)
-                    Text("Saint Michael Prayer")
-                        .font(AppTheme.TypeRole.callout(weight: .semibold))
-                        .foregroundStyle(secondary.secondaryButtonText)
-                        .padding(.horizontal, 28)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: AppTheme.Component.pillHeight)
-                        .background(secondary.secondaryButtonFill, in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .guidePressable()
+                ceremonyButton(
+                    title: "Saint Michael Prayer",
+                    fill: palette.tertiaryButtonFill,
+                    text: palette.tertiaryButtonText,
+                    haptic: false,
+                    action: onMichael
+                )
                 .accessibilityLabel("Saint Michael Prayer")
-                .accessibilityAddTraits(.isButton)
             }
         }
         .padding(.horizontal, AppTheme.gutter)
         .padding(.bottom, 0)
+    }
+
+    /// Finish-screen pills use the ceremony palette, not the inherited scheme.
+    private func ceremonyButton(
+        title: String,
+        fill: Color,
+        text: Color,
+        haptic: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            if haptic {
+                HapticService.play(.light, enabled: settings.hapticsEnabled)
+            }
+            action()
+        } label: {
+            Text(title)
+                .font(AppTheme.TypeRole.callout(weight: .semibold))
+                .foregroundStyle(text)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 28)
+                .frame(maxWidth: .infinity)
+                .frame(height: AppTheme.Component.pillHeight)
+                .background(fill, in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .guidePressable()
+        .accessibilityAddTraits(.isButton)
     }
 }
 

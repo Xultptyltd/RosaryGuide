@@ -185,6 +185,9 @@ struct ThemePalette {
     var buttonPrimaryText: Color { onAccent }
     var buttonSecondaryFill: Color { scheme == .dark ? Color.white : Color.black }
     var buttonSecondaryText: Color { scheme == .dark ? Color.black : Color.white }
+    /// Quiet third action. Same fill as cards and grouped rows, not a new hue.
+    var buttonTertiaryFill: Color { surface }
+    var buttonTertiaryText: Color { scheme == .dark ? Color.white.opacity(0.96) : Color.black }
     var todayPillFill: Color { Color.white }
     var todayPillText: Color { Color.black }
 
@@ -272,6 +275,8 @@ struct ThemePalette {
     var primaryButtonText: Color { buttonPrimaryText }
     var secondaryButtonFill: Color { buttonSecondaryFill }
     var secondaryButtonText: Color { buttonSecondaryText }
+    var tertiaryButtonFill: Color { buttonTertiaryFill }
+    var tertiaryButtonText: Color { buttonTertiaryText }
     var learnMoreButtonFill: Color { buttonSecondaryFill }
     var learnMoreButtonText: Color { buttonSecondaryText }
     var onImageSecondary: Color { Color.white.opacity(0.72) }
