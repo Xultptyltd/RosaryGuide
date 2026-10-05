@@ -840,41 +840,25 @@ private struct SettingsDivider: View {
     }
 }
 
+/// Settings level-2 pages: standard compact bar (`guideDetailChrome`), sections
+/// sectionGap apart starting `GuideDetailChrome.contentTop` under the bar.
 private struct SettingsDetailScaffold<Content: View>: View {
     @Environment(\.palette) private var palette
-    @Environment(\.dismiss) private var dismiss
     let title: String
     @ViewBuilder var content: () -> Content
-
-    @State private var titleScrollOffset: CGFloat = 0
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
-                // Standard large-title space; the first section starts
-                // sectionTitleGap below the H1 (the stack adds sectionGap).
-                CollapsingTitleSpacer(
-                    height: CollapsingTitleMetrics.spacerHeight(gapBelowTitle: AppTheme.sectionTitleGap) - AppTheme.sectionGap
-                )
-
                 content()
             }
             .padding(.horizontal, AppTheme.gutter)
+            .padding(.top, GuideDetailChrome.contentTop)
             .padding(.bottom, AppTheme.Space.xxl)
         }
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
-        .guidePageChrome()
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
-        .collapsingTitleChrome(title, scrollOffset: $titleScrollOffset) {
-            SettingsToolbarButton(symbol: "chevron.left", label: "Back") {
-                dismiss()
-            }
-        } trailing: {
-            EmptyView()
-        }
-        .navigationTitle(title)
+        .guideDetailChrome(title)
     }
 }
 

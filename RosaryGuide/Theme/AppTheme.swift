@@ -415,7 +415,13 @@ extension View {
     }
 }
 
+/// The one chrome for pushed level-2+ screens: small centred inline title, native
+/// back button and edge swipe. Tab roots and the Settings root keep the large
+/// collapsing title instead. Start scroll content `contentTop` under the bar.
 struct GuideDetailChrome: ViewModifier {
+    /// Gap from the bar to the first content element on level-2+ screens.
+    static let contentTop: CGFloat = AppTheme.Space.lg
+
     let title: String
 
     func body(content: Content) -> some View {

@@ -897,8 +897,7 @@ private struct AllIntentionsView: View {
                 }
             }
             .padding(.horizontal, AppTheme.gutter)
-            // Rows start Space.lg under the compact bar.
-            .padding(.top, AppTheme.Space.lg)
+            .padding(.top, GuideDetailChrome.contentTop)
             .padding(.bottom, 108)
         }
         .background(palette.bg)
@@ -1087,8 +1086,7 @@ private struct IntentionDetailView: View {
                 }
             }
         }
-        .navigationTitle(detailNavigationTitle)
-        .navigationBarTitleDisplayMode(.inline)
+        .guideDetailChrome(detailNavigationTitle)
         .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
