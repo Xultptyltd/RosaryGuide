@@ -63,10 +63,6 @@ struct SettingsView: View {
                         }
                     }
 
-                    SettingsSection(title: "App icon") {
-                        AppIconChoices()
-                    }
-
                     SettingsSection(title: "Account") {
                         SettingsValueOnlyRow(title: "Signed in", icon: "person.badge.key", value: auth.provider.rawValue)
                         SettingsNavigationRow(title: "Your Data", icon: "folder", destination: .yourData)
@@ -274,7 +270,7 @@ struct SettingsView: View {
         case .preferences:
             SettingsPreferencesScreen()
         case .appearance:
-            SettingsAppearanceScreen(placeholderMessage: $placeholderMessage)
+            SettingsAppearanceScreen()
         case .yourData:
             SettingsDataScreen(
                 confirmDeleteHistory: $confirmDeleteHistory,
@@ -746,7 +742,6 @@ private struct SettingsPreferencesScreen: View {
                 }
 
                 SettingsToggleRow(title: "Haptics", icon: "iphone.radiowaves.left.and.right", isOn: $settings.hapticsEnabled)
-                SettingsToggleRow(title: "Saint Michael prayer", icon: "shield", isOn: $settings.includeSaintMichael)
             }
         }
     }
@@ -754,7 +749,6 @@ private struct SettingsPreferencesScreen: View {
 
 private struct SettingsAppearanceScreen: View {
     @Environment(SettingsStore.self) private var settings
-    @Binding var placeholderMessage: String?
 
     var body: some View {
         @Bindable var settings = settings
@@ -769,20 +763,12 @@ private struct SettingsAppearanceScreen: View {
                     }
                 }
 
-                AppIconChoices()
-
                 SettingsMenuRow(title: "Text size", icon: "textformat.size", value: settings.textSize.title) {
                     Picker("Text size", selection: $settings.textSize) {
                         ForEach(PrayerTextSize.allCases) { option in
                             Text(option.title).tag(option)
                         }
                     }
-                }
-            }
-
-            SettingsSection(title: "Display") {
-                SettingsActionRow(title: "Rosary visual style", icon: "paintbrush") {
-                    placeholderMessage = "Additional Rosary visual styles are coming soon."
                 }
             }
         }
@@ -893,78 +879,6 @@ private struct SettingsAcknowledgementsScreen: View {
     }
 }
 
-
-private struct AppIconChoices: View {
-    @Environment(AppIconService.self) private var appIcon
-    @Environment(\.palette) private var palette
-
-    private let previewSize: CGFloat = 64
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-            if appIcon.supportsAlternateIcons {
-                HStack(spacing: AppTheme.Space.md) {
-                    ForEach(AppIconOption.allCases) { option in
-                        iconCell(option)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-            } else {
-                Text("Alternate icons aren’t available on this device.")
-                    .font(AppTheme.TypeRole.themeSummary)
-                    .foregroundStyle(palette.dim)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            if let message = appIcon.lastErrorMessage {
-                Text(message)
-                    .font(AppTheme.TypeRole.themeSummary)
-                    .foregroundStyle(palette.destructive)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(.vertical, AppTheme.Space.lg)
-        .overlay(alignment: .bottom) { SettingsDivider() }
-        .onAppear { appIcon.refreshFromSystem() }
-        .accessibilityElement(children: .contain)
-    }
-
-    private func iconCell(_ option: AppIconOption) -> some View {
-        let selected = appIcon.current == option
-        return Button {
-            appIcon.select(option)
-        } label: {
-            VStack(spacing: AppTheme.Space.sm) {
-                Image(option.previewImageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: previewSize, height: previewSize)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(
-                                selected ? palette.accent : palette.selectionStroke,
-                                lineWidth: selected ? 2.5 : AppTheme.Component.panelStrokeWidth
-                            )
-                    }
-                    .shadow(
-                        color: selected ? palette.selectedShadow : .clear,
-                        radius: selected ? 6 : 0,
-                        y: selected ? 2 : 0
-                    )
-
-                Text(option.title)
-                    .font(AppTheme.TypeRole.themeSummary)
-                    .foregroundStyle(selected ? palette.accent : palette.dim)
-            }
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(option.title) app icon")
-        .accessibilityAddTraits(selected ? [.isSelected] : [])
-    }
-}
 
 private struct SettingsFootnote: View {
     @Environment(\.palette) private var palette
