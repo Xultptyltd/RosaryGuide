@@ -40,7 +40,7 @@ private enum AppTab: String, CaseIterable, Identifiable, Hashable {
         case .today: "Today"
         case .pray: "Learn"
         case .calendar: "Feasts"
-        case .intentions: "Intentions"
+        case .intentions: "Prayer"
         }
     }
 

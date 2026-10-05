@@ -35,7 +35,7 @@ struct OfferView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .collapsingTitleChrome(
-                "Intentions",
+                "Prayer",
                 scrollOffset: $titleScrollOffset,
                 morphEnabled: true
             )
@@ -219,19 +219,32 @@ struct OfferView: View {
         .guidePressable()
         .accessibilityLabel(hideIntentionText ? "Show intentions" : "Hide intentions")
     }
+    /// "Your intentions" section title with the hide/show intentions toggle on the right.
+    /// The 44pt toggle is an overlay so it doesn't add height to the title row; it is
+    /// nudged right so the eye glyph lines up with the cards' trailing edge.
+    private var intentionsSectionHeader: some View {
+        GuideSectionLabel(text: "Your intentions", prominence: .strong)
+            .accessibilityAddTraits(.isHeader)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.trailing, AppTheme.Accessibility.minHitTarget)
+            .overlay(alignment: .trailing) {
+                titlePrivacyButton
+                    .offset(x: 12)
+            }
+    }
+
     private var intentionList: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                // Keep the papal card directly beneath the page title, like Feasts' control.
+                // Prayer rhythm directly beneath the page title, then the "Your intentions" section.
                 VStack(alignment: .leading, spacing: 0) {
                     CollapsingTitleSpacer()
-                        .overlay(alignment: .topTrailing) {
-                            titlePrivacyButton
-                                .padding(.top, 10)
-                        }
 
                     // Live: completedDayStarts is observed, so finishing a rosary updates it.
                     PrayerRhythmCard(rhythm: PrayerRhythm(prayedDayStarts: sessionStore.completedDayStarts))
+
+                    intentionsSectionHeader
+                        .padding(.top, AppTheme.sectionGap)
 
 	                    if let papalSuggestion {
 	                        PapalMonthCard(
@@ -241,8 +254,8 @@ struct OfferView: View {
                             onAdd: { adoptSuggestion(papalSuggestion) }
                         )
 	                        .guideNavList(pageGutter: AppTheme.gutter)
-                        // Prayer rhythm card to the Pope's card.
-                        .padding(.top, AppTheme.Space.lg)
+                        // Section title to the Pope's card.
+                        .padding(.top, AppTheme.sectionTitleGap)
 	                    }
 
 	                    syncWarning
@@ -291,8 +304,8 @@ struct OfferView: View {
                     // Add button to the secondary rows (unchanged).
                     .padding(.top, 12)
                 }
-                // Pope's card (or the prayer rhythm card) to the featured card / Add button.
-                .padding(.top, AppTheme.Space.lg)
+                // Pope's card to the featured card / Add button; section title gap when there is no Pope's card.
+                .padding(.top, papalSuggestion == nil ? AppTheme.sectionTitleGap : AppTheme.Space.lg)
             }
             .padding(.horizontal, AppTheme.gutter)
             // Same top breathing room as FeastsView before its title/control block.
