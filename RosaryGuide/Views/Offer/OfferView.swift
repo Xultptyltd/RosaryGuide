@@ -26,10 +26,6 @@ struct OfferView: View {
     private static let intentionRowBottomInset: CGFloat = 10
     /// Rows shown under the Add button; more than this shows "See all".
     private static let collapsedIntentionRowLimit = 3
-    /// See all button height (44pt hit target).
-    private static let seeAllHeight: CGFloat = AppTheme.Accessibility.minHitTarget
-    /// Space under the See all label inside its 44pt frame (~21pt callout line).
-    private static let seeAllBottomInset: CGFloat = 11
     private var todaySet: MysterySetKind {
         MysteryCalendar.assignment(on: Date()).set
     }
@@ -86,7 +82,6 @@ struct OfferView: View {
             }
             .navigationDestination(isPresented: $showingAllIntentions) {
                 AllIntentionsView(
-                    hideText: hideIntentionText,
                     onEdit: { editor = .edit($0) },
                     onPray: { prayWith($0) }
                 )
@@ -225,11 +220,10 @@ struct OfferView: View {
     private var visibleSecondaryIntentions: [OfferIntention] {
         Array(secondaryIntentions.prefix(Self.collapsedIntentionRowLimit))
     }
-    /// Visible space under the last list element (row icon or Show more label),
-    /// subtracted so the Prayer journeys gap reads as sectionGap.
+    /// Visible space under the last list row's icon, subtracted so the Prayer
+    /// journeys gap reads as sectionGap.
     private var intentionListBottomInset: CGFloat {
-        if hasMoreIntentionRows { return Self.seeAllBottomInset }
-        return secondaryIntentions.isEmpty ? 0 : Self.intentionRowBottomInset
+        secondaryIntentions.isEmpty ? 0 : Self.intentionRowBottomInset
     }
     private var papalSuggestion: SuggestedIntention? {
         suggestions.first(where: isPapalSuggestion)
@@ -261,15 +255,8 @@ struct OfferView: View {
         Button {
             settings.hideIntentionText.toggle()
         } label: {
-            Group {
-                if hideIntentionText {
-                    ClosedEyeIcon()
-                } else {
-                    Image(systemName: "eye")
-                        .guideSymbol(size: 17, weight: .medium)
-                }
-            }
-            .foregroundStyle(palette.dim)
+            IntentionPrivacyGlyph(hidden: hideIntentionText)
+                .foregroundStyle(palette.dim)
             .frame(
                 width: AppTheme.Accessibility.minHitTarget,
                 height: AppTheme.Accessibility.minHitTarget
@@ -280,13 +267,14 @@ struct OfferView: View {
         .guidePressable()
         .accessibilityLabel(hideIntentionText ? "Show intentions" : "Hide intentions")
     }
-    /// Opens All intentions. Same dim text + faint chevron treatment as the app's
-    /// expandable rows, with the chevron pointing right for navigation.
+    /// Opens All intentions from the "Your intentions" title row. Dim text + faint
+    /// right chevron (the app's expandable-row treatment); 44pt tall tap area that
+    /// extends left of the label, chevron flush with the cards' trailing edge.
     private var seeAllIntentionsButton: some View {
         Button {
             showingAllIntentions = true
         } label: {
-            HStack(spacing: AppTheme.Space.sm) {
+            HStack(spacing: AppTheme.Space.xs) {
                 Text("See all")
                     .font(AppTheme.TypeRole.callout(weight: .medium))
                     .foregroundStyle(palette.dim)
@@ -295,8 +283,8 @@ struct OfferView: View {
                     .foregroundStyle(palette.faint)
                     .accessibilityHidden(true)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: Self.seeAllHeight)
+            .padding(.leading, AppTheme.Space.md)
+            .frame(minWidth: AppTheme.Accessibility.minHitTarget, minHeight: AppTheme.Accessibility.minHitTarget, alignment: .trailing)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -317,17 +305,23 @@ struct OfferView: View {
         }
     }
 
-    /// "Your intentions" section title with the hide/show intentions toggle on the right.
-    /// The 44pt toggle is an overlay so it doesn't add height to the title row; it is
-    /// nudged right so the eye glyph lines up with the cards' trailing edge.
+    /// "Your intentions" section title. The right slot shows "See all" when there are
+    /// more rows than fit, otherwise the hide/show intentions toggle (which also lives
+    /// in All intentions' bar). The 44pt control is an overlay so it doesn't add
+    /// height to the title row; the eye is nudged right so its glyph lines up with
+    /// the cards' trailing edge.
     private var intentionsSectionHeader: some View {
         GuideSectionLabel(text: "Your intentions", prominence: .strong)
             .accessibilityAddTraits(.isHeader)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.trailing, AppTheme.Accessibility.minHitTarget)
+            .padding(.trailing, hasMoreIntentionRows ? 88 : AppTheme.Accessibility.minHitTarget)
             .overlay(alignment: .trailing) {
-                titlePrivacyButton
-                    .offset(x: 12)
+                if hasMoreIntentionRows {
+                    seeAllIntentionsButton
+                } else {
+                    titlePrivacyButton
+                        .offset(x: 12)
+                }
             }
     }
 
@@ -400,10 +394,6 @@ struct OfferView: View {
                                 Hairline()
                                     .padding(.leading, 62)
                             }
-                        }
-
-                        if hasMoreIntentionRows {
-                            seeAllIntentionsButton
                         }
                     }
                     .guideNavList(pageGutter: AppTheme.gutter)
@@ -813,20 +803,33 @@ private struct PapalIntentionDetailView: View {
 
 /// Secondary row: NavigationLink for open, overflow menu overlaid outside the link
 /// so Pin/Edit/Delete are not swallowed by navigation (same pattern as CurrentIntentionHero).
-private struct ClosedEyeIcon: View {
-    @Environment(\.palette) private var palette
+/// Eye (shown) or closed eye (hidden) for the hide intentions toggle; takes the
+/// caller's foreground style.
+private struct IntentionPrivacyGlyph: View {
+    let hidden: Bool
 
+    var body: some View {
+        if hidden {
+            ClosedEyeIcon()
+        } else {
+            Image(systemName: "eye")
+                .guideSymbol(size: 17, weight: .medium)
+        }
+    }
+}
+
+private struct ClosedEyeIcon: View {
     var body: some View {
         ZStack {
             ClosedEyeLid()
                 .stroke(
-                    palette.dim,
+                    .foreground,
                     style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round)
                 )
 
             ClosedEyeLashes()
                 .stroke(
-                    palette.dim,
+                    .foreground,
                     style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
                 )
         }
@@ -866,12 +869,14 @@ private struct ClosedEyeLashes: Shape {
 /// feature, edit or delete. Pops back if the list empties.
 private struct AllIntentionsView: View {
     @Environment(OfferStore.self) private var offer
+    @Environment(SettingsStore.self) private var settings
     @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
 
-    var hideText: Bool
     let onEdit: (OfferIntention) -> Void
     let onPray: (OfferIntention) -> Void
+
+    private var hideText: Bool { settings.hideIntentionText }
 
     var body: some View {
         let items = offer.sortedIntentions
@@ -903,6 +908,19 @@ private struct AllIntentionsView: View {
         .background(palette.bg)
         // Standard level-2 chrome: native inline title, system back button and edge swipe.
         .guideDetailChrome("All intentions")
+        .toolbar {
+            // Hide/show intention text: same setting as My prayer.
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    settings.hideIntentionText.toggle()
+                } label: {
+                    // Primary, like the native back chevron beside it (not the accent tint).
+                    IntentionPrivacyGlyph(hidden: hideText)
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel(hideText ? "Show intentions" : "Hide intentions")
+            }
+        }
         .onChange(of: items.isEmpty) { _, isEmpty in
             if isEmpty { dismiss() }
         }
