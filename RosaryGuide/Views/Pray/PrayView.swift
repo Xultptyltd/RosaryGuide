@@ -59,6 +59,9 @@ struct PrayView: View {
     @State private var michaelContentHeight: CGFloat = 0
     @State private var michaelViewportHeight: CGFloat = 0
     @State private var michaelActionLocked = false
+    /// Tap has started the scroll. The circle stays put until the bottom arrives.
+    @State private var michaelArrowArmed = false
+    @State private var michaelScrollY: CGFloat = 0
     @Namespace private var michaelActionNamespace
     @State private var showingCompletion = false
     @State private var freshSetPending: MysterySetKind?
@@ -1069,17 +1072,17 @@ struct PrayView: View {
                             viewportHeight: geometry.containerSize.height
                         )
                     } action: { _, newValue in
-                        // Heights only. Scroll position must not morph or revert the
-                        // circle — a tap is the only thing that turns it into Done.
                         if newValue.contentHeight > 1 {
                             michaelContentHeight = max(michaelContentHeight, newValue.contentHeight)
                         }
                         if newValue.viewportHeight > 1 {
                             michaelViewportHeight = newValue.viewportHeight
                         }
+                        michaelScrollY = max(0, newValue.offsetY)
                     }
                         .onChange(of: settings.language) {
                             michaelActionLocked = false
+                            michaelArrowArmed = false
                             michaelContentHeight = 0
                         }
                     }
@@ -1093,9 +1096,23 @@ struct PrayView: View {
                         VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
                             michaelActionChrome {
                                 HapticService.play(.light, enabled: settings.hapticsEnabled)
-                                michaelActionLocked = true
-                                withAnimation(reduceMotion ? nil : MotionTokens.reveal) {
-                                    proxy.scrollTo(MichaelScrollAnchor.bottom, anchor: .bottom)
+                                let contentH = michaelContentHeight
+                                let viewH = michaelViewportHeight
+                                let maxOffset = max(0, contentH - viewH)
+                                let alreadyBottom = maxOffset <= 8 || michaelScrollY >= maxOffset - 36
+                                if alreadyBottom {
+                                    michaelActionLocked = true
+                                    michaelArrowArmed = false
+                                } else {
+                                    // Stay a circle for the whole scroll. Expand only
+                                    // when that scroll animation has finished.
+                                    michaelArrowArmed = true
+                                    withAnimation(reduceMotion ? nil : MotionTokens.reveal, completionCriteria: .logicallyComplete) {
+                                        proxy.scrollTo(MichaelScrollAnchor.bottom, anchor: .bottom)
+                                    } completion: {
+                                        michaelActionLocked = true
+                                        michaelArrowArmed = false
+                                    }
                                 }
                             }
                             languageChips
