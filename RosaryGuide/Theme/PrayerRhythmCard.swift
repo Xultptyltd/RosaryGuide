@@ -80,15 +80,15 @@ struct PrayerRhythm: Equatable {
     var streakText: String { streak == 1 ? "1 day" : "\(streak) days" }
 
     var caption: String {
-        if streak == 0 { return "Pray a rosary to start your rhythm." }
-        if prayedToday && prayedEachDayThisWeek { return "You've prayed each day this week." }
-        if prayedToday { return "Keep going, pray again tomorrow." }
-        return "Pray today to keep it going."
+        if streak == 0 { return "Start your rhythm today" }
+        if prayedToday && prayedEachDayThisWeek { return "Every day this week" }
+        if prayedToday { return "See you tomorrow" }
+        return "Pray today to keep it"
     }
 
     var accessibilityLabel: String {
         let days = prayedDaysThisMonth == 1 ? "1 day" : "\(prayedDaysThisMonth) days"
-        return "Prayer rhythm, \(streak) day streak, prayed \(days) in \(monthName). \(caption)"
+        return "Prayer rhythm, \(streak) day streak, prayed \(days) in \(monthName). \(caption)."
     }
 }
 
