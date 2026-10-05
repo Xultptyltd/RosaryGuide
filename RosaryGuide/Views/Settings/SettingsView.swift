@@ -730,18 +730,11 @@ private struct SettingsAccountScreen: View {
 
     var body: some View {
         SettingsDetailScaffold(title: "Account") {
-            if auth.isSignedIn {
-                SettingsSection(title: "You") {
+            VStack(spacing: 0) {
+                if auth.isSignedIn {
                     SettingsValueOnlyRow(title: "Name", icon: "person", value: auth.displayName ?? "Not set")
-                    SettingsValueOnlyRow(title: "Prayer story", icon: "text.book.closed", value: "Not set")
-                }
-
-                SettingsSection(title: "Sync") {
                     SettingsValueOnlyRow(title: "Signed in with", icon: "person.badge.key", value: auth.provider.rawValue)
-                    SettingsValueOnlyRow(title: "Cloud sync", icon: "icloud", value: "On")
-                }
-            } else {
-                SettingsSection(title: "Sign in") {
+                } else {
                     SettingsActionRow(
                         title: auth.isWorking ? "Signing in..." : "Continue with Apple",
                         icon: "apple.logo",
@@ -759,15 +752,13 @@ private struct SettingsAccountScreen: View {
                     .disabled(auth.isWorking)
                 }
 
-                if let message = auth.errorMessage {
-                    SettingsFootnote(message)
-                }
-            }
-
-            SettingsSection(title: "Data") {
                 SettingsActionRow(title: "Delete local data", icon: "trash", destructive: true) {
                     confirmDeleteHistory = true
                 }
+            }
+
+            if !auth.isSignedIn, let message = auth.errorMessage {
+                SettingsFootnote(message)
             }
 
             if auth.isSignedIn {
