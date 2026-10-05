@@ -66,3 +66,26 @@ struct PremiumUpsellCard: View {
             }
     }
 }
+
+/// Shows `PremiumUpsellCard` only on the free tier. Observes the Debug
+/// Premium mode switch so it hides and shows live; Release always shows it
+/// until StoreKit backs `PremiumStatus`.
+struct PremiumUpsellIfNeeded: View {
+    var title = "Rosary Guide+"
+    var subtitle = "Guided novenas, prayer tracking, full history and more."
+    var action: () -> Void
+
+    #if DEBUG
+    @Bindable private var premium = PremiumDebugOverride.shared
+    private var isPremium: Bool { premium.isPremium }
+    #else
+    private var isPremium: Bool { false }
+    #endif
+
+    @ViewBuilder
+    var body: some View {
+        if !isPremium {
+            PremiumUpsellCard(title: title, subtitle: subtitle, action: action)
+        }
+    }
+}

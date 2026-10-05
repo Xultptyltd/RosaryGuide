@@ -102,7 +102,7 @@ struct SettingsView: View {
 
         return ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                UnlockTrialCard {
+                PremiumUpsellIfNeeded {
                     placeholderMessage = "Premium trials will be available when subscriptions are configured."
                 }
 
@@ -481,50 +481,6 @@ private struct SettingsMailComposer: UIViewControllerRepresentable {
         ) {
             dismiss()
         }
-    }
-}
-
-private struct UnlockTrialCard: View {
-    @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var colorScheme
-    var action: () -> Void
-
-    var body: some View {
-        VStack(spacing: AppTheme.Space.lg) {
-            ZStack(alignment: .trailing) {
-                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                    Text("Unlock every prayer companion feature")
-                        .font(AppTheme.TypeRole.settingsCardTitle)
-                        .foregroundStyle(palette.ink)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text("Start your Rosary Guide Premium trial.")
-                        .font(AppTheme.TypeRole.settingsMeta)
-                        .foregroundStyle(palette.dim)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.trailing, AppTheme.Component.profileHeroSymbolReserve)
-
-                Image(systemName: "lock.open.fill")
-                    .guideSymbol(size: AppTheme.Component.profileHeroSymbolSize, weight: .regular)
-                    .foregroundStyle(palette.ink.opacity(AppTheme.Component.profileBackgroundSymbolOpacity))
-                    .offset(x: AppTheme.Space.md, y: AppTheme.Space.lg)
-                    .accessibilityHidden(true)
-            }
-
-            Button(action: action) {
-                Text("Unlock free trial")
-                    .font(AppTheme.TypeRole.settingsRow(weight: .semibold))
-                    .foregroundStyle(palette.secondaryButtonText)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: AppTheme.Component.pillHeight)
-                    .background(palette.secondaryButtonFill, in: Capsule())
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(AppTheme.Space.xl)
-        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, stroke: false, elevated: colorScheme == .light)
     }
 }
 
@@ -923,7 +879,7 @@ private struct SettingsPremiumScreen: View {
                 SettingsFootnote(note)
             }
 
-            UnlockTrialCard {
+            PremiumUpsellIfNeeded {
                 placeholderMessage = "Premium trials will be available when subscriptions are configured."
             }
 
