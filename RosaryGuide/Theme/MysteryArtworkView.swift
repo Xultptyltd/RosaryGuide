@@ -28,6 +28,8 @@ struct MysteryArtworkView: View {
     var kind: Kind = .plate
     /// Soft bottom dissolve into the surrounding card. Off for a hard image/body edge.
     var bottomFade: Bool = true
+    /// Finish hero only. Top of the visible image, as a fraction of the artwork.
+    var cropTop: CGFloat? = nil
 
     enum Kind { case plate, plateWide, heroTall, heroWide }
 
@@ -59,7 +61,8 @@ struct MysteryArtworkView: View {
             FocusedRasterImage(
                 directory: path.directory,
                 name: path.name,
-                focus: UnitPoint(x: 0.5, y: tall ? 0.28 : 0.42)
+                focus: UnitPoint(x: 0.5, y: tall ? 0.28 : 0.42),
+                cropTop: tall ? cropTop : nil
             )
         case .plate, .plateWide:
             if let slug {

@@ -93,7 +93,8 @@ struct CompletionView: View {
                     set: mysterySet,
                     mysteryNumber: nil,
                     slug: nil,
-                    kind: .heroTall
+                    kind: .heroTall,
+                    cropTop: 0.45
                 )
                 .frame(height: heroHeight)
                 .frame(maxWidth: .infinity)

@@ -107,14 +107,24 @@ enum ArtCatalog {
         }
     }
 
-    static func offset(imageSize: CGSize, frame: CGSize, focus: UnitPoint) -> CGSize {
+    static func offset(imageSize: CGSize, frame: CGSize, focus: UnitPoint, cropTop: CGFloat? = nil) -> CGSize {
         guard imageSize.width > 0, imageSize.height > 0, frame.width > 0, frame.height > 0 else {
             return .zero
         }
         let scale = max(frame.width / imageSize.width, frame.height / imageSize.height)
         let extraW = imageSize.width * scale - frame.width
         let extraH = imageSize.height * scale - frame.height
-        return CGSize(width: (0.5 - focus.x) * extraW, height: (0.5 - focus.y) * extraH)
+        let scaledH = imageSize.height * scale
+        // cropTop is where the visible window begins, as a fraction of the image.
+        // The focus point is the center of that window, so it is derived from the frame.
+        let focusY: CGFloat
+        if let cropTop, extraH > 1, scaledH > 1 {
+            let top = min(max(cropTop, 0), extraH / scaledH)
+            focusY = top * scaledH / extraH
+        } else {
+            focusY = focus.y
+        }
+        return CGSize(width: (0.5 - focus.x) * extraW, height: (0.5 - focusY) * extraH)
     }
 }
 
@@ -123,11 +133,13 @@ struct FocusedRasterImage: View {
     var name: String
     var ext: String = "jpg"
     var focus: UnitPoint = UnitPoint(x: 0.5, y: 0.32)
+    /// When set, the top of the visible crop is this far down the image (0...1).
+    var cropTop: CGFloat? = nil
 
     var body: some View {
         GeometryReader { geo in
             if let image = BundleRasterImage.load(directory: directory, name: name, ext: ext) {
-                let shift = ArtCatalog.offset(imageSize: image.size, frame: geo.size, focus: focus)
+                let shift = ArtCatalog.offset(imageSize: image.size, frame: geo.size, focus: focus, cropTop: cropTop)
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
