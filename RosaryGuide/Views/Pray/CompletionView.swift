@@ -103,8 +103,9 @@ struct CompletionView: View {
                 .offset(y: resting ? 0 : 28)
                 .accessibilityHidden(true)
 
-                // Spare room sits above the tick group. The group itself
-                // stays 40pt above the quote, and Done stays 36pt under it.
+                // Spare room sits above the tick group. The intention chip
+                // sits 16pt above the quote (40pt when there is no intention),
+                // and Done stays 36pt under the quote.
                 Spacer(minLength: 0)
 
                 iconSlot
@@ -233,7 +234,7 @@ struct CompletionView: View {
                     .layoutPriority(1)
             }
 
-            Color.clear.frame(height: 40)
+            Color.clear.frame(height: hasIntention ? 16 : 40)
 
             VStack(spacing: 6) {
                 Text("“\(quote.text)”")
@@ -257,18 +258,12 @@ struct CompletionView: View {
         }
     }
 
-    /// Same row language as the Sign of the Cross "For" line — label, category
-    /// icon, title — set on the shared surface so it belongs to the finish page.
+    /// Category icon (or Pope portrait) and title, on the shared surface.
+    /// No "Offered for" label — VoiceOver still says who it was offered for.
     private var offeredForSurface: some View {
         HStack(spacing: 0) {
             Spacer(minLength: 0)
             HStack(spacing: AppTheme.Space.sm) {
-                Text("Offered for")
-                    .font(AppTheme.TypeRole.themeSummary)
-                    .foregroundStyle(palette.completionLabel)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
-
                 if let intentionFace {
                     IntentionIconView(
                         accent: intentionFace.accent,
