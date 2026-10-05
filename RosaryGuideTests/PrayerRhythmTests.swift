@@ -33,7 +33,15 @@ final class PrayerRhythmTests: XCTestCase {
 
     // MARK: Daily mode
 
-    func testThreeInARow() { assertCard(rhythm([0, -1, -2]), "3 days", "Three days in a row") }
+    func testThreeInARow() {
+        let r = rhythm([0, -1, -2])
+        assertCard(r, "3 days", "Three days in a row")
+        XCTAssertTrue(r.isMilestone)
+    }
+    func testNonMilestoneNotFlagged() {
+        XCTAssertFalse(rhythm([0]).isMilestone)
+        XCTAssertFalse(rhythm([0, -1, -2, -3]).isMilestone) // 4 days, "See you tomorrow"
+    }
     func testFourInARowPrayedToday() { assertCard(rhythm([0, -1, -2, -3]), "4 days", "See you tomorrow") }
     func testFourInARowNotYetToday() { assertCard(rhythm([-1, -2, -3, -4]), "4 days", "Pray today to keep it") }
     func testMilestoneOnlyOnTheDayReached() { assertCard(rhythm([-1, -2, -3]), "3 days", "Pray today to keep it") }

@@ -24,6 +24,8 @@ struct PrayerRhythm: Equatable {
     var bigNumber: Int
     var unit: Unit
     var caption: String
+    /// True when `caption` is a daily/week milestone (card shows a flame instead of the calendar).
+    var isMilestone: Bool
 
     var monthName: String
     var prayedDaysThisMonth: Int
@@ -117,6 +119,7 @@ struct PrayerRhythm: Equatable {
         bigNumber = result.number
         unit = result.unit
         caption = result.caption
+        isMilestone = result.isMilestone
 
         // Month grid.
         var cells: [Day?] = []
@@ -155,9 +158,9 @@ struct PrayerRhythm: Equatable {
         dailyRunStartDay: String,
         dailyRunStartMonth: String,
         weekRunStartMonth: String
-    ) -> (number: Int, unit: Unit, caption: String) {
+    ) -> (number: Int, unit: Unit, caption: String, isMilestone: Bool) {
         // 1. Never prayed.
-        guard hasEverPrayed else { return (0, .day, "Start your rhythm this week") }
+        guard hasEverPrayed else { return (0, .day, "Start your rhythm this week", false) }
 
         // 2. Daily mode (3+ days in a row); milestones only on the day they're reached.
         if dailyRun >= 3 {
@@ -175,24 +178,27 @@ struct PrayerRhythm: Equatable {
                 default: return nil
                 }
             }() : nil
-            return (dailyRun, .day, milestone ?? (prayedToday ? "See you tomorrow" : "Pray today to keep it"))
+            if let milestone {
+                return (dailyRun, .day, milestone, true)
+            }
+            return (dailyRun, .day, prayedToday ? "See you tomorrow" : "Pray today to keep it", false)
         }
 
         // Lapsed: prayed before, but not this week or last week.
-        guard weekRun > 0 else { return (0, .week, "Start your rhythm this week") }
+        guard weekRun > 0 else { return (0, .week, "Start your rhythm this week", false) }
 
         // 3. Welcome back after a gap of at least one empty week.
-        if isWelcomeBack { return (1, .week, "Welcome back") }
+        if isWelcomeBack { return (1, .week, "Welcome back", false) }
 
         // 4. Getting started: first week of the run, by distinct prayed days this week.
         if weekRun == 1 && prayedThisWeek {
             switch prayedDaysThisWeek {
-            case 1: return (1, .day, "Once this week")
-            case 2: return (1, .week, "Twice this week")
-            case 3: return (1, .week, "Three days this week")
-            case 4: return (1, .week, "Four days this week")
-            case 5: return (1, .week, "Five days this week")
-            case 6: return (1, .week, "Six days this week")
+            case 1: return (1, .day, "Once this week", false)
+            case 2: return (1, .week, "Twice this week", false)
+            case 3: return (1, .week, "Three days this week", false)
+            case 4: return (1, .week, "Four days this week", false)
+            case 5: return (1, .week, "Five days this week", false)
+            case 6: return (1, .week, "Six days this week", false)
             default: break
             }
         }
@@ -211,11 +217,11 @@ struct PrayerRhythm: Equatable {
                 default: return nil
                 }
             }()
-            if let milestone { return (weekRun, .week, milestone) }
+            if let milestone { return (weekRun, .week, milestone, true) }
         }
 
         // 6. Week mode otherwise.
-        return (weekRun, .week, prayedThisWeek ? "See you next week" : "Pray this week to keep it")
+        return (weekRun, .week, prayedThisWeek ? "See you next week" : "Pray this week to keep it", false)
     }
 
     /// Some prayer to show: a prayed day in the shown month or a live run.
@@ -328,10 +334,21 @@ struct PrayerRhythmCard: View {
     // MARK: Left column
 
     private var icon: some View {
-        CalendarCheckGlyph(showsCheck: rhythm.hasPrayed)
-            .stroke(palette.ink.opacity(isDark ? 0.88 : 0.82),
-                    style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
-            .frame(width: Metric.iconSize.width, height: Metric.iconSize.height)
+        Group {
+            if rhythm.isMilestone {
+                // Accent flame for daily/week milestone captions.
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(palette.accent)
+                    .symbolRenderingMode(.hierarchical)
+            } else {
+                CalendarCheckGlyph(showsCheck: rhythm.hasPrayed)
+                    .stroke(palette.ink.opacity(isDark ? 0.88 : 0.82),
+                            style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+            }
+        }
+        .frame(width: Metric.iconSize.width, height: Metric.iconSize.height)
+        .accessibilityHidden(true)
     }
 
     private var summaryText: some View {
