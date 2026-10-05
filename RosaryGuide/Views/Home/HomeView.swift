@@ -278,6 +278,34 @@ struct HomeView: View {
         .accessibilityValue(colorScheme == .light ? "Day" : "Night")
     }
 
+    /// Small centred tertiary pill at the end of Home that opens the share sheet.
+    /// No App Store listing exists yet, so it shares the website.
+    private var shareAppButton: some View {
+        ShareLink(
+            item: URL(string: "https://rosaryguide.app")!,
+            subject: Text("Rosary Guide"),
+            message: Text("I've been praying the Rosary with Rosary Guide. Take a look:")
+        ) {
+            HStack(spacing: AppTheme.Space.sm) {
+                Image(systemName: "square.and.arrow.up")
+                    .guideSymbol(size: 15, weight: .medium)
+                Text("Share Rosary Guide")
+                    .font(AppTheme.TypeRole.callout(weight: .medium))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(palette.tertiaryButtonText)
+            .padding(.horizontal, AppTheme.Space.lg)
+            .frame(height: AppTheme.Accessibility.minHitTarget)
+            .background(palette.tertiaryButtonFill, in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(TapGesture().onEnded {
+            HapticService.play(.light, enabled: settings.hapticsEnabled)
+        })
+        .accessibilityLabel("Share Rosary Guide")
+    }
+
     private func sheet(width: CGFloat, gutter: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(today.formatted(.dateTime.weekday(.wide).month(.wide).day()))
@@ -335,6 +363,10 @@ struct HomeView: View {
                 GuideSectionLabel(text: "This week", prominence: .strong)
                 weekGlance
             }
+                .padding(.top, AppTheme.sectionGap)
+
+            shareAppButton
+                .frame(maxWidth: .infinity)
                 .padding(.top, AppTheme.sectionGap)
         }
         .padding(.horizontal, gutter)
