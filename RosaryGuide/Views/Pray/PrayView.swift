@@ -100,9 +100,7 @@ struct PrayView: View {
     var body: some View {
         ZStack {
             palette.prayBg.ignoresSafeArea()
-            if showingMichael {
-                michaelLayer
-            } else if showingCompletion {
+            if showingCompletion {
                 finisLayer
             } else if let current {
                 if current.isFinis {
@@ -110,6 +108,11 @@ struct PrayView: View {
                 } else {
                     prayLayer(current)
                 }
+            }
+            // Kept above the finish screen so closing Saint Michael returns
+            // to the same completion state instead of leaving for Home.
+            if showingMichael {
+                michaelLayer
             }
             if finishBlack > 0, !showingCompletion, !showingMichael {
                 Color.black
@@ -972,10 +975,10 @@ struct PrayView: View {
     private var michaelLayer: some View {
         VStack(spacing: 0) {
             HStack {
-                roundControl(system: "xmark") {
-                    finishRosary()
-                }
                 Spacer()
+                roundControl(system: "xmark") {
+                    returnToFinishScreen()
+                }
             }
             .padding(.horizontal, AppTheme.Space.lg)
             .padding(.top, AppTheme.Space.sm)
@@ -996,8 +999,8 @@ struct PrayView: View {
             Spacer()
             VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
                 languageChips
-                PillButton(title: "Amen", filled: false) {
-                    finishRosary()
+                PillButton(title: "Done", filled: false) {
+                    returnToFinishScreen()
                 }
             }
             .padding(.horizontal, AppTheme.gutter)
@@ -1018,6 +1021,11 @@ struct PrayView: View {
         if sessionStore.session != nil {
             sessionStore.complete()
         }
+    }
+
+    /// Saint Michael is a side step. Done and the close control come back here.
+    private func returnToFinishScreen() {
+        showingMichael = false
     }
 
     private func finishRosary() {
