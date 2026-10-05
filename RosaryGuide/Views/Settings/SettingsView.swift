@@ -745,6 +745,19 @@ private struct AppIconChoices: View {
     @Environment(\.palette) private var palette
 
     private let previewSize: CGFloat = 64
+    private let tileSpacing = AppTheme.Space.md
+    /// Leading edge of the "App icon" label: icon column + icon/label spacing.
+    private let labelLeading = AppTheme.Space.xl + AppTheme.Space.lg
+    @State private var tileRowWidth: CGFloat = 0
+
+    /// Shifts the equal-width tile row right so the first tile's left edge meets
+    /// the label's leading edge, without changing tile size or spacing.
+    private var tileRowShift: CGFloat {
+        guard tileRowWidth > 0 else { return 0 }
+        let cellWidth = (tileRowWidth - tileSpacing * CGFloat(AppIconOption.allCases.count - 1))
+            / CGFloat(AppIconOption.allCases.count)
+        return max(0, labelLeading - (cellWidth - previewSize) / 2)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
@@ -757,12 +770,21 @@ private struct AppIconChoices: View {
             }
             .accessibilityAddTraits(.isHeader)
 
-            HStack(spacing: AppTheme.Space.md) {
+            HStack(spacing: tileSpacing) {
                 ForEach(AppIconOption.allCases) { option in
                     iconCell(option)
                 }
             }
             .frame(maxWidth: .infinity)
+            // Width stays the full row width (leading/trailing padding cancel), so
+            // measuring here does not feed back into the shift.
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.width
+            } action: { width in
+                tileRowWidth = width
+            }
+            .padding(.leading, tileRowShift)
+            .padding(.trailing, -tileRowShift)
         }
         .padding(.vertical, AppTheme.Space.lg)
         .overlay(alignment: .bottom) { SettingsDivider() }
