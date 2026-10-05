@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// "Rosary Guide+" upsell row: thin gold crown, gold title in the app sans, short pitch
-/// and a chevron on the standard surface with a faint gold hairline.
+/// plus a dim "7-day free trial" line on the standard surface with a faint gold hairline.
 /// Dark: dark surface with warm gold. Light: light surface with a deeper, richer gold
 /// so the title, crown and edge keep contrast.
 struct PremiumUpsellCard: View {
@@ -10,6 +10,7 @@ struct PremiumUpsellCard: View {
 
     var title = "Rosary Guide+"
     var subtitle = "Guided novenas, prayer tracking, full history and more."
+    var trialLine = "7-day free trial"
     var action: () -> Void
 
     private var isDark: Bool { colorScheme == .dark }
@@ -20,7 +21,7 @@ struct PremiumUpsellCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: AppTheme.Space.lg) {
+            HStack(alignment: .center, spacing: AppTheme.Space.lg) {
                 Image(systemName: "crown")
                     .font(.system(size: 26, weight: .light))
                     .foregroundStyle(gold)
@@ -36,13 +37,11 @@ struct PremiumUpsellCard: View {
                         .foregroundStyle(palette.ink.opacity(isDark ? 0.86 : 0.78))
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
+                    Text(trialLine)
+                        .font(AppTheme.sans(13, relativeTo: .caption))
+                        .foregroundStyle(palette.dim)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-                Image(systemName: "chevron.right")
-                    .guideSymbol(size: 15, weight: .semibold)
-                    .foregroundStyle(palette.ink.opacity(isDark ? 0.8 : 0.55))
-                    .accessibilityHidden(true)
             }
             .padding(.horizontal, AppTheme.Space.xl)
             .padding(.vertical, AppTheme.Space.xl)
@@ -53,7 +52,7 @@ struct PremiumUpsellCard: View {
         .buttonStyle(.plain)
         .guidePressable()
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title). \(subtitle)")
+        .accessibilityLabel("\(title). \(subtitle). \(trialLine).")
         .accessibilityAddTraits(.isButton)
     }
 
