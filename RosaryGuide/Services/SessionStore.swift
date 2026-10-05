@@ -7,6 +7,7 @@ final class SessionStore {
     private let historyKey = "session.completedDays"
     private let changedAtKey = "session.changedAt"
     private let historyResetKey = "session.historyResetAt"
+    private let completedSetsKey = "session.completedSetsToday"
 
     /// How far back prayed-day history is kept (on device and in the account).
     static let historyWindowDays = 366
@@ -28,6 +29,11 @@ final class SessionStore {
 
     /// Day-start timestamps (timeIntervalSince1970) of days a rosary was finished.
     private(set) var completedDayStarts: Set<TimeInterval> = []
+
+    /// Mystery sets finished on `completedSetsDay` (yyyy-MM-dd). Device-only: synced progress
+    /// records prayed days, not sets, and its Firestore rules allow no extra field.
+    private(set) var completedSets: Set<MysterySetKind> = []
+    private(set) var completedSetsDay: String = ""
 
     /// When the in-progress rosary was last started, advanced, finished or discarded.
     /// Used for last-write-wins between devices.
@@ -69,6 +75,44 @@ final class SessionStore {
         isApplyingSynced = false
         completedDayStarts = Self.loadHistory(key: historyKey)
         pruneHistory()
+        if let stored = defaults.dictionary(forKey: completedSetsKey),
+           let day = stored["day"] as? String,
+           let sets = stored["sets"] as? [String] {
+            completedSetsDay = day
+            completedSets = Set(sets.compactMap(MysterySetKind.init(rawValue:)))
+        }
+    }
+
+    /// True when this mystery set was finished today on this device. Resets the next day.
+    func completedToday(_ set: MysterySetKind, now: Date = .now) -> Bool {
+        completedSetsDay == SyncedProgress.dayKey(for: now) && completedSets.contains(set)
+    }
+
+    private func recordCompletedSet(_ set: MysterySetKind) {
+        let today = SyncedProgress.dayKey(for: Date())
+        if completedSetsDay != today {
+            completedSetsDay = today
+            completedSets = []
+        }
+        completedSets.insert(set)
+        persistCompletedSets()
+    }
+
+    private func clearCompletedSets() {
+        completedSets = []
+        completedSetsDay = ""
+        persistCompletedSets()
+    }
+
+    private func persistCompletedSets() {
+        if completedSets.isEmpty {
+            UserDefaults.standard.removeObject(forKey: completedSetsKey)
+        } else {
+            UserDefaults.standard.set(
+                ["day": completedSetsDay, "sets": completedSets.map(\.rawValue).sorted()],
+                forKey: completedSetsKey
+            )
+        }
     }
 
     func start(set: MysterySetKind, language: PrayerLanguage, intentionId: UUID? = nil, intentionTitle: String? = nil) {
@@ -102,6 +146,9 @@ final class SessionStore {
 
     func complete() {
         let start = Calendar.current.startOfDay(for: Date()).timeIntervalSince1970
+        if let set = session?.mysterySet {
+            recordCompletedSet(set)
+        }
         completedDayStarts.insert(start)
         persistHistory()
         session = nil
@@ -146,6 +193,7 @@ final class SessionStore {
     func clearHistoryAndData() {
         completedDayStarts = []
         persistHistory()
+        clearCompletedSets()
         historyResetAt = Date().syncRounded
         session = nil
         onUserChange?(true)
@@ -170,6 +218,10 @@ final class SessionStore {
         let days = Set(progress.completedDays.compactMap { SyncedProgress.date(forDayKey: $0)?.timeIntervalSince1970 })
         completedDayStarts = Self.pruned(days)
         persistHistory()
+        // Another account's data, or history wiped elsewhere: today's sets no longer apply.
+        if !progress.completedDays.contains(SyncedProgress.dayKey(for: Date())) {
+            clearCompletedSets()
+        }
         historyResetAt = progress.historyResetAt
         sessionChangedAt = progress.sessionChangedAt
         if let incoming = progress.session, incoming.isSameCalendarDay {
@@ -185,6 +237,7 @@ final class SessionStore {
         defer { isApplyingSynced = false }
         completedDayStarts = []
         persistHistory()
+        clearCompletedSets()
         session = nil
         sessionChangedAt = .syncNever
         historyResetAt = nil

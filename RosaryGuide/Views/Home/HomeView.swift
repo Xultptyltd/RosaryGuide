@@ -402,6 +402,9 @@ struct HomeView: View {
         if let resumable = matchingResumableSession {
             return resumable.continueCTATitle
         }
+        if session.completedToday(currentSet) {
+            return "Pray again"
+        }
         return isShowingTodayMysteries ? "Pray today's mysteries" : "Pray the \(currentSet.shortName) Mysteries"
     }
 
