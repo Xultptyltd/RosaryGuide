@@ -236,11 +236,13 @@ struct SettingsView: View {
     private var backToolbarItem: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
             Button(action: close) {
-                // Primary, like the native back chevron on pushed pages (not the accent tint).
                 Image(systemName: "chevron.backward")
                     .fontWeight(.medium)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(palette.ink)
             }
+            // Ink, like the native back chevron on pushed pages (bar buttons
+            // otherwise take the accent tint).
+            .tint(palette.ink)
             .accessibilityLabel("Back")
         }
     }

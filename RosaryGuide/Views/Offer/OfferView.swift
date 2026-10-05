@@ -914,10 +914,12 @@ private struct AllIntentionsView: View {
                 Button {
                     settings.hideIntentionText.toggle()
                 } label: {
-                    // Primary, like the native back chevron beside it (not the accent tint).
                     IntentionPrivacyGlyph(hidden: hideText)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(palette.ink)
                 }
+                // Ink, like the native back chevron beside it (bar buttons
+                // otherwise take the accent tint).
+                .tint(palette.ink)
                 .accessibilityLabel(hideText ? "Show intentions" : "Hide intentions")
             }
         }
