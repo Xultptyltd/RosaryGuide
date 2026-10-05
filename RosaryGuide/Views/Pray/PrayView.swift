@@ -62,7 +62,6 @@ struct PrayView: View {
     /// Tap has started the scroll. The circle stays put until the bottom arrives.
     @State private var michaelArrowArmed = false
     @State private var michaelScrollY: CGFloat = 0
-    @Namespace private var michaelActionNamespace
     @State private var showingCompletion = false
     @State private var freshSetPending: MysterySetKind?
 
@@ -1153,32 +1152,27 @@ struct PrayView: View {
                     returnToFinishScreen()
                 }
             } label: {
-                Group {
+                let side = AppTheme.Component.mysteryPlateActionCircle
+                ZStack {
+                    Capsule()
+                        .fill(palette.secondaryButtonFill)
                     if showScroll {
                         Image(systemName: "chevron.down")
                             .guideSymbol(size: 17, weight: .semibold)
                             .foregroundStyle(palette.secondaryButtonText)
-                            .frame(
-                                width: AppTheme.Component.mysteryPlateActionCircle,
-                                height: AppTheme.Component.mysteryPlateActionCircle
-                            )
+                            .transition(.identity)
                     } else {
                         Text("Done")
                             .font(AppTheme.TypeRole.callout(weight: .semibold))
                             .foregroundStyle(palette.secondaryButtonText)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: AppTheme.Component.pillHeight)
+                            .transition(.identity)
                     }
                 }
-                .background {
-                    Capsule()
-                        .fill(palette.secondaryButtonFill)
-                        .matchedGeometryEffect(id: "michael-action-background", in: michaelActionNamespace)
-                }
+                .frame(maxWidth: showScroll ? side : .infinity)
+                .frame(width: showScroll ? side : nil, height: AppTheme.Component.pillHeight)
                 .contentShape(Capsule())
             }
             .buttonStyle(.plain)
-            .guidePressable()
             .accessibilityLabel(showScroll ? "Scroll to read the prayer" : "Done")
         }
         .animation(animation, value: showScroll)
