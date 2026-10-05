@@ -16,12 +16,21 @@ struct OfferView: View {
     @State private var popeStore = PopeIntentionStore.shared
     @State private var intentionDetail: OfferIntention?
     @State private var showingPremium = false
+    /// Intention rows under the Add button: first `collapsedIntentionRowLimit`, or all when expanded.
+    @State private var showsAllIntentions = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Set when Premium opens because the free intention limit was hit.
     @State private var premiumNote: String?
     /// Banking-style privacy: when true, mask personal intention titles on the list surface.
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
     /// Space an IntentionListRow leaves under its icon (its vertical padding).
     private static let intentionRowBottomInset: CGFloat = 10
+    /// Rows shown under the Add button before "Show more".
+    private static let collapsedIntentionRowLimit = 3
+    /// Show more/less button height (44pt hit target).
+    private static let showMoreHeight: CGFloat = AppTheme.Accessibility.minHitTarget
+    /// Space under the Show more/less label inside its 44pt frame (~21pt callout line).
+    private static let showMoreBottomInset: CGFloat = 11
     private var todaySet: MysterySetKind {
         MysteryCalendar.assignment(on: Date()).set
     }
@@ -204,6 +213,18 @@ struct OfferView: View {
         guard let currentIntention else { return offer.sortedIntentions }
         return offer.sortedIntentions.filter { $0.id != currentIntention.id }
     }
+    private var hasMoreIntentionRows: Bool {
+        secondaryIntentions.count > Self.collapsedIntentionRowLimit
+    }
+    private var visibleSecondaryIntentions: [OfferIntention] {
+        showsAllIntentions ? secondaryIntentions : Array(secondaryIntentions.prefix(Self.collapsedIntentionRowLimit))
+    }
+    /// Visible space under the last list element (row icon or Show more label),
+    /// subtracted so the Prayer journeys gap reads as sectionGap.
+    private var intentionListBottomInset: CGFloat {
+        if hasMoreIntentionRows { return Self.showMoreBottomInset }
+        return secondaryIntentions.isEmpty ? 0 : Self.intentionRowBottomInset
+    }
     private var papalSuggestion: SuggestedIntention? {
         suggestions.first(where: isPapalSuggestion)
     }
@@ -253,6 +274,34 @@ struct OfferView: View {
         .guidePressable()
         .accessibilityLabel(hideIntentionText ? "Show intentions" : "Hide intentions")
     }
+    /// Expands/collapses the intention rows. Same chevron treatment as the app's
+    /// accordions (chevron.down, faint, rotates 180° when open).
+    private var showMoreIntentionsButton: some View {
+        Button {
+            withAnimation(reduceMotion ? nil : MotionTokens.selection) {
+                showsAllIntentions.toggle()
+            }
+        } label: {
+            HStack(spacing: AppTheme.Space.sm) {
+                Text(showsAllIntentions ? "Show less" : "Show more")
+                    .font(AppTheme.TypeRole.callout(weight: .medium))
+                    .foregroundStyle(palette.dim)
+                Image(systemName: "chevron.down")
+                    .guideSymbol(size: 12, weight: .semibold)
+                    .foregroundStyle(palette.faint)
+                    .rotationEffect(.degrees(showsAllIntentions ? 180 : 0))
+                    .accessibilityHidden(true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: Self.showMoreHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .guidePressable()
+        .accessibilityValue(showsAllIntentions ? "Expanded" : "Collapsed")
+        .accessibilityHint(showsAllIntentions ? "Shows fewer intentions" : "Shows all intentions")
+    }
+
     /// "Prayer journeys" section: title, sectionTitleGap, then the Rosary Guide+ card.
     /// No entitlement flag exists yet, so the upsell always shows.
     private var prayerJourneysSection: some View {
@@ -334,7 +383,7 @@ struct OfferView: View {
                         .padding(.top, (currentIntention == nil && visiblePapalSuggestion == nil) ? 0 : AppTheme.Space.md)
 
                     VStack(spacing: 0) {
-                        ForEach(secondaryIntentions) { item in
+                        ForEach(visibleSecondaryIntentions) { item in
                             IntentionSecondaryRow(
                                 intention: item,
                                 hideText: hideIntentionText,
@@ -345,10 +394,14 @@ struct OfferView: View {
                                 onPray: { prayWith(item) }
                             )
 
-                            if item.id != secondaryIntentions.last?.id {
+                            if item.id != visibleSecondaryIntentions.last?.id {
                                 Hairline()
                                     .padding(.leading, 62)
                             }
+                        }
+
+                        if hasMoreIntentionRows {
+                            showMoreIntentionsButton
                         }
                     }
                     .guideNavList(pageGutter: AppTheme.gutter)
@@ -360,7 +413,7 @@ struct OfferView: View {
 
                 prayerJourneysSection
                     // Visible sectionGap: intention rows carry their own bottom inset.
-                    .padding(.top, AppTheme.sectionGap - (secondaryIntentions.isEmpty ? 0 : Self.intentionRowBottomInset))
+                    .padding(.top, AppTheme.sectionGap - intentionListBottomInset)
             }
             .padding(.horizontal, AppTheme.gutter)
             // Same top breathing room as FeastsView before its title/control block.
