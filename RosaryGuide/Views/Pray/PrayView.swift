@@ -62,6 +62,8 @@ struct PrayView: View {
     /// Tap has started the scroll. The circle stays put until the bottom arrives.
     @State private var michaelArrowArmed = false
     @State private var michaelScrollY: CGFloat = 0
+    /// Offset target. A stable anchor id is ignored on the second tap.
+    @State private var michaelScrollPosition = ScrollPosition(edge: .top)
     /// Last time the prayer actually moved. A scroll that ends on the circle is not a tap.
     @State private var michaelLastDrag = Date.distantPast
     @State private var showingCompletion = false
@@ -1025,8 +1027,7 @@ struct PrayView: View {
         VStack(spacing: 0) {
             michaelHeader
 
-            ScrollViewReader { proxy in
-                VStack(spacing: 0) {
+            VStack(spacing: 0) {
                     GeometryReader { scrollGeo in
                         ScrollView {
                             VStack(spacing: 0) {
@@ -1066,6 +1067,7 @@ struct PrayView: View {
                                 Color.clear.preference(key: MichaelViewportHeightKey.self, value: geo.size.height)
                             }
                         }
+                        .scrollPosition($michaelScrollPosition)
                         .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
                         PlateScrollMetrics(
                             offsetY: geometry.contentOffset.y,
@@ -1120,20 +1122,19 @@ struct PrayView: View {
                                 let contentH = michaelContentHeight
                                 let viewH = michaelViewportHeight
                                 let maxOffset = max(0, contentH - viewH)
-                                let alreadyBottom = maxOffset <= 8 || michaelScrollY >= maxOffset - 36
-                                if alreadyBottom {
+                                let distanceFromBottom = maxOffset - michaelScrollY
+                                // One motion every tap. scrollTo(id:) of the same bottom
+                                // anchor is dropped after the user drags away, which
+                                // expanded Done without moving. Setting the offset again
+                                // still scrolls. Already-at-bottom just expands.
+                                michaelArrowArmed = distanceFromBottom > 8
+                                withAnimation(reduceMotion ? nil : MotionTokens.reveal, completionCriteria: .logicallyComplete) {
                                     michaelActionLocked = true
-                                    michaelArrowArmed = false
-                                } else {
-                                    // One motion: scroll to the bottom while the circle
-                                    // expands. Armed blocks a mid-scroll revert.
-                                    michaelArrowArmed = true
-                                    withAnimation(reduceMotion ? nil : MotionTokens.reveal, completionCriteria: .logicallyComplete) {
-                                        michaelActionLocked = true
-                                        proxy.scrollTo(MichaelScrollAnchor.bottom, anchor: .bottom)
-                                    } completion: {
-                                        michaelArrowArmed = false
+                                    if distanceFromBottom > 8 {
+                                        michaelScrollPosition.scrollTo(y: maxOffset)
                                     }
+                                } completion: {
+                                    michaelArrowArmed = false
                                 }
                             }
                             languageChips
@@ -1143,7 +1144,6 @@ struct PrayView: View {
                         .padding(.top, AppTheme.Space.md)
                     }
                 }
-            }
         }
         .background(palette.prayBg.ignoresSafeArea())
     }
