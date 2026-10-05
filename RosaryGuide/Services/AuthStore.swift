@@ -21,6 +21,8 @@ final class AuthStore: NSObject {
 
     private(set) var userID: String?
     private(set) var provider: Provider = .anonymous
+    /// Name from the sign-in provider, when it shared one.
+    private(set) var displayName: String?
     private(set) var isWorking = false
     var errorMessage: String?
 
@@ -284,6 +286,9 @@ final class AuthStore: NSObject {
     private func apply(user: User?) {
         userID = user?.uid
         provider = Self.provider(for: user)
+        let name = (user?.displayName ?? user?.providerData.compactMap(\.displayName).first)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        displayName = (name?.isEmpty ?? true) ? nil : name
     }
 
     private static func provider(for user: User?) -> Provider {

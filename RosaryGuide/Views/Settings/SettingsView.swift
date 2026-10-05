@@ -4,10 +4,7 @@ import SwiftUI
 import UIKit
 
 private enum SettingsDestination: Hashable {
-    case aboutYou
-    case preferences
-    case appearance
-    case yourData
+    case account
     case aboutPremium
     case faqs
     case widgets
@@ -33,6 +30,7 @@ struct SettingsView: View {
     @State private var placeholderMessage: String?
     @State private var showOnboardingPreview = false
     @State private var mailDraft: SettingsMailDraft?
+    @State private var showReportChoice = false
 
     var body: some View {
         @Bindable var settings = settings
@@ -49,54 +47,64 @@ struct SettingsView: View {
                 }
 
                 VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
-                    SettingsSection(title: "Personalize") {
-                        SettingsNavigationRow(title: "About you", icon: "person", destination: .aboutYou)
-                        SettingsNavigationRow(title: "Preferences", icon: "slider.horizontal.3", destination: .preferences)
-                        SettingsNavigationRow(title: "Appearance", icon: "circle.lefthalf.filled", value: settings.appearance.title, destination: .appearance)
-
-                        SettingsMenuRow(title: "Language", icon: "globe", value: settings.language.title) {
+                    SettingsSection(title: "Praying") {
+                        SettingsMenuRow(title: "Language", icon: "globe", value: settings.language.settingsTitle) {
                             Picker("Language", selection: $settings.language) {
                                 ForEach(PrayerLanguage.appCases) { option in
+                                    Text(option.settingsTitle).tag(option)
+                                }
+                            }
+                        }
+
+                        SettingsMenuRow(title: "Text size", icon: "textformat.size", value: settings.textSize.title) {
+                            Picker("Text size", selection: $settings.textSize) {
+                                ForEach(PrayerTextSize.allCases) { option in
                                     Text(option.title).tag(option)
                                 }
                             }
                         }
-                    }
 
-                    SettingsSection(title: "Account") {
-                        SettingsValueOnlyRow(title: "Signed in", icon: "person.badge.key", value: auth.provider.rawValue)
-                        SettingsNavigationRow(title: "Your Data", icon: "folder", destination: .yourData)
+                        SettingsToggleRow(title: "Haptics", icon: "iphone.radiowaves.left.and.right", isOn: $settings.hapticsEnabled)
+
+                        SettingsMenuRow(title: "Color theme", icon: "circle.lefthalf.filled", value: settings.appearance.title) {
+                            Picker("Color theme", selection: $settings.appearance) {
+                                ForEach(AppearancePreference.allCases) { option in
+                                    Text(option.title).tag(option)
+                                }
+                            }
+                        }
+
                         SettingsActionRow(title: "Notifications", icon: "bell") {
                             placeholderMessage = "Rosary reminders and feast notifications are coming soon."
                         }
                     }
 
-                    SettingsSection(title: "Premium") {
-                        SettingsNavigationRow(title: "About Premium", icon: "crown", destination: .aboutPremium)
-                        SettingsActionRow(title: "Restore Purchase", icon: "arrow.clockwise") {
-                            placeholderMessage = "Purchases are not configured yet."
-                        }
+                    SettingsSection(title: "Account") {
+                        SettingsNavigationRow(
+                            title: auth.isSignedIn ? (auth.displayName ?? "Your account") : "Sign in",
+                            icon: "person.crop.circle",
+                            subtitle: auth.isSignedIn ? "Signed in with \(auth.provider.rawValue)" : nil,
+                            destination: .account
+                        )
+                        SettingsNavigationRow(title: "Premium", icon: "crown", value: "Upgrade", destination: .aboutPremium)
                     }
 
-                    SettingsSection(title: "Help & Support") {
+                    SettingsSection(title: "Help & support") {
                         SettingsNavigationRow(title: "Frequently Asked Questions", icon: "questionmark.circle", destination: .faqs)
-                        SettingsActionRow(title: "Suggest a Feature", icon: "lightbulb", accessory: .externalLink) {
+                        SettingsActionRow(title: "Report a problem", icon: "exclamationmark.bubble") {
+                            showReportChoice = true
+                        }
+                        SettingsActionRow(title: "Suggest a feature", icon: "lightbulb", accessory: .externalLink) {
                             open("https://xult.ltd/contact/")
                         }
-                        SettingsActionRow(title: "Report a Bug", icon: "ladybug") {
-                            composeSupportEmail(.bug)
-                        }
-                        SettingsActionRow(title: "Report a Translation Bug", icon: "character.bubble") {
-                            composeSupportEmail(.translation)
-                        }
-                        SettingsActionRow(title: "Leave Review on App Store", icon: "star") {
+                        SettingsActionRow(title: "Leave a review", icon: "star") {
                             requestReview()
                         }
                     }
 
-                    SettingsSection(title: "Application") {
+                    SettingsSection(title: "About") {
                         SettingsNavigationRow(title: "Widgets", icon: "square.grid.2x2", destination: .widgets)
-                        SettingsActionRow(title: "Onboarding", icon: "sparkles") {
+                        SettingsActionRow(title: "Replay welcome", icon: "sparkles") {
                             showOnboardingPreview = true
                         }
                         SettingsActionRow(title: "Terms of Service", icon: "doc.text", accessory: .externalLink) {
@@ -107,21 +115,10 @@ struct SettingsView: View {
                         }
                         SettingsNavigationRow(title: "Acknowledgements", icon: "heart", destination: .acknowledgements)
                     }
-
-                    SettingsSection(title: "Account Management") {
-                        SettingsActionRow(title: "Sign out", icon: "rectangle.portrait.and.arrow.right") {
-                            auth.signOut()
-                            dismiss()
-                        }
-                        SettingsActionRow(title: auth.isWorking ? "Deleting..." : "Delete account", icon: "person.crop.circle.badge.xmark", destructive: true) {
-                            confirmDeleteAccount = true
-                        }
-                        .disabled(auth.isWorking)
-                    }
                 }
                 .padding(.top, AppTheme.sectionGap - AppTheme.Space.xl)
 
-                Text("Rosary Guide version \(appVersion)")
+                Text("Version \(appVersion)")
                     .font(AppTheme.TypeRole.settingsMeta)
                     .foregroundStyle(palette.dim)
                     .frame(maxWidth: .infinity)
@@ -157,6 +154,11 @@ struct SettingsView: View {
         }
         .sheet(item: $mailDraft) { draft in
             SettingsMailComposer(draft: draft)
+        }
+        .confirmationDialog("What would you like to report?", isPresented: $showReportChoice, titleVisibility: .visible) {
+            Button("Bug") { composeSupportEmail(.bug) }
+            Button("Translation") { composeSupportEmail(.translation) }
+            Button("Cancel", role: .cancel) {}
         }
         .alert("Delete local data?", isPresented: $confirmDeleteHistory) {
             Button("Cancel", role: .cancel) {}
@@ -265,16 +267,14 @@ struct SettingsView: View {
     @ViewBuilder
     private func destinationView(_ destination: SettingsDestination) -> some View {
         switch destination {
-        case .aboutYou:
-            SettingsAboutYouScreen()
-        case .preferences:
-            SettingsPreferencesScreen()
-        case .appearance:
-            SettingsAppearanceScreen()
-        case .yourData:
-            SettingsDataScreen(
+        case .account:
+            SettingsAccountScreen(
                 confirmDeleteHistory: $confirmDeleteHistory,
-                confirmDeleteAccount: $confirmDeleteAccount
+                confirmDeleteAccount: $confirmDeleteAccount,
+                onSignOut: {
+                    auth.signOut()
+                    dismiss()
+                }
             )
         case .aboutPremium:
             SettingsPremiumScreen(placeholderMessage: $placeholderMessage)
@@ -511,12 +511,13 @@ private struct SettingsActionRow: View {
 private struct SettingsNavigationRow: View {
     let title: String
     var icon: String?
+    var subtitle: String?
     var value: String?
     let destination: SettingsDestination
 
     var body: some View {
         NavigationLink(value: destination) {
-            SettingsRowChrome(title: title, icon: icon, value: value, accessory: .chevron)
+            SettingsRowChrome(title: title, icon: icon, subtitle: subtitle, value: value, accessory: .chevron)
         }
         .buttonStyle(.plain)
     }
@@ -609,6 +610,7 @@ private struct SettingsRowChrome: View {
     @Environment(\.palette) private var palette
     let title: String
     var icon: String?
+    var subtitle: String?
     let value: String?
     var destructive = false
     var accessory: SettingsRowAccessory = .chevron
@@ -622,11 +624,20 @@ private struct SettingsRowChrome: View {
                     SettingsRowIcon(symbol: icon, tint: tint)
                 }
 
-                Text(title)
-                    .font(AppTheme.TypeRole.settingsRow)
-                    .foregroundStyle(tint)
-                    .lineLimit(1)
-                    .minimumScaleFactor(AppTheme.Component.profileTitleMinimumScale)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(AppTheme.TypeRole.settingsRow)
+                        .foregroundStyle(tint)
+                        .lineLimit(1)
+                        .minimumScaleFactor(AppTheme.Component.profileTitleMinimumScale)
+
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(AppTheme.TypeRole.settingsMeta)
+                            .foregroundStyle(palette.dim)
+                            .lineLimit(1)
+                    }
+                }
             }
 
             Spacer(minLength: AppTheme.Space.md)
@@ -695,111 +706,74 @@ private struct SettingsDetailScaffold<Content: View>: View {
     }
 }
 
-private struct SettingsAboutYouScreen: View {
+private struct SettingsAccountScreen: View {
     @Environment(AuthStore.self) private var auth
-
-    var body: some View {
-        SettingsDetailScaffold(title: "about you.") {
-            SettingsSection(title: "Account") {
-                SettingsValueOnlyRow(title: "Signed in with", icon: "person.badge.key", value: auth.provider.rawValue)
-                SettingsValueOnlyRow(title: "Sync", icon: "arrow.triangle.2.circlepath", value: auth.isSignedIn ? "On" : "Off")
-            }
-
-            SettingsSection(title: "Profile") {
-                SettingsValueOnlyRow(title: "Name", icon: "person", value: "Not set")
-                SettingsValueOnlyRow(title: "Prayer story", icon: "text.book.closed", value: "Not set")
-            }
-
-            SettingsFootnote(
-                "Rosary Guide keeps your profile intentionally minimal. Future personalisation will live here without changing the private nature of your intentions."
-            )
-        }
-    }
-}
-
-private struct SettingsPreferencesScreen: View {
     @Environment(SettingsStore.self) private var settings
-
-    var body: some View {
-        @Bindable var settings = settings
-
-        SettingsDetailScaffold(title: "preferences.") {
-            SettingsSection(title: "Prayer") {
-                SettingsMenuRow(title: "Language", icon: "globe", value: settings.language.title) {
-                    Picker("Language", selection: $settings.language) {
-                        ForEach(PrayerLanguage.appCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-                }
-
-                SettingsMenuRow(title: "Text size", icon: "textformat.size", value: settings.textSize.title) {
-                    Picker("Text size", selection: $settings.textSize) {
-                        ForEach(PrayerTextSize.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-                }
-
-                SettingsToggleRow(title: "Haptics", icon: "iphone.radiowaves.left.and.right", isOn: $settings.hapticsEnabled)
-            }
-        }
-    }
-}
-
-private struct SettingsAppearanceScreen: View {
-    @Environment(SettingsStore.self) private var settings
-
-    var body: some View {
-        @Bindable var settings = settings
-
-        SettingsDetailScaffold(title: "appearance.") {
-            SettingsSection(title: "General") {
-                SettingsMenuRow(title: "Color theme", icon: "circle.lefthalf.filled", value: settings.appearance.title) {
-                    Picker("Color theme", selection: $settings.appearance) {
-                        ForEach(AppearancePreference.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-                }
-
-                SettingsMenuRow(title: "Text size", icon: "textformat.size", value: settings.textSize.title) {
-                    Picker("Text size", selection: $settings.textSize) {
-                        ForEach(PrayerTextSize.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct SettingsDataScreen: View {
-    @Environment(AuthStore.self) private var auth
     @Binding var confirmDeleteHistory: Bool
     @Binding var confirmDeleteAccount: Bool
+    var onSignOut: () -> Void
 
     var body: some View {
-        SettingsDetailScaffold(title: "your data.") {
-            SettingsSection(title: "Sync") {
-                SettingsValueOnlyRow(title: "Cloud sync", icon: "icloud", value: auth.isSignedIn ? "On" : "Off")
-                SettingsValueOnlyRow(title: "Provider", icon: "person.badge.key", value: auth.provider.rawValue)
+        SettingsDetailScaffold(title: "account.") {
+            if auth.isSignedIn {
+                SettingsSection(title: "You") {
+                    SettingsValueOnlyRow(title: "Name", icon: "person", value: auth.displayName ?? "Not set")
+                    SettingsValueOnlyRow(title: "Prayer story", icon: "text.book.closed", value: "Not set")
+                }
+
+                SettingsSection(title: "Sync") {
+                    SettingsValueOnlyRow(title: "Signed in with", icon: "person.badge.key", value: auth.provider.rawValue)
+                    SettingsValueOnlyRow(title: "Cloud sync", icon: "icloud", value: "On")
+                }
+            } else {
+                SettingsSection(title: "Sign in") {
+                    SettingsActionRow(
+                        title: auth.isWorking ? "Signing in..." : "Continue with Apple",
+                        icon: "apple.logo",
+                        accessory: .none
+                    ) {
+                        HapticService.play(.medium, enabled: settings.hapticsEnabled)
+                        auth.signInWithApple()
+                    }
+                    .disabled(auth.isWorking)
+
+                    SettingsActionRow(title: "Continue with Google", icon: "g.circle", accessory: .none) {
+                        HapticService.play(.medium, enabled: settings.hapticsEnabled)
+                        auth.signInWithGoogle()
+                    }
+                    .disabled(auth.isWorking)
+                }
+
+                if let message = auth.errorMessage {
+                    SettingsFootnote(message)
+                }
             }
 
-            SettingsSection(title: "Privacy") {
+            SettingsSection(title: "Data") {
                 SettingsActionRow(title: "Delete local data", icon: "trash", destructive: true) {
                     confirmDeleteHistory = true
                 }
-                SettingsActionRow(title: auth.isWorking ? "Deleting..." : "Delete account", icon: "person.crop.circle.badge.xmark", destructive: true) {
-                    confirmDeleteAccount = true
-                }
-                .disabled(auth.isWorking)
             }
 
-            SettingsFootnote(
-                "Sign out clears private local session data on this device. Delete account removes your synced intentions before deleting your sign-in account."
-            )
+            if auth.isSignedIn {
+                VStack(spacing: 0) {
+                    SettingsActionRow(title: "Sign out", icon: "rectangle.portrait.and.arrow.right") {
+                        onSignOut()
+                    }
+                    SettingsActionRow(
+                        title: auth.isWorking ? "Deleting..." : "Delete account",
+                        icon: "person.crop.circle.badge.xmark",
+                        destructive: true
+                    ) {
+                        confirmDeleteAccount = true
+                    }
+                    .disabled(auth.isWorking)
+                }
+
+                SettingsFootnote(
+                    "Sign out clears private local session data on this device. Delete account removes your synced intentions before deleting your sign-in account."
+                )
+            }
         }
     }
 }
@@ -894,6 +868,17 @@ private struct SettingsFootnote: View {
             .foregroundStyle(palette.dim)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, AppTheme.Space.lg - AppTheme.sectionGap)
+    }
+}
+
+private extension PrayerLanguage {
+    /// Short labels for the Settings language picker.
+    var settingsTitle: String {
+        switch self {
+        case .english: "English"
+        case .latin: "Latin"
+        case .bilingual: "Both"
+        }
     }
 }
 
