@@ -78,8 +78,6 @@ struct PrayView: View {
     @State private var prayerScrollY: CGFloat = 0
     @State private var prayerScrollPosition = ScrollPosition(edge: .top)
     @State private var prayerLastDrag = Date.distantPast
-    /// +1 moving on, -1 going back. Sets which way the prayer text drifts.
-    @State private var stepDirection: CGFloat = 1
     /// Two-button steps only (decade Hail Marys 1–9). Next shows as a pill.
     @State private var pairNextExpanded = false
     /// Complete decade is in its slot. Follows Next out, leaves before it.
@@ -608,9 +606,6 @@ struct PrayView: View {
                         viewportHeight: geometry.containerSize.height
                     )
                 } action: { _, newValue in
-                    // The outgoing step's text is still on screen during the
-                    // transition. It must not drive the new step's circle.
-                    guard step.id == current?.id else { return }
                     if newValue.contentHeight > 1 {
                         prayerContentHeight = newValue.contentHeight
                     }
@@ -636,16 +631,13 @@ struct PrayView: View {
                     if next.armed != prayerArrowArmed { prayerArrowArmed = next.armed }
                 }
                 .onScrollPhaseChange { _, phase in
-                    guard step.id == current?.id else { return }
                     if phase == .interacting {
                         prayerArrowArmed = false
                         prayerLastDrag = Date()
                     }
                 }
                 // Fresh scroll view per step: starts at the top, measures again.
-                // Keyed to the step, so identical Hail Marys still transition.
                 .id(step.id)
-                .transition(stepTextTransition)
                 .onChange(of: settings.language) { resetPrayerScrollState() }
                 .onChange(of: settings.textSize) { resetPrayerScrollState() }
             }
@@ -693,29 +685,6 @@ struct PrayView: View {
         .allowsHitTesting(true)
     }
 
-
-    /// Prayer text (title and body) on a step change. Moving on, the old text
-    /// drifts up and fades while the new text rises from below. Going back
-    /// mirrors it. Reduce Motion is a plain crossfade. The footer and the
-    /// scroll circle are outside this view, so they do not drift.
-    private var stepTextTransition: AnyTransition {
-        if reduceMotion {
-            return .opacity.animation(StepTextMotion.crossfade)
-        }
-        let dir = stepDirection
-        return .asymmetric(
-            insertion: .modifier(
-                active: StepTextDrift(offset: StepTextMotion.rise * dir, opacity: 0),
-                identity: StepTextDrift(offset: 0, opacity: 1)
-            )
-            .animation(StepTextMotion.incoming),
-            removal: .modifier(
-                active: StepTextDrift(offset: -StepTextMotion.drift * dir, opacity: 0),
-                identity: StepTextDrift(offset: 0, opacity: 1)
-            )
-            .animation(StepTextMotion.outgoing)
-        )
-    }
 
     /// Top inset for a prayer title in the shared column.
     /// Header bottom pad + stage track are already between the close button and the title.
@@ -1666,24 +1635,13 @@ struct PrayView: View {
         if steps.indices.contains(next), steps[next].isFinis {
             lockCompletionIntentionIfNeeded()
         }
-        let direction: CGFloat = next >= index ? 1 : -1
-        let commit = {
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
-                index = next
-            }
-            if next > 0 {
-                sessionStore.updateStep(next)
-            }
-            playHaptic()
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+            index = next
         }
-        if direction == stepDirection {
-            commit()
-        } else {
-            // The outgoing text takes its transition from the last frame it
-            // was drawn in, so the new direction lands one frame first.
-            stepDirection = direction
-            DispatchQueue.main.async { commit() }
+        if next > 0 {
+            sessionStore.updateStep(next)
         }
+        playHaptic()
     }
 
     private func jump(to stage: PrayTrackStage) {
@@ -1723,31 +1681,6 @@ private struct PrayerTextHeightKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
-    }
-}
-
-/// Step-change motion for the prayer text.
-private enum StepTextMotion {
-    /// Incoming text starts this far below (or above, going back).
-    static let rise: CGFloat = 8
-    /// Outgoing text drifts this far up (or down, going back).
-    static let drift: CGFloat = 7
-    /// Out first and quickly, so the two never sit stacked for long.
-    static let outgoing = Animation.easeOut(duration: 0.16)
-    /// In just behind it. About 0.25s end to end.
-    static let incoming = Animation.smooth(duration: 0.22).delay(0.04)
-    /// Reduce Motion: opacity only.
-    static let crossfade = Animation.easeInOut(duration: 0.2)
-}
-
-private struct StepTextDrift: ViewModifier {
-    var offset: CGFloat
-    var opacity: Double
-
-    func body(content: Content) -> some View {
-        content
-            .offset(y: offset)
-            .opacity(opacity)
     }
 }
 
