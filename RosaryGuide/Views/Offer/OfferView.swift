@@ -882,16 +882,42 @@ private struct AllIntentionsView: View {
 
     private var hideText: Bool { settings.hideIntentionText }
 
+    /// Featured/current card only when something is explicitly pinned (same as My prayer).
+    private var featured: OfferIntention? {
+        offer.sortedIntentions.first(where: \.isPinned)
+    }
+
+    /// Everything except the featured card, so it isn't listed twice.
+    private var listItems: [OfferIntention] {
+        guard let featured else { return offer.sortedIntentions }
+        return offer.sortedIntentions.filter { $0.id != featured.id }
+    }
+
+    @State private var detail: OfferIntention?
+
     var body: some View {
-        let items = offer.sortedIntentions
+        let items = listItems
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
+                if let featured {
+                    CurrentIntentionHero(
+                        intention: featured,
+                        hideText: hideText,
+                        onOpen: { detail = featured },
+                        onPray: { onPray(featured) },
+                        onPin: { offer.togglePin(id: featured.id) },
+                        onEdit: { onEdit(featured) },
+                        onDelete: { offer.delete(id: featured.id) },
+                        allowsPin: offer.sortedIntentions.count > 1
+                    )
+                }
+
                 VStack(spacing: 0) {
                     ForEach(items) { item in
                         IntentionSecondaryRow(
                             intention: item,
                             hideText: hideText,
-                            allowsPin: items.count > 1,
+                            allowsPin: offer.sortedIntentions.count > 1,
                             onPin: { offer.togglePin(id: item.id) },
                             onEdit: { onEdit(item) },
                             onDelete: { offer.delete(id: item.id) },
@@ -904,6 +930,8 @@ private struct AllIntentionsView: View {
                         }
                     }
                 }
+                // Same gap as featured → Pope's / Add on My prayer.
+                .padding(.top, featured == nil ? 0 : AppTheme.Space.md)
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideDetailChrome.contentTop)
@@ -927,7 +955,17 @@ private struct AllIntentionsView: View {
                 .accessibilityLabel(hideText ? "Show intentions" : "Hide intentions")
             }
         }
-        .onChange(of: items.isEmpty) { _, isEmpty in
+        .navigationDestination(item: $detail) { item in
+            IntentionDetailView(
+                intention: item,
+                hideText: hideText,
+                onPin: { offer.togglePin(id: item.id) },
+                onEdit: { onEdit(item); detail = nil },
+                onDelete: { offer.delete(id: item.id); detail = nil },
+                onPray: { onPray(item) }
+            )
+        }
+        .onChange(of: offer.sortedIntentions.isEmpty) { _, isEmpty in
             if isEmpty { dismiss() }
         }
     }

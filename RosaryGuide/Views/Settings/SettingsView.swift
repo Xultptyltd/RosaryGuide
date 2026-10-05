@@ -16,7 +16,6 @@ private enum SettingsDestination: Hashable {
 
 struct SettingsView: View {
     @Environment(SettingsStore.self) private var settings
-    @Environment(SessionStore.self) private var session
     @Environment(OfferStore.self) private var offer
     @Environment(AuthStore.self) private var auth
     @Environment(AccountSyncStore.self) private var sync
@@ -26,8 +25,6 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     var onClose: (() -> Void)?
 
-    @State private var confirmDeleteHistory = false
-    @State private var didDeleteHistory = false
     @State private var confirmDeleteAccount = false
     @State private var didDeleteAccount = false
     @State private var accountDeletionError: String?
@@ -58,20 +55,6 @@ struct SettingsView: View {
             Button("Bug") { composeSupportEmail(.bug) }
             Button("Translation") { composeSupportEmail(.translation) }
             Button("Cancel", role: .cancel) {}
-        }
-        .alert("Delete prayer history?", isPresented: $confirmDeleteHistory) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
-                session.clearHistoryAndData()
-                didDeleteHistory = true
-            }
-        } message: {
-            Text("This clears your prayer progress and prayer history on this device and in your account. Your intentions and settings are not affected.")
-        }
-        .alert("Prayer history deleted", isPresented: $didDeleteHistory) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Your prayer progress and prayer history have been deleted.")
         }
         .alert("Delete account?", isPresented: $confirmDeleteAccount) {
             Button("Cancel", role: .cancel) {}
@@ -359,9 +342,9 @@ struct SettingsView: View {
     private func destinationView(_ destination: SettingsDestination) -> some View {
         switch destination {
         case .account:
-            SettingsAccountScreen(confirmDeleteHistory: $confirmDeleteHistory)
+            SettingsAccountScreen()
         case .aboutPremium:
-            SettingsPremiumScreen(placeholderMessage: $placeholderMessage)
+            SettingsPremiumScreen()
         case .faqs:
             SettingsFAQScreen()
         case .widgets:
@@ -860,7 +843,11 @@ private struct SettingsDetailScaffold<Content: View>: View {
 private struct SettingsAccountScreen: View {
     @Environment(AuthStore.self) private var auth
     @Environment(SettingsStore.self) private var settings
-    @Binding var confirmDeleteHistory: Bool
+    @Environment(SessionStore.self) private var session
+    // Alerts must live on this pushed page — attaching them to SettingsView (the
+    // drawer root) means they only appear after the user swipes back.
+    @State private var confirmDeleteHistory = false
+    @State private var didDeleteHistory = false
 
     var body: some View {
         SettingsDetailScaffold(title: "Account") {
@@ -895,6 +882,20 @@ private struct SettingsAccountScreen: View {
                 SettingsFootnote(message)
             }
         }
+        .alert("Delete prayer history?", isPresented: $confirmDeleteHistory) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                session.clearHistoryAndData()
+                didDeleteHistory = true
+            }
+        } message: {
+            Text("This clears your prayer progress and prayer history on this device and in your account. Your intentions and settings are not affected.")
+        }
+        .alert("Prayer history deleted", isPresented: $didDeleteHistory) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Your prayer progress and prayer history have been deleted.")
+        }
     }
 }
 
@@ -904,24 +905,17 @@ private struct SettingsAccountScreen: View {
 struct PremiumScreen: View {
     /// Optional context line shown at the top (e.g. why the user landed here).
     var note: String? = nil
-    @State private var placeholderMessage: String?
 
     var body: some View {
-        SettingsPremiumScreen(placeholderMessage: $placeholderMessage, note: note)
-            .alert("Coming soon", isPresented: Binding(
-                get: { placeholderMessage != nil },
-                set: { if !$0 { placeholderMessage = nil } }
-            )) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(placeholderMessage ?? "This will be available in a future update.")
-            }
+        SettingsPremiumScreen(note: note)
     }
 }
 
 private struct SettingsPremiumScreen: View {
-    @Binding var placeholderMessage: String?
     var note: String? = nil
+    // Own the alert so it presents on this page when pushed from Settings
+    // (root SettingsView alerts only appear after swipe-back).
+    @State private var placeholderMessage: String?
 
     var body: some View {
         SettingsDetailScaffold(title: "Premium") {
@@ -945,6 +939,14 @@ private struct SettingsPremiumScreen: View {
             #if DEBUG
             PremiumModeDebugSection()
             #endif
+        }
+        .alert("Coming soon", isPresented: Binding(
+            get: { placeholderMessage != nil },
+            set: { if !$0 { placeholderMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(placeholderMessage ?? "This will be available in a future update.")
         }
     }
 }
