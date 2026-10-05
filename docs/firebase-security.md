@@ -115,6 +115,17 @@ Delete Account reauthenticates the user first, deletes Firestore intentions whil
 
 If more cloud data is added later, it must be included in this deletion flow before Auth deletion.
 
+Full order in the app:
+
+1. Re-authenticate with the account's provider (Apple or Google). Cancelling stops quietly.
+2. Delete every document in `/users/{uid}/intentions` (batched) and clear Firestore's local cache. This is the only per-user cloud data; no `/users/{uid}` parent document is ever written.
+3. Sign in with Apple only: revoke the user's Apple tokens with `Auth.auth().revokeToken(withAuthorizationCode:)`, using the one-time code from step 1. Firebase calls Apple's `/auth/revoke` endpoint, so no Cloud Function is needed, but the Apple provider in the Firebase console must have its Services ID, Apple Team ID, Key ID and private key filled in. A failed revocation is logged in Debug and does not block deletion.
+4. Delete the Firebase Auth user.
+5. Google only: `GIDSignIn.disconnect` revokes the app's Google grant and clears Google Sign-In's keychain entry (other providers just sign out of Google Sign-In locally).
+6. Clear local intentions, the migration marker for that UID, Rosary session progress and prayed-day history.
+
+If step 2 or 4 fails, the local intentions are uploaded again so nothing is lost, and the user sees why. Device preferences (appearance, reminders, onboarding state) are kept because they are not account data.
+
 ## Private Prayer Content
 
 Prayer intentions and notes are private devotional content. They must not be sent to Analytics, Crashlytics, logs, document IDs, URLs, notification payloads, or unrelated third parties.

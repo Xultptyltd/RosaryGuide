@@ -85,6 +85,47 @@ final class OfferStore {
         try await repository.clearLocalCache()
     }
 
+    /// Called after the Auth account is deleted. Stops sync first so clearing the list
+    /// does not try to delete documents for an account that no longer exists.
+    func finishAccountDeletion() {
+        let deletedUID = userID
+        listener?.remove()
+        listener = nil
+        userID = nil
+        intentions = []
+        defaults.removeObject(forKey: Keys.intentions)
+        if let deletedUID {
+            defaults.removeObject(forKey: Keys.migrationPrefix + deletedUID)
+        }
+        syncErrorMessage = nil
+        Task { [weak self] in
+            try? await self?.repository.clearLocalCache()
+        }
+    }
+
+    /// Account deletion stopped after cloud intentions were (possibly partly) deleted.
+    /// Re-uploads the copy still on this device before listening again, so a failed
+    /// deletion never loses intentions.
+    func restoreCloudDataAfterFailedDeletion() {
+        guard let userID else { return }
+        listener?.remove()
+        listener = nil
+        let local = intentions
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                for intention in local {
+                    try await self.repository.upsert(intention, uid: userID)
+                }
+                self.startListening(uid: userID)
+            } catch {
+                // Keep the local copy authoritative; the next sign-in or launch re-runs migration.
+                self.defaults.removeObject(forKey: Keys.migrationPrefix + userID)
+                self.syncErrorMessage = "Some intentions could not be restored to your account yet. They are still on this device."
+            }
+        }
+    }
+
     func reconnectSync() {
         guard let userID else { return }
         listener?.remove()

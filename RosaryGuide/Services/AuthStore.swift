@@ -28,6 +28,9 @@ final class AuthStore: NSObject {
 
     private var authHandle: AuthStateDidChangeListenerHandle?
     private var currentNonce: String?
+    /// One-time Apple authorization code from the most recent re-authentication.
+    /// Used only to revoke Sign in with Apple tokens during account deletion; never stored.
+    private var pendingAppleAuthorizationCode: String?
     private var appleAuthPurpose: AppleAuthPurpose?
     private weak var presentationWindow: UIWindow?
 
@@ -118,6 +121,11 @@ final class AuthStore: NSObject {
         }
     }
 
+    /// Deletes the Firebase Auth account. Call only after `reauthenticateForSensitiveOperation`
+    /// succeeded and the user's cloud data has been deleted.
+    ///
+    /// Order: revoke Sign in with Apple tokens (needs the signed-in user), delete the Auth user,
+    /// then revoke the Google grant and sign out of Google locally.
     func deleteAccount(completion: @escaping @MainActor @Sendable (Bool) -> Void) {
         guard let user = Auth.auth().currentUser else {
             errorMessage = "No account is signed in."
@@ -125,23 +133,56 @@ final class AuthStore: NSObject {
             return
         }
 
+        let deletedProvider = provider
+        let appleCode = pendingAppleAuthorizationCode
+        pendingAppleAuthorizationCode = nil
         isWorking = true
         errorMessage = nil
-        user.delete { [weak self] error in
-            Task { @MainActor in
-                guard let self else { return }
-                if let error {
-                    self.finishWith(Self.deleteAccountMessage(for: error))
-                    completion(false)
-                    return
-                }
 
-                GIDSignIn.sharedInstance.signOut()
-                self.apply(user: nil)
-                self.isWorking = false
-                completion(true)
+        Task { @MainActor in
+            if deletedProvider == .apple {
+                if let appleCode {
+                    // Firebase calls Apple's /auth/revoke endpoint server-side. This only works when the
+                    // Apple provider in the Firebase console has the Services ID, Team ID, Key ID and
+                    // private key filled in. A failure must not block deletion, so it is logged only.
+                    do {
+                        try await Auth.auth().revokeToken(withAuthorizationCode: appleCode)
+                    } catch {
+                        #if DEBUG
+                        print("Sign in with Apple token revocation failed: \(error.localizedDescription)")
+                        #endif
+                    }
+                } else {
+                    #if DEBUG
+                    print("Sign in with Apple token revocation skipped: no authorization code.")
+                    #endif
+                }
             }
+
+            do {
+                try await user.delete()
+            } catch {
+                self.finishWith(Self.deleteAccountMessage(for: error))
+                completion(false)
+                return
+            }
+
+            if deletedProvider == .google, GIDSignIn.sharedInstance.currentUser != nil {
+                // Revokes this app's Google OAuth grant and clears Google Sign-In's keychain entry.
+                GIDSignIn.sharedInstance.disconnect { _ in }
+            } else {
+                GIDSignIn.sharedInstance.signOut()
+            }
+            self.apply(user: nil)
+            self.isWorking = false
+            completion(true)
         }
+    }
+
+    /// Clears anything kept for a deletion that will not go ahead.
+    func cancelPendingAccountDeletion() {
+        pendingAppleAuthorizationCode = nil
+        isWorking = false
     }
 
     func reauthenticateForSensitiveOperation(completion: @escaping @MainActor @Sendable (Bool) -> Void) {
@@ -210,6 +251,7 @@ final class AuthStore: NSObject {
     private func reauthenticateWithApple(completion: @escaping @MainActor @Sendable (Bool) -> Void) {
         let nonce = Self.randomNonceString()
         currentNonce = nonce
+        pendingAppleAuthorizationCode = nil
         appleAuthPurpose = .reauthenticate(completion)
 
         let request = ASAuthorizationAppleIDProvider().createRequest()
@@ -243,7 +285,7 @@ final class AuthStore: NSObject {
             Task { @MainActor in
                 guard let self else { return }
                 if let error {
-                    self.finishWith(error.localizedDescription)
+                    self.finishWith(Self.isCancellation(error) ? nil : error.localizedDescription)
                     completion(false)
                     return
                 }
@@ -265,7 +307,7 @@ final class AuthStore: NSObject {
                     Task { @MainActor in
                         guard let self else { return }
                         if let error {
-                            self.finishWith(error.localizedDescription)
+                            self.finishWith(Self.reauthenticationMessage(for: error))
                             completion(false)
                             return
                         }
@@ -278,7 +320,7 @@ final class AuthStore: NSObject {
         }
     }
 
-    private func finishWith(_ message: String) {
+    private func finishWith(_ message: String?) {
         errorMessage = message
         isWorking = false
     }
@@ -338,10 +380,44 @@ final class AuthStore: NSObject {
 
     private static func deleteAccountMessage(for error: Error) -> String {
         let nsError = error as NSError
-        if nsError.code == AuthErrorCode.requiresRecentLogin.rawValue {
-            return "For your security, sign out and sign in again before deleting this account."
+        guard nsError.domain == AuthErrorDomain else { return error.localizedDescription }
+        switch AuthErrorCode(rawValue: nsError.code) {
+        case .requiresRecentLogin, .userTokenExpired, .invalidUserToken:
+            return "For your security, please confirm your sign-in again, then try Delete account once more."
+        case .networkError:
+            return "You appear to be offline. Connect to the internet and try again."
+        case .tooManyRequests:
+            return "Too many attempts. Wait a few minutes and try again."
+        default:
+            return error.localizedDescription
+        }
+    }
+
+    private static func reauthenticationMessage(for error: Error) -> String {
+        let nsError = error as NSError
+        if nsError.domain == AuthErrorDomain {
+            switch AuthErrorCode(rawValue: nsError.code) {
+            case .userMismatch:
+                return "That sign-in belongs to a different account. Choose the account you're signed in with."
+            case .networkError:
+                return "You appear to be offline. Connect to the internet and try again."
+            default:
+                break
+            }
         }
         return error.localizedDescription
+    }
+
+    /// The user closed the Apple or Google sheet; not an error worth showing.
+    private static func isCancellation(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == ASAuthorizationError.errorDomain, nsError.code == ASAuthorizationError.canceled.rawValue {
+            return true
+        }
+        if nsError.domain == kGIDSignInErrorDomain, nsError.code == GIDSignInError.canceled.rawValue {
+            return true
+        }
+        return false
     }
 }
 
@@ -364,6 +440,10 @@ extension AuthStore: ASAuthorizationControllerDelegate {
                 let tokenString = String(data: tokenData, encoding: .utf8)
             else {
                 finishWith("Apple Sign-In did not return a usable identity token.")
+                if case .reauthenticate(let completion) = appleAuthPurpose {
+                    appleAuthPurpose = nil
+                    completion(false)
+                }
                 return
             }
 
@@ -377,19 +457,23 @@ extension AuthStore: ASAuthorizationControllerDelegate {
                 signIn(with: firebaseCredential)
             case .reauthenticate(let completion):
                 guard let user = Auth.auth().currentUser else {
+                    appleAuthPurpose = nil
                     finishWith("No account is signed in.")
                     completion(false)
                     return
                 }
+                let authorizationCode = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
                 user.reauthenticate(with: firebaseCredential) { [weak self] _, error in
                     Task { @MainActor in
                         guard let self else { return }
                         if let error {
-                            self.finishWith(error.localizedDescription)
+                            self.appleAuthPurpose = nil
+                            self.finishWith(Self.reauthenticationMessage(for: error))
                             completion(false)
                             return
                         }
 
+                        self.pendingAppleAuthorizationCode = authorizationCode
                         self.appleAuthPurpose = nil
                         self.isWorking = false
                         completion(true)
@@ -401,13 +485,14 @@ extension AuthStore: ASAuthorizationControllerDelegate {
 
     nonisolated func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
         Task { @MainActor in
+            let message = Self.isCancellation(error) ? nil : error.localizedDescription
             if case .reauthenticate(let completion) = appleAuthPurpose {
                 appleAuthPurpose = nil
-                finishWith(error.localizedDescription)
+                finishWith(message)
                 completion(false)
                 return
             }
-            finishWith(error.localizedDescription)
+            finishWith(message)
         }
     }
 }

@@ -180,34 +180,16 @@ struct SettingsView: View {
         }
         .alert("Delete account?", isPresented: $confirmDeleteAccount) {
             Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
-                auth.reauthenticateForSensitiveOperation { reauthenticated in
-                    guard reauthenticated else { return }
-                    Task {
-                        do {
-                            try await offer.deleteCloudDataForCurrentUser()
-                            auth.deleteAccount { success in
-                                if success {
-                                    session.clearHistoryAndData()
-                                    offer.clearAll()
-                                    didDeleteAccount = true
-                                } else {
-                                    offer.reconnectSync()
-                                }
-                            }
-                        } catch {
-                            accountDeletionError = "Cloud intentions could not be deleted. Your account was not deleted."
-                        }
-                    }
-                }
+            Button("Delete account", role: .destructive) {
+                deleteAccount()
             }
         } message: {
-            Text("This deletes your Rosary Guide sign-in account and clears private prayer data from this device. This cannot be undone.")
+            Text(deleteAccountConfirmationMessage)
         }
         .alert("Account deleted", isPresented: $didDeleteAccount) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Your account was deleted and private prayer data was cleared from this device.")
+            Text("Your account and the intentions synced to it were deleted, and private prayer data was cleared from this device.")
         }
         .alert("Account not deleted", isPresented: Binding(
             get: { accountDeletionError != nil },
@@ -249,6 +231,47 @@ struct SettingsView: View {
     private func open(_ string: String) {
         guard let url = URL(string: string) else { return }
         openURL(url)
+    }
+
+    private var deleteAccountConfirmationMessage: String {
+        let provider = auth.provider == .anonymous ? "your sign-in provider" : auth.provider.rawValue
+        return "This permanently deletes your Rosary Guide account and the intentions synced to it, then clears private prayer data from this device. You'll confirm with \(provider) first. This can't be undone."
+    }
+
+    /// Re-authenticate, delete cloud intentions, delete the Auth account, then clear local data.
+    /// Any failure leaves the account and its intentions in place and explains why.
+    private func deleteAccount() {
+        auth.reauthenticateForSensitiveOperation { reauthenticated in
+            guard reauthenticated else {
+                // A cancelled Apple/Google sheet leaves no message, so nothing is shown.
+                if let message = auth.errorMessage {
+                    accountDeletionError = message
+                    auth.errorMessage = nil
+                }
+                return
+            }
+            Task {
+                do {
+                    try await offer.deleteCloudDataForCurrentUser()
+                } catch {
+                    auth.cancelPendingAccountDeletion()
+                    offer.restoreCloudDataAfterFailedDeletion()
+                    accountDeletionError = "Your synced intentions could not be deleted, so your account was not deleted. Check your connection and try again."
+                    return
+                }
+                auth.deleteAccount { success in
+                    if success {
+                        offer.finishAccountDeletion()
+                        session.clearHistoryAndData()
+                        didDeleteAccount = true
+                    } else {
+                        offer.restoreCloudDataAfterFailedDeletion()
+                        accountDeletionError = auth.errorMessage ?? "Your account could not be deleted. Try again."
+                        auth.errorMessage = nil
+                    }
+                }
+            }
+        }
     }
 
     private func composeSupportEmail(_ kind: SettingsSupportMailKind) {
@@ -808,7 +831,7 @@ private struct SettingsAccountScreen: View {
                 }
 
                 SettingsFootnote(
-                    "Sign out clears private local session data on this device. Delete account removes your synced intentions before deleting your sign-in account."
+                    "Sign out clears private prayer data from this device; synced intentions stay in your account. Delete account permanently removes your synced intentions and your sign-in account."
                 )
             }
         }
