@@ -980,28 +980,21 @@ struct PrayView: View {
         michaelContentHeight > michaelViewportHeight + 6 && !michaelActionLocked
     }
 
-    /// Both reads as two full-width prayers, not a pair of cramped columns.
+    /// Both stays two columns. A slightly smaller size and the shared column
+    /// gap keep the lines even, instead of the cramped centered pair.
     @ViewBuilder
     private var michaelPrayerBody: some View {
         let font = AppTheme.TypeRole.prayerText(scale: settings.textSize.scale)
         let size = 21 * settings.textSize.scale
         if language == .bilingual {
-            VStack(alignment: .leading, spacing: AppTheme.Space.xxl) {
-                BilingualStack(
-                    text: PrayerCatalog.saintMichael.text,
-                    language: .english,
-                    font: font,
-                    pointSize: size,
-                    alignment: .leading
-                )
-                BilingualStack(
-                    text: PrayerCatalog.saintMichael.text,
-                    language: .latin,
-                    font: font,
-                    pointSize: size,
-                    alignment: .leading
-                )
-            }
+            let columnScale = settings.textSize.scale * (17.0 / 21.0)
+            BilingualStack(
+                text: PrayerCatalog.saintMichael.text,
+                language: .bilingual,
+                font: AppTheme.TypeRole.prayerText(scale: columnScale),
+                pointSize: 17 * settings.textSize.scale,
+                alignment: .leading
+            )
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             BilingualStack(
