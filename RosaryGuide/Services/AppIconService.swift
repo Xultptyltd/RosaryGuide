@@ -13,7 +13,7 @@ enum AppIconOption: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .black: "Black"
         case .white: "White"
-        case .blue: "Marian Blue"
+        case .blue: "Blue"
         }
     }
 
@@ -111,6 +111,10 @@ final class AppIconService {
     func applyPendingSyncedIcon() {
         guard let pendingSynced else { return }
         applySynced(pendingSynced)
+    }
+
+    func clearError() {
+        lastErrorMessage = nil
     }
 
     func refreshFromSystem() {

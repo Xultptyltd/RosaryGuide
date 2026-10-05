@@ -20,6 +20,7 @@ struct SettingsView: View {
     @Environment(OfferStore.self) private var offer
     @Environment(AuthStore.self) private var auth
     @Environment(AccountSyncStore.self) private var sync
+    @Environment(AppIconService.self) private var appIcon
     @Environment(\.palette) private var palette
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
@@ -65,6 +66,21 @@ struct SettingsView: View {
                             Picker("Color theme", selection: $settings.appearance) {
                                 ForEach(AppearancePreference.allCases) { option in
                                     Text(option.title).tag(option)
+                                }
+                            }
+                        }
+
+                        if appIcon.supportsAlternateIcons {
+                            // Picking an icon also records the synced appIcon preference
+                            // (AppIconService.onUserSelect -> SettingsStore.appIconChoice).
+                            SettingsMenuRow(title: "App icon", icon: "app", value: appIcon.current.title) {
+                                Picker("App icon", selection: Binding(
+                                    get: { appIcon.current },
+                                    set: { appIcon.select($0) }
+                                )) {
+                                    ForEach(AppIconOption.allCases) { option in
+                                        Text(option.title).tag(option)
+                                    }
                                 }
                             }
                         }
@@ -200,6 +216,15 @@ struct SettingsView: View {
         } message: {
             Text(accountDeletionError ?? "Try again.")
         }
+        .alert("App icon not changed", isPresented: Binding(
+            get: { appIcon.lastErrorMessage != nil },
+            set: { if !$0 { appIcon.clearError() } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(appIcon.lastErrorMessage ?? "Try again.")
+        }
+        .onAppear { appIcon.refreshFromSystem() }
         .alert("Coming soon", isPresented: Binding(
             get: { placeholderMessage != nil },
             set: { if !$0 { placeholderMessage = nil } }
