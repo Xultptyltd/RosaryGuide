@@ -10,6 +10,9 @@ final class SettingsStore {
         static let saintMichael = "settings.includeSaintMichael"
         static let haptics = "settings.hapticsEnabled"
         static let textSize = "settings.textSize"
+        static let dailyReminder = "settings.notifications.dailyReminder"
+        static let dailyReminderMinutes = "settings.notifications.dailyReminderMinutes"
+        static let feastAlerts = "settings.notifications.feastAlerts"
     }
 
     var language: PrayerLanguage {
@@ -41,6 +44,29 @@ final class SettingsStore {
         didSet { UserDefaults.standard.set(textSize.rawValue, forKey: Keys.textSize) }
     }
 
+    /// Daily Rosary reminder (local notification).
+    var dailyReminderEnabled: Bool {
+        didSet { UserDefaults.standard.set(dailyReminderEnabled, forKey: Keys.dailyReminder) }
+    }
+
+    /// Reminder time as minutes after local midnight (default 7:00 pm).
+    var dailyReminderMinutes: Int {
+        didSet { UserDefaults.standard.set(dailyReminderMinutes, forKey: Keys.dailyReminderMinutes) }
+    }
+
+    /// 8:00 am alerts on feast days from the app's feast calendar.
+    var feastAlertsEnabled: Bool {
+        didSet { UserDefaults.standard.set(feastAlertsEnabled, forKey: Keys.feastAlerts) }
+    }
+
+    var notificationPlan: NotificationService.Plan {
+        NotificationService.Plan(
+            dailyEnabled: dailyReminderEnabled,
+            dailyMinutes: dailyReminderMinutes,
+            feastsEnabled: feastAlertsEnabled
+        )
+    }
+
     init(defaults: UserDefaults = .standard) {
         let legacyLanguage = PrayerLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .english
         language = legacyLanguage
@@ -50,6 +76,9 @@ final class SettingsStore {
         // Drop any stored "off" from the old Haptics toggle.
         defaults.removeObject(forKey: Keys.haptics)
         textSize = PrayerTextSize(rawValue: defaults.string(forKey: Keys.textSize) ?? "") ?? .medium
+        dailyReminderEnabled = defaults.bool(forKey: Keys.dailyReminder)
+        dailyReminderMinutes = defaults.object(forKey: Keys.dailyReminderMinutes) as? Int ?? 19 * 60
+        feastAlertsEnabled = defaults.bool(forKey: Keys.feastAlerts)
     }
 
     func toggleLightDark(systemIsDark: Bool) {

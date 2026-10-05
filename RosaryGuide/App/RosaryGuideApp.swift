@@ -9,6 +9,7 @@ struct RosaryGuideApp: App {
     @State private var appIcon = AppIconService()
     @State private var isShowingSplash = true
     @AppStorage("onboarding.completed") private var didCompleteOnboarding = false
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         FontRegistrar.register()
@@ -58,6 +59,13 @@ struct RosaryGuideApp: App {
                 if auth.isSignedIn {
                     didCompleteOnboarding = true
                 }
+            }
+            .onChange(of: scenePhase, initial: true) { _, phase in
+                // Refresh reminder copy and the rolling feast-day window.
+                guard phase == .active else { return }
+                let plan = settings.notificationPlan
+                guard !plan.isEmpty else { return }
+                Task { await NotificationService.reschedule(plan) }
             }
             .onChange(of: auth.userID) { _, userID in
                 offer.configureSync(for: userID)

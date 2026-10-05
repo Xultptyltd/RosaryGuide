@@ -2,9 +2,11 @@ import MessageUI
 import StoreKit
 import SwiftUI
 import UIKit
+import UserNotifications
 
 private enum SettingsDestination: Hashable {
     case account
+    case notifications
     case aboutPremium
     case faqs
     case widgets
@@ -66,9 +68,7 @@ struct SettingsView: View {
                             }
                         }
 
-                        SettingsActionRow(title: "Notifications", icon: "bell") {
-                            placeholderMessage = "Rosary reminders and feast notifications are coming soon."
-                        }
+                        SettingsNavigationRow(title: "Notifications", icon: "bell", value: notificationsSummary, destination: .notifications)
                     }
 
                     SettingsSection(title: "Account") {
@@ -227,6 +227,19 @@ struct SettingsView: View {
         }
     }
 
+    /// Main-row value: the reminder time, "On" for feast alerts only, or "Off".
+    private var notificationsSummary: String {
+        if settings.dailyReminderEnabled {
+            let date = Calendar.current.date(
+                byAdding: .minute,
+                value: settings.dailyReminderMinutes,
+                to: Calendar.current.startOfDay(for: .now)
+            ) ?? .now
+            return date.formatted(date: .omitted, time: .shortened)
+        }
+        return settings.feastAlertsEnabled ? "On" : "Off"
+    }
+
     private var appVersion: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
@@ -286,6 +299,8 @@ struct SettingsView: View {
             SettingsFAQScreen()
         case .widgets:
             SettingsWidgetsScreen()
+        case .notifications:
+            SettingsNotificationsScreen()
         case .acknowledgements:
             SettingsAcknowledgementsScreen()
         case .license(let id):
@@ -849,6 +864,151 @@ private struct SettingsWidgetsScreen: View {
                 "Widgets will help you see today’s mysteries and upcoming feast days from your Home Screen."
             )
         }
+    }
+}
+
+private struct SettingsNotificationsScreen: View {
+    @Environment(SettingsStore.self) private var settings
+    @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
+
+    @State private var status: UNAuthorizationStatus = .notDetermined
+    @State private var permissionWasDenied = false
+
+    var body: some View {
+        SettingsDetailScaffold(title: "Notifications") {
+            VStack(spacing: 0) {
+                SettingsToggleRow(
+                    title: "Daily rosary reminder",
+                    icon: "bell",
+                    isOn: permissionGatedBinding(\.dailyReminderEnabled)
+                )
+
+                if settings.dailyReminderEnabled {
+                    SettingsTimeRow(
+                        title: "Reminder time",
+                        icon: "clock",
+                        minutes: Binding(
+                            get: { settings.dailyReminderMinutes },
+                            set: { settings.dailyReminderMinutes = $0 }
+                        )
+                    )
+                }
+
+                SettingsToggleRow(
+                    title: "Feast day alerts",
+                    icon: "calendar",
+                    isOn: permissionGatedBinding(\.feastAlertsEnabled)
+                )
+            }
+
+            if status == .denied && (permissionWasDenied || !settings.notificationPlan.isEmpty) {
+                VStack(alignment: .leading, spacing: 0) {
+                    SettingsActionRow(title: "Turn on in iOS Settings", icon: "gear", accessory: .externalLink) {
+                        if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                            openURL(url)
+                        }
+                    }
+                }
+                SettingsFootnote("Notifications are turned off for Rosary Guide in iOS Settings, so reminders can't be shown.")
+            } else {
+                SettingsFootnote("The daily reminder names that day's mysteries. Feast day alerts arrive at 8:00 am on feast days in the Rosary Guide calendar.")
+            }
+        }
+        .task { status = await NotificationService.authorizationStatus() }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { status = await NotificationService.authorizationStatus() }
+        }
+        .onChange(of: settings.notificationPlan) { _, plan in
+            Task { await NotificationService.reschedule(plan) }
+        }
+    }
+
+    /// Turning a toggle on asks for notification permission first; if it's refused,
+    /// the toggle stays off and the iOS Settings row appears.
+    private func permissionGatedBinding(_ keyPath: ReferenceWritableKeyPath<SettingsStore, Bool>) -> Binding<Bool> {
+        Binding(
+            get: { settings[keyPath: keyPath] },
+            set: { newValue in
+                guard newValue else {
+                    settings[keyPath: keyPath] = false
+                    return
+                }
+                Task {
+                    let allowed = await NotificationService.requestPermission()
+                    status = await NotificationService.authorizationStatus()
+                    if allowed {
+                        settings[keyPath: keyPath] = true
+                        permissionWasDenied = false
+                    } else {
+                        permissionWasDenied = true
+                    }
+                }
+            }
+        )
+    }
+}
+
+private struct SettingsToggleRow: View {
+    @Environment(\.palette) private var palette
+    let title: String
+    var icon: String?
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            HStack(spacing: AppTheme.Space.lg) {
+                if let icon {
+                    SettingsRowIcon(symbol: icon, tint: palette.ink)
+                }
+                Text(title)
+                    .font(AppTheme.TypeRole.settingsRow)
+                    .foregroundStyle(palette.ink)
+            }
+        }
+        .tint(palette.accent)
+        .frame(minHeight: AppTheme.Component.profileRowHeight)
+        .overlay(alignment: .bottom) { SettingsDivider() }
+    }
+}
+
+/// Row with a trailing compact time picker; time is stored as minutes after midnight.
+private struct SettingsTimeRow: View {
+    @Environment(\.palette) private var palette
+    let title: String
+    var icon: String?
+    @Binding var minutes: Int
+
+    var body: some View {
+        HStack(spacing: AppTheme.Space.md) {
+            HStack(spacing: AppTheme.Space.lg) {
+                if let icon {
+                    SettingsRowIcon(symbol: icon, tint: palette.ink)
+                }
+                Text(title)
+                    .font(AppTheme.TypeRole.settingsRow)
+                    .foregroundStyle(palette.ink)
+            }
+            Spacer(minLength: AppTheme.Space.md)
+            DatePicker(title, selection: dateBinding, displayedComponents: .hourAndMinute)
+                .labelsHidden()
+                .tint(palette.accent)
+        }
+        .frame(minHeight: AppTheme.Component.profileRowHeight)
+        .overlay(alignment: .bottom) { SettingsDivider() }
+    }
+
+    private var dateBinding: Binding<Date> {
+        Binding(
+            get: {
+                Calendar.current.date(byAdding: .minute, value: minutes, to: Calendar.current.startOfDay(for: .now)) ?? .now
+            },
+            set: { date in
+                let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+                minutes = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+            }
+        )
     }
 }
 
