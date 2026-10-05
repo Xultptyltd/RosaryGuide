@@ -231,13 +231,15 @@ struct SettingsView: View {
 
     /// Settings root is the root of the drawer's own NavigationStack, so there is
     /// no native back button. This toolbar chevron mirrors it (same symbol, glass
-    /// circle and tint) and closes the drawer.
+    /// circle and colour) and closes the drawer.
     @ToolbarContentBuilder
     private var backToolbarItem: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
             Button(action: close) {
+                // Primary, like the native back chevron on pushed pages (not the accent tint).
                 Image(systemName: "chevron.backward")
                     .fontWeight(.medium)
+                    .foregroundStyle(.primary)
             }
             .accessibilityLabel("Back")
         }
