@@ -96,12 +96,14 @@ struct CompletionView: View {
 
                 completionContent()
                     .padding(.horizontal, AppTheme.gutter)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .offset(y: resting ? 0 : 108)
                     .opacity(resting ? 1 : 0)
 
-                // Extra space stays above the buttons so Done and Saint Michael
-                // sit on the bottom safe area. A fixed 36pt gap pulled them up.
-                Spacer(minLength: 0)
+                // Exactly 36pt from the quote card to Done. Spare room is
+                // inside completionContent, above the quote, so the buttons
+                // stay on the bottom safe area.
+                Color.clear.frame(height: 36)
 
                 actions()
                     .offset(y: resting ? 0 : 108)
@@ -233,6 +235,8 @@ struct CompletionView: View {
                 .accessibilityLabel("Offered for \(displayIntentionTitle)")
             }
 
+            Spacer(minLength: 0)
+
             VStack(spacing: 6) {
                 Text("“\(quote.text)”")
                     .font(AppTheme.TypeRole.bodySmall)
@@ -279,7 +283,6 @@ struct CompletionView: View {
             }
         }
         .padding(.horizontal, AppTheme.gutter)
-        .padding(.top, 4)
         .padding(.bottom, 0)
     }
 }
