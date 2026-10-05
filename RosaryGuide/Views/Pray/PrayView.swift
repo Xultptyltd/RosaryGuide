@@ -1038,7 +1038,7 @@ struct PrayView: View {
     }
 
     private func shouldShowBeads(_ step: RosaryStep) -> Bool {
-        language != .bilingual && !step.isPlate && !step.isFinis && step.kind != .completion && step.kind != .ourFather
+        language != .bilingual && !step.isPlate && !step.isFinis && step.kind != .completion
     }
 
     // MARK: - Finis
