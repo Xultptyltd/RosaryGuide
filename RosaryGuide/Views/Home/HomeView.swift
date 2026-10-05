@@ -199,7 +199,8 @@ struct HomeView: View {
     }
 
     private func hero(topInset: CGFloat, viewport: CGFloat) -> some View {
-        let artworkTop = collapseHeroTopBand ? 0 : topInset
+        // Top band above the artwork: 60% of the status-bar inset.
+        let artworkTop = collapseHeroTopBand ? 0 : (topInset * 0.6).rounded()
         return ZStack(alignment: .top) {
             palette.bg
             MysteryArtworkView(set: currentSet, kind: .heroTall)
