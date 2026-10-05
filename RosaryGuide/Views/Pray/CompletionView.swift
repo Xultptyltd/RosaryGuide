@@ -151,7 +151,9 @@ struct CompletionView: View {
                 ? CGPoint(x: slot.midX, y: slot.midY)
                 : center
             let landed = resting && slot.width > 1
-            let play = max(Self.tickRest, min(proxy.size.width, proxy.size.height) - Self.tickMargin * 2)
+            let fitted = min(proxy.size.width, proxy.size.height) - Self.tickMargin * 2
+            // First state only. About 30% smaller than the fitted canvas; the 88pt slot is unchanged.
+            let play = max(Self.tickRest, fitted * 0.7)
             RosaryTickPlayer(plays: true, onComplete: morphIn)
                 .frame(width: play, height: play)
                 .scaleEffect(landed ? Self.tickRest / play : 1)
