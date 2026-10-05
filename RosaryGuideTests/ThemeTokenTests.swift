@@ -148,3 +148,19 @@ final class ScrollMorphTests: XCTestCase {
         XCTAssertFalse(top.locked)
     }
 }
+
+final class VersicleLineTests: XCTestCase {
+    func testResponseStartsItsOwnLine() {
+        let english = PrayerCatalog.versicle.text.english
+        XCTAssertEqual(
+            BilingualStack.joinedLines(english),
+            "V. Pray for us, O holy Mother of God.\nR. That we may be made worthy of the promises of Christ."
+        )
+        let latin = PrayerCatalog.versicle.text.latin
+        XCTAssertTrue(BilingualStack.joinedLines(latin).contains("Genetrix.\nR. Ut digni"))
+    }
+
+    func testOrdinaryLinesStillJoin() {
+        XCTAssertEqual(BilingualStack.joinedLines("Hail Mary,\nfull of grace"), "Hail Mary, full of grace")
+    }
+}

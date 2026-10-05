@@ -209,7 +209,7 @@ struct BilingualStack: View {
         let paras = raw.components(separatedBy: "\n\n").filter { !$0.isEmpty }
         VStack(alignment: alignment == .center ? .center : .leading, spacing: 32) { // prayer paragraph gap
             ForEach(Array(paras.enumerated()), id: \.offset) { _, para in
-                Text(para.replacingOccurrences(of: "\n", with: " "))
+                Text(Self.joinedLines(para))
                     .font(font)
                     .italic(italic)
                     .foregroundStyle(color)
@@ -219,6 +219,24 @@ struct BilingualStack: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+}
+
+extension BilingualStack {
+    /// Source line breaks are soft and become spaces, except before a
+    /// versicle (V.) or response (R.) line, which always starts its own line.
+    static func joinedLines(_ para: String) -> String {
+        let lines = para.components(separatedBy: "\n")
+        var out = ""
+        for (i, line) in lines.enumerated() {
+            if i > 0 {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                let isVersicleOrResponse = ["V.", "R.", "℣", "℟"].contains { trimmed.hasPrefix($0) }
+                out += isVersicleOrResponse ? "\n" : " "
+            }
+            out += line
+        }
+        return out
     }
 }
 
