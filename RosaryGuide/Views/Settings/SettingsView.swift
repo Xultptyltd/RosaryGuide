@@ -113,6 +113,24 @@ struct SettingsView: View {
                         }
                         SettingsNavigationRow(title: "Acknowledgements", icon: "heart", destination: .acknowledgements)
                     }
+
+                    if auth.isSignedIn {
+                        // sectionGap (44pt) above, like the Account page styled these rows.
+                        VStack(spacing: 0) {
+                            SettingsActionRow(title: "Sign out", icon: "rectangle.portrait.and.arrow.right") {
+                                auth.signOut()
+                                dismiss()
+                            }
+                            SettingsActionRow(
+                                title: auth.isWorking ? "Deleting..." : "Delete account",
+                                icon: "person.crop.circle.badge.xmark",
+                                destructive: true
+                            ) {
+                                confirmDeleteAccount = true
+                            }
+                            .disabled(auth.isWorking)
+                        }
+                    }
                 }
                 .padding(.top, AppTheme.sectionGap - AppTheme.Space.xl)
 
@@ -328,14 +346,7 @@ struct SettingsView: View {
     private func destinationView(_ destination: SettingsDestination) -> some View {
         switch destination {
         case .account:
-            SettingsAccountScreen(
-                confirmDeleteHistory: $confirmDeleteHistory,
-                confirmDeleteAccount: $confirmDeleteAccount,
-                onSignOut: {
-                    auth.signOut()
-                    dismiss()
-                }
-            )
+            SettingsAccountScreen(confirmDeleteHistory: $confirmDeleteHistory)
         case .aboutPremium:
             SettingsPremiumScreen(placeholderMessage: $placeholderMessage)
         case .faqs:
@@ -870,8 +881,6 @@ private struct SettingsAccountScreen: View {
     @Environment(AuthStore.self) private var auth
     @Environment(SettingsStore.self) private var settings
     @Binding var confirmDeleteHistory: Bool
-    @Binding var confirmDeleteAccount: Bool
-    var onSignOut: () -> Void
 
     var body: some View {
         SettingsDetailScaffold(title: "Account") {
@@ -904,26 +913,6 @@ private struct SettingsAccountScreen: View {
 
             if !auth.isSignedIn, let message = auth.errorMessage {
                 SettingsFootnote(message)
-            }
-
-            if auth.isSignedIn {
-                VStack(spacing: 0) {
-                    SettingsActionRow(title: "Sign out", icon: "rectangle.portrait.and.arrow.right") {
-                        onSignOut()
-                    }
-                    SettingsActionRow(
-                        title: auth.isWorking ? "Deleting..." : "Delete account",
-                        icon: "person.crop.circle.badge.xmark",
-                        destructive: true
-                    ) {
-                        confirmDeleteAccount = true
-                    }
-                    .disabled(auth.isWorking)
-                }
-
-                SettingsFootnote(
-                    "Your intentions, prayer history and settings sync to your account. Signing out keeps them in your account and on this device, ready when you sign back in. Delete account permanently removes them and your sign-in account."
-                )
             }
         }
     }
