@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The chosen prayer intention on a surface card: "For:" + icon + title, or
+/// The chosen prayer intention on a surface card: icon + title, or
 /// "Add an intention" when none is chosen. Tapping opens the picker; × clears.
 ///
 /// Privacy: with `hidesText`, the title is masked, except the Holy Father's
@@ -25,10 +25,6 @@ struct IntentionSurface: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: AppTheme.Space.sm) {
-            Text("For:")
-                .font(AppTheme.TypeRole.themeSummary)
-                .foregroundStyle(palette.dim)
-
             if hasIntention {
                 Button(action: onOpen) {
                     HStack(spacing: AppTheme.Space.sm) {
@@ -52,7 +48,7 @@ struct IntentionSurface: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("For: \(displayTitle)")
+                .accessibilityLabel("Intention: \(displayTitle)")
                 .accessibilityHint("Opens intention picker")
 
                 Button(action: onClear) {
@@ -81,7 +77,7 @@ struct IntentionSurface: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("For: Add an intention")
+                .accessibilityLabel("Add an intention")
                 .accessibilityHint("Opens intention picker")
             }
         }
