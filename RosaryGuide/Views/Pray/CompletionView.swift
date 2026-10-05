@@ -299,8 +299,8 @@ struct CompletionView: View {
             if let onMichael {
                 ceremonyButton(
                     title: "Saint Michael Prayer",
-                    fill: palette.tertiaryButtonFill,
-                    text: palette.tertiaryButtonText,
+                    fill: palette.secondaryButtonFill,
+                    text: palette.secondaryButtonText,
                     haptic: false,
                     action: onMichael
                 )

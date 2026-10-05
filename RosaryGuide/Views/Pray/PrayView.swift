@@ -56,6 +56,10 @@ struct PrayView: View {
     @State private var confirmReplace = false
     @State private var didConfigure = false
     @State private var showingMichael = false
+    @State private var michaelContentHeight: CGFloat = 0
+    @State private var michaelViewportHeight: CGFloat = 0
+    @State private var michaelActionLocked = false
+    @Namespace private var michaelActionNamespace
     @State private var showingCompletion = false
     @State private var freshSetPending: MysterySetKind?
 
@@ -972,6 +976,45 @@ struct PrayView: View {
         }
     }
 
+    private var michaelCanScrollFurther: Bool {
+        michaelContentHeight > michaelViewportHeight + 6 && !michaelActionLocked
+    }
+
+    /// Both reads as two full-width prayers, not a pair of cramped columns.
+    @ViewBuilder
+    private var michaelPrayerBody: some View {
+        let font = AppTheme.TypeRole.prayerText(scale: settings.textSize.scale)
+        let size = 21 * settings.textSize.scale
+        if language == .bilingual {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xxl) {
+                BilingualStack(
+                    text: PrayerCatalog.saintMichael.text,
+                    language: .english,
+                    font: font,
+                    pointSize: size,
+                    alignment: .leading
+                )
+                BilingualStack(
+                    text: PrayerCatalog.saintMichael.text,
+                    language: .latin,
+                    font: font,
+                    pointSize: size,
+                    alignment: .leading
+                )
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            BilingualStack(
+                text: PrayerCatalog.saintMichael.text,
+                language: language,
+                font: font,
+                pointSize: size,
+                alignment: .leading
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     private var michaelLayer: some View {
         VStack(spacing: 0) {
             HStack {
@@ -982,31 +1025,146 @@ struct PrayView: View {
             }
             .padding(.horizontal, AppTheme.Space.lg)
             .padding(.top, AppTheme.Space.sm)
-            Spacer()
-            VStack(spacing: AppTheme.Space.lg) {
-                Text(PrayerCatalog.saintMichael.title.primary(for: language))
-                    .font(AppTheme.TypeRole.titleSmall(weight: .regular))
-                    .multilineTextAlignment(.center)
-                BilingualStack(
-                    text: PrayerCatalog.saintMichael.text,
-                    language: language,
-                    font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
-                    pointSize: 21 * settings.textSize.scale,
-                    alignment: .center
-                )
-            }
-            .padding(.horizontal, AppTheme.gutter)
-            Spacer()
-            VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
-                languageChips
-                PillButton(title: "Done", filled: false) {
-                    returnToFinishScreen()
+
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                        Text(PrayerCatalog.saintMichael.title.primary(for: language))
+                            .font(AppTheme.TypeRole.titleSmall(weight: .regular))
+                            .foregroundStyle(palette.ink)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        michaelPrayerBody
+                    }
+                    .padding(.horizontal, AppTheme.gutter)
+                    .padding(.top, AppTheme.Space.md)
+                    .padding(.bottom, AppTheme.Space.lg)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background {
+                        GeometryReader { geo in
+                            Color.clear.preference(key: MichaelContentHeightKey.self, value: geo.size.height)
+                        }
+                    }
+
+                    Color.clear
+                        .frame(height: 1)
+                        .id(MichaelScrollAnchor.bottom)
+                }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
+                .background {
+                    GeometryReader { geo in
+                        Color.clear.preference(key: MichaelViewportHeightKey.self, value: geo.size.height)
+                    }
+                }
+                .onPreferenceChange(MichaelContentHeightKey.self) { height in
+                    if height > 1 { michaelContentHeight = height }
+                }
+                .onPreferenceChange(MichaelViewportHeightKey.self) { height in
+                    if height > 1 { michaelViewportHeight = height }
+                }
+                .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
+                    PlateScrollMetrics(
+                        offsetY: geometry.contentOffset.y,
+                        contentHeight: geometry.contentSize.height,
+                        viewportHeight: geometry.containerSize.height
+                    )
+                } action: { _, newValue in
+                    let y = max(0, newValue.offsetY)
+                    if newValue.contentHeight > 1 {
+                        michaelContentHeight = max(michaelContentHeight, newValue.contentHeight)
+                    }
+                    if newValue.viewportHeight > 1 {
+                        michaelViewportHeight = newValue.viewportHeight
+                    }
+                    let contentH = max(michaelContentHeight, newValue.contentHeight)
+                    let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : michaelViewportHeight
+                    let maxOffset = max(0, contentH - viewH)
+                    let shouldSettle = maxOffset > 8 && y >= maxOffset - 56
+                    let shouldUnlock = maxOffset > 8 && y < maxOffset - 112
+                    if shouldSettle, !michaelActionLocked {
+                        michaelActionLocked = true
+                        withAnimation(reduceMotion ? nil : MotionTokens.soft) {
+                            proxy.scrollTo(MichaelScrollAnchor.bottom, anchor: .bottom)
+                        }
+                    } else if shouldUnlock, michaelActionLocked {
+                        michaelActionLocked = false
+                    }
+                }
+                .onChange(of: settings.language) {
+                    michaelActionLocked = false
+                    michaelContentHeight = 0
+                }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
+                        languageChips
+                            .padding(.horizontal, AppTheme.gutter)
+                        michaelActionChrome {
+                            HapticService.play(.light, enabled: settings.hapticsEnabled)
+                            michaelActionLocked = true
+                            withAnimation(reduceMotion ? nil : MotionTokens.reveal) {
+                                proxy.scrollTo(MichaelScrollAnchor.bottom, anchor: .bottom)
+                            }
+                        }
+                    }
+                    .padding(.top, AppTheme.Space.sm)
+                    .background(palette.prayBg)
                 }
             }
-            .padding(.horizontal, AppTheme.gutter)
-            .padding(.bottom, AppTheme.Space.xl)
         }
         .background(palette.prayBg.ignoresSafeArea())
+    }
+
+    /// Same circle-to-pill morph as the mystery plate. The circle scrolls; the pill is Done.
+    private func michaelActionChrome(scrollToBottom: @escaping () -> Void) -> some View {
+        let showScroll = michaelCanScrollFurther
+        let animation = reduceMotion ? nil : Animation.spring(response: 0.42, dampingFraction: 0.84)
+
+        return HStack {
+            if showScroll {
+                Spacer(minLength: 0)
+            }
+            Button {
+                if showScroll {
+                    scrollToBottom()
+                } else {
+                    returnToFinishScreen()
+                }
+            } label: {
+                Group {
+                    if showScroll {
+                        Image(systemName: "chevron.down")
+                            .guideSymbol(size: 17, weight: .semibold)
+                            .foregroundStyle(palette.secondaryButtonText)
+                            .frame(
+                                width: AppTheme.Component.mysteryPlateActionCircle,
+                                height: AppTheme.Component.mysteryPlateActionCircle
+                            )
+                    } else {
+                        Text("Done")
+                            .font(AppTheme.TypeRole.callout(weight: .semibold))
+                            .foregroundStyle(palette.secondaryButtonText)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: AppTheme.Component.pillHeight)
+                    }
+                }
+                .background {
+                    Capsule()
+                        .fill(palette.secondaryButtonFill)
+                        .matchedGeometryEffect(id: "michael-action-background", in: michaelActionNamespace)
+                }
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .guidePressable()
+            .accessibilityLabel(showScroll ? "Scroll to read the prayer" : "Done")
+        }
+        .animation(animation, value: showScroll)
+        .padding(.horizontal, AppTheme.gutter)
+        .padding(.top, 8)
+        .padding(.bottom, AppTheme.Space.lg)
     }
 
     // MARK: - Navigation
@@ -1185,6 +1343,24 @@ private struct PlateScrollMetrics: Equatable {
 
 private enum PlateScrollAnchor {
     static let bottom = "plate-scroll-bottom"
+}
+
+private enum MichaelScrollAnchor {
+    static let bottom = "michael-scroll-bottom"
+}
+
+private struct MichaelContentHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct MichaelViewportHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
 }
 
 private struct PlateChromeHeightKey: PreferenceKey {
