@@ -128,9 +128,11 @@ struct OfferView: View {
                         }
                     }
 
-                    prayerJourneysSection
-                        // sectionGap above (the stack already adds Space.lg).
-                        .padding(.top, AppTheme.sectionGap - AppTheme.Space.lg)
+                    if !PremiumStatus.isPremium {
+                        prayerJourneysSection
+                            // sectionGap above (the stack already adds Space.lg).
+                            .padding(.top, AppTheme.sectionGap - AppTheme.Space.lg)
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, AppTheme.gutter)
@@ -293,7 +295,7 @@ struct OfferView: View {
     }
 
     /// "Prayer journeys" section: title, sectionTitleGap, then the Rosary Guide+ card.
-    /// No entitlement flag exists yet, so the upsell always shows.
+    /// Hidden for Rosary Guide+ users (`PremiumStatus.isPremium`).
     private var prayerJourneysSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             GuideSectionLabel(text: "Prayer journeys", prominence: .strong)
@@ -403,9 +405,11 @@ struct OfferView: View {
                 // "Your intentions" heading to the first card.
                 .padding(.top, AppTheme.sectionTitleGap)
 
-                prayerJourneysSection
-                    // Visible sectionGap: intention rows carry their own bottom inset.
-                    .padding(.top, AppTheme.sectionGap - intentionListBottomInset)
+                if !PremiumStatus.isPremium {
+                    prayerJourneysSection
+                        // Visible sectionGap: intention rows carry their own bottom inset.
+                        .padding(.top, AppTheme.sectionGap - intentionListBottomInset)
+                }
             }
             .padding(.horizontal, AppTheme.gutter)
             // Same top breathing room as FeastsView before its title/control block.

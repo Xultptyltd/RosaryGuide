@@ -941,9 +941,28 @@ private struct SettingsPremiumScreen: View {
                     placeholderMessage = "Purchases are not configured yet."
                 }
             }
+
+            #if DEBUG
+            PremiumModeDebugSection()
+            #endif
         }
     }
 }
+
+#if DEBUG
+/// Developer switch between the free tier and Rosary Guide+ (Debug builds only).
+private struct PremiumModeDebugSection: View {
+    @Bindable private var premium = PremiumDebugOverride.shared
+
+    var body: some View {
+        SettingsSection(title: "Developer") {
+            SettingsToggleRow(title: "Premium mode", icon: "hammer", isOn: $premium.isPremium)
+        }
+
+        SettingsFootnote("For testing only. Switches the app between free and Rosary Guide+.")
+    }
+}
+#endif
 
 private struct SettingsFAQScreen: View {
     var body: some View {
