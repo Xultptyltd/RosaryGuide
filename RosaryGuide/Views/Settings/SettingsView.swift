@@ -250,6 +250,7 @@ struct SettingsView: View {
                 }
                 return
             }
+            let deletingUID = auth.userID
             Task {
                 do {
                     try await offer.deleteCloudDataForCurrentUser()
@@ -261,7 +262,7 @@ struct SettingsView: View {
                 }
                 auth.deleteAccount { success in
                     if success {
-                        offer.finishAccountDeletion()
+                        offer.finishAccountDeletion(uid: deletingUID)
                         session.clearHistoryAndData()
                         didDeleteAccount = true
                     } else {
@@ -831,7 +832,7 @@ private struct SettingsAccountScreen: View {
                 }
 
                 SettingsFootnote(
-                    "Sign out clears private prayer data from this device; synced intentions stay in your account. Delete account permanently removes your synced intentions and your sign-in account."
+                    "Signing out keeps your intentions in your account and on this device, ready when you sign back in. Delete account permanently removes your synced intentions and your sign-in account."
                 )
             }
         }

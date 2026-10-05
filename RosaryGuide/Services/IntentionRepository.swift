@@ -1,10 +1,19 @@
 import Foundation
 import FirebaseFirestore
 
+/// One listener event. `isFromCache` is true when Firestore could not confirm the result with
+/// the server (offline, or the backend is unreachable/disabled), so missing documents must not
+/// be read as deletions. `confirmedIDs` are documents the server has acknowledged.
+struct IntentionSnapshot {
+    var intentions: [OfferIntention]
+    var confirmedIDs: Set<UUID>
+    var isFromCache: Bool
+}
+
 protocol IntentionRepository {
     func listen(
         uid: String,
-        onChange: @escaping (Result<[OfferIntention], Error>) -> Void
+        onChange: @escaping (Result<IntentionSnapshot, Error>) -> Void
     ) -> ListenerRegistration
     func upsert(_ intention: OfferIntention, uid: String) async throws
     func delete(id: UUID, uid: String) async throws
@@ -24,20 +33,28 @@ private final class FirestoreIntentionRepository: IntentionRepository {
 
     func listen(
         uid: String,
-        onChange: @escaping (Result<[OfferIntention], Error>) -> Void
+        onChange: @escaping (Result<IntentionSnapshot, Error>) -> Void
     ) -> ListenerRegistration {
         intentions(uid: uid)
             .order(by: "createdAt", descending: false)
-            .addSnapshotListener { snapshot, error in
+            .addSnapshotListener(includeMetadataChanges: true) { snapshot, error in
                 if let error {
                     onChange(.failure(error))
                     return
                 }
+                guard let snapshot else { return }
 
-                let values = snapshot?.documents.compactMap { document in
+                let values = snapshot.documents.compactMap { document in
                     OfferIntention(firestoreId: document.documentID, data: document.data())
-                } ?? []
-                onChange(.success(values))
+                }
+                let confirmed = Set(snapshot.documents.compactMap { document in
+                    document.metadata.hasPendingWrites ? nil : UUID(uuidString: document.documentID)
+                })
+                onChange(.success(IntentionSnapshot(
+                    intentions: values,
+                    confirmedIDs: confirmed,
+                    isFromCache: snapshot.metadata.isFromCache
+                )))
             }
     }
 

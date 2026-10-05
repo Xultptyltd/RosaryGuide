@@ -98,16 +98,15 @@ The app still stores local cache/preferences in `UserDefaults`:
 - App language, rosary language, appearance, text size, haptics, and prayer preferences
 - Onboarding completion state
 
-Sign out clears private local intention/session data from the device, removes the Firestore listener, and clears Firestore's local persisted cache. It does not delete cloud intentions.
+Sign out keeps data. It removes the Firestore listener and hides intentions from the UI, but keeps each account's device copy (`offer.intentions.<uid>`) and Firestore's offline cache, which may still hold writes that have not reached the server. Rosary session progress and prayed-day history are device-only and are not cleared on sign-out. Signing back in to the same account shows the device copy immediately and merges it with the cloud copy; a different account gets its own empty device copy, so accounts never mix. Delete account removes everything.
 
-## Migration Behaviour
+## Sync and Merge Behaviour
 
-After authentication, existing local intentions are migrated to Firestore using their existing UUIDs as document IDs. Migration is idempotent:
+Intentions created by older builds before sign-in (`offer.intentions`) are adopted by the first account that signs in. Every listener event is merged into the device copy:
 
-- if a remote document with the same UUID already exists, it is not duplicated
-- migration only marks complete after uploads succeed
-- interrupted migrations retry on the next authenticated launch
-- after sync starts, Firestore becomes the authoritative intention store and local storage acts as cache/offline state
+- cloud documents win for ids they contain
+- a device intention missing from a server-confirmed snapshot is uploaded, unless the server had confirmed it earlier (`offer.syncedIDs.<uid>`), in which case it was deleted on another device and is dropped
+- cache-only snapshots (offline, or the backend unreachable or disabled) never drop anything
 
 ## Account Deletion
 

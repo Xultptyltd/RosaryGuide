@@ -6,8 +6,15 @@ import Observation
 @MainActor
 final class OfferStore {
     private enum Keys {
-        static let intentions = "offer.intentions"
+        /// Pre-account copy from older builds. Adopted by the first account that signs in.
+        static let legacyIntentions = "offer.intentions"
+        /// Old one-shot migration marker; no longer used, removed on account deletion.
         static let migrationPrefix = "offer.firestoreMigrated."
+        /// This device's copy of one account's intentions. Kept on sign-out so nothing is lost.
+        static func intentions(_ uid: String) -> String { "offer.intentions." + uid }
+        /// Intention ids the server has confirmed for an account. Lets a later server snapshot
+        /// tell "deleted on another device" (was confirmed, now gone) from "never uploaded".
+        static func syncedIDs(_ uid: String) -> String { "offer.syncedIDs." + uid }
     }
 
     private let defaults: UserDefaults
@@ -15,6 +22,8 @@ final class OfferStore {
     private var listener: ListenerRegistration?
     private var userID: String?
     private var isApplyingRemoteSnapshot = false
+    /// True while swapping accounts, so the list is not written to the wrong account's copy.
+    private var isSwitchingAccount = false
     private(set) var syncErrorMessage: String?
 
     var intentions: [OfferIntention] {
@@ -44,37 +53,41 @@ final class OfferStore {
     init(defaults: UserDefaults = .standard, repository: IntentionRepository = IntentionRepositoryFactory.make()) {
         self.defaults = defaults
         self.repository = repository
-        intentions = Self.loadIntentions(defaults: defaults)
+        intentions = Self.loadIntentions(defaults: defaults, key: Keys.legacyIntentions)
         pruneExpired()
     }
 
+    /// Switches to the signed-in account's intentions (or none when signed out).
+    ///
+    /// Sign-out keeps each account's copy on this device and keeps Firestore's offline cache,
+    /// which still holds any writes that have not reached the server yet. Signing back in
+    /// shows the device copy at once, then merges it with the cloud copy. Accounts never mix:
+    /// each has its own device copy.
     func configureSync(for uid: String?) {
-        if uid == userID && listener != nil { return }
+        if uid == userID && (listener != nil || uid == nil) { return }
 
         listener?.remove()
         listener = nil
         userID = uid
 
         guard let uid else {
-            intentions = []
-            defaults.removeObject(forKey: Keys.intentions)
-            Task { [weak self] in
-                do {
-                    try await self?.repository.clearLocalCache()
-                } catch {
-                    await MainActor.run {
-                        self?.syncErrorMessage = "Private local cache could not be cleared."
-                    }
-                }
-            }
+            replaceWithoutSyncing([])
+            syncErrorMessage = nil
             return
         }
 
-        let localBeforeSync = intentions
-        Task { [weak self] in
-            await self?.migrateIfNeeded(localIntentions: localBeforeSync, uid: uid)
-            self?.startListening(uid: uid)
+        var local = Self.loadIntentions(defaults: defaults, key: Keys.intentions(uid))
+        let legacy = Self.loadIntentions(defaults: defaults, key: Keys.legacyIntentions)
+        if !legacy.isEmpty {
+            // Intentions made before accounts existed belong to whoever signs in first.
+            let known = Set(local.map(\.id))
+            local += legacy.filter { !known.contains($0.id) }
         }
+        defaults.removeObject(forKey: Keys.legacyIntentions)
+        replaceWithoutSyncing(local.filter { !$0.isExpired })
+        persistIntentions()
+        syncErrorMessage = nil
+        startListening(uid: uid)
     }
 
     func deleteCloudDataForCurrentUser() async throws {
@@ -87,14 +100,16 @@ final class OfferStore {
 
     /// Called after the Auth account is deleted. Stops sync first so clearing the list
     /// does not try to delete documents for an account that no longer exists.
-    func finishAccountDeletion() {
-        let deletedUID = userID
+    func finishAccountDeletion(uid: String?) {
+        let deletedUID = uid ?? userID
         listener?.remove()
         listener = nil
         userID = nil
-        intentions = []
-        defaults.removeObject(forKey: Keys.intentions)
+        replaceWithoutSyncing([])
+        defaults.removeObject(forKey: Keys.legacyIntentions)
         if let deletedUID {
+            defaults.removeObject(forKey: Keys.intentions(deletedUID))
+            defaults.removeObject(forKey: Keys.syncedIDs(deletedUID))
             defaults.removeObject(forKey: Keys.migrationPrefix + deletedUID)
         }
         syncErrorMessage = nil
@@ -111,6 +126,9 @@ final class OfferStore {
         listener?.remove()
         listener = nil
         let local = intentions
+        // The cloud copy may be gone, so nothing counts as confirmed any more. The next server
+        // snapshot then re-uploads every device intention instead of treating it as deleted.
+        defaults.removeObject(forKey: Keys.syncedIDs(userID))
         Task { [weak self] in
             guard let self else { return }
             do {
@@ -119,8 +137,7 @@ final class OfferStore {
                 }
                 self.startListening(uid: userID)
             } catch {
-                // Keep the local copy authoritative; the next sign-in or launch re-runs migration.
-                self.defaults.removeObject(forKey: Keys.migrationPrefix + userID)
+                // The device copy stays; the next launch or sign-in uploads it again.
                 self.syncErrorMessage = "Some intentions could not be restored to your account yet. They are still on this device."
             }
         }
@@ -222,7 +239,6 @@ final class OfferStore {
     /// Removes every saved intention (Settings wipe).
     func clearAll() {
         intentions = []
-        defaults.removeObject(forKey: Keys.intentions)
     }
 
     /// Pin as the sole current intention, or unpin if already pinned.
@@ -276,14 +292,72 @@ final class OfferStore {
     }
 
     private func persistIntentions() {
+        guard !isSwitchingAccount else { return }
+        let key = userID.map(Keys.intentions) ?? Keys.legacyIntentions
         if let data = try? JSONEncoder().encode(intentions) {
-            defaults.set(data, forKey: Keys.intentions)
+            defaults.set(data, forKey: key)
         }
     }
 
-    private static func loadIntentions(defaults: UserDefaults) -> [OfferIntention] {
-        guard let data = defaults.data(forKey: Keys.intentions) else { return [] }
+    /// Replaces the in-memory list without writing it to any account's copy or the cloud.
+    private func replaceWithoutSyncing(_ values: [OfferIntention]) {
+        isSwitchingAccount = true
+        isApplyingRemoteSnapshot = true
+        intentions = values
+        isApplyingRemoteSnapshot = false
+        isSwitchingAccount = false
+    }
+
+    private static func loadIntentions(defaults: UserDefaults, key: String) -> [OfferIntention] {
+        guard let data = defaults.data(forKey: key) else { return [] }
         return (try? JSONDecoder().decode([OfferIntention].self, from: data)) ?? []
+    }
+
+    private func syncedIDs(uid: String) -> Set<UUID> {
+        let raw = defaults.stringArray(forKey: Keys.syncedIDs(uid)) ?? []
+        return Set(raw.compactMap(UUID.init(uuidString:)))
+    }
+
+    private func setSyncedIDs(_ ids: Set<UUID>, uid: String) {
+        defaults.set(ids.map(\.uuidString).sorted(), forKey: Keys.syncedIDs(uid))
+    }
+
+    /// Merges a listener event into the device copy.
+    ///
+    /// - Cloud documents always win for ids they contain.
+    /// - A device intention missing from the cloud is kept and uploaded unless the server had
+    ///   confirmed it before (then it was deleted on another device and is dropped).
+    /// - Cache-only events (offline, backend unreachable) never drop anything.
+    private func applySnapshot(_ snapshot: IntentionSnapshot, uid: String) {
+        let remoteIDs = Set(snapshot.intentions.map(\.id))
+        let previouslySynced = syncedIDs(uid: uid)
+        let localOnly = intentions.filter { !remoteIDs.contains($0.id) }
+
+        let kept: [OfferIntention]
+        var toUpload: [OfferIntention] = []
+        if snapshot.isFromCache {
+            kept = localOnly
+        } else {
+            kept = localOnly.filter { !previouslySynced.contains($0.id) }
+            toUpload = kept.filter { !$0.isExpired }
+            setSyncedIDs(snapshot.confirmedIDs, uid: uid)
+        }
+
+        isApplyingRemoteSnapshot = true
+        intentions = snapshot.intentions + kept
+        isApplyingRemoteSnapshot = false
+
+        for intention in toUpload {
+            Task {
+                do {
+                    try await repository.upsert(intention, uid: uid)
+                } catch {
+                    await MainActor.run {
+                        self.syncErrorMessage = "Some intentions have not synced to your account yet. They are still on this device."
+                    }
+                }
+            }
+        }
     }
 
     @MainActor
@@ -293,34 +367,13 @@ final class OfferStore {
             Task { @MainActor in
                 guard let self, uid == self.userID else { return }
                 switch result {
-                case .success(let remoteIntentions):
-                    self.syncErrorMessage = nil
-                    self.isApplyingRemoteSnapshot = true
-                    self.intentions = remoteIntentions
-                    self.isApplyingRemoteSnapshot = false
+                case .success(let snapshot):
+                    if !snapshot.isFromCache { self.syncErrorMessage = nil }
+                    self.applySnapshot(snapshot, uid: uid)
                 case .failure:
                     self.syncErrorMessage = "Intentions could not sync. Your local copy is still available."
                 }
             }
-        }
-    }
-
-    private func migrateIfNeeded(localIntentions: [OfferIntention], uid: String) async {
-        let migrationKey = Keys.migrationPrefix + uid
-        if defaults.bool(forKey: migrationKey) { return }
-
-        do {
-            let remote = try await repository.fetchAll(uid: uid)
-            let remoteIds = Set(remote.map(\.id))
-            for intention in localIntentions where !remoteIds.contains(intention.id) {
-                try await repository.upsert(intention, uid: uid)
-            }
-            defaults.set(true, forKey: migrationKey)
-        } catch {
-            await MainActor.run {
-                self.syncErrorMessage = "Existing intentions could not finish syncing yet."
-            }
-            // Leave the migration marker unset so the next authenticated launch retries safely.
         }
     }
 

@@ -68,10 +68,11 @@ struct RosaryGuideApp: App {
                 Task { await NotificationService.reschedule(plan) }
             }
             .onChange(of: auth.userID) { _, userID in
+                // Signing out keeps data: intentions stay in the account and in a per-account
+                // copy on this device; prayer progress and history are device data and stay too.
+                // Delete account clears everything explicitly.
                 offer.configureSync(for: userID)
-                if userID == nil {
-                    session.clearHistoryAndData()
-                } else {
+                if userID != nil {
                     didCompleteOnboarding = true
                 }
             }
