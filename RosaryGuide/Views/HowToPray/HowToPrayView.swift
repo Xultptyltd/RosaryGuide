@@ -42,7 +42,7 @@ struct HowToPrayView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
             GuideSectionLabel(text: "Guide", prominence: .strong)
             Text(HowToPrayContent.introduction.primary(for: settings.language))
                 .font(AppTheme.TypeRole.serifBody)
@@ -56,7 +56,7 @@ struct HowToPrayView: View {
     private var pathCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             GuideSectionLabel(text: "The path", prominence: .strong)
-                .padding(.bottom, AppTheme.Space.lg)
+                .padding(.bottom, AppTheme.sectionTitleGap)
             VStack(spacing: 0) {
                 ForEach(Array(pathOverview.enumerated()), id: \.offset) { index, item in
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
@@ -89,7 +89,7 @@ struct HowToPrayView: View {
     private var stepsCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             GuideSectionLabel(text: "Step by step", prominence: .strong)
-                .padding(.bottom, AppTheme.Space.lg)
+                .padding(.bottom, AppTheme.sectionTitleGap)
             VStack(spacing: 0) {
                 ForEach(Array(HowToPrayContent.steps.enumerated()), id: \.element.id) { index, step in
                     stepRow(step)
@@ -165,7 +165,7 @@ struct HowToPrayView: View {
     private var weekdayCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             GuideSectionLabel(text: "When to pray which mysteries", prominence: .strong)
-                .padding(.bottom, AppTheme.Space.lg)
+                .padding(.bottom, AppTheme.sectionTitleGap)
             VStack(spacing: 0) {
                 ForEach(Array(HowToPrayContent.weekdayGuide.enumerated()), id: \.element.0) { index, pair in
                     HStack(alignment: .firstTextBaseline, spacing: 12) {
@@ -199,7 +199,7 @@ struct HowToPrayView: View {
     private var beadsCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             GuideSectionLabel(text: "The beads", prominence: .strong)
-                .padding(.bottom, AppTheme.Space.md)
+                .padding(.bottom, AppTheme.sectionTitleGap)
             Text(HowToPrayContent.beadsNote)
                 .font(AppTheme.TypeRole.serifBody)
                 .foregroundStyle(palette.dim)

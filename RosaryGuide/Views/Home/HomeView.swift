@@ -325,13 +325,13 @@ struct HomeView: View {
                     .padding(.top, AppTheme.sectionGap)
             }
 
-            VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+            VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
                 GuideSectionLabel(text: "Upcoming feast days", prominence: .strong)
                 comingUpSection
             }
                 .padding(.top, AppTheme.sectionGap)
 
-            VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+            VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
                 GuideSectionLabel(text: "This week", prominence: .strong)
                 weekGlance
             }
@@ -980,7 +980,7 @@ struct HomeView: View {
     private func mysteryRail(gutter: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             GuideSectionLabel(text: mysteryRailTitle, prominence: .strong)
-                .padding(.bottom, AppTheme.Space.md)
+                .padding(.bottom, AppTheme.sectionTitleGap)
             GeometryReader { geo in
                 let cardWidth = min(286, max(252, geo.size.width * 0.74))
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -1192,7 +1192,7 @@ struct HomeView: View {
     private var upcomingMarianSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             GuideSectionLabel(text: "Upcoming Marian feasts", prominence: .strong)
-                .padding(.bottom, AppTheme.Space.lg)
+                .padding(.bottom, AppTheme.sectionTitleGap)
             VStack(spacing: 0) {
                 ForEach(Array(upcomingMarian.enumerated()), id: \.element.id) { index, item in
                     let isOpen = openFeastID == item.id

@@ -114,7 +114,7 @@ struct PrayHubView: View {
             PrayerCatalog.concluding
         ]
 
-        return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+        return VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
             GuideSectionLabel(text: "The prayers", prominence: .strong)
 
             VStack(spacing: 0) {
@@ -145,7 +145,7 @@ struct PrayHubView: View {
     private var questionsSection: some View {
         let questions: [LearnArticle] = [.whatIsRosary, .beads, .oneDecade, .losePlace, .repetition, .mary]
 
-        return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+        return VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
             GuideSectionLabel(text: "Common questions", prominence: .strong)
 
             VStack(spacing: 0) {
@@ -206,7 +206,7 @@ struct PrayHubView: View {
     }
 
     private func learnSection(title: String, rows: [LearnRow]) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
             GuideSectionLabel(text: title, prominence: .strong)
 
             VStack(spacing: 0) {

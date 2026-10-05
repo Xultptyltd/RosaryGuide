@@ -133,7 +133,7 @@ struct FeastsView: View {
         Group {
             if !focusedFeasts.isEmpty {
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                    VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                    VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
                         GuideSectionLabel(text: focusedSectionTitle, prominence: .strong)
 
                         VStack(spacing: 0) {
@@ -211,7 +211,7 @@ struct FeastsView: View {
     // MARK: - Upcoming
 
     private var upcomingSection: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
             GuideSectionLabel(
                 text: filter == .marian ? "Upcoming Marian feasts" : "Upcoming",
                 prominence: .strong
@@ -714,7 +714,7 @@ struct FeastDetailView: View {
     }
 
     private var keepTheDaySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
             GuideSectionLabel(text: "Keep the day", prominence: .strong)
             VStack(spacing: 0) {
                 ForEach(Array(dayPractices.enumerated()), id: \.offset) { index, practice in
@@ -744,6 +744,7 @@ struct FeastDetailView: View {
     private var prayersForDaySection: some View {
         VStack(alignment: .leading, spacing: 12) {
             GuideSectionLabel(text: "Prayers for this day", prominence: .strong)
+                .padding(.bottom, AppTheme.sectionTitleGap - 12)
             ForEach(prayersForDay) { prayer in
                 prayerCard(prayer)
             }
@@ -753,6 +754,7 @@ struct FeastDetailView: View {
     private var scriptureRosarySection: some View {
         VStack(alignment: .leading, spacing: 12) {
             GuideSectionLabel(text: "Scripture and Rosary", prominence: .strong)
+                .padding(.bottom, AppTheme.sectionTitleGap - 12)
             rosaryConnectionCard
 
             if feastScriptures.isEmpty {
@@ -1024,7 +1026,7 @@ struct FeastDetailView: View {
     }
 
     private var supportingLinks: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
             GuideSectionLabel(text: "More for this feast", prominence: .strong)
             infoRows
                 .guideNavList(pageGutter: AppTheme.gutter)

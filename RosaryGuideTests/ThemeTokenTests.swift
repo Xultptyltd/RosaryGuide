@@ -11,6 +11,11 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(AppTheme.homeTitleSize(width: 800), 56, accuracy: 0.05)
     }
 
+    func testSectionTitleGapIsTwentyFour() {
+        XCTAssertEqual(AppTheme.sectionTitleGap, 24)
+        XCTAssertEqual(AppTheme.sectionTitleGap, AppTheme.Space.xl)
+    }
+
     func testGutterIsSixteenEverywhere() {
         XCTAssertEqual(AppTheme.gutter, 16)
         XCTAssertEqual(AppTheme.gutterCompact, 16)
