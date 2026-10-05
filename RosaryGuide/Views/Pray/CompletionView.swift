@@ -65,46 +65,47 @@ struct CompletionView: View {
         dynamicTypeSize >= .xxxLarge
     }
 
+    /// Short enough that Done and Saint Michael both sit above the home
+    /// indicator on an iPhone 14 Pro (852pt, ~759pt inside the safe area).
+    private var heroHeight: CGFloat { prefersCompactType ? 112 : 148 }
+
     var body: some View {
-        // One finite scroll. The previous layout measured itself with a
-        // GeometryReader, then ignored the safe area and locked a frame to
-        // that measurement. The icon slot below is a fixed frame; its
-        // background reader does not change that size.
+        // No scroll. A GeometryReader that measured itself and locked a
+        // frame re-entered until the main thread never returned. The icon
+        // slot is a fixed 88pt frame; its background reader does not change that size.
         ZStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    MysteryArtworkView(
-                        set: mysterySet,
-                        mysteryNumber: nil,
-                        slug: nil,
-                        kind: .heroTall
-                    )
-                    .frame(height: prefersCompactType ? 220 : 300)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-                    .overlay { heroFade }
-                    .opacity(resting ? 1 : 0)
-                    .offset(y: resting ? 0 : 28)
-                    .accessibilityHidden(true)
-
-                    iconSlot
-                        .padding(.top, prefersCompactType ? 12 : 20)
-                        .padding(.bottom, prefersCompactType ? 12 : 18)
-
-                    completionContent(compact: prefersCompactType)
-                        .padding(.horizontal, AppTheme.gutter)
-                        .offset(y: resting ? 0 : 108)
-                        .opacity(resting ? 1 : 0)
-
-                    actions(compact: prefersCompactType)
-                        .offset(y: resting ? 0 : 108)
-                        .opacity(resting ? 1 : 0)
-                }
+            VStack(spacing: 0) {
+                MysteryArtworkView(
+                    set: mysterySet,
+                    mysteryNumber: nil,
+                    slug: nil,
+                    kind: .heroTall
+                )
+                .frame(height: heroHeight)
                 .frame(maxWidth: .infinity)
-                .animation(Self.morph, value: resting)
+                .clipped()
+                .overlay { heroFade }
+                .opacity(resting ? 1 : 0)
+                .offset(y: resting ? 0 : 28)
+                .accessibilityHidden(true)
+
+                iconSlot
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
+
+                completionContent()
+                    .padding(.horizontal, AppTheme.gutter)
+                    .offset(y: resting ? 0 : 108)
+                    .opacity(resting ? 1 : 0)
+
+                Spacer(minLength: 8)
+
+                actions()
+                    .offset(y: resting ? 0 : 108)
+                    .opacity(resting ? 1 : 0)
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .scrollDisabled(!resting)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .animation(Self.morph, value: resting)
 
             if !reduceMotion {
                 tickJourney
@@ -188,7 +189,7 @@ struct CompletionView: View {
     }
 
     @ViewBuilder
-    private func completionContent(compact: Bool) -> some View {
+    private func completionContent() -> some View {
         VStack(spacing: 0) {
             Text("ROSARY COMPLETE")
                 .font(AppTheme.TypeRole.caption(weight: .medium))
@@ -199,16 +200,17 @@ struct CompletionView: View {
                 .accessibilityLabel("Rosary complete")
 
             Text(mysteryHeadline)
-                .font(compact ? AppTheme.TypeRole.screenTitle : AppTheme.TypeRole.title)
+                .font(AppTheme.TypeRole.screenTitle)
                 .foregroundStyle(palette.completionTitle)
                 .multilineTextAlignment(.center)
-                .lineSpacing(2)
+                .lineSpacing(1)
+                .lineLimit(2)
                 .minimumScaleFactor(0.78)
                 .accessibilityLabel(mysterySet.name.english)
-                .padding(.top, compact ? 8 : 10)
+                .padding(.top, 6)
 
             if hasIntention {
-                VStack(spacing: AppTheme.Space.sm) {
+                VStack(spacing: 4) {
                     Text("OFFERED FOR")
                         .font(AppTheme.TypeRole.caption(weight: .medium))
                         .tracking(1.4)
@@ -216,23 +218,25 @@ struct CompletionView: View {
                         .textCase(.uppercase)
 
                     Text(displayIntentionTitle)
-                        .font(compact ? AppTheme.TypeRole.body : AppTheme.TypeRole.bodySmall)
+                        .font(AppTheme.TypeRole.bodySmall)
                         .foregroundStyle(palette.completionMetaValue)
                         .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
                 }
-                .padding(.top, compact ? 20 : 28)
+                .padding(.top, 12)
                 .layoutPriority(1)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Offered for \(displayIntentionTitle)")
             }
 
-            VStack(spacing: compact ? AppTheme.Space.sm : AppTheme.Space.md) {
+            VStack(spacing: 6) {
                 Text("“\(quote.text)”")
-                    .font(compact ? AppTheme.TypeRole.body : AppTheme.TypeRole.bodySmall)
+                    .font(AppTheme.TypeRole.bodySmall)
                     .foregroundStyle(palette.dim)
                     .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.8)
 
                 Text(quote.attribution.uppercased())
                     .font(AppTheme.TypeRole.quoteAttribution)
@@ -241,18 +245,16 @@ struct CompletionView: View {
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .padding(compact ? AppTheme.Space.md : AppTheme.Space.lg)
+            .padding(12)
             .guideCard(fill: palette.surface)
-            .padding(.top, compact ? AppTheme.Space.xl : AppTheme.Space.xxl)
+            .padding(.top, 14)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(quote.text), \(quote.attribution)")
-
-            Color.clear.frame(height: compact ? 16 : 24)
         }
     }
 
-    private func actions(compact: Bool) -> some View {
-        VStack(spacing: compact ? 12 : 18) {
+    private func actions() -> some View {
+        VStack(spacing: 12) {
             PillButton(title: "Done", action: onDone)
                 .accessibilityLabel("Done")
 
@@ -274,8 +276,8 @@ struct CompletionView: View {
             }
         }
         .padding(.horizontal, AppTheme.gutter)
-        .padding(.top, 8)
-        .padding(.bottom, 28)
+        .padding(.top, 4)
+        .padding(.bottom, 12)
     }
 }
 
