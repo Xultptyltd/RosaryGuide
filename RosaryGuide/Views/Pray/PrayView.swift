@@ -1078,7 +1078,17 @@ struct PrayView: View {
                         if newValue.viewportHeight > 1 {
                             michaelViewportHeight = newValue.viewportHeight
                         }
-                        michaelScrollY = max(0, newValue.offsetY)
+                        let y = max(0, newValue.offsetY)
+                        michaelScrollY = y
+                        // Only after Done is showing. The downward tap-scroll
+                        // stays armed, so a position update cannot cancel it.
+                        guard michaelActionLocked, !michaelArrowArmed else { return }
+                        let contentH = max(michaelContentHeight, newValue.contentHeight)
+                        let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : michaelViewportHeight
+                        let maxOffset = max(0, contentH - viewH)
+                        if maxOffset > 8, y < maxOffset - 112 {
+                            michaelActionLocked = false
+                        }
                     }
                         .onChange(of: settings.language) {
                             michaelActionLocked = false
