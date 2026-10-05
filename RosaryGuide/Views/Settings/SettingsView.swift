@@ -47,24 +47,15 @@ struct SettingsView: View {
                 }
 
                 VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
-                    SettingsSection(title: "Praying") {
-                        SettingsMenuRow(title: "Language", icon: "globe", value: settings.language.settingsTitle) {
-                            Picker("Language", selection: $settings.language) {
-                                ForEach(PrayerLanguage.appCases) { option in
-                                    Text(option.settingsTitle).tag(option)
-                                }
+                    SettingsSection(title: "General") {
+                        // App UI language. English is the only option for now; this is
+                        // separate from the Eng/Lat/Both prayer toggle in the rosary flow,
+                        // so it never reads or writes settings.language.
+                        SettingsMenuRow(title: "Language", icon: "globe", value: "English") {
+                            Picker("Language", selection: .constant("English")) {
+                                Text("English").tag("English")
                             }
                         }
-
-                        SettingsMenuRow(title: "Text size", icon: "textformat.size", value: settings.textSize.title) {
-                            Picker("Text size", selection: $settings.textSize) {
-                                ForEach(PrayerTextSize.allCases) { option in
-                                    Text(option.title).tag(option)
-                                }
-                            }
-                        }
-
-                        SettingsToggleRow(title: "Haptics", icon: "iphone.radiowaves.left.and.right", isOn: $settings.hapticsEnabled)
 
                         SettingsMenuRow(title: "Color theme", icon: "circle.lefthalf.filled", value: settings.appearance.title) {
                             Picker("Color theme", selection: $settings.appearance) {
@@ -553,29 +544,6 @@ private struct SettingsMenuRow<Content: View>: View {
     }
 }
 
-private struct SettingsToggleRow: View {
-    @Environment(\.palette) private var palette
-    let title: String
-    var icon: String?
-    @Binding var isOn: Bool
-
-    var body: some View {
-        Toggle(isOn: $isOn) {
-            HStack(spacing: AppTheme.Space.lg) {
-                if let icon {
-                    SettingsRowIcon(symbol: icon, tint: palette.ink)
-                }
-                Text(title)
-                    .font(AppTheme.TypeRole.settingsRow)
-                    .foregroundStyle(palette.ink)
-            }
-        }
-        .tint(palette.accent)
-        .frame(minHeight: AppTheme.Component.profileRowHeight)
-        .overlay(alignment: .bottom) { SettingsDivider() }
-    }
-}
-
 private struct SettingsValueOnlyRow: View {
     let title: String
     var icon: String?
@@ -868,26 +836,5 @@ private struct SettingsFootnote: View {
             .foregroundStyle(palette.dim)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, AppTheme.Space.lg - AppTheme.sectionGap)
-    }
-}
-
-private extension PrayerLanguage {
-    /// Short labels for the Settings language picker.
-    var settingsTitle: String {
-        switch self {
-        case .english: "English"
-        case .latin: "Latin"
-        case .bilingual: "Both"
-        }
-    }
-}
-
-private extension PrayerTextSize {
-    var title: String {
-        switch self {
-        case .small: "Small"
-        case .medium: "Medium"
-        case .large: "Large"
-        }
     }
 }

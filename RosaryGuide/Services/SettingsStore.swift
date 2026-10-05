@@ -34,9 +34,8 @@ final class SettingsStore {
         didSet { UserDefaults.standard.set(includeSaintMichael, forKey: Keys.saintMichael) }
     }
 
-    var hapticsEnabled: Bool {
-        didSet { UserDefaults.standard.set(hapticsEnabled, forKey: Keys.haptics) }
-    }
+    /// Haptics are always on; there is no longer a setting to turn them off.
+    var hapticsEnabled: Bool { true }
 
     var textSize: PrayerTextSize {
         didSet { UserDefaults.standard.set(textSize.rawValue, forKey: Keys.textSize) }
@@ -48,7 +47,8 @@ final class SettingsStore {
         rosaryLanguage = legacyLanguage
         appearance = AppearancePreference(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
         includeSaintMichael = defaults.object(forKey: Keys.saintMichael) as? Bool ?? false
-        hapticsEnabled = defaults.object(forKey: Keys.haptics) as? Bool ?? true
+        // Drop any stored "off" from the old Haptics toggle.
+        defaults.removeObject(forKey: Keys.haptics)
         textSize = PrayerTextSize(rawValue: defaults.string(forKey: Keys.textSize) ?? "") ?? .medium
     }
 
