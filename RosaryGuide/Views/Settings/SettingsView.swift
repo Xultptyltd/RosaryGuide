@@ -26,7 +26,6 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     var onClose: (() -> Void)?
 
-    @State private var titleScrollOffset: CGFloat = 0
     @State private var confirmDeleteHistory = false
     @State private var didDeleteHistory = false
     @State private var confirmDeleteAccount = false
@@ -38,17 +37,90 @@ struct SettingsView: View {
     @State private var showReportChoice = false
 
     var body: some View {
+        profileScroll
+        .scrollContentBackground(.hidden)
+        .background(palette.bg.ignoresSafeArea())
+        // Same compact bar as every pushed page; Close stays on the left.
+        .guideDetailChrome("Your profile")
+        .toolbar { closeToolbarItem }
+        .navigationDestination(for: SettingsDestination.self) { destination in
+            destinationView(destination)
+        }
+        .fullScreenCover(isPresented: $showOnboardingPreview) {
+            OnboardingView(includesSignIn: false) {
+                showOnboardingPreview = false
+            }
+        }
+        .sheet(item: $mailDraft) { draft in
+            SettingsMailComposer(draft: draft)
+        }
+        .confirmationDialog("What would you like to report?", isPresented: $showReportChoice, titleVisibility: .visible) {
+            Button("Bug") { composeSupportEmail(.bug) }
+            Button("Translation") { composeSupportEmail(.translation) }
+            Button("Cancel", role: .cancel) {}
+        }
+        .alert("Delete prayer history?", isPresented: $confirmDeleteHistory) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                session.clearHistoryAndData()
+                didDeleteHistory = true
+            }
+        } message: {
+            Text("This clears your prayer progress and prayer history on this device and in your account. Your intentions and settings are not affected.")
+        }
+        .alert("Prayer history deleted", isPresented: $didDeleteHistory) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Your prayer progress and prayer history have been deleted.")
+        }
+        .alert("Delete account?", isPresented: $confirmDeleteAccount) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete account", role: .destructive) {
+                deleteAccount()
+            }
+        } message: {
+            Text(deleteAccountConfirmationMessage)
+        }
+        .alert("Account deleted", isPresented: $didDeleteAccount) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Your account and everything synced to it (intentions, prayer history and settings) were deleted, and your prayer data was cleared from this device.")
+        }
+        .alert("Account not deleted", isPresented: Binding(
+            get: { accountDeletionError != nil },
+            set: { if !$0 { accountDeletionError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(accountDeletionError ?? "Try again.")
+        }
+        .alert("App icon not changed", isPresented: Binding(
+            get: { appIcon.lastErrorMessage != nil },
+            set: { if !$0 { appIcon.clearError() } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(appIcon.lastErrorMessage ?? "Try again.")
+        }
+        .onAppear { appIcon.refreshFromSystem() }
+        .alert("Coming soon", isPresented: Binding(
+            get: { placeholderMessage != nil },
+            set: { if !$0 { placeholderMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(placeholderMessage ?? "This will be available in a future update.")
+        }
+    }
+
+    /// Settings root content, split out of `body` to keep type-checking fast.
+    private var profileScroll: some View {
         @Bindable var settings = settings
 
-        ScrollView(.vertical, showsIndicators: false) {
+        return ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                VStack(alignment: .leading, spacing: 0) {
-                    // Standard large-title space; the Premium card starts sectionTitleGap below the H1.
-                    CollapsingTitleSpacer(height: CollapsingTitleMetrics.spacerHeight(gapBelowTitle: AppTheme.sectionTitleGap))
-
-                    UnlockTrialCard {
-                        placeholderMessage = "Premium trials will be available when subscriptions are configured."
-                    }
+                UnlockTrialCard {
+                    placeholderMessage = "Premium trials will be available when subscriptions are configured."
                 }
 
                 VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
@@ -153,92 +225,26 @@ struct SettingsView: View {
                 .padding(.bottom, AppTheme.Space.xxl)
             }
             .padding(.horizontal, AppTheme.gutter)
+            .padding(.top, GuideDetailChrome.contentTop)
         }
-        .scrollContentBackground(.hidden)
-        .background(palette.bg.ignoresSafeArea())
-        .background(SettingsSwipeBackEnabler())
-        .guidePageChrome()
-        .toolbar(.hidden, for: .navigationBar)
-        .collapsingTitleChrome("Your profile", scrollOffset: $titleScrollOffset) {
-            SettingsToolbarButton(symbol: "xmark", label: "Close") {
-                if let onClose {
-                    onClose()
-                } else {
-                    dismiss()
-                }
+    }
+
+    /// Settings root is presented, not pushed, so the leading slot holds Close.
+    @ToolbarContentBuilder
+    private var closeToolbarItem: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button(action: close) {
+                Image(systemName: "xmark")
             }
-        } trailing: {
-            EmptyView()
+            .accessibilityLabel("Close")
         }
-        .navigationTitle("Your profile")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: SettingsDestination.self) { destination in
-            destinationView(destination)
-        }
-        .fullScreenCover(isPresented: $showOnboardingPreview) {
-            OnboardingView(includesSignIn: false) {
-                showOnboardingPreview = false
-            }
-        }
-        .sheet(item: $mailDraft) { draft in
-            SettingsMailComposer(draft: draft)
-        }
-        .confirmationDialog("What would you like to report?", isPresented: $showReportChoice, titleVisibility: .visible) {
-            Button("Bug") { composeSupportEmail(.bug) }
-            Button("Translation") { composeSupportEmail(.translation) }
-            Button("Cancel", role: .cancel) {}
-        }
-        .alert("Delete prayer history?", isPresented: $confirmDeleteHistory) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
-                session.clearHistoryAndData()
-                didDeleteHistory = true
-            }
-        } message: {
-            Text("This clears your prayer progress and prayer history on this device and in your account. Your intentions and settings are not affected.")
-        }
-        .alert("Prayer history deleted", isPresented: $didDeleteHistory) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Your prayer progress and prayer history have been deleted.")
-        }
-        .alert("Delete account?", isPresented: $confirmDeleteAccount) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete account", role: .destructive) {
-                deleteAccount()
-            }
-        } message: {
-            Text(deleteAccountConfirmationMessage)
-        }
-        .alert("Account deleted", isPresented: $didDeleteAccount) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Your account and everything synced to it (intentions, prayer history and settings) were deleted, and your prayer data was cleared from this device.")
-        }
-        .alert("Account not deleted", isPresented: Binding(
-            get: { accountDeletionError != nil },
-            set: { if !$0 { accountDeletionError = nil } }
-        )) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(accountDeletionError ?? "Try again.")
-        }
-        .alert("App icon not changed", isPresented: Binding(
-            get: { appIcon.lastErrorMessage != nil },
-            set: { if !$0 { appIcon.clearError() } }
-        )) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(appIcon.lastErrorMessage ?? "Try again.")
-        }
-        .onAppear { appIcon.refreshFromSystem() }
-        .alert("Coming soon", isPresented: Binding(
-            get: { placeholderMessage != nil },
-            set: { if !$0 { placeholderMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(placeholderMessage ?? "This will be available in a future update.")
+    }
+
+    private func close() {
+        if let onClose {
+            onClose()
+        } else {
+            dismiss()
         }
     }
 
@@ -485,28 +491,6 @@ private struct SettingsMailComposer: UIViewControllerRepresentable {
         ) {
             dismiss()
         }
-    }
-}
-
-private struct SettingsToolbarButton: View {
-    @Environment(\.palette) private var palette
-    let symbol: String
-    let label: String
-    var action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .guideSymbol(size: 16, weight: .semibold)
-                .foregroundStyle(palette.ink)
-                .frame(
-                    width: AppTheme.Accessibility.minHitTarget,
-                    height: AppTheme.Accessibility.minHitTarget
-                )
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
     }
 }
 
@@ -859,27 +843,6 @@ private struct SettingsDetailScaffold<Content: View>: View {
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
         .guideDetailChrome(title)
-    }
-}
-
-/// Keeps the edge-swipe back gesture working on Settings pages, which hide the
-/// system navigation bar to use the collapsing large title. Only allows the
-/// swipe when there is a page to go back to.
-private struct SettingsSwipeBackEnabler: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> Controller { Controller() }
-    func updateUIViewController(_ uiViewController: Controller, context: Context) {}
-
-    final class Controller: UIViewController, UIGestureRecognizerDelegate {
-        override func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-            guard let pop = navigationController?.interactivePopGestureRecognizer else { return }
-            pop.isEnabled = true
-            pop.delegate = self
-        }
-
-        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-            (navigationController?.viewControllers.count ?? 0) > 1
-        }
     }
 }
 
