@@ -42,9 +42,9 @@ struct CompletionView: View {
     /// screen intentionally stays dark.
     private var pageBg: Color { palette.completionBackground }
 
-    /// Primary headline — adjective + "Mysteries" on two lines when natural.
+    /// One line: "Joyful Mysteries", "Sorrowful Mysteries", and the rest.
     private var mysteryHeadline: String {
-        "\(mysterySet.shortName)\nMysteries"
+        "\(mysterySet.shortName) Mysteries"
     }
 
     private var hasIntention: Bool {
@@ -90,19 +90,20 @@ struct CompletionView: View {
                 .offset(y: resting ? 0 : 28)
                 .accessibilityHidden(true)
 
+                // Spare room sits above the tick group. The group itself
+                // stays 40pt above the quote, and Done stays 36pt under it.
+                Spacer(minLength: 0)
+
                 iconSlot
                     .padding(.top, 8)
                     .padding(.bottom, 4)
 
                 completionContent()
                     .padding(.horizontal, AppTheme.gutter)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .offset(y: resting ? 0 : 108)
                     .opacity(resting ? 1 : 0)
 
-                // Exactly 36pt from the quote card to Done. Spare room is
-                // inside completionContent, above the quote, so the buttons
-                // stay on the bottom safe area.
+                // Exactly 36pt from the quote card to Done.
                 Color.clear.frame(height: 36)
 
                 actions()
@@ -208,8 +209,7 @@ struct CompletionView: View {
                 .font(AppTheme.TypeRole.screenTitle)
                 .foregroundStyle(palette.completionTitle)
                 .multilineTextAlignment(.center)
-                .lineSpacing(1)
-                .lineLimit(2)
+                .lineLimit(1)
                 .minimumScaleFactor(0.78)
                 .accessibilityLabel(mysterySet.name.english)
                 .padding(.top, 6)
@@ -235,7 +235,7 @@ struct CompletionView: View {
                 .accessibilityLabel("Offered for \(displayIntentionTitle)")
             }
 
-            Spacer(minLength: 0)
+            Color.clear.frame(height: 40)
 
             VStack(spacing: 6) {
                 Text("“\(quote.text)”")
@@ -254,7 +254,6 @@ struct CompletionView: View {
             .frame(maxWidth: .infinity)
             .padding(12)
             .guideCard(fill: palette.surface)
-            .padding(.top, 14)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(quote.text), \(quote.attribution)")
         }
