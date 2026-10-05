@@ -5,7 +5,6 @@ import UIKit
 import UserNotifications
 
 private enum SettingsDestination: Hashable {
-    case account
     case notifications
     case aboutPremium
     case faqs
@@ -16,6 +15,7 @@ private enum SettingsDestination: Hashable {
 
 struct SettingsView: View {
     @Environment(SettingsStore.self) private var settings
+    @Environment(SessionStore.self) private var session
     @Environment(OfferStore.self) private var offer
     @Environment(AuthStore.self) private var auth
     @Environment(AccountSyncStore.self) private var sync
@@ -25,6 +25,8 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     var onClose: (() -> Void)?
 
+    @State private var confirmClearAppHistory = false
+    @State private var didClearAppHistory = false
     @State private var confirmDeleteAccount = false
     @State private var didDeleteAccount = false
     @State private var accountDeletionError: String?
@@ -55,6 +57,20 @@ struct SettingsView: View {
             Button("Bug") { composeSupportEmail(.bug) }
             Button("Translation") { composeSupportEmail(.translation) }
             Button("Cancel", role: .cancel) {}
+        }
+        .alert("Clear app history?", isPresented: $confirmClearAppHistory) {
+            Button("Cancel", role: .cancel) {}
+            Button("Clear", role: .destructive) {
+                clearAppHistory()
+                didClearAppHistory = true
+            }
+        } message: {
+            Text("This clears your prayer progress, prayer history, intentions and settings on this device. When signed in, the wipe also reaches your account. Your sign-in stays.")
+        }
+        .alert("App history cleared", isPresented: $didClearAppHistory) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Your prayer progress, intentions and settings have been cleared from this device.")
         }
         .alert("Delete account?", isPresented: $confirmDeleteAccount) {
             Button("Cancel", role: .cancel) {}
@@ -133,13 +149,40 @@ struct SettingsView: View {
                     }
 
                     SettingsSection(title: "Account") {
-                        SettingsNavigationRow(
-                            title: auth.isSignedIn ? (auth.displayName ?? "Your account") : "Sign in",
-                            icon: "person.crop.circle",
-                            subtitle: auth.isSignedIn ? "Signed in with \(auth.provider.rawValue)" : nil,
-                            destination: .account
-                        )
+                        if auth.isSignedIn {
+                            SettingsValueOnlyRow(
+                                title: "Signed in with",
+                                icon: "person.badge.key",
+                                value: auth.provider.rawValue
+                            )
+                        } else {
+                            SettingsActionRow(
+                                title: auth.isWorking ? "Signing in..." : "Continue with Apple",
+                                icon: "apple.logo",
+                                accessory: .none
+                            ) {
+                                HapticService.play(.medium, enabled: settings.hapticsEnabled)
+                                auth.signInWithApple()
+                            }
+                            .disabled(auth.isWorking)
+
+                            SettingsActionRow(title: "Continue with Google", icon: "g.circle", accessory: .none) {
+                                HapticService.play(.medium, enabled: settings.hapticsEnabled)
+                                auth.signInWithGoogle()
+                            }
+                            .disabled(auth.isWorking)
+                        }
+
+                        SettingsActionRow(title: "Clear app history", icon: "trash", destructive: true) {
+                            confirmClearAppHistory = true
+                        }
+
                         SettingsNavigationRow(title: "Premium", icon: "crown", value: "Upgrade", destination: .aboutPremium)
+                    }
+
+                    if !auth.isSignedIn, let message = auth.errorMessage {
+                        SettingsFootnote(message)
+                            .padding(.top, -AppTheme.sectionGap + AppTheme.Space.lg)
                     }
 
                     SettingsSection(title: "Help & support") {
@@ -270,6 +313,17 @@ struct SettingsView: View {
     /// Re-authenticate, delete cloud preferences/progress and intentions, delete the Auth account,
     /// then clear local data. Any failure leaves the account and its data in place and explains why.
     /// Preferences and progress go first: deleting intentions also shuts down Firestore's cache.
+    /// Full local wipe: prayers/streak, in-progress rosary, intentions, and preferences
+    /// (icon on the Home Screen is kept). Same behaviour as the former Account page.
+    private func clearAppHistory() {
+        session.clearHistoryAndData()
+        offer.clearAll()
+        settings.resetLocalPreferences(keepingAppIcon: appIcon.current)
+        Task {
+            await NotificationService.reschedule(settings.notificationPlan)
+        }
+    }
+
     private func deleteAccount() {
         auth.reauthenticateForSensitiveOperation { reauthenticated in
             guard reauthenticated else {
@@ -341,8 +395,6 @@ struct SettingsView: View {
     @ViewBuilder
     private func destinationView(_ destination: SettingsDestination) -> some View {
         switch destination {
-        case .account:
-            SettingsAccountScreen()
         case .aboutPremium:
             SettingsPremiumScreen()
         case .faqs:
@@ -817,81 +869,6 @@ private struct SettingsDetailScaffold<Content: View>: View {
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
         .guideDetailChrome(title)
-    }
-}
-
-private struct SettingsAccountScreen: View {
-    @Environment(AuthStore.self) private var auth
-    @Environment(SettingsStore.self) private var settings
-    @Environment(SessionStore.self) private var session
-    @Environment(OfferStore.self) private var offer
-    @Environment(AppIconService.self) private var appIcon
-    // Alerts must live on this pushed page — attaching them to SettingsView (the
-    // drawer root) means they only appear after the user swipes back.
-    @State private var confirmClearAppHistory = false
-    @State private var didClearAppHistory = false
-
-    var body: some View {
-        SettingsDetailScaffold(title: "Account") {
-            DividedRows {
-                if auth.isSignedIn {
-                    SettingsValueOnlyRow(
-                        title: "Signed in with",
-                        icon: "person.badge.key",
-                        value: auth.provider.rawValue
-                    )
-                } else {
-                    SettingsActionRow(
-                        title: auth.isWorking ? "Signing in..." : "Continue with Apple",
-                        icon: "apple.logo",
-                        accessory: .none
-                    ) {
-                        HapticService.play(.medium, enabled: settings.hapticsEnabled)
-                        auth.signInWithApple()
-                    }
-                    .disabled(auth.isWorking)
-
-                    SettingsActionRow(title: "Continue with Google", icon: "g.circle", accessory: .none) {
-                        HapticService.play(.medium, enabled: settings.hapticsEnabled)
-                        auth.signInWithGoogle()
-                    }
-                    .disabled(auth.isWorking)
-                }
-
-                SettingsActionRow(title: "Clear app history", icon: "trash", destructive: true) {
-                    confirmClearAppHistory = true
-                }
-            }
-
-            if !auth.isSignedIn, let message = auth.errorMessage {
-                SettingsFootnote(message)
-            }
-        }
-        .alert("Clear app history?", isPresented: $confirmClearAppHistory) {
-            Button("Cancel", role: .cancel) {}
-            Button("Clear", role: .destructive) {
-                clearAppHistory()
-                didClearAppHistory = true
-            }
-        } message: {
-            Text("This clears your prayer progress, prayer history, intentions and settings on this device. When signed in, the wipe also reaches your account. Your sign-in stays.")
-        }
-        .alert("App history cleared", isPresented: $didClearAppHistory) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Your prayer progress, intentions and settings have been cleared from this device.")
-        }
-    }
-
-    /// Full local wipe: prayers/streak, in-progress rosary, intentions, and preferences
-    /// (icon on the Home Screen is kept). Uses existing store clear helpers.
-    private func clearAppHistory() {
-        session.clearHistoryAndData()
-        offer.clearAll()
-        settings.resetLocalPreferences(keepingAppIcon: appIcon.current)
-        Task {
-            await NotificationService.reschedule(settings.notificationPlan)
-        }
     }
 }
 
