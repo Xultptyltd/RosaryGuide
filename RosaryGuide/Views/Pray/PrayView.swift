@@ -1001,7 +1001,6 @@ struct PrayView: View {
         }
         .padding(.horizontal, AppTheme.Space.lg)
         .padding(.top, AppTheme.Space.xs)
-        .padding(.bottom, AppTheme.Space.xs)
     }
 
     /// Same title block as `locus` on a non-plate prayer.
@@ -1019,7 +1018,8 @@ struct PrayView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 2)
+        // 48pt from the close button's bottom edge to this title.
+        .padding(.top, 48)
         .padding(.bottom, 22)
     }
 
@@ -1042,7 +1042,6 @@ struct PrayView: View {
                                     )
                                 }
                                 .padding(.horizontal, AppTheme.gutter)
-                                .padding(.top, 4)
                                 .padding(.bottom, AppTheme.Space.lg)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 Spacer(minLength: 0)
