@@ -66,6 +66,16 @@ struct PrayView: View {
     @State private var michaelScrollPosition = ScrollPosition(edge: .top)
     /// Last time the prayer actually moved. A scroll that ends on the circle is not a tap.
     @State private var michaelLastDrag = Date.distantPast
+    /// Shared scroll-template state for long rosary prayers (not Saint Michael).
+    @State private var prayerTextHeight: CGFloat = 0
+    @State private var prayerViewportHeight: CGFloat = 0
+    @State private var prayerContentHeight: CGFloat = 0
+    @State private var prayerUsesScrollTemplate = false
+    @State private var prayerActionLocked = false
+    @State private var prayerArrowArmed = false
+    @State private var prayerScrollY: CGFloat = 0
+    @State private var prayerScrollPosition = ScrollPosition(edge: .top)
+    @State private var prayerLastDrag = Date.distantPast
     @State private var showingCompletion = false
     @State private var freshSetPending: MysterySetKind?
 
@@ -82,9 +92,11 @@ struct PrayView: View {
     @State private var plateHintDismissed = false
     @State private var plateNearBottom = false
     @State private var plateActionLockedToNext = false
+    @State private var plateArrowArmed = false
+    @State private var plateScrollPosition = ScrollPosition(edge: .top)
+    @State private var plateLastDrag = Date.distantPast
     /// Measured header + progress track height (safe-area content, not status bar).
     @State private var plateChromeHeight: CGFloat = 96
-    @Namespace private var plateActionNamespace
     @State private var chosenIntentionId: UUID?
     @State private var chosenIntentionTitle: String = ""
     @State private var chosenIntentionNote: String = ""
@@ -228,12 +240,21 @@ struct PrayView: View {
 
                     footer(step)
                 }
+                .overlay(alignment: .bottom) {
+                    if prayerUsesScrollTemplate {
+                        // Bead shelf stays in flow. The circle floats on the prayer,
+                        // just above that shelf, not on a black bar.
+                        prayerScrollChrome(step)
+                            .padding(.bottom, showBeads ? 142 : 0)
+                    }
+                }
             }
         }
         .onChange(of: index) { _, _ in
             plateScrollY = 0
             plateHintDismissed = false
             plateNearBottom = false
+            resetPrayerScrollTemplate()
             // Do not clear content/viewport heights here — zeroing races the next
             // geometry callback and can leave the scroll cue stuck hidden.
         }
@@ -265,8 +286,7 @@ struct PrayView: View {
             .ignoresSafeArea(edges: .top)
             .allowsHitTesting(false)
 
-            ScrollViewReader { proxy in
-                ScrollView {
+            ScrollView {
                     VStack(spacing: 0) {
                         Color.clear
                             .frame(height: heroSpacer)
@@ -282,6 +302,10 @@ struct PrayView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityElement(children: .contain)
 
+                        // Room so the last lines can clear the floating action.
+                        Color.clear
+                            .frame(height: 108)
+                            .accessibilityHidden(true)
                         Color.clear
                             .frame(height: 1)
                             .id(PlateScrollAnchor.bottom)
@@ -295,6 +319,7 @@ struct PrayView: View {
                 }
                 .scrollIndicators(.hidden)
                 .scrollBounceBehavior(.basedOnSize)
+                .scrollPosition($plateScrollPosition)
                 .background {
                     GeometryReader { geo in
                         Color.clear.preference(key: PlateViewportHeightKey.self, value: geo.size.height)
@@ -313,50 +338,63 @@ struct PrayView: View {
                         viewportHeight: geometry.containerSize.height
                     )
                 } action: { _, newValue in
-                    let y = max(0, newValue.offsetY)
-                    plateScrollY = y
                     if newValue.contentHeight > 1 {
                         plateContentHeight = max(plateContentHeight, newValue.contentHeight)
                     }
                     if newValue.viewportHeight > 1 {
                         plateViewportHeight = newValue.viewportHeight
                     }
-                    let contentH = max(plateContentHeight, newValue.contentHeight)
+                    let y = max(0, newValue.offsetY)
+                    if abs(y - plateScrollY) > 0.5 {
+                        plateLastDrag = Date()
+                    }
+                    plateScrollY = y
+                    let contentH = newValue.contentHeight > 1 ? newValue.contentHeight : plateContentHeight
                     let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : plateViewportHeight
                     let maxOffset = max(0, contentH - viewH)
-                    let shouldSettle = maxOffset > 8 && y >= maxOffset - 56
-                    let shouldUnlock = maxOffset > 8 && y < maxOffset - 112
-                    if shouldSettle, !plateNearBottom {
-                        plateActionLockedToNext = true
-                        withAnimation(reduceMotion ? nil : MotionTokens.soft) {
-                            proxy.scrollTo(PlateScrollAnchor.bottom, anchor: .bottom)
+                    guard maxOffset > 8 else { return }
+                    if y >= maxOffset - 36 {
+                        if !plateActionLockedToNext {
+                            plateActionLockedToNext = true
                         }
-                    } else if shouldUnlock, plateActionLockedToNext {
+                    } else if plateActionLockedToNext, !plateArrowArmed, y < maxOffset - 112 {
                         plateActionLockedToNext = false
                     }
-                    plateNearBottom = shouldSettle
+                    plateNearBottom = y >= maxOffset - 36
                 }
                 .task(id: mystery.id) {
                     plateScrollY = 0
                     plateHintDismissed = false
                     plateNearBottom = false
                     plateActionLockedToNext = false
+                    plateArrowArmed = false
+                    plateLastDrag = .distantPast
+                    plateScrollPosition = ScrollPosition(edge: .top)
                 }
                 // Edge taps below chrome so Aa / close / track keep priority.
                 .overlay {
                     edgeTapZones
                         .padding(.top, chromeH)
                 }
-                .safeAreaInset(edge: .bottom, spacing: 0) {
+                .overlay(alignment: .bottom) {
                     plateActionChrome(step) {
+                        guard Date().timeIntervalSince(plateLastDrag) > 0.25 else { return }
                         HapticService.play(.light, enabled: settings.hapticsEnabled)
-                        plateActionLockedToNext = true
-                        withAnimation(reduceMotion ? nil : MotionTokens.reveal) {
-                            proxy.scrollTo(PlateScrollAnchor.bottom, anchor: .bottom)
+                        let contentH = plateContentHeight
+                        let viewH = plateViewportHeight
+                        let maxOffset = max(0, contentH - viewH)
+                        let distanceFromBottom = maxOffset - plateScrollY
+                        plateArrowArmed = distanceFromBottom > 8
+                        withAnimation(reduceMotion ? nil : MotionTokens.reveal, completionCriteria: .logicallyComplete) {
+                            plateActionLockedToNext = true
+                            if distanceFromBottom > 8 {
+                                plateScrollPosition.scrollTo(y: maxOffset)
+                            }
+                        } completion: {
+                            plateArrowArmed = false
                         }
                     }
                 }
-            }
 
             // Fixed floating chrome — last so it composites above the hero canvas.
             plateTopChrome(step)
@@ -489,53 +527,16 @@ struct PrayView: View {
 
     private func plateActionChrome(_ step: RosaryStep, scrollToBottom: @escaping () -> Void) -> some View {
         let nextTitle = step.nextLabel == "Continue" ? "Next" : step.nextLabel
-        let showScroll = plateCanScrollFurther
-        let animation = reduceMotion ? nil : Animation.spring(response: 0.42, dampingFraction: 0.84)
-
-        return HStack {
-            if showScroll {
-                Spacer(minLength: 0)
-            }
-            Button {
-                if showScroll {
-                    scrollToBottom()
-                } else {
-                    advance()
-                }
-            } label: {
-                Group {
-                    if showScroll {
-                        Image(systemName: "chevron.down")
-                            .guideSymbol(size: 17, weight: .semibold)
-                            .foregroundStyle(palette.secondaryButtonText)
-                            .frame(
-                                width: AppTheme.Component.mysteryPlateActionCircle,
-                                height: AppTheme.Component.mysteryPlateActionCircle
-                            )
-                    } else {
-                        Text(nextTitle)
-                            .font(AppTheme.TypeRole.callout(weight: .semibold))
-                        .foregroundStyle(palette.secondaryButtonText)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: AppTheme.Component.pillHeight)
-                    }
-                }
-                .background {
-                    Capsule()
-                        .fill(palette.secondaryButtonFill)
-                        .matchedGeometryEffect(id: "plate-action-background", in: plateActionNamespace)
-                }
-                .contentShape(Capsule())
-            }
-            .buttonStyle(.plain)
-            .guidePressable()
-            .accessibilityLabel(showScroll ? "Scroll to read full scripture" : nextTitle)
-        }
-        .animation(animation, value: showScroll)
-        .transition(.opacity.combined(with: .scale(scale: 0.96)))
-            .padding(.horizontal, AppTheme.gutter)
-            .padding(.top, 8)
-            .padding(.bottom, AppTheme.Space.lg)
+        return scrollActionChrome(
+            showScroll: plateCanScrollFurther,
+            expandedTitle: nextTitle,
+            scrollLabel: "Scroll to read full scripture",
+            onScroll: scrollToBottom,
+            onAdvance: { advance() }
+        )
+        .padding(.horizontal, AppTheme.gutter)
+        .padding(.top, 8)
+        .padding(.bottom, AppTheme.Space.lg)
     }
 
         /// Non-plate pray column (unchanged mid-column / Creed pin behavior).
@@ -565,10 +566,60 @@ struct PrayView: View {
                         .padding(.top, prayerTitleTopPadding)
                         .padding(.bottom, AppTheme.Space.lg)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .background {
+                            GeometryReader { geo in
+                                Color.clear.preference(key: PrayerTextHeightKey.self, value: geo.size.height)
+                            }
+                        }
                         if !pinTop { Spacer(minLength: 0) }
+                        if prayerUsesScrollTemplate {
+                            Color.clear.frame(height: 132)
+                            Color.clear.frame(height: 1).id(PrayerScrollAnchor.bottom)
+                        }
                     }
                     .frame(minHeight: pinTop ? nil : scrollGeo.size.height, alignment: .top)
                     .frame(maxWidth: .infinity)
+                }
+                .scrollPosition($prayerScrollPosition)
+                .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
+                    PlateScrollMetrics(
+                        offsetY: geometry.contentOffset.y,
+                        contentHeight: geometry.contentSize.height,
+                        viewportHeight: geometry.containerSize.height
+                    )
+                } action: { _, newValue in
+                    if newValue.contentHeight > 1 {
+                        prayerContentHeight = newValue.contentHeight
+                    }
+                    if newValue.viewportHeight > 1 {
+                        prayerViewportHeight = newValue.viewportHeight
+                    }
+                    let y = max(0, newValue.offsetY)
+                    if abs(y - prayerScrollY) > 0.5 {
+                        prayerLastDrag = Date()
+                    }
+                    prayerScrollY = y
+                    let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : prayerViewportHeight
+                    updatePrayerScrollTemplate(viewport: viewH)
+                    guard prayerUsesScrollTemplate else { return }
+                    let contentH = newValue.contentHeight
+                    let maxOffset = max(0, contentH - viewH)
+                    guard maxOffset > 8 else { return }
+                    if y >= maxOffset - 36 {
+                        if !prayerActionLocked {
+                            prayerActionLocked = true
+                        }
+                    } else if prayerActionLocked, !prayerArrowArmed, y < maxOffset - 112 {
+                        prayerActionLocked = false
+                    }
+                }
+                .onChange(of: settings.language) { resetPrayerScrollTemplate() }
+                .onChange(of: settings.textSize) { resetPrayerScrollTemplate() }
+            }
+            .onPreferenceChange(PrayerTextHeightKey.self) { height in
+                if height > 1 {
+                    prayerTextHeight = height
+                    updatePrayerScrollTemplate(viewport: prayerViewportHeight)
                 }
             }
             // Rosary shelf lives in `prayLayer`, above the in-flow footer (web phone parity).
@@ -860,7 +911,16 @@ struct PrayView: View {
         }
     }
 
+    @ViewBuilder
     private func footer(_ step: RosaryStep) -> some View {
+        if prayerUsesScrollTemplate {
+            EmptyView()
+        } else {
+            footerBar(step)
+        }
+    }
+
+    private func footerBar(_ step: RosaryStep) -> some View {
         let nextTitle = step.nextLabel == "Continue" ? "Next" : step.nextLabel
         let isDecadeHailMary = step.kind == .hailMary && step.decadeNumber != nil
         let showCompleteDecade = isDecadeHailMary && step.hailMaryNumber != 10
@@ -1168,18 +1228,34 @@ struct PrayView: View {
 
     /// Mystery-plate circle, in the prayer footer. It becomes Done at the end of the scroll.
     private func michaelActionChrome(scrollToBottom: @escaping () -> Void) -> some View {
-        let showScroll = michaelCanScrollFurther
-        let animation = reduceMotion ? nil : MotionTokens.reveal
+        scrollActionChrome(
+            showScroll: michaelCanScrollFurther,
+            expandedTitle: "Done",
+            scrollLabel: "Scroll to read the prayer",
+            onScroll: scrollToBottom,
+            onAdvance: { returnToFinishScreen() }
+        )
+    }
 
+    /// Circle over the prayer. It becomes the step's own action once the text is at the bottom.
+    /// Solid fill for the whole morph. No footer bar.
+    private func scrollActionChrome(
+        showScroll: Bool,
+        expandedTitle: String,
+        scrollLabel: String,
+        onScroll: @escaping () -> Void,
+        onAdvance: @escaping () -> Void
+    ) -> some View {
+        let animation = reduceMotion ? nil : MotionTokens.reveal
         return HStack {
             if showScroll {
                 Spacer(minLength: 0)
             }
             Button {
                 if showScroll {
-                    scrollToBottom()
+                    onScroll()
                 } else {
-                    returnToFinishScreen()
+                    onAdvance()
                 }
             } label: {
                 let side = AppTheme.Component.mysteryPlateActionCircle
@@ -1192,7 +1268,7 @@ struct PrayView: View {
                             .foregroundStyle(palette.secondaryButtonText)
                             .transition(.identity)
                     } else {
-                        Text("Done")
+                        Text(expandedTitle)
                             .font(AppTheme.TypeRole.callout(weight: .semibold))
                             .foregroundStyle(palette.secondaryButtonText)
                             .transition(.identity)
@@ -1203,9 +1279,84 @@ struct PrayView: View {
                 .contentShape(Capsule())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(showScroll ? "Scroll to read the prayer" : "Done")
+            .accessibilityLabel(showScroll ? scrollLabel : expandedTitle)
         }
         .animation(animation, value: showScroll)
+    }
+
+    private var prayerCanScrollFurther: Bool {
+        prayerUsesScrollTemplate && !prayerActionLocked
+    }
+
+    /// Long prayers only. Short prayers keep the in-flow footer.
+    /// The footer is about 148pt; once it is hidden the viewport grows by that much.
+    private func updatePrayerScrollTemplate(viewport: CGFloat) {
+        guard prayerTextHeight > 1, viewport > 1 else { return }
+        let footerReserve: CGFloat = 148
+        if prayerUsesScrollTemplate {
+            if prayerTextHeight + footerReserve <= viewport - 8 {
+                prayerUsesScrollTemplate = false
+                prayerActionLocked = false
+                prayerArrowArmed = false
+            }
+        } else if prayerTextHeight > viewport + 6 {
+            prayerUsesScrollTemplate = true
+        }
+    }
+
+    private func resetPrayerScrollTemplate() {
+        prayerUsesScrollTemplate = false
+        prayerActionLocked = false
+        prayerArrowArmed = false
+        prayerTextHeight = 0
+        prayerContentHeight = 0
+        prayerScrollY = 0
+        prayerLastDrag = .distantPast
+        prayerScrollPosition = ScrollPosition(edge: .top)
+    }
+
+    private func scrollPrayerToBottom() {
+        guard Date().timeIntervalSince(prayerLastDrag) > 0.25 else { return }
+        HapticService.play(.light, enabled: settings.hapticsEnabled)
+        let contentH = prayerContentHeight > 1 ? prayerContentHeight : prayerTextHeight + 132
+        let viewH = prayerViewportHeight
+        let maxOffset = max(0, contentH - viewH)
+        let distanceFromBottom = maxOffset - prayerScrollY
+        prayerArrowArmed = distanceFromBottom > 8
+        withAnimation(reduceMotion ? nil : MotionTokens.reveal, completionCriteria: .logicallyComplete) {
+            prayerActionLocked = true
+            if distanceFromBottom > 8 {
+                prayerScrollPosition.scrollTo(y: maxOffset)
+            }
+        } completion: {
+            prayerArrowArmed = false
+        }
+    }
+
+    @ViewBuilder
+    private func prayerScrollChrome(_ step: RosaryStep) -> some View {
+        let nextTitle = step.nextLabel == "Continue" ? "Next" : step.nextLabel
+        let showCompleteDecade = step.kind == .hailMary && step.decadeNumber != nil && step.hailMaryNumber != 10
+        VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
+            HStack(spacing: AppTheme.Component.prayerFooterButtonGap) {
+                scrollActionChrome(
+                    showScroll: prayerCanScrollFurther,
+                    expandedTitle: nextTitle,
+                    scrollLabel: "Scroll to read the prayer",
+                    onScroll: { scrollPrayerToBottom() },
+                    onAdvance: { advance() }
+                )
+                if !prayerCanScrollFurther, showCompleteDecade {
+                    PillButton(title: "Complete decade", filled: false) {
+                        skipDecadeHailMarys()
+                    }
+                }
+            }
+            languageChips
+        }
+        .padding(.horizontal, AppTheme.gutter)
+        .padding(.bottom, AppTheme.Space.lg)
+        .padding(.top, AppTheme.Space.md)
     }
 
     // MARK: - Navigation
@@ -1384,6 +1535,17 @@ private struct PlateScrollMetrics: Equatable {
 
 private enum PlateScrollAnchor {
     static let bottom = "plate-scroll-bottom"
+}
+
+private struct PrayerTextHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private enum PrayerScrollAnchor {
+    static let bottom = "prayer-scroll-bottom"
 }
 
 private enum PrayerTitleChrome {
