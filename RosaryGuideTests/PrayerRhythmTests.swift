@@ -50,8 +50,8 @@ final class PrayerRhythmTests: XCTestCase {
 
     // MARK: Week mode
 
-    func testFirstDayEver() { assertCard(rhythm([0]), "1 day", "This week's Rosary prayed") }
-    func testTwoDaysThisWeek() { assertCard(rhythm([0, -2]), "1 week", "Two days this week") }
+    func testFirstDayEver() { assertCard(rhythm([0]), "1 day", "Once this week") }
+    func testTwoDaysThisWeek() { assertCard(rhythm([0, -2]), "1 week", "Twice this week") }
 
     func testWelcomeBack() {
         let r = rhythm([0, -21])
@@ -64,7 +64,7 @@ final class PrayerRhythmTests: XCTestCase {
     func testFirstWeekdayDecidesTheWeek() {
         // Sunday 4 Oct + today: last week when weeks start Monday, same week when they start Sunday.
         assertCard(rhythm([0, -3], firstWeekday: 2), "2 weeks", "Two weeks running")
-        assertCard(rhythm([0, -3], firstWeekday: 1), "1 week", "Two days this week")
+        assertCard(rhythm([0, -3], firstWeekday: 1), "1 week", "Twice this week")
     }
 
     /// Mondays only: 5 Oct, 28 Sep, 21 Sep, 14 Sep, 7 Sep.
