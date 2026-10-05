@@ -65,6 +65,7 @@ No other document id under `meta` can be read or written, and the `meta` collect
 - `dailyReminderEnabled: bool`
 - `dailyReminderMinutes: int` (0–1439, minutes after local midnight)
 - `feastAlertsEnabled: bool`
+- `feastAlertMinutes: int` (0–1439, feast day alert time in minutes after local midnight; default 480 = 8:00 am. Device copies and documents written before this field existed are read as 480. Required by the rules, so builds that write it need the updated rules published.)
 - `appIcon: "black" | "white" | "blue"`
 - `updatedAt: timestamp` (client time of the last user change; used for last-write-wins; at most one day in the future)
 

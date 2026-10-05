@@ -13,6 +13,7 @@ final class SettingsStore {
         static let dailyReminder = "settings.notifications.dailyReminder"
         static let dailyReminderMinutes = "settings.notifications.dailyReminderMinutes"
         static let feastAlerts = "settings.notifications.feastAlerts"
+        static let feastAlertMinutes = "settings.notifications.feastAlertMinutes"
         /// Shared with the `@AppStorage` readers in the intention views.
         static let hideIntentionText = "offer.hideIntentionText"
         static let appIcon = "settings.appIcon"
@@ -79,10 +80,18 @@ final class SettingsStore {
         }
     }
 
-    /// 8:00 am alerts on feast days from the app's feast calendar.
+    /// Alerts on feast days from the app's feast calendar.
     var feastAlertsEnabled: Bool {
         didSet {
             defaults.set(feastAlertsEnabled, forKey: Keys.feastAlerts)
+            userChanged()
+        }
+    }
+
+    /// Feast day alert time as minutes after local midnight (default 8:00 am).
+    var feastAlertMinutes: Int {
+        didSet {
+            defaults.set(feastAlertMinutes, forKey: Keys.feastAlertMinutes)
             userChanged()
         }
     }
@@ -121,7 +130,8 @@ final class SettingsStore {
         NotificationService.Plan(
             dailyEnabled: dailyReminderEnabled,
             dailyMinutes: dailyReminderMinutes,
-            feastsEnabled: feastAlertsEnabled
+            feastsEnabled: feastAlertsEnabled,
+            feastMinutes: feastAlertMinutes
         )
     }
 
@@ -138,6 +148,7 @@ final class SettingsStore {
         dailyReminderEnabled = defaults.bool(forKey: Keys.dailyReminder)
         dailyReminderMinutes = defaults.object(forKey: Keys.dailyReminderMinutes) as? Int ?? 19 * 60
         feastAlertsEnabled = defaults.bool(forKey: Keys.feastAlerts)
+        feastAlertMinutes = defaults.object(forKey: Keys.feastAlertMinutes) as? Int ?? SyncedPreferences.defaultFeastAlertMinutes
         hideIntentionText = defaults.bool(forKey: Keys.hideIntentionText)
         appIconChoice = AppIconOption(rawValue: defaults.string(forKey: Keys.appIcon) ?? "") ?? .black
         preferencesUpdatedAt = Date(timeIntervalSince1970: defaults.double(forKey: Keys.updatedAt))
@@ -167,6 +178,7 @@ final class SettingsStore {
             dailyReminderEnabled: dailyReminderEnabled,
             dailyReminderMinutes: dailyReminderMinutes,
             feastAlertsEnabled: feastAlertsEnabled,
+            feastAlertMinutes: feastAlertMinutes,
             appIcon: appIconChoice,
             updatedAt: preferencesUpdatedAt
         )
@@ -186,6 +198,7 @@ final class SettingsStore {
         if dailyReminderEnabled != value.dailyReminderEnabled { dailyReminderEnabled = value.dailyReminderEnabled }
         if dailyReminderMinutes != value.dailyReminderMinutes { dailyReminderMinutes = value.dailyReminderMinutes }
         if feastAlertsEnabled != value.feastAlertsEnabled { feastAlertsEnabled = value.feastAlertsEnabled }
+        if feastAlertMinutes != value.feastAlertMinutes { feastAlertMinutes = value.feastAlertMinutes }
         if hideIntentionText != value.hideIntentionText { hideIntentionText = value.hideIntentionText }
         if appIconChoice != value.appIcon { appIconChoice = value.appIcon }
         preferencesUpdatedAt = value.updatedAt

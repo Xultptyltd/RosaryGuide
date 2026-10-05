@@ -46,6 +46,7 @@ function validPreferences(overrides = {}) {
     dailyReminderEnabled: true,
     dailyReminderMinutes: 19 * 60,
     feastAlertsEnabled: false,
+    feastAlertMinutes: 8 * 60,
     appIcon: "blue",
     updatedAt: new Date(),
     ...overrides,
@@ -136,6 +137,12 @@ async function main() {
     await assertFails(setDoc(prefs, validPreferences({ appearance: "neon" })));
     await assertFails(setDoc(prefs, validPreferences({ dailyReminderMinutes: 1440 })));
     await assertFails(setDoc(prefs, validPreferences({ dailyReminderMinutes: "19:00" })));
+    await assertSucceeds(setDoc(prefs, validPreferences({ feastAlertMinutes: 0 })));
+    await assertSucceeds(setDoc(prefs, validPreferences({ feastAlertMinutes: 1439 })));
+    await assertFails(setDoc(prefs, validPreferences({ feastAlertMinutes: 1440 })));
+    await assertFails(setDoc(prefs, validPreferences({ feastAlertMinutes: -1 })));
+    await assertFails(setDoc(prefs, validPreferences({ feastAlertMinutes: "08:00" })));
+    await assertFails(setDoc(prefs, withoutKey(validPreferences(), "feastAlertMinutes")));
     await assertFails(setDoc(prefs, validPreferences({ hideIntentionText: "yes" })));
     await assertFails(setDoc(prefs, validPreferences({ updatedAt: farFuture })));
     await assertFails(setDoc(prefs, validPreferences({ schemaVersion: 2 })));

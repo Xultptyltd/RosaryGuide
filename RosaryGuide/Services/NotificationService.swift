@@ -10,13 +10,13 @@ enum NotificationService {
     /// iOS keeps at most 64 pending local notifications per app. The daily
     /// reminder uses 7 (one repeating trigger per weekday), feasts up to 30.
     private static let feastDayLimit = 30
-    private static let feastAlertHour = 8
 
     /// What should be scheduled, taken from SettingsStore.
     struct Plan: Equatable, Sendable {
         var dailyEnabled: Bool
         var dailyMinutes: Int
         var feastsEnabled: Bool
+        var feastMinutes: Int = 8 * 60
 
         var isEmpty: Bool { !dailyEnabled && !feastsEnabled }
     }
@@ -59,7 +59,7 @@ enum NotificationService {
             requests += dailyRequests(minutes: plan.dailyMinutes, now: now)
         }
         if plan.feastsEnabled {
-            requests += feastRequests(now: now)
+            requests += feastRequests(minutes: plan.feastMinutes, now: now)
         }
         for request in requests {
             try? await center.add(request)
@@ -107,16 +107,19 @@ enum NotificationService {
 
     // MARK: - Feast days
 
-    /// One alert at 8:00 am on each upcoming feast day in the app's own feast calendar.
-    private static func feastRequests(now: Date) -> [UNNotificationRequest] {
+    /// One alert at the chosen time (default 8:00 am) on each upcoming feast day in the
+    /// app's own feast calendar.
+    private static func feastRequests(minutes: Int, now: Date) -> [UNNotificationRequest] {
         let calendar = Calendar.current
+        let hour = max(0, min(23, minutes / 60))
+        let minute = max(0, min(59, minutes % 60))
         let upcoming = FeastCatalog.upcoming(from: now, limit: feastDayLimit * 2, calendar: calendar)
         let byDay = Dictionary(grouping: upcoming) { calendar.startOfDay(for: $0.date) }
 
         return byDay.keys.sorted()
             .compactMap { day -> UNNotificationRequest? in
                 guard
-                    let fireDate = calendar.date(bySettingHour: feastAlertHour, minute: 0, second: 0, of: day),
+                    let fireDate = calendar.date(bySettingHour: hour, minute: minute, second: 0, of: day),
                     fireDate > now,
                     let feasts = byDay[day], !feasts.isEmpty
                 else { return nil }

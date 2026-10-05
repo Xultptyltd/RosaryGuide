@@ -29,6 +29,8 @@ struct SyncedPreferences: Codable, Equatable {
     var dailyReminderEnabled: Bool
     var dailyReminderMinutes: Int
     var feastAlertsEnabled: Bool
+    /// Feast day alert time as minutes after local midnight (default 8:00 am).
+    var feastAlertMinutes: Int
     var appIcon: AppIconOption
     /// When the user last changed any of these. `.syncNever` means never (defaults or values
     /// from before sync existed), so any copy in the account wins.
@@ -44,20 +46,50 @@ struct SyncedPreferences: Codable, Equatable {
         dailyReminderEnabled: false,
         dailyReminderMinutes: 19 * 60,
         feastAlertsEnabled: false,
+        feastAlertMinutes: SyncedPreferences.defaultFeastAlertMinutes,
         appIcon: .black,
         updatedAt: .syncNever
     )
+
+    static let defaultFeastAlertMinutes = 8 * 60
+
+    private enum CodingKeys: String, CodingKey {
+        case appearance, prayerLanguage, rosaryLanguage, textSize, includeSaintMichael, hideIntentionText
+        case dailyReminderEnabled, dailyReminderMinutes, feastAlertsEnabled, feastAlertMinutes, appIcon, updatedAt
+    }
 
     var normalized: SyncedPreferences {
         var copy = self
         copy.updatedAt = updatedAt.syncRounded
         copy.dailyReminderMinutes = max(0, min(24 * 60 - 1, dailyReminderMinutes))
+        copy.feastAlertMinutes = max(0, min(24 * 60 - 1, feastAlertMinutes))
         return copy
     }
 
     /// Last write wins for the whole set. Ties go to the account copy.
     static func merge(local: SyncedPreferences, remote: SyncedPreferences) -> SyncedPreferences {
         remote.updatedAt >= local.updatedAt ? remote : local
+    }
+}
+
+extension SyncedPreferences {
+    /// Device copies saved before `feastAlertMinutes` existed decode with the 8:00 am default.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            appearance: try c.decode(AppearancePreference.self, forKey: .appearance),
+            prayerLanguage: try c.decode(PrayerLanguage.self, forKey: .prayerLanguage),
+            rosaryLanguage: try c.decode(PrayerLanguage.self, forKey: .rosaryLanguage),
+            textSize: try c.decode(PrayerTextSize.self, forKey: .textSize),
+            includeSaintMichael: try c.decode(Bool.self, forKey: .includeSaintMichael),
+            hideIntentionText: try c.decode(Bool.self, forKey: .hideIntentionText),
+            dailyReminderEnabled: try c.decode(Bool.self, forKey: .dailyReminderEnabled),
+            dailyReminderMinutes: try c.decode(Int.self, forKey: .dailyReminderMinutes),
+            feastAlertsEnabled: try c.decode(Bool.self, forKey: .feastAlertsEnabled),
+            feastAlertMinutes: try c.decodeIfPresent(Int.self, forKey: .feastAlertMinutes) ?? Self.defaultFeastAlertMinutes,
+            appIcon: try c.decode(AppIconOption.self, forKey: .appIcon),
+            updatedAt: try c.decode(Date.self, forKey: .updatedAt)
+        )
     }
 }
 
@@ -164,6 +196,8 @@ private extension SyncedPreferences {
             dailyReminderEnabled: dailyReminderEnabled,
             dailyReminderMinutes: dailyReminderMinutes,
             feastAlertsEnabled: feastAlertsEnabled,
+            // Documents written before this field existed get the 8:00 am default.
+            feastAlertMinutes: data["feastAlertMinutes"] as? Int ?? Self.defaultFeastAlertMinutes,
             appIcon: appIcon,
             updatedAt: updatedAt
         )
@@ -182,6 +216,7 @@ private extension SyncedPreferences {
             "dailyReminderEnabled": dailyReminderEnabled,
             "dailyReminderMinutes": max(0, min(24 * 60 - 1, dailyReminderMinutes)),
             "feastAlertsEnabled": feastAlertsEnabled,
+            "feastAlertMinutes": max(0, min(24 * 60 - 1, feastAlertMinutes)),
             "appIcon": appIcon.rawValue,
             "updatedAt": Timestamp(date: updatedAt)
         ]

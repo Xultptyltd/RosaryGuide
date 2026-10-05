@@ -95,6 +95,7 @@ service cloud.firestore {
         'dailyReminderEnabled',
         'dailyReminderMinutes',
         'feastAlertsEnabled',
+        'feastAlertMinutes',
         'appIcon',
         'updatedAt'
       ];
@@ -113,6 +114,9 @@ service cloud.firestore {
         && data.dailyReminderMinutes >= 0
         && data.dailyReminderMinutes <= 1439
         && data.feastAlertsEnabled is bool
+        && data.feastAlertMinutes is int
+        && data.feastAlertMinutes >= 0
+        && data.feastAlertMinutes <= 1439
         && data.appIcon in ['black', 'white', 'blue']
         && notFutureTimestamp(data.updatedAt);
     }

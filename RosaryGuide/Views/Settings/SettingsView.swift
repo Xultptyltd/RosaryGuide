@@ -1003,6 +1003,17 @@ private struct SettingsNotificationsScreen: View {
                     icon: "calendar",
                     isOn: permissionGatedBinding(\.feastAlertsEnabled)
                 )
+
+                if settings.feastAlertsEnabled {
+                    SettingsTimeRow(
+                        title: "Alert time",
+                        icon: "clock",
+                        minutes: Binding(
+                            get: { settings.feastAlertMinutes },
+                            set: { settings.feastAlertMinutes = $0 }
+                        )
+                    )
+                }
             }
 
             if status == .notDetermined && !settings.notificationPlan.isEmpty {
@@ -1027,7 +1038,7 @@ private struct SettingsNotificationsScreen: View {
                 }
                 SettingsFootnote("Notifications are turned off for Rosary Guide in iOS Settings, so reminders can't be shown.")
             } else {
-                SettingsFootnote("The daily reminder names that day's mysteries. Feast day alerts arrive at 8:00 am on feast days in the Rosary Guide calendar.")
+                SettingsFootnote("The daily reminder names that day's mysteries. Feast day alerts arrive at your chosen time on feast days in the Rosary Guide calendar.")
             }
         }
         .task { status = await NotificationService.authorizationStatus() }
