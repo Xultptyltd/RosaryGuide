@@ -535,12 +535,23 @@ private struct SettingsMenuRow<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        Menu {
-            content()
-        } label: {
-            SettingsRowChrome(title: title, icon: icon, value: value, accessory: .chevron)
-        }
-        .buttonStyle(.plain)
+        // The visible row is drawn outside the Menu. The Menu's own label is an
+        // invisible full-row tap target on top, so when iOS lifts/hides the menu
+        // source while the popover is open, the icon and label stay on screen.
+        SettingsRowChrome(title: title, icon: icon, value: value, accessory: .chevron)
+            .accessibilityHidden(true)
+            .overlay {
+                Menu {
+                    content()
+                } label: {
+                    Color.clear
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(title)
+                .accessibilityValue(value)
+            }
     }
 }
 
