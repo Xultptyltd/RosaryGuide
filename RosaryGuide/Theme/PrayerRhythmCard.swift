@@ -89,107 +89,265 @@ struct PrayerRhythm: Equatable {
 }
 
 /// "Your prayer rhythm" card: current streak on the left, this month's prayed days
-/// as a dot grid on the right (prayed = accent, missed = faint, future = fainter).
+/// as a dot grid on the right (prayed = glowing accent, missed = grey, future = darker grey).
+/// Proportions follow the design mockup (436 x 172 at ~0.85pt per px).
 struct PrayerRhythmCard: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var rhythm: PrayerRhythm
 
-    private let dotSize: CGFloat = 8
-    private let dotSpacing: CGFloat = 7
+    private enum Metric {
+        static let radius: CGFloat = AppTheme.containerRadius
+        static let horizontalPadding: CGFloat = 20
+        static let topPadding: CGFloat = 16
+        static let bottomPadding: CGFloat = 16
+        static let iconSize = CGSize(width: 24, height: 26)
+        static let iconToText: CGFloat = 14
+        static let columnGap: CGFloat = 8
+        static let dotSize: CGFloat = 8
+        static let dotColumnSpacing: CGFloat = 8
+        static let dotRowSpacing: CGFloat = 9
+        static let headerGlyph = CGSize(width: 16, height: 18)
+    }
+
+    private var isDark: Bool { colorScheme == .dark }
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: AppTheme.Space.lg) {
-                summary
-                Spacer(minLength: 0)
-                monthGrid
-            }
-            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-                summary
-                monthGrid
+        Group {
+            if dynamicTypeSize < .xxLarge {
+                sideBySide
+            } else {
+                stacked
             }
         }
-        .padding(AppTheme.Space.lg)
+        .padding(.horizontal, Metric.horizontalPadding)
+        .padding(.top, Metric.topPadding)
+        .padding(.bottom, Metric.bottomPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface)
+        .background { cardSurface }
+        .clipShape(RoundedRectangle(cornerRadius: Metric.radius, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(rhythm.accessibilityLabel)
     }
 
-    private var summary: some View {
+    /// Mockup layout: icon top-left with the text block bottom-aligned under it;
+    /// month header level with the icon and the dot grid level with the text.
+    private var sideBySide: some View {
+        HStack(alignment: .top, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                icon
+                Spacer(minLength: Metric.iconToText)
+                summaryText
+            }
+            .frame(maxHeight: .infinity, alignment: .leading)
+            .layoutPriority(1)
+
+            Spacer(minLength: Metric.columnGap)
+
+            VStack(alignment: .leading, spacing: 0) {
+                monthHeader
+                    .frame(height: Metric.iconSize.height)
+                Spacer(minLength: Metric.iconToText)
+                dotGrid
+                    .padding(.bottom, 3)
+            }
+            .frame(maxHeight: .infinity)
+            .fixedSize(horizontal: true, vertical: false)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// Larger text: the month sits under the summary so nothing truncates.
+    private var stacked: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Image(systemName: "calendar.badge.checkmark")
-                .guideSymbol(size: 22, weight: .regular)
-                .foregroundStyle(palette.ink)
-                .padding(.bottom, AppTheme.Space.lg)
-
-            Text("Your prayer rhythm")
-                .font(AppTheme.TypeRole.bodySmall)
-                .foregroundStyle(palette.dim)
-
-            Text(rhythm.streakText)
-                .font(AppTheme.TypeRole.title)
-                .foregroundStyle(palette.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .padding(.top, AppTheme.Space.xs)
-
-            Text(rhythm.caption)
-                .font(AppTheme.TypeRole.label(weight: .regular))
-                .foregroundStyle(palette.dim)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, AppTheme.Space.sm)
+            icon
+            summaryText
+                .padding(.top, Metric.iconToText)
+            monthHeader
+                .padding(.top, AppTheme.Space.xl)
+            dotGrid
+                .padding(.top, AppTheme.Space.md)
         }
     }
 
-    private var monthGrid: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            HStack(spacing: 6) {
-                Image(systemName: "calendar")
-                    .guideSymbol(size: 12, weight: .medium)
-                Text(rhythm.monthName)
-                    .font(AppTheme.TypeRole.label)
-                    .lineLimit(1)
-            }
-            .foregroundStyle(palette.dim)
+    // MARK: Surface
 
-            Grid(horizontalSpacing: dotSpacing, verticalSpacing: dotSpacing) {
-                ForEach(rhythm.weeks.indices, id: \.self) { row in
-                    GridRow {
-                        ForEach(0..<7, id: \.self) { column in
-                            dot(rhythm.weeks[row][column])
-                        }
+    /// Surface token with a faint top sheen and a hairline edge that fades toward the bottom.
+    private var cardSurface: some View {
+        let shape = RoundedRectangle(cornerRadius: Metric.radius, style: .continuous)
+        return shape
+            .fill(palette.surface)
+            .overlay {
+                shape.fill(LinearGradient(
+                    colors: isDark
+                        ? [Color.white.opacity(0.045), Color.white.opacity(0.0)]
+                        : [Color.white.opacity(0.65), Color.white.opacity(0.0)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ))
+            }
+            .overlay {
+                shape.strokeBorder(
+                    LinearGradient(
+                        colors: isDark
+                            ? [Color.white.opacity(0.08), Color.white.opacity(0.035)]
+                            : [Color.black.opacity(0.07), Color.black.opacity(0.04)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: 1
+                )
+            }
+    }
+
+    // MARK: Left column
+
+    private var icon: some View {
+        CalendarCheckGlyph()
+            .stroke(palette.ink.opacity(isDark ? 0.88 : 0.82),
+                    style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+            .frame(width: Metric.iconSize.width, height: Metric.iconSize.height)
+    }
+
+    private var summaryText: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Your prayer rhythm")
+                .font(AppTheme.sans(16, relativeTo: .callout))
+                .foregroundStyle(palette.ink.opacity(isDark ? 0.9 : 0.85))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Text(rhythm.streakText)
+                .font(AppTheme.sans(32, relativeTo: .title))
+                .foregroundStyle(palette.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.top, 2)
+
+            // One line like the mockup; step down a point before wrapping.
+            ViewThatFits(in: .horizontal) {
+                caption(size: 14).lineLimit(1)
+                caption(size: 13).lineLimit(1)
+                caption(size: 13).fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    private func caption(size: CGFloat) -> some View {
+        Text(rhythm.caption)
+            .font(AppTheme.sans(size, relativeTo: .subheadline))
+            .foregroundStyle(palette.ink.opacity(isDark ? 0.72 : 0.62))
+    }
+
+    // MARK: Right column
+
+    private var monthHeader: some View {
+        HStack(spacing: 12) {
+            CalendarFilledGlyph()
+                .foregroundStyle(palette.ink.opacity(isDark ? 0.86 : 0.78))
+                .frame(width: Metric.headerGlyph.width, height: Metric.headerGlyph.height)
+            Text(rhythm.monthName)
+                .font(AppTheme.sans(15, relativeTo: .subheadline))
+                .foregroundStyle(palette.ink.opacity(isDark ? 0.82 : 0.75))
+                .lineLimit(1)
+        }
+    }
+
+    private var dotGrid: some View {
+        Grid(horizontalSpacing: Metric.dotColumnSpacing, verticalSpacing: Metric.dotRowSpacing) {
+            ForEach(rhythm.weeks.indices, id: \.self) { row in
+                GridRow {
+                    ForEach(0..<7, id: \.self) { column in
+                        dot(rhythm.weeks[row][column])
                     }
                 }
             }
         }
-        .fixedSize()
     }
 
     @ViewBuilder
     private func dot(_ day: PrayerRhythm.Day?) -> some View {
+        let size = Metric.dotSize
         if let day {
-            Circle()
-                .fill(fill(for: day))
-                .frame(width: dotSize, height: dotSize)
-                .overlay {
-                    if day.isToday {
-                        // Today: a quiet ring just outside the dot.
-                        Circle()
-                            .strokeBorder(day.prayed ? palette.accent.opacity(0.55) : palette.ink.opacity(0.45), lineWidth: 1)
-                            .frame(width: dotSize + 5, height: dotSize + 5)
-                    }
+            ZStack {
+                if day.prayed {
+                    // Soft halo, then a bright core fading out to the accent rim.
+                    Circle()
+                        .fill(palette.accent.opacity(isDark ? 0.45 : 0.30))
+                        .frame(width: size + 6, height: size + 6)
+                        .blur(radius: 2.5)
+                    Circle()
+                        .fill(RadialGradient(
+                            colors: [Color.white.opacity(0.95), palette.accent.opacity(0.9), palette.accent],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: size / 2
+                        ))
+                        .frame(width: size, height: size)
+                } else {
+                    Circle()
+                        .fill(day.isFuture
+                              ? palette.ink.opacity(isDark ? 0.13 : 0.08)
+                              : palette.ink.opacity(isDark ? 0.30 : 0.20))
+                        .frame(width: size, height: size)
                 }
+                if day.isToday {
+                    Circle()
+                        .strokeBorder(day.prayed ? palette.accent.opacity(0.7) : palette.ink.opacity(0.5), lineWidth: 1)
+                        .frame(width: size + 6, height: size + 6)
+                }
+            }
+            .frame(width: size, height: size)
         } else {
-            Color.clear.frame(width: dotSize, height: dotSize)
+            Color.clear.frame(width: size, height: size)
         }
     }
+}
 
-    private func fill(for day: PrayerRhythm.Day) -> Color {
-        if day.prayed { return palette.accent }
-        if day.isFuture { return palette.ink.opacity(colorScheme == .dark ? 0.10 : 0.08) }
-        return palette.ink.opacity(colorScheme == .dark ? 0.24 : 0.18)
+/// Outline calendar: rounded body, header rule, two ring tabs, centred check.
+/// Drawn on a 24 x 26 design box and scaled to the frame.
+private struct CalendarCheckGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        let sx = rect.width / 24, sy = rect.height / 26
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * sx, y: rect.minY + y * sy) }
+        var path = Path()
+        path.addRoundedRect(
+            in: CGRect(origin: p(0.8, 3.2), size: CGSize(width: 22.4 * sx, height: 22 * sy)),
+            cornerSize: CGSize(width: 5 * sx, height: 5 * sy),
+            style: .continuous
+        )
+        path.move(to: p(0.8, 9.2)); path.addLine(to: p(23.2, 9.2))
+        path.move(to: p(7, 0.8)); path.addLine(to: p(7, 5.4))
+        path.move(to: p(17, 0.8)); path.addLine(to: p(17, 5.4))
+        path.move(to: p(7.6, 17.2)); path.addLine(to: p(10.6, 20.2)); path.addLine(to: p(16.4, 14.2))
+        return path
+    }
+}
+
+/// Filled calendar with a header rule and a grid of day marks knocked out.
+private struct CalendarFilledGlyph: View {
+    var body: some View {
+        Canvas { context, size in
+            let sx = size.width / 16, sy = size.height / 18
+            func r(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) -> CGRect {
+                CGRect(x: x * sx, y: y * sy, width: w * sx, height: h * sy)
+            }
+            let ink = GraphicsContext.Shading.foreground
+            context.fill(Path(roundedRect: r(0, 2, 16, 16), cornerRadius: 3 * sx, style: .continuous), with: ink)
+            context.fill(Path(roundedRect: r(3.4, 0, 1.8, 4), cornerRadius: 0.9 * sx), with: ink)
+            context.fill(Path(roundedRect: r(10.8, 0, 1.8, 4), cornerRadius: 0.9 * sx), with: ink)
+            context.blendMode = .destinationOut
+            context.fill(Path(r(0, 5.6, 16, 1.2)), with: .color(.black))
+            for row in 0..<3 {
+                for column in 0..<4 {
+                    let x = 2.6 + CGFloat(column) * 3.0
+                    let y = 8.6 + CGFloat(row) * 2.9
+                    context.fill(Path(r(x, y, 1.9, 1.7)), with: .color(.black))
+                }
+            }
+        }
     }
 }
