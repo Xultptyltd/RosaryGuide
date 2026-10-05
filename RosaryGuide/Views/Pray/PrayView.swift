@@ -83,6 +83,8 @@ struct PrayView: View {
     @State private var didRecordCarry = false
     /// Locked when entering finis so Offered for survives session.complete() / store churn.
     @State private var completionIntentionTitle: String?
+    /// Icon and papal flag locked with the title. Nil for a title with no stored intention.
+    @State private var completionIntentionFace: CompletionIntentionFace?
     /// Chosen before the finis screen exists so its first update does not write UserDefaults.
     @State private var completionQuote: CompletionQuote?
     /// Stops the bead TimelineView before the finis screen is inserted.
@@ -908,7 +910,8 @@ struct PrayView: View {
         CompletionView(
             mysterySet: launch.mysterySet,
             intentionTitle: completionIntentionTitle,
-            intentionIsPapal: completionIntentionIsPapal,
+            intentionIsPapal: completionIntentionFace?.isPapal ?? completionIntentionIsPapal,
+            intentionFace: completionIntentionFace,
             quote: completionQuote ?? QuoteCatalog.quote(),
             onDone: { finishRosary() },
             onMichael: {
@@ -942,9 +945,23 @@ struct PrayView: View {
         return nil
     }
 
+    /// Snapshot the category icon at the same moment as the title.
+    private func resolvedIntentionFaceForCompletion() -> CompletionIntentionFace? {
+        let id = chosenIntentionId ?? sessionStore.session?.intentionId ?? launch.intentionId
+        guard let id, let found = offer.intention(id: id) else { return nil }
+        return CompletionIntentionFace(
+            accent: found.accent,
+            emoji: found.displayEmoji,
+            isPapal: found.isPapal
+        )
+    }
+
     private func lockCompletionIntentionIfNeeded() {
         if completionIntentionTitle == nil {
             completionIntentionTitle = resolvedIntentionTitleForCompletion()
+        }
+        if completionIntentionFace == nil {
+            completionIntentionFace = resolvedIntentionFaceForCompletion()
         }
         // Keep live fields aligned so carry / resume paths stay consistent.
         if let locked = completionIntentionTitle, chosenIntentionTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -1022,6 +1039,7 @@ struct PrayView: View {
             chosenIntentionNote = resolvedId.flatMap { offer.intention(id: $0)?.note } ?? ""
             didRecordCarry = false
             completionIntentionTitle = nil
+            completionIntentionFace = nil
             completionQuote = nil
             beadTimelinePaused = false
             finishBlack = 0
@@ -1042,6 +1060,7 @@ struct PrayView: View {
             chosenIntentionNote = session.intentionId.flatMap { offer.intention(id: $0)?.note } ?? ""
             didRecordCarry = false
             completionIntentionTitle = nil
+            completionIntentionFace = nil
             completionQuote = nil
             beadTimelinePaused = false
             finishBlack = 0
@@ -1076,6 +1095,7 @@ struct PrayView: View {
         // Beads keep running until the fade below actually starts.
         DispatchQueue.main.async {
             let title = resolvedIntentionTitleForCompletion()
+            let face = resolvedIntentionFaceForCompletion()
             let quote = QuoteCatalog.selectCompletionQuote()
             RosaryTickLibrary.preload()
             let fade = reduceMotion ? 0.01 : 0.62
@@ -1088,6 +1108,9 @@ struct PrayView: View {
                 withTransaction(transaction) {
                     if completionIntentionTitle == nil {
                         completionIntentionTitle = title
+                    }
+                    if completionIntentionFace == nil {
+                        completionIntentionFace = face
                     }
                     completionQuote = quote
                     showingCompletion = true

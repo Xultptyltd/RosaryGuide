@@ -1,5 +1,12 @@
 import SwiftUI
 
+/// Category colour, glyph, and papal portrait locked with the finish intention.
+struct CompletionIntentionFace: Equatable {
+    var accent: IntentionAccent
+    var emoji: String
+    var isPapal: Bool
+}
+
 /// Ceremonial end-of-rosary screen: art → symbol → label → mystery title →
 /// optional intention → quote → calm space → Done → optional St Michael prayer.
 /// No stats, X, or confetti — stillness as the emotional endpoint.
@@ -7,6 +14,8 @@ struct CompletionView: View {
     var mysterySet: MysterySetKind
     var intentionTitle: String?
     var intentionIsPapal: Bool = false
+    /// Nil when the rosary was offered with a title but no stored intention.
+    var intentionFace: CompletionIntentionFace? = nil
     var quote: CompletionQuote
     var onDone: () -> Void
     var onMichael: (() -> Void)?
@@ -52,12 +61,16 @@ struct CompletionView: View {
         return !intentionTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    /// Holy Father stays readable. Personal intentions use the fuller
+    /// finish-screen phrase, not the short "Hidden" used in the prayer row.
+    private var intentionIsHidden: Bool {
+        hideIntentionText && !intentionIsPapal
+    }
+
     private var displayIntentionTitle: String {
-        guard let intentionTitle else { return IntentionPrivacy.maskedText }
-        return IntentionPrivacy.displayText(
-            intentionTitle,
-            hidden: hideIntentionText && !intentionIsPapal
-        )
+        guard let intentionTitle else { return "Hidden intention" }
+        if intentionIsHidden { return "Hidden intention" }
+        return intentionTitle
     }
 
     private var prefersCompactType: Bool {
@@ -215,24 +228,9 @@ struct CompletionView: View {
                 .padding(.top, 6)
 
             if hasIntention {
-                VStack(spacing: 4) {
-                    Text("OFFERED FOR")
-                        .font(AppTheme.TypeRole.caption(weight: .medium))
-                        .tracking(1.4)
-                        .foregroundStyle(palette.completionMeta)
-                        .textCase(.uppercase)
-
-                    Text(displayIntentionTitle)
-                        .font(AppTheme.TypeRole.bodySmall)
-                        .foregroundStyle(palette.completionMetaValue)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.8)
-                }
-                .padding(.top, 12)
-                .layoutPriority(1)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Offered for \(displayIntentionTitle)")
+                offeredForSurface
+                    .padding(.top, 12)
+                    .layoutPriority(1)
             }
 
             Color.clear.frame(height: 40)
@@ -257,6 +255,45 @@ struct CompletionView: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(quote.text), \(quote.attribution)")
         }
+    }
+
+    /// Same row language as the Sign of the Cross "For" line — label, category
+    /// icon, title — set on the shared surface so it belongs to the finish page.
+    private var offeredForSurface: some View {
+        HStack(spacing: 0) {
+            Spacer(minLength: 0)
+            HStack(spacing: AppTheme.Space.sm) {
+                Text("Offered for")
+                    .font(AppTheme.TypeRole.themeSummary)
+                    .foregroundStyle(palette.completionLabel)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+
+                if let intentionFace {
+                    IntentionIconView(
+                        accent: intentionFace.accent,
+                        emoji: intentionFace.emoji,
+                        size: 27,
+                        usesPopePortrait: intentionFace.isPapal
+                    )
+                    .accessibilityHidden(true)
+                }
+
+                Text(displayIntentionTitle)
+                    .font(AppTheme.TypeRole.bodySmall(weight: .medium))
+                    .foregroundStyle(intentionIsHidden ? palette.completionMeta : palette.completionMetaValue)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                    .layoutPriority(-1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .guideCard(radius: AppTheme.nestedRadius, fill: palette.surface)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Offered for \(displayIntentionTitle)")
     }
 
     private func actions() -> some View {
