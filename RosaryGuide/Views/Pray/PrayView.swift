@@ -539,7 +539,7 @@ struct PrayView: View {
     }
 
     private var plateCanScrollFurther: Bool {
-        plateContentHeight > plateViewportHeight + 6 && !plateActionLockedToNext
+        plateContentHeight > plateViewportHeight + ScrollMorph.minimumOffset && !plateActionLockedToNext
     }
 
     private func plateActionChrome(_ step: RosaryStep, scrollToBottom: @escaping () -> Void) -> some View {
@@ -594,7 +594,7 @@ struct PrayView: View {
                         }
                         if !pinTop { Spacer(minLength: 0) }
                         if prayerUsesScrollTemplate {
-                            Color.clear.frame(height: 132)
+                            Color.clear.frame(height: prayerScrollTail(step))
                             Color.clear.frame(height: 1).id(PrayerScrollAnchor.bottom)
                         }
                     }
@@ -662,6 +662,19 @@ struct PrayView: View {
             // Rosary shelf lives in `prayLayer`, above the in-flow footer (web phone parity).
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Room under a long prayer: 132pt so the last line clears the floating circle and
+    /// language toggle, plus whatever it takes to leave a real scroll to the bottom.
+    /// A prayer that only just overflows (the Closing Prayer at common text sizes) otherwise
+    /// had a few points of scroll or none, below the 8pt `ScrollMorph` needs, so scrolling by
+    /// hand could never reach the expand line; only a tap expanded it.
+    private func prayerScrollTail(_ step: RosaryStep) -> CGFloat {
+        let base: CGFloat = 132
+        guard prayerViewportHeight > 1, prayerTextHeight > 1 else { return base }
+        let beads = shouldShowBeads(step) && step.bead != nil ? prayerBeadShelfHeight : 0
+        let range = prayerTextHeight + beads + base + 1 - prayerViewportHeight
+        return base + max(0, ScrollMorph.minimumRange - range)
     }
 
     /// Rosary bead map under the prayer text (same spacing in both templates).
@@ -1107,7 +1120,9 @@ struct PrayView: View {
     }
 
     private var michaelCanScrollFurther: Bool {
-        michaelContentHeight > michaelViewportHeight + 6 && !michaelActionLocked
+        // Same threshold as `ScrollMorph.resolve`, so a circle is only shown when scrolling
+        // by hand can expand it.
+        michaelContentHeight > michaelViewportHeight + ScrollMorph.minimumOffset && !michaelActionLocked
     }
 
     /// Same chrome as a rosary prayer page: text-size, close, no stage track.
@@ -1741,6 +1756,12 @@ private enum PrayerScrollAnchor {
 /// Expand near the bottom; collapse once the reader is clearly back up.
 /// Both gaps scale with the scroll range so short overflows still collapse.
 enum ScrollMorph {
+    /// Every scrolling prayer leaves at least this much to scroll, so reaching the bottom
+    /// by hand always crosses the expand line.
+    static let minimumRange: CGFloat = 56
+    /// Below this there is no scroll to speak of; `resolve` leaves the state alone.
+    static let minimumOffset: CGFloat = 8
+
     static func expandGap(_ maxOffset: CGFloat) -> CGFloat {
         min(36, maxOffset * 0.2)
     }
@@ -1753,7 +1774,7 @@ enum ScrollMorph {
     /// New (locked, armed) after a scroll position update.
     /// `armed` is a tap's own scroll on its way down. It clears on arrival.
     static func resolve(locked: Bool, armed: Bool, y: CGFloat, maxOffset: CGFloat) -> (locked: Bool, armed: Bool) {
-        guard maxOffset > 8 else { return (locked, false) }
+        guard maxOffset > minimumOffset else { return (locked, false) }
         if y >= maxOffset - expandGap(maxOffset) {
             return (true, false)
         }
