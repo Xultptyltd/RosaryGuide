@@ -18,6 +18,8 @@ struct OfferView: View {
     @State private var showingPremium = false
     /// Banking-style privacy: when true, mask personal intention titles on the list surface.
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
+    /// Space an IntentionListRow leaves under its icon (its vertical padding).
+    private static let intentionRowBottomInset: CGFloat = 10
     private var todaySet: MysterySetKind {
         MysteryCalendar.assignment(on: Date()).set
     }
@@ -313,12 +315,13 @@ struct OfferView: View {
                     // Add button to the secondary rows (unchanged).
                     .padding(.top, 12)
                 }
+                // "Your intentions" heading to the first card.
+                .padding(.top, AppTheme.sectionTitleGap)
 
                 // No entitlement flag exists yet, so the upsell always shows.
                 PremiumUpsellCard { showingPremium = true }
-                    .padding(.top, AppTheme.sectionGap)
-                // "Your intentions" heading to the first card.
-                .padding(.top, AppTheme.sectionTitleGap)
+                    // Visible sectionGap: intention rows carry their own bottom inset.
+                    .padding(.top, AppTheme.sectionGap - (secondaryIntentions.isEmpty ? 0 : Self.intentionRowBottomInset))
             }
             .padding(.horizontal, AppTheme.gutter)
             // Same top breathing room as FeastsView before its title/control block.
