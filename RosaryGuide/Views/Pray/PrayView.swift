@@ -1042,6 +1042,9 @@ struct PrayView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 Spacer(minLength: 0)
 
+                                // Room so the last lines can clear the floating action.
+                                Color.clear
+                                    .frame(height: 132)
                                 Color.clear
                                     .frame(height: 1)
                                     .id(MichaelScrollAnchor.bottom)
@@ -1098,21 +1101,21 @@ struct PrayView: View {
                     .onPreferenceChange(MichaelViewportHeightKey.self) { height in
                         if height > 1 { michaelViewportHeight = height }
                     }
-
-                    VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
-                        michaelActionChrome {
-                            HapticService.play(.light, enabled: settings.hapticsEnabled)
-                            michaelActionLocked = true
-                            withAnimation(reduceMotion ? nil : MotionTokens.reveal) {
-                                proxy.scrollTo(MichaelScrollAnchor.bottom, anchor: .bottom)
+                    .overlay(alignment: .bottom) {
+                        VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
+                            michaelActionChrome {
+                                HapticService.play(.light, enabled: settings.hapticsEnabled)
+                                michaelActionLocked = true
+                                withAnimation(reduceMotion ? nil : MotionTokens.reveal) {
+                                    proxy.scrollTo(MichaelScrollAnchor.bottom, anchor: .bottom)
+                                }
                             }
+                            languageChips
                         }
-                        languageChips
+                        .padding(.horizontal, AppTheme.gutter)
+                        .padding(.bottom, AppTheme.Space.lg)
+                        .padding(.top, AppTheme.Space.md)
                     }
-                    .padding(.horizontal, AppTheme.gutter)
-                    .padding(.bottom, AppTheme.Space.lg)
-                    .padding(.top, AppTheme.Space.md)
-                    .background(palette.prayBg)
                 }
             }
         }
