@@ -2020,8 +2020,9 @@ struct IntentionEditorSheet: View {
             accent = .mintGreen
             emoji = "🙏"
             kind = .personal
-            // First intention → ON so it becomes Current; otherwise OFF.
-            makeCurrent = offer.sortedIntentions.isEmpty
+            // No featured (pinned) intention yet → ON so the new one becomes featured;
+            // otherwise OFF so an existing featured intention stays put.
+            makeCurrent = !offer.sortedIntentions.contains(where: \.isPinned)
             isPapalIntention = false
             suggestOn = Set(initialMystery.map { [$0] } ?? [])
         case .edit(let item):
