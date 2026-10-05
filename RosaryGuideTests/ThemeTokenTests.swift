@@ -113,3 +113,38 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(UIColor(MysterySetKind.glorious.letterOn), UIColor(AppTheme.intentionPeachOn))
     }
 }
+
+/// Circle-to-button control on scrolling prayers.
+final class ScrollMorphTests: XCTestCase {
+    func testShortOverflowCollapsesWhenScrolledBackUp() {
+        // A 60pt scroll range could never collapse with a fixed 112pt gap.
+        let atBottom = ScrollMorph.resolve(locked: false, armed: false, y: 60, maxOffset: 60)
+        XCTAssertTrue(atBottom.locked)
+        let backUp = ScrollMorph.resolve(locked: true, armed: false, y: 0, maxOffset: 60)
+        XCTAssertFalse(backUp.locked)
+    }
+
+    func testTapScrollIsNotCancelledOnTheWayDown() {
+        let midway = ScrollMorph.resolve(locked: true, armed: true, y: 100, maxOffset: 600)
+        XCTAssertTrue(midway.locked)
+        XCTAssertTrue(midway.armed)
+        let arrived = ScrollMorph.resolve(locked: true, armed: true, y: 600, maxOffset: 600)
+        XCTAssertTrue(arrived.locked)
+        XCTAssertFalse(arrived.armed)
+    }
+
+    func testFullCycleRepeats() {
+        var state = (locked: false, armed: false)
+        for _ in 0..<3 {
+            state = ScrollMorph.resolve(locked: state.locked, armed: state.armed, y: 400, maxOffset: 400)
+            XCTAssertTrue(state.locked)
+            state = ScrollMorph.resolve(locked: state.locked, armed: state.armed, y: 50, maxOffset: 400)
+            XCTAssertFalse(state.locked)
+        }
+    }
+
+    func testTopOfLongPrayerStaysACircle() {
+        let top = ScrollMorph.resolve(locked: false, armed: false, y: 0, maxOffset: 900)
+        XCTAssertFalse(top.locked)
+    }
+}

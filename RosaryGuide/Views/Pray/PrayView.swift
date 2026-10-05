@@ -70,6 +70,8 @@ struct PrayView: View {
     @State private var prayerTextHeight: CGFloat = 0
     @State private var prayerViewportHeight: CGFloat = 0
     @State private var prayerContentHeight: CGFloat = 0
+    /// Last measured in-flow footer height (Next + language chips).
+    @State private var prayerFooterHeight: CGFloat = 128
     @State private var prayerUsesScrollTemplate = false
     @State private var prayerActionLocked = false
     @State private var prayerArrowArmed = false
@@ -254,7 +256,9 @@ struct PrayView: View {
             plateScrollY = 0
             plateHintDismissed = false
             plateNearBottom = false
-            resetPrayerScrollTemplate()
+            resetPrayerScrollState()
+            plateActionLockedToNext = false
+            plateArrowArmed = false
             // Do not clear content/viewport heights here — zeroing races the next
             // geometry callback and can leave the scroll cue stuck hidden.
         }
@@ -352,15 +356,22 @@ struct PrayView: View {
                     let contentH = newValue.contentHeight > 1 ? newValue.contentHeight : plateContentHeight
                     let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : plateViewportHeight
                     let maxOffset = max(0, contentH - viewH)
-                    guard maxOffset > 8 else { return }
-                    if y >= maxOffset - 36 {
-                        if !plateActionLockedToNext {
-                            plateActionLockedToNext = true
-                        }
-                    } else if plateActionLockedToNext, !plateArrowArmed, y < maxOffset - 112 {
-                        plateActionLockedToNext = false
+                    let next = ScrollMorph.resolve(
+                        locked: plateActionLockedToNext,
+                        armed: plateArrowArmed,
+                        y: y,
+                        maxOffset: maxOffset
+                    )
+                    if next.locked != plateActionLockedToNext { plateActionLockedToNext = next.locked }
+                    if next.armed != plateArrowArmed { plateArrowArmed = next.armed }
+                    plateNearBottom = maxOffset > 8 && y >= maxOffset - ScrollMorph.expandGap(maxOffset)
+                }
+                .onScrollPhaseChange { _, phase in
+                    // A finger on the text takes over from any tap scroll.
+                    if phase == .interacting {
+                        plateArrowArmed = false
+                        plateLastDrag = Date()
                     }
-                    plateNearBottom = y >= maxOffset - 36
                 }
                 .task(id: mystery.id) {
                     plateScrollY = 0
@@ -393,6 +404,7 @@ struct PrayView: View {
                         } completion: {
                             plateArrowArmed = false
                         }
+                        disarmLater { plateArrowArmed = false }
                     }
                 }
 
@@ -602,24 +614,40 @@ struct PrayView: View {
                     let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : prayerViewportHeight
                     updatePrayerScrollTemplate(viewport: viewH)
                     guard prayerUsesScrollTemplate else { return }
-                    let contentH = newValue.contentHeight
-                    let maxOffset = max(0, contentH - viewH)
-                    guard maxOffset > 8 else { return }
-                    if y >= maxOffset - 36 {
-                        if !prayerActionLocked {
-                            prayerActionLocked = true
-                        }
-                    } else if prayerActionLocked, !prayerArrowArmed, y < maxOffset - 112 {
-                        prayerActionLocked = false
+                    let maxOffset = max(0, newValue.contentHeight - viewH)
+                    let next = ScrollMorph.resolve(
+                        locked: prayerActionLocked,
+                        armed: prayerArrowArmed,
+                        y: y,
+                        maxOffset: maxOffset
+                    )
+                    if next.locked != prayerActionLocked { prayerActionLocked = next.locked }
+                    if next.armed != prayerArrowArmed { prayerArrowArmed = next.armed }
+                }
+                .onScrollPhaseChange { _, phase in
+                    if phase == .interacting {
+                        prayerArrowArmed = false
+                        prayerLastDrag = Date()
                     }
                 }
-                .onChange(of: settings.language) { resetPrayerScrollTemplate() }
-                .onChange(of: settings.textSize) { resetPrayerScrollTemplate() }
+                // Fresh scroll view per step: starts at the top, measures again.
+                .id(step.id)
+                .onChange(of: settings.language) { resetPrayerScrollState() }
+                .onChange(of: settings.textSize) { resetPrayerScrollState() }
             }
             .onPreferenceChange(PrayerTextHeightKey.self) { height in
                 if height > 1 {
                     prayerTextHeight = height
                     updatePrayerScrollTemplate(viewport: prayerViewportHeight)
+                }
+            }
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.height
+            } action: { height in
+                // Column height changes when the footer hides or shows.
+                if height > 1 {
+                    prayerViewportHeight = height
+                    updatePrayerScrollTemplate(viewport: height)
                 }
             }
             // Rosary shelf lives in `prayLayer`, above the in-flow footer (web phone parity).
@@ -917,6 +945,11 @@ struct PrayView: View {
             EmptyView()
         } else {
             footerBar(step)
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    proxy.size.height
+                } action: { height in
+                    if height > 1 { prayerFooterHeight = height }
+                }
         }
     }
 
@@ -1162,18 +1195,24 @@ struct PrayView: View {
                         let contentH = newValue.contentHeight > 1 ? newValue.contentHeight : michaelContentHeight
                         let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : michaelViewportHeight
                         let maxOffset = max(0, contentH - viewH)
-                        guard maxOffset > 8 else { return }
-                        if y >= maxOffset - 36 {
-                            // Dragging to the bottom expands the circle. A tap
-                            // locks at the start of its own scroll, and stays
-                            // armed so these updates cannot cancel that motion.
-                            if !michaelActionLocked {
-                                michaelActionLocked = true
-                            }
-                        } else if michaelActionLocked, !michaelArrowArmed, y < maxOffset - 112 {
-                            michaelActionLocked = false
-                        }
+                        // Dragging to the bottom expands the circle. A tap locks
+                        // at the start of its own scroll and stays armed until it
+                        // arrives, so these updates cannot cancel that motion.
+                        let next = ScrollMorph.resolve(
+                            locked: michaelActionLocked,
+                            armed: michaelArrowArmed,
+                            y: y,
+                            maxOffset: maxOffset
+                        )
+                        if next.locked != michaelActionLocked { michaelActionLocked = next.locked }
+                        if next.armed != michaelArrowArmed { michaelArrowArmed = next.armed }
                     }
+                        .onScrollPhaseChange { _, phase in
+                            if phase == .interacting {
+                                michaelArrowArmed = false
+                                michaelLastDrag = Date()
+                            }
+                        }
                         .onChange(of: settings.language) {
                             michaelActionLocked = false
                             michaelArrowArmed = false
@@ -1214,6 +1253,7 @@ struct PrayView: View {
                                 } completion: {
                                     michaelArrowArmed = false
                                 }
+                                disarmLater { michaelArrowArmed = false }
                             }
                             languageChips
                         }
@@ -1224,6 +1264,14 @@ struct PrayView: View {
                 }
         }
         .background(palette.prayBg.ignoresSafeArea())
+        .onAppear {
+            // Opening Saint Michael again starts as a circle at the top.
+            michaelActionLocked = false
+            michaelArrowArmed = false
+            michaelScrollY = 0
+            michaelLastDrag = .distantPast
+            michaelScrollPosition = ScrollPosition(edge: .top)
+        }
     }
 
     /// Mystery-plate circle, in the prayer footer. It becomes Done at the end of the scroll.
@@ -1289,30 +1337,39 @@ struct PrayView: View {
     }
 
     /// Long prayers only. Short prayers keep the in-flow footer.
-    /// The footer is about 148pt; once it is hidden the viewport grows by that much.
+    /// Compares the text to the room it would have with the footer showing.
     private func updatePrayerScrollTemplate(viewport: CGFloat) {
         guard prayerTextHeight > 1, viewport > 1 else { return }
-        let footerReserve: CGFloat = 148
+        let roomWithFooter = prayerUsesScrollTemplate ? viewport - prayerFooterHeight : viewport
         if prayerUsesScrollTemplate {
-            if prayerTextHeight + footerReserve <= viewport - 8 {
+            if prayerTextHeight <= roomWithFooter - 8 {
                 prayerUsesScrollTemplate = false
                 prayerActionLocked = false
                 prayerArrowArmed = false
             }
-        } else if prayerTextHeight > viewport + 6 {
+        } else if prayerTextHeight > roomWithFooter + 6 {
             prayerUsesScrollTemplate = true
+            prayerActionLocked = false
+            prayerArrowArmed = false
         }
     }
 
-    private func resetPrayerScrollTemplate() {
-        prayerUsesScrollTemplate = false
+    /// Every new step, language, or text size starts as a circle at the top.
+    /// The measured text height is kept: the next step re-measures it, and a
+    /// zero here left the template off (a full-width button) when the height
+    /// came back unchanged.
+    private func resetPrayerScrollState() {
         prayerActionLocked = false
         prayerArrowArmed = false
-        prayerTextHeight = 0
         prayerContentHeight = 0
         prayerScrollY = 0
         prayerLastDrag = .distantPast
         prayerScrollPosition = ScrollPosition(edge: .top)
+    }
+
+    /// Backstop: a tap's scroll never keeps the control from collapsing.
+    private func disarmLater(_ clear: @escaping () -> Void) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { clear() }
     }
 
     private func scrollPrayerToBottom() {
@@ -1331,6 +1388,7 @@ struct PrayView: View {
         } completion: {
             prayerArrowArmed = false
         }
+        disarmLater { prayerArrowArmed = false }
     }
 
     @ViewBuilder
@@ -1546,6 +1604,36 @@ private struct PrayerTextHeightKey: PreferenceKey {
 
 private enum PrayerScrollAnchor {
     static let bottom = "prayer-scroll-bottom"
+}
+
+/// One rule for every circle-to-button control on a scrolling prayer.
+/// Expand near the bottom; collapse once the reader is clearly back up.
+/// Both gaps scale with the scroll range so short overflows still collapse.
+enum ScrollMorph {
+    static func expandGap(_ maxOffset: CGFloat) -> CGFloat {
+        min(36, maxOffset * 0.2)
+    }
+
+    static func collapseGap(_ maxOffset: CGFloat) -> CGFloat {
+        // Half the range, at most 112pt. Always above the expand line.
+        min(112, maxOffset * 0.5)
+    }
+
+    /// New (locked, armed) after a scroll position update.
+    /// `armed` is a tap's own scroll on its way down. It clears on arrival.
+    static func resolve(locked: Bool, armed: Bool, y: CGFloat, maxOffset: CGFloat) -> (locked: Bool, armed: Bool) {
+        guard maxOffset > 8 else { return (locked, false) }
+        if y >= maxOffset - expandGap(maxOffset) {
+            return (true, false)
+        }
+        if armed {
+            return (locked, armed)
+        }
+        if locked, y < maxOffset - collapseGap(maxOffset) {
+            return (false, false)
+        }
+        return (locked, armed)
+    }
 }
 
 private enum PrayerTitleChrome {
