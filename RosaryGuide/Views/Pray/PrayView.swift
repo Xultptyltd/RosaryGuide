@@ -957,15 +957,14 @@ struct PrayView: View {
         let nextTitle = step.nextLabel == "Continue" ? "Next" : step.nextLabel
         let isDecadeHailMary = step.kind == .hailMary && step.decadeNumber != nil
         let showCompleteDecade = isDecadeHailMary && step.hailMaryNumber != 10
-        // Decade Hail Marys 1–9 stay primary. The three opening Hail Marys
-        // (faith, hope, charity) have no decade and use the secondary pill.
-        let nextIsPrimary = step.kind == .hailMary && step.decadeNumber != nil && step.hailMaryNumber != 10
+        // Every step's Next is the secondary pill, matching the scroll circle.
+        // Beside it on decade Hail Marys 1–9, Complete decade is tertiary.
         return VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
             // Web `.pfoot`: Next | Complete decade side by side on Hail Marys.
             HStack(spacing: AppTheme.Component.prayerFooterButtonGap) {
-                PillButton(title: nextTitle, filled: nextIsPrimary, action: advance)
+                PillButton(title: nextTitle, filled: false, action: advance)
                 if showCompleteDecade {
-                    PillButton(title: "Complete decade", filled: false) {
+                    PillButton(title: "Complete decade", filled: false, tertiary: true) {
                         skipDecadeHailMarys()
                     }
                 }
@@ -1409,7 +1408,7 @@ struct PrayView: View {
                     onAdvance: { advance() }
                 )
                 if !prayerCanScrollFurther, showCompleteDecade {
-                    PillButton(title: "Complete decade", filled: false) {
+                    PillButton(title: "Complete decade", filled: false, tertiary: true) {
                         skipDecadeHailMarys()
                     }
                 }
