@@ -39,7 +39,10 @@ struct SettingsView: View {
 
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                CollapsingTitleSpacer()
+                // The expanded H1's text frame ends about 64pt below the top of the
+                // scroll content (title centre 31pt + half of the 54pt line height).
+                // Size the spacer so the Premium card starts sectionTitleGap below it.
+                CollapsingTitleSpacer(height: 64 + AppTheme.sectionTitleGap - AppTheme.Space.xl)
 
                 UnlockTrialCard {
                     placeholderMessage = "Premium trials will be available when subscriptions are configured."
@@ -130,7 +133,6 @@ struct SettingsView: View {
                     .padding(.bottom, AppTheme.Space.xxl)
             }
             .padding(.horizontal, AppTheme.gutter)
-            .padding(.top, AppTheme.Space.xl)
         }
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
