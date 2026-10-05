@@ -250,6 +250,54 @@ struct Hairline: View {
     }
 }
 
+// MARK: - Row dividers (no hairline under the last row)
+
+extension EnvironmentValues {
+    /// Whether a list row draws its bottom divider. `DividedRows` sets this to
+    /// false for its last row, so lists never end on a hairline.
+    @Entry var showsRowDivider: Bool = true
+}
+
+/// Vertical list of rows that draw their own bottom divider (via
+/// `rowBottomDivider()` or a divider reading `showsRowDivider`). Every row
+/// except the last keeps its divider; conditional rows are handled because the
+/// last row is resolved from the actual subviews.
+struct DividedRows<Content: View>: View {
+    var alignment: HorizontalAlignment = .center
+    var spacing: CGFloat = 0
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: alignment, spacing: spacing) {
+            Group(subviews: content) { subviews in
+                let lastID = subviews.last?.id
+                ForEach(subviews) { subview in
+                    subview.environment(\.showsRowDivider, subview.id != lastID)
+                }
+            }
+        }
+    }
+}
+
+private struct RowBottomDivider: ViewModifier {
+    @Environment(\.showsRowDivider) private var showsRowDivider
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .bottom) {
+            if showsRowDivider {
+                Hairline()
+            }
+        }
+    }
+}
+
+extension View {
+    /// Bottom hairline for a list row; hidden on the last row of a `DividedRows`.
+    func rowBottomDivider() -> some View {
+        modifier(RowBottomDivider())
+    }
+}
+
 struct PillButton: View {
     var title: String
     var filled: Bool = true

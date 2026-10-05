@@ -1346,7 +1346,7 @@ private struct FeastRelatedPrayersView: View {
 
     var body: some View {
         FeastSecondaryPage(title: "Related prayers", feast: feast) {
-            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+            DividedRows(alignment: .leading, spacing: AppTheme.Space.lg) {
                 ForEach(prayers) { prayer in
                     prayerCard(prayer)
                 }
@@ -1415,9 +1415,7 @@ private struct FeastRelatedPrayersView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 2)
-        .overlay(alignment: .bottom) {
-            Hairline()
-        }
+        .rowBottomDivider()
     }
 
     private func prayerText(_ prayer: FeastRelatedPrayer) -> String {
@@ -1443,18 +1441,18 @@ private struct FeastPatronagesView: View {
                     .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
 
-                ForEach(patronages, id: \.self) { patronage in
-                    VStack(alignment: .leading, spacing: 8) {
-                        GuideSectionLabel(text: "Patronage", color: palette.faint)
-                        Text(patronage)
-                            .font(AppTheme.TypeRole.serifTitle)
-                            .foregroundStyle(palette.ink)
-                            .lineSpacing(4)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(.bottom, 20)
-                    .overlay(alignment: .bottom) {
-                        Hairline()
+                DividedRows(alignment: .leading, spacing: 24) {
+                    ForEach(patronages, id: \.self) { patronage in
+                        VStack(alignment: .leading, spacing: 8) {
+                            GuideSectionLabel(text: "Patronage", color: palette.faint)
+                            Text(patronage)
+                                .font(AppTheme.TypeRole.serifTitle)
+                                .foregroundStyle(palette.ink)
+                                .lineSpacing(4)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.bottom, 20)
+                        .rowBottomDivider()
                     }
                 }
             }
@@ -1503,21 +1501,21 @@ private struct FeastScriptureView: View {
                         text: "\(feast.shortTitle) is held within the Church's living memory of Scripture, prayer, and worship."
                     )
                 } else {
-                    ForEach(passages) { passage in
-                        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                            GuideSectionLabel(text: passage.reference, color: palette.faint)
-                            Text(passage.title)
-                                .font(AppTheme.TypeRole.serifTitle)
-                                .foregroundStyle(palette.ink)
-                            Text(passage.excerpt)
-                                .font(AppTheme.TypeRole.serifBody)
-                                .foregroundStyle(palette.dim)
-                                .lineSpacing(5)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .padding(.bottom, 22)
-                        .overlay(alignment: .bottom) {
-                            Hairline()
+                    DividedRows(alignment: .leading, spacing: 24) {
+                        ForEach(passages) { passage in
+                            VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                                GuideSectionLabel(text: passage.reference, color: palette.faint)
+                                Text(passage.title)
+                                    .font(AppTheme.TypeRole.serifTitle)
+                                    .foregroundStyle(palette.ink)
+                                Text(passage.excerpt)
+                                    .font(AppTheme.TypeRole.serifBody)
+                                    .foregroundStyle(palette.dim)
+                                    .lineSpacing(5)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(.bottom, 22)
+                            .rowBottomDivider()
                         }
                     }
                 }

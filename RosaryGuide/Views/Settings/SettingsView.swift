@@ -551,7 +551,7 @@ private struct SettingsSection<Content: View>: View {
                 .accessibilityAddTraits(.isHeader)
                 .padding(.bottom, AppTheme.sectionTitleGap)
 
-            VStack(spacing: 0) {
+            DividedRows {
                 content()
             }
         }
@@ -817,13 +817,17 @@ private struct AppIconChoices: View {
 }
 
 /// Hairline under each row, spanning the full content width inside the page gutter.
+/// Hidden on the last row of a section (`DividedRows` sets `showsRowDivider`).
 private struct SettingsDivider: View {
     @Environment(\.palette) private var palette
+    @Environment(\.showsRowDivider) private var showsRowDivider
 
     var body: some View {
-        Rectangle()
-            .fill(palette.hair.opacity(AppTheme.Component.profileDividerOpacity))
-            .frame(height: AppTheme.Component.hairline)
+        if showsRowDivider {
+            Rectangle()
+                .fill(palette.hair.opacity(AppTheme.Component.profileDividerOpacity))
+                .frame(height: AppTheme.Component.hairline)
+        }
     }
 }
 
@@ -856,7 +860,7 @@ private struct SettingsAccountScreen: View {
 
     var body: some View {
         SettingsDetailScaffold(title: "Account") {
-            VStack(spacing: 0) {
+            DividedRows {
                 if auth.isSignedIn {
                     SettingsValueOnlyRow(title: "Name", icon: "person", value: auth.displayName ?? "Not set")
                     SettingsValueOnlyRow(title: "Signed in with", icon: "person.badge.key", value: auth.provider.rawValue)
@@ -978,7 +982,7 @@ private struct SettingsNotificationsScreen: View {
 
     var body: some View {
         SettingsDetailScaffold(title: "Notifications") {
-            VStack(spacing: 0) {
+            DividedRows {
                 SettingsToggleRow(
                     title: "Daily rosary reminder",
                     icon: "bell",
@@ -1016,7 +1020,7 @@ private struct SettingsNotificationsScreen: View {
 
             if status == .notDetermined && !settings.notificationPlan.isEmpty {
                 // Reminders restored from the account on a device that has not been asked yet.
-                VStack(alignment: .leading, spacing: 0) {
+                DividedRows(alignment: .leading) {
                     SettingsActionRow(title: "Allow notifications", icon: "bell.badge") {
                         Task {
                             _ = await NotificationService.requestPermission()
@@ -1027,7 +1031,7 @@ private struct SettingsNotificationsScreen: View {
                 }
                 SettingsFootnote("Your reminders came from your account. Allow notifications on this iPhone so they can be shown.")
             } else if status == .denied && (permissionWasDenied || !settings.notificationPlan.isEmpty) {
-                VStack(alignment: .leading, spacing: 0) {
+                DividedRows(alignment: .leading) {
                     SettingsActionRow(title: "Turn on in iOS Settings", icon: "gear", accessory: .externalLink) {
                         if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
                             openURL(url)
@@ -1139,7 +1143,7 @@ private struct SettingsTimeRow: View {
 private struct SettingsAcknowledgementsScreen: View {
     var body: some View {
         SettingsDetailScaffold(title: "Acknowledgements") {
-            VStack(spacing: 0) {
+            DividedRows {
                 ForEach(LicenseCatalog.all) { entry in
                     SettingsNavigationRow(title: entry.name, destination: .license(entry.id))
                 }
