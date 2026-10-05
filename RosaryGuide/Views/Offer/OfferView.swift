@@ -4,6 +4,7 @@ import UIKit
 
 struct OfferView: View {
     @Environment(OfferStore.self) private var offer
+    @Environment(SettingsStore.self) private var settings
     @Environment(\.palette) private var palette
     @Binding var prayLaunch: PrayLaunch?
 
@@ -196,7 +197,7 @@ struct OfferView: View {
 
     private var titlePrivacyButton: some View {
         Button {
-            hideIntentionText.toggle()
+            settings.hideIntentionText.toggle()
         } label: {
             Group {
                 if hideIntentionText {

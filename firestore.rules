@@ -74,12 +74,133 @@ service cloud.firestore {
         && request.resource.data.updatedAt is timestamp;
     }
 
+    function notFutureTimestamp(value) {
+      return value is timestamp && value <= request.time + duration.value(1, 'd');
+    }
+
+    function prayerLanguage(value) {
+      return value in ['english', 'latin', 'bilingual'];
+    }
+
+    function validPreferences() {
+      let data = request.resource.data;
+      let fields = [
+        'schemaVersion',
+        'appearance',
+        'prayerLanguage',
+        'rosaryLanguage',
+        'textSize',
+        'includeSaintMichael',
+        'hideIntentionText',
+        'dailyReminderEnabled',
+        'dailyReminderMinutes',
+        'feastAlertsEnabled',
+        'appIcon',
+        'updatedAt'
+      ];
+
+      return data.keys().hasOnly(fields)
+        && data.keys().hasAll(fields)
+        && data.schemaVersion == 1
+        && data.appearance in ['system', 'light', 'dark']
+        && prayerLanguage(data.prayerLanguage)
+        && prayerLanguage(data.rosaryLanguage)
+        && data.textSize in ['small', 'medium', 'large']
+        && data.includeSaintMichael is bool
+        && data.hideIntentionText is bool
+        && data.dailyReminderEnabled is bool
+        && data.dailyReminderMinutes is int
+        && data.dailyReminderMinutes >= 0
+        && data.dailyReminderMinutes <= 1439
+        && data.feastAlertsEnabled is bool
+        && data.appIcon in ['black', 'white', 'blue']
+        && notFutureTimestamp(data.updatedAt);
+    }
+
+    function validDayKeys(days) {
+      return days is list
+        && days.size() <= 400
+        && (days.size() == 0
+          || days.join(',').matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}(,[0-9]{4}-[0-9]{2}-[0-9]{2})*$'));
+    }
+
+    function validSession(session) {
+      let allowed = [
+        'mysterySet',
+        'stepIndex',
+        'startedAt',
+        'updatedAt',
+        'includeSaintMichael',
+        'language',
+        'intentionId',
+        'intentionTitle'
+      ];
+      let required = [
+        'mysterySet',
+        'stepIndex',
+        'startedAt',
+        'updatedAt',
+        'includeSaintMichael',
+        'language'
+      ];
+
+      return session is map
+        && session.keys().hasOnly(allowed)
+        && session.keys().hasAll(required)
+        && session.mysterySet in ['joyful', 'luminous', 'sorrowful', 'glorious']
+        && session.stepIndex is int
+        && session.stepIndex >= 0
+        && session.stepIndex <= 500
+        && notFutureTimestamp(session.startedAt)
+        && notFutureTimestamp(session.updatedAt)
+        && session.includeSaintMichael is bool
+        && prayerLanguage(session.language)
+        && (!('intentionId' in session) || (session.intentionId is string && validIntentionId(session.intentionId)))
+        && (!('intentionTitle' in session) || validString(session.intentionTitle, 0, 160));
+    }
+
+    function validProgress() {
+      let data = request.resource.data;
+      let allowed = [
+        'schemaVersion',
+        'completedDays',
+        'historyResetAt',
+        'session',
+        'sessionChangedAt',
+        'updatedAt'
+      ];
+      let required = [
+        'schemaVersion',
+        'completedDays',
+        'sessionChangedAt',
+        'updatedAt'
+      ];
+
+      return data.keys().hasOnly(allowed)
+        && data.keys().hasAll(required)
+        && data.schemaVersion == 1
+        && validDayKeys(data.completedDays)
+        && (!('historyResetAt' in data) || notFutureTimestamp(data.historyResetAt))
+        && (!('session' in data) || validSession(data.session))
+        && notFutureTimestamp(data.sessionChangedAt)
+        && notFutureTimestamp(data.updatedAt);
+    }
+
     match /users/{uid}/intentions/{intentionId} {
       allow get, list: if signedInAs(uid);
       allow create, update: if signedInAs(uid)
         && validIntentionId(intentionId)
         && validIntention();
       allow delete: if signedInAs(uid);
+    }
+
+    // Synced preferences and prayer progress: exactly two documents per user.
+    match /users/{uid}/meta/{docId} {
+      allow get: if signedInAs(uid) && docId in ['preferences', 'progress'];
+      allow create, update: if signedInAs(uid)
+        && ((docId == 'preferences' && validPreferences())
+          || (docId == 'progress' && validProgress()));
+      allow delete: if signedInAs(uid) && docId in ['preferences', 'progress'];
     }
 
     match /{document=**} {

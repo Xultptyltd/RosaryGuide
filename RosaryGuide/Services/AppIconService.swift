@@ -48,6 +48,11 @@ final class AppIconService {
     private(set) var current: AppIconOption
     private(set) var lastErrorMessage: String?
 
+    /// Called when the user picks an icon and iOS accepts it (not for synced changes).
+    @ObservationIgnored var onUserSelect: ((AppIconOption) -> Void)?
+    /// A synced choice waiting for the app to be in the foreground (iOS requires it).
+    @ObservationIgnored private var pendingSynced: AppIconOption?
+
     var supportsAlternateIcons: Bool {
         UIApplication.shared.supportsAlternateIcons
     }
@@ -77,9 +82,35 @@ final class AppIconService {
                     self.current = AppIconOption.from(
                         alternateIconName: UIApplication.shared.alternateIconName
                     )
+                    self.onUserSelect?(self.current)
                 }
             }
         }
+    }
+
+    /// Applies the icon choice from the account. iOS shows its own short "icon changed" alert.
+    func applySynced(_ option: AppIconOption) {
+        refreshFromSystem()
+        guard option != current else {
+            pendingSynced = nil
+            return
+        }
+        guard option.alternateIconName == nil || supportsAlternateIcons else { return }
+        guard UIApplication.shared.applicationState == .active else {
+            pendingSynced = option
+            return
+        }
+        pendingSynced = nil
+        UIApplication.shared.setAlternateIconName(option.alternateIconName) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.refreshFromSystem()
+            }
+        }
+    }
+
+    func applyPendingSyncedIcon() {
+        guard let pendingSynced else { return }
+        applySynced(pendingSynced)
     }
 
     func refreshFromSystem() {

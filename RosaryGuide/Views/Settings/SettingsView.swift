@@ -19,6 +19,7 @@ struct SettingsView: View {
     @Environment(SessionStore.self) private var session
     @Environment(OfferStore.self) private var offer
     @Environment(AuthStore.self) private var auth
+    @Environment(AccountSyncStore.self) private var sync
     @Environment(\.palette) private var palette
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
@@ -164,19 +165,19 @@ struct SettingsView: View {
             Button("Translation") { composeSupportEmail(.translation) }
             Button("Cancel", role: .cancel) {}
         }
-        .alert("Delete local data?", isPresented: $confirmDeleteHistory) {
+        .alert("Delete prayer history?", isPresented: $confirmDeleteHistory) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
                 session.clearHistoryAndData()
                 didDeleteHistory = true
             }
         } message: {
-            Text("This clears prayer progress and recent prayer history from this device. Synced intentions stay in your account.")
+            Text("This clears your prayer progress and prayer history on this device and in your account. Your intentions and settings are not affected.")
         }
-        .alert("Data deleted", isPresented: $didDeleteHistory) {
+        .alert("Prayer history deleted", isPresented: $didDeleteHistory) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Local prayer progress and recent prayer history have been deleted from this device.")
+            Text("Your prayer progress and prayer history have been deleted.")
         }
         .alert("Delete account?", isPresented: $confirmDeleteAccount) {
             Button("Cancel", role: .cancel) {}
@@ -189,7 +190,7 @@ struct SettingsView: View {
         .alert("Account deleted", isPresented: $didDeleteAccount) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Your account and the intentions synced to it were deleted, and private prayer data was cleared from this device.")
+            Text("Your account and everything synced to it (intentions, prayer history and settings) were deleted, and your prayer data was cleared from this device.")
         }
         .alert("Account not deleted", isPresented: Binding(
             get: { accountDeletionError != nil },
@@ -235,11 +236,12 @@ struct SettingsView: View {
 
     private var deleteAccountConfirmationMessage: String {
         let provider = auth.provider == .anonymous ? "your sign-in provider" : auth.provider.rawValue
-        return "This permanently deletes your Rosary Guide account and the intentions synced to it, then clears private prayer data from this device. You'll confirm with \(provider) first. This can't be undone."
+        return "This permanently deletes your Rosary Guide account and everything synced to it (intentions, prayer history and settings), then clears your prayer data from this device. You'll confirm with \(provider) first. This can't be undone."
     }
 
-    /// Re-authenticate, delete cloud intentions, delete the Auth account, then clear local data.
-    /// Any failure leaves the account and its intentions in place and explains why.
+    /// Re-authenticate, delete cloud preferences/progress and intentions, delete the Auth account,
+    /// then clear local data. Any failure leaves the account and its data in place and explains why.
+    /// Preferences and progress go first: deleting intentions also shuts down Firestore's cache.
     private func deleteAccount() {
         auth.reauthenticateForSensitiveOperation { reauthenticated in
             guard reauthenticated else {
@@ -253,19 +255,22 @@ struct SettingsView: View {
             let deletingUID = auth.userID
             Task {
                 do {
+                    try await sync.deleteCloudDataForCurrentUser()
                     try await offer.deleteCloudDataForCurrentUser()
                 } catch {
                     auth.cancelPendingAccountDeletion()
+                    sync.restoreCloudDataAfterFailedDeletion()
                     offer.restoreCloudDataAfterFailedDeletion()
-                    accountDeletionError = "Your synced intentions could not be deleted, so your account was not deleted. Check your connection and try again."
+                    accountDeletionError = "Your synced data could not be deleted, so your account was not deleted. Check your connection and try again."
                     return
                 }
                 auth.deleteAccount { success in
                     if success {
                         offer.finishAccountDeletion(uid: deletingUID)
-                        session.clearHistoryAndData()
+                        sync.finishAccountDeletion(uid: deletingUID)
                         didDeleteAccount = true
                     } else {
+                        sync.restoreCloudDataAfterFailedDeletion()
                         offer.restoreCloudDataAfterFailedDeletion()
                         accountDeletionError = auth.errorMessage ?? "Your account could not be deleted. Try again."
                         auth.errorMessage = nil
@@ -807,7 +812,7 @@ private struct SettingsAccountScreen: View {
                     .disabled(auth.isWorking)
                 }
 
-                SettingsActionRow(title: "Delete local data", icon: "trash", destructive: true) {
+                SettingsActionRow(title: "Delete prayer history", icon: "trash", destructive: true) {
                     confirmDeleteHistory = true
                 }
             }
@@ -832,7 +837,7 @@ private struct SettingsAccountScreen: View {
                 }
 
                 SettingsFootnote(
-                    "Signing out keeps your intentions in your account and on this device, ready when you sign back in. Delete account permanently removes your synced intentions and your sign-in account."
+                    "Your intentions, prayer history and settings sync to your account. Signing out keeps them in your account and on this device, ready when you sign back in. Delete account permanently removes them and your sign-in account."
                 )
             }
         }
@@ -926,7 +931,19 @@ private struct SettingsNotificationsScreen: View {
                 )
             }
 
-            if status == .denied && (permissionWasDenied || !settings.notificationPlan.isEmpty) {
+            if status == .notDetermined && !settings.notificationPlan.isEmpty {
+                // Reminders restored from the account on a device that has not been asked yet.
+                VStack(alignment: .leading, spacing: 0) {
+                    SettingsActionRow(title: "Allow notifications", icon: "bell.badge") {
+                        Task {
+                            _ = await NotificationService.requestPermission()
+                            status = await NotificationService.authorizationStatus()
+                            await NotificationService.reschedule(settings.notificationPlan)
+                        }
+                    }
+                }
+                SettingsFootnote("Your reminders came from your account. Allow notifications on this iPhone so they can be shown.")
+            } else if status == .denied && (permissionWasDenied || !settings.notificationPlan.isEmpty) {
                 VStack(alignment: .leading, spacing: 0) {
                     SettingsActionRow(title: "Turn on in iOS Settings", icon: "gear", accessory: .externalLink) {
                         if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
