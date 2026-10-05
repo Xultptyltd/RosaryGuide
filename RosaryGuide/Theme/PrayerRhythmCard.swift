@@ -136,8 +136,9 @@ struct PrayerRhythmCard: View {
         .accessibilityLabel(rhythm.accessibilityLabel)
     }
 
-    /// Mockup layout: icon top-left with the text block bottom-aligned under it;
-    /// month header level with the icon and the dot grid level with the text.
+    /// Mockup layout: icon top-left with the streak + caption bottom-aligned under it;
+    /// month header level with the icon and the dot grid level with the text, so the
+    /// grid sets the card height and the streak's baseline block meets the grid bottom.
     private var sideBySide: some View {
         HStack(alignment: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
@@ -194,19 +195,13 @@ struct PrayerRhythmCard: View {
     }
 
     private var summaryText: some View {
+        // No visible title: the streak leads (VoiceOver still says "Prayer rhythm").
         VStack(alignment: .leading, spacing: 0) {
-            Text("Your prayer rhythm")
-                .font(AppTheme.sans(16, relativeTo: .callout))
-                .foregroundStyle(palette.ink.opacity(isDark ? 0.9 : 0.85))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-
             Text(rhythm.streakText)
                 .font(AppTheme.sans(32, relativeTo: .title))
                 .foregroundStyle(palette.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-                .padding(.top, 2)
 
             // One line like the mockup; step down a point before wrapping.
             ViewThatFits(in: .horizontal) {
