@@ -96,8 +96,8 @@ struct CompletionView: View {
                 .accessibilityHidden(true)
 
                 iconSlot
-                    .padding(.top, 8)
-                    .padding(.bottom, -14)
+                    .padding(.top, 4)
+                    .padding(.bottom, -10)
 
                 completionContent()
                     .padding(.horizontal, AppTheme.gutter)
@@ -289,8 +289,8 @@ struct CompletionView: View {
         VStack(spacing: 12) {
             ceremonyButton(
                 title: "Done",
-                fill: palette.secondaryButtonFill,
-                text: palette.secondaryButtonText,
+                fill: palette.primaryButtonFill,
+                text: palette.primaryButtonText,
                 haptic: true,
                 action: onDone
             )
