@@ -28,9 +28,11 @@ struct CompletionView: View {
     /// Icon slot in the finish coordinate space. Written only when it actually moves.
     @State private var slot: CGRect = .zero
 
-    /// Centerpiece size while the tick plays, and the slot it shrinks into.
-    private static let tickPlay: CGFloat = 272
-    private static let tickRest: CGFloat = 64
+    /// Resting icon. The ring is about half the 1024 canvas, so 88pt
+    /// leaves a drawn tick about the size of the old emblem.
+    private static let tickRest: CGFloat = 88
+    /// Screen margin around the playing composition so glow and beads stay inside.
+    private static let tickMargin: CGFloat = 40
     private static let morph = Animation.timingCurve(0.16, 1, 0.3, 1, duration: 0.98)
 
     private var resting: Bool { reduceMotion || settled }
@@ -149,9 +151,10 @@ struct CompletionView: View {
                 ? CGPoint(x: slot.midX, y: slot.midY)
                 : center
             let landed = resting && slot.width > 1
+            let play = max(Self.tickRest, min(proxy.size.width, proxy.size.height) - Self.tickMargin * 2)
             RosaryTickPlayer(plays: true, onComplete: morphIn)
-                .frame(width: Self.tickPlay, height: Self.tickPlay)
-                .scaleEffect(landed ? Self.tickRest / Self.tickPlay : 1)
+                .frame(width: play, height: play)
+                .scaleEffect(landed ? Self.tickRest / play : 1)
                 .position(landed ? target : center)
                 .animation(Self.morph, value: landed)
                 .allowsHitTesting(false)

@@ -5,6 +5,11 @@ import Lottie
 /// the bundled web player; that view cannot travel from the center of the
 /// screen into the finish-screen icon slot.
 struct RosaryTickPlayer: UIViewRepresentable {
+    /// Last frame where the tick and ring are still fully drawn.
+    /// The composition fades every layer out by frame 96; holding frame 82
+    /// keeps the tick on screen so it can travel into the icon slot.
+    static let holdProgress: AnimationProgressTime = 82.0 / 96.0
+
     var plays: Bool
     var onComplete: () -> Void
 
@@ -12,34 +17,54 @@ struct RosaryTickPlayer: UIViewRepresentable {
         Coordinator(onComplete: onComplete)
     }
 
-    func makeUIView(context: Context) -> LottieAnimationView {
-        let view = LottieAnimationView()
-        view.contentMode = .scaleAspectFit
-        view.backgroundColor = .clear
-        view.isUserInteractionEnabled = false
-        view.backgroundBehavior = .pauseAndRestore
-        return view
+    func makeUIView(context: Context) -> UIView {
+        let container = UIView()
+        container.backgroundColor = .clear
+        container.isUserInteractionEnabled = false
+        // Plain UIView has no intrinsic size. The Lottie view's 1024×1024
+        // composition must not become the SwiftUI layout size.
+        let animationView = LottieAnimationView()
+        animationView.contentMode = .scaleAspectFit
+        animationView.backgroundColor = .clear
+        animationView.isUserInteractionEnabled = false
+        animationView.backgroundBehavior = .pauseAndRestore
+        animationView.translatesAutoresizingMaskIntoConstraints = false
+        animationView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        animationView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        animationView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        animationView.setContentHuggingPriority(.defaultLow, for: .vertical)
+        container.addSubview(animationView)
+        NSLayoutConstraint.activate([
+            animationView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            animationView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            animationView.topAnchor.constraint(equalTo: container.topAnchor),
+            animationView.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+        context.coordinator.animationView = animationView
+        return container
     }
 
-    func updateUIView(_ view: LottieAnimationView, context: Context) {
+    func updateUIView(_ view: UIView, context: Context) {
         context.coordinator.onComplete = onComplete
         guard !context.coordinator.didStart else { return }
         context.coordinator.didStart = true
 
+        guard let animationView = context.coordinator.animationView else { return }
         let plays = plays
         let start: (LottieAnimation?) -> Void = { animation in
-            view.animation = animation
+            animationView.animation = animation
             guard animation != nil else {
                 DispatchQueue.main.async { context.coordinator.onComplete() }
                 return
             }
             if plays {
-                view.play(fromProgress: 0, toProgress: 1, loopMode: .playOnce) { finished in
+                animationView.play(fromProgress: 0, toProgress: RosaryTickPlayer.holdProgress, loopMode: .playOnce) { finished in
                     guard finished else { return }
+                    animationView.currentProgress = RosaryTickPlayer.holdProgress
                     DispatchQueue.main.async { context.coordinator.onComplete() }
                 }
             } else {
-                view.currentProgress = 1
+                animationView.currentProgress = RosaryTickPlayer.holdProgress
             }
         }
 
@@ -55,6 +80,7 @@ struct RosaryTickPlayer: UIViewRepresentable {
 
     final class Coordinator {
         var didStart = false
+        var animationView: LottieAnimationView?
         var onComplete: () -> Void
         init(onComplete: @escaping () -> Void) { self.onComplete = onComplete }
     }
