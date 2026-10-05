@@ -187,8 +187,8 @@ struct PrayerRhythm: Equatable {
         // 4. Getting started: first week of the run, by distinct prayed days this week.
         if weekRun == 1 && prayedThisWeek {
             switch prayedDaysThisWeek {
-            case 1: return (1, .day, "This week's Rosary prayed")
-            case 2: return (1, .week, "Two days this week")
+            case 1: return (1, .day, "Once this week")
+            case 2: return (1, .week, "Twice this week")
             case 3: return (1, .week, "Three days this week")
             case 4: return (1, .week, "Four days this week")
             case 5: return (1, .week, "Five days this week")
