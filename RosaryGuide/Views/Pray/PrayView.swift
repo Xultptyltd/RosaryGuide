@@ -1069,25 +1069,13 @@ struct PrayView: View {
                             viewportHeight: geometry.containerSize.height
                         )
                     } action: { _, newValue in
-                        let y = max(0, newValue.offsetY)
+                        // Heights only. Scroll position must not morph or revert the
+                        // circle — a tap is the only thing that turns it into Done.
                         if newValue.contentHeight > 1 {
                             michaelContentHeight = max(michaelContentHeight, newValue.contentHeight)
                         }
                         if newValue.viewportHeight > 1 {
                             michaelViewportHeight = newValue.viewportHeight
-                        }
-                        let contentH = max(michaelContentHeight, newValue.contentHeight)
-                        let viewH = newValue.viewportHeight > 1 ? newValue.viewportHeight : michaelViewportHeight
-                        let maxOffset = max(0, contentH - viewH)
-                        let shouldSettle = maxOffset > 8 && y >= maxOffset - 56
-                        let shouldUnlock = maxOffset > 8 && y < maxOffset - 112
-                        if shouldSettle, !michaelActionLocked {
-                            michaelActionLocked = true
-                            withAnimation(reduceMotion ? nil : MotionTokens.soft) {
-                                proxy.scrollTo(MichaelScrollAnchor.bottom, anchor: .bottom)
-                            }
-                        } else if shouldUnlock, michaelActionLocked {
-                            michaelActionLocked = false
                         }
                     }
                         .onChange(of: settings.language) {
