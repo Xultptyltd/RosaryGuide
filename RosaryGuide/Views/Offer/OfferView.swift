@@ -5,6 +5,7 @@ import UIKit
 struct OfferView: View {
     @Environment(OfferStore.self) private var offer
     @Environment(SettingsStore.self) private var settings
+    @Environment(SessionStore.self) private var sessionStore
     @Environment(\.palette) private var palette
     @Binding var prayLaunch: PrayLaunch?
 
@@ -229,6 +230,9 @@ struct OfferView: View {
                                 .padding(.top, 10)
                         }
 
+                    // Live: completedDayStarts is observed, so finishing a rosary updates it.
+                    PrayerRhythmCard(rhythm: PrayerRhythm(prayedDayStarts: sessionStore.completedDayStarts))
+
 	                    if let papalSuggestion {
 	                        PapalMonthCard(
                             item: papalSuggestion,
@@ -237,6 +241,8 @@ struct OfferView: View {
                             onAdd: { adoptSuggestion(papalSuggestion) }
                         )
 	                        .guideNavList(pageGutter: AppTheme.gutter)
+                        // Prayer rhythm card to the Pope's card.
+                        .padding(.top, AppTheme.Space.lg)
 	                    }
 
 	                    syncWarning
@@ -285,9 +291,8 @@ struct OfferView: View {
                     // Add button to the secondary rows (unchanged).
                     .padding(.top, 12)
                 }
-                // Pope's card to the featured card (or the Add button when there is none).
-                // Without a papal card, keep the original 24pt below the title.
-                .padding(.top, papalSuggestion != nil ? AppTheme.Space.lg : AppTheme.Space.xl)
+                // Pope's card (or the prayer rhythm card) to the featured card / Add button.
+                .padding(.top, AppTheme.Space.lg)
             }
             .padding(.horizontal, AppTheme.gutter)
             // Same top breathing room as FeastsView before its title/control block.
