@@ -35,7 +35,7 @@ struct OfferView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .collapsingTitleChrome(
-                "Prayer",
+                "My prayer",
                 scrollOffset: $titleScrollOffset,
                 morphEnabled: true
             )
@@ -246,21 +246,9 @@ struct OfferView: View {
                     intentionsSectionHeader
                         .padding(.top, AppTheme.sectionGap)
 
-	                    if let papalSuggestion {
-	                        PapalMonthCard(
-                            item: papalSuggestion,
-                            isAdded: hasAdoptedSuggestion(papalSuggestion),
-                            onOpen: { papalDetail = papalSuggestion },
-                            onAdd: { adoptSuggestion(papalSuggestion) }
-                        )
-	                        .guideNavList(pageGutter: AppTheme.gutter)
-                        // Section title to the Pope's card.
-                        .padding(.top, AppTheme.sectionTitleGap)
-	                    }
-
-	                    syncWarning
-	                        .padding(.horizontal, AppTheme.gutter)
-	                }
+                    syncWarning
+                        .padding(.horizontal, AppTheme.gutter)
+                }
 
                 VStack(alignment: .leading, spacing: 0) {
                     if let currentIntention {
@@ -275,12 +263,24 @@ struct OfferView: View {
                             allowsPin: offer.sortedIntentions.count > 1
                         )
                         .guideNavList(pageGutter: AppTheme.gutter)
-                        // Featured card to Add button.
-                        .padding(.bottom, AppTheme.Space.lg)
+                    }
+
+                    if let papalSuggestion {
+                        PapalMonthCard(
+                            item: papalSuggestion,
+                            isAdded: hasAdoptedSuggestion(papalSuggestion),
+                            onOpen: { papalDetail = papalSuggestion },
+                            onAdd: { adoptSuggestion(papalSuggestion) }
+                        )
+                        .guideNavList(pageGutter: AppTheme.gutter)
+                        // Featured card to the Pope's card.
+                        .padding(.top, currentIntention == nil ? 0 : AppTheme.Space.lg)
                     }
 
                     addIntentionButton(title: "Add an intention", matchesLearnStyle: true)
                         .guideNavList(pageGutter: AppTheme.gutter)
+                        // Featured / Pope's card to the Add button.
+                        .padding(.top, (currentIntention == nil && papalSuggestion == nil) ? 0 : AppTheme.Space.lg)
 
                     VStack(spacing: 0) {
                         ForEach(secondaryIntentions) { item in
@@ -304,8 +304,8 @@ struct OfferView: View {
                     // Add button to the secondary rows (unchanged).
                     .padding(.top, 12)
                 }
-                // Pope's card to the featured card / Add button; section title gap when there is no Pope's card.
-                .padding(.top, papalSuggestion == nil ? AppTheme.sectionTitleGap : AppTheme.Space.lg)
+                // "Your intentions" heading to the first card.
+                .padding(.top, AppTheme.sectionTitleGap)
             }
             .padding(.horizontal, AppTheme.gutter)
             // Same top breathing room as FeastsView before its title/control block.

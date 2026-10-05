@@ -73,6 +73,10 @@ struct PrayerRhythm: Equatable {
         weeks = stride(from: 0, to: cells.count, by: 7).map { Array(cells[$0..<min($0 + 7, cells.count)]) }
     }
 
+    /// Some prayer to show: a prayed day in the shown month or a live streak.
+    /// Drives the tick in the card's calendar icon.
+    var hasPrayed: Bool { streak > 0 || prayedDaysThisMonth > 0 }
+
     var streakText: String { streak == 1 ? "1 day" : "\(streak) days" }
 
     var caption: String {
@@ -205,7 +209,7 @@ struct PrayerRhythmCard: View {
     // MARK: Left column
 
     private var icon: some View {
-        CalendarCheckGlyph()
+        CalendarCheckGlyph(showsCheck: rhythm.hasPrayed)
             .stroke(palette.ink.opacity(isDark ? 0.88 : 0.82),
                     style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
             .frame(width: Metric.iconSize.width, height: Metric.iconSize.height)
@@ -307,9 +311,11 @@ struct PrayerRhythmCard: View {
     }
 }
 
-/// Outline calendar: rounded body, header rule, two ring tabs, centred check.
-/// Drawn on a 24 x 26 design box and scaled to the frame.
+/// Outline calendar: rounded body, header rule, two ring tabs, and a centred check
+/// when `showsCheck`. Drawn on a 24 x 26 design box and scaled to the frame.
 private struct CalendarCheckGlyph: Shape {
+    var showsCheck = true
+
     func path(in rect: CGRect) -> Path {
         let sx = rect.width / 24, sy = rect.height / 26
         func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * sx, y: rect.minY + y * sy) }
@@ -322,7 +328,9 @@ private struct CalendarCheckGlyph: Shape {
         path.move(to: p(0.8, 9.2)); path.addLine(to: p(23.2, 9.2))
         path.move(to: p(7, 0.8)); path.addLine(to: p(7, 5.4))
         path.move(to: p(17, 0.8)); path.addLine(to: p(17, 5.4))
-        path.move(to: p(7.6, 17.2)); path.addLine(to: p(10.6, 20.2)); path.addLine(to: p(16.4, 14.2))
+        if showsCheck {
+            path.move(to: p(7.6, 17.2)); path.addLine(to: p(10.6, 20.2)); path.addLine(to: p(16.4, 14.2))
+        }
         return path
     }
 }
