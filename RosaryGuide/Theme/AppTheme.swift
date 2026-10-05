@@ -46,8 +46,8 @@ enum AppTheme {
     static let titleLineHeight: CGFloat = 1.02
     static let titleTrackingEm: CGFloat = -0.022
     static let sectionGap: CGFloat = 44
-    /// Gap between a section title (GuideSectionLabel `.strong`) and the content directly below it. Same as `Space.xl`.
-    static let sectionTitleGap: CGFloat = Space.xl
+    /// Gap between a section title (GuideSectionLabel `.strong`) and the content directly below it.
+    static let sectionTitleGap: CGFloat = 20
     static let decadesGap: CGFloat = 32
     static let containerRadius: CGFloat = 20
     /// Site `--r-feature` — Home mystery rail cards.
