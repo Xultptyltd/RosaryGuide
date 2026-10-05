@@ -284,7 +284,10 @@ struct HomeView: View {
         ShareLink(
             item: URL(string: "https://rosaryguide.app")!,
             subject: Text("Rosary Guide"),
-            message: Text("I've been praying the Rosary with Rosary Guide. Take a look:")
+            message: Text("I've been praying the Rosary with Rosary Guide. Take a look:"),
+            // Share sheet header shows the blue icon (IconPreviewBlue is the same artwork as
+            // the AppIconBlue alternate icon) instead of the site's preview.
+            preview: SharePreview("Rosary Guide", image: Image("IconPreviewBlue"))
         ) {
             HStack(spacing: AppTheme.Space.sm) {
                 Image(systemName: "square.and.arrow.up")
