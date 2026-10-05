@@ -220,7 +220,7 @@ struct OfferView: View {
     }
     private var intentionList: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+            VStack(alignment: .leading, spacing: 0) {
                 // Keep the papal card directly beneath the page title, like Feasts' control.
                 VStack(alignment: .leading, spacing: 0) {
                     CollapsingTitleSpacer()
@@ -243,7 +243,7 @@ struct OfferView: View {
 	                        .padding(.horizontal, AppTheme.gutter)
 	                }
 
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 0) {
                     if let currentIntention {
                         CurrentIntentionHero(
                             intention: currentIntention,
@@ -256,6 +256,8 @@ struct OfferView: View {
                             allowsPin: offer.sortedIntentions.count > 1
                         )
                         .guideNavList(pageGutter: AppTheme.gutter)
+                        // Featured card to Add button.
+                        .padding(.bottom, AppTheme.Space.lg)
                     }
 
                     addIntentionButton(title: "Add an intention", matchesLearnStyle: true)
@@ -280,7 +282,12 @@ struct OfferView: View {
                         }
                     }
                     .guideNavList(pageGutter: AppTheme.gutter)
+                    // Add button to the secondary rows (unchanged).
+                    .padding(.top, 12)
                 }
+                // Pope's card to the featured card (or the Add button when there is none).
+                // Without a papal card, keep the original 24pt below the title.
+                .padding(.top, papalSuggestion != nil ? AppTheme.Space.lg : AppTheme.Space.xl)
             }
             .padding(.horizontal, AppTheme.gutter)
             // Same top breathing room as FeastsView before its title/control block.
