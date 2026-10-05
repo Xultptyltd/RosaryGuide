@@ -1128,6 +1128,10 @@ extension AppTheme {
         static let quoteAttributionTracking: CGFloat = 1.3
         /// Shared height for segmented controls; matches Apple minimum touch target.
         static let segmentedControlHeight: CGFloat = Accessibility.minHitTarget
+        /// The system large segmented control draws its track past its frame on each
+        /// side (measured 49.3pt tall in a 44pt frame on iOS 26). Add this to a layout
+        /// gap when the visible gap to the track must be exact.
+        static let segmentedControlVisualOverflow: CGFloat = 8.0 / 3.0
         /// Home mystery selector keeps the larger, hero-control proportion.
         static let mysterySelectorHeight: CGFloat = 52
         static let segmentedControlInset: CGFloat = Space.xs

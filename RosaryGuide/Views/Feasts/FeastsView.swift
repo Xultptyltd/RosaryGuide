@@ -96,6 +96,12 @@ struct FeastsView: View {
                         .guideSegmentedControl()
                         .frame(maxWidth: .infinity)
                     }
+                    // Visible gap from the scope tabs' track to the calendar card: 16pt.
+                    // The stack's spacing is 24; the track overhangs its frame slightly.
+                    .padding(
+                        .bottom,
+                        AppTheme.Space.lg + AppTheme.Component.segmentedControlVisualOverflow - AppTheme.Space.xl
+                    )
 
                     FeastMonthCalendar(
                         month: $visibleMonth,
