@@ -1114,13 +1114,13 @@ struct PrayView: View {
                                     michaelActionLocked = true
                                     michaelArrowArmed = false
                                 } else {
-                                    // Stay a circle for the whole scroll. Expand only
-                                    // when that scroll animation has finished.
+                                    // One motion: scroll to the bottom while the circle
+                                    // expands. Armed blocks a mid-scroll revert.
                                     michaelArrowArmed = true
                                     withAnimation(reduceMotion ? nil : MotionTokens.reveal, completionCriteria: .logicallyComplete) {
+                                        michaelActionLocked = true
                                         proxy.scrollTo(MichaelScrollAnchor.bottom, anchor: .bottom)
                                     } completion: {
-                                        michaelActionLocked = true
                                         michaelArrowArmed = false
                                     }
                                 }
@@ -1140,7 +1140,7 @@ struct PrayView: View {
     /// Mystery-plate circle, in the prayer footer. It becomes Done at the end of the scroll.
     private func michaelActionChrome(scrollToBottom: @escaping () -> Void) -> some View {
         let showScroll = michaelCanScrollFurther
-        let animation = reduceMotion ? nil : Animation.spring(response: 0.42, dampingFraction: 0.84)
+        let animation = reduceMotion ? nil : MotionTokens.reveal
 
         return HStack {
             if showScroll {
