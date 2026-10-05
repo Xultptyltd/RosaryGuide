@@ -16,21 +16,20 @@ struct OfferView: View {
     @State private var popeStore = PopeIntentionStore.shared
     @State private var intentionDetail: OfferIntention?
     @State private var showingPremium = false
-    /// Intention rows under the Add button: first `collapsedIntentionRowLimit`, or all when expanded.
-    @State private var showsAllIntentions = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Pushes the All intentions screen from "See all".
+    @State private var showingAllIntentions = false
     /// Set when Premium opens because the free intention limit was hit.
     @State private var premiumNote: String?
     /// Banking-style privacy: when true, mask personal intention titles on the list surface.
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
     /// Space an IntentionListRow leaves under its icon (its vertical padding).
     private static let intentionRowBottomInset: CGFloat = 10
-    /// Rows shown under the Add button before "Show more".
+    /// Rows shown under the Add button; more than this shows "See all".
     private static let collapsedIntentionRowLimit = 3
-    /// Show more/less button height (44pt hit target).
-    private static let showMoreHeight: CGFloat = AppTheme.Accessibility.minHitTarget
-    /// Space under the Show more/less label inside its 44pt frame (~21pt callout line).
-    private static let showMoreBottomInset: CGFloat = 11
+    /// See all button height (44pt hit target).
+    private static let seeAllHeight: CGFloat = AppTheme.Accessibility.minHitTarget
+    /// Space under the See all label inside its 44pt frame (~21pt callout line).
+    private static let seeAllBottomInset: CGFloat = 11
     private var todaySet: MysterySetKind {
         MysteryCalendar.assignment(on: Date()).set
     }
@@ -84,6 +83,13 @@ struct OfferView: View {
             }
             .navigationDestination(isPresented: $showingPremium) {
                 PremiumScreen(note: premiumNote)
+            }
+            .navigationDestination(isPresented: $showingAllIntentions) {
+                AllIntentionsView(
+                    hideText: hideIntentionText,
+                    onEdit: { editor = .edit($0) },
+                    onPray: { prayWith($0) }
+                )
             }
             .onChange(of: showingPremium) { _, showing in
                 if !showing { premiumNote = nil }
@@ -217,12 +223,12 @@ struct OfferView: View {
         secondaryIntentions.count > Self.collapsedIntentionRowLimit
     }
     private var visibleSecondaryIntentions: [OfferIntention] {
-        showsAllIntentions ? secondaryIntentions : Array(secondaryIntentions.prefix(Self.collapsedIntentionRowLimit))
+        Array(secondaryIntentions.prefix(Self.collapsedIntentionRowLimit))
     }
     /// Visible space under the last list element (row icon or Show more label),
     /// subtracted so the Prayer journeys gap reads as sectionGap.
     private var intentionListBottomInset: CGFloat {
-        if hasMoreIntentionRows { return Self.showMoreBottomInset }
+        if hasMoreIntentionRows { return Self.seeAllBottomInset }
         return secondaryIntentions.isEmpty ? 0 : Self.intentionRowBottomInset
     }
     private var papalSuggestion: SuggestedIntention? {
@@ -274,32 +280,28 @@ struct OfferView: View {
         .guidePressable()
         .accessibilityLabel(hideIntentionText ? "Show intentions" : "Hide intentions")
     }
-    /// Expands/collapses the intention rows. Same chevron treatment as the app's
-    /// accordions (chevron.down, faint, rotates 180° when open).
-    private var showMoreIntentionsButton: some View {
+    /// Opens All intentions. Same dim text + faint chevron treatment as the app's
+    /// expandable rows, with the chevron pointing right for navigation.
+    private var seeAllIntentionsButton: some View {
         Button {
-            withAnimation(reduceMotion ? nil : MotionTokens.selection) {
-                showsAllIntentions.toggle()
-            }
+            showingAllIntentions = true
         } label: {
             HStack(spacing: AppTheme.Space.sm) {
-                Text(showsAllIntentions ? "Show less" : "Show more")
+                Text("See all")
                     .font(AppTheme.TypeRole.callout(weight: .medium))
                     .foregroundStyle(palette.dim)
-                Image(systemName: "chevron.down")
+                Image(systemName: "chevron.right")
                     .guideSymbol(size: 12, weight: .semibold)
                     .foregroundStyle(palette.faint)
-                    .rotationEffect(.degrees(showsAllIntentions ? 180 : 0))
                     .accessibilityHidden(true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: Self.showMoreHeight)
+            .frame(height: Self.seeAllHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .guidePressable()
-        .accessibilityValue(showsAllIntentions ? "Expanded" : "Collapsed")
-        .accessibilityHint(showsAllIntentions ? "Shows fewer intentions" : "Shows all intentions")
+        .accessibilityLabel("See all intentions")
     }
 
     /// "Prayer journeys" section: title, sectionTitleGap, then the Rosary Guide+ card.
@@ -401,7 +403,7 @@ struct OfferView: View {
                         }
 
                         if hasMoreIntentionRows {
-                            showMoreIntentionsButton
+                            seeAllIntentionsButton
                         }
                     }
                     .guideNavList(pageGutter: AppTheme.gutter)
@@ -856,6 +858,69 @@ private struct ClosedEyeLashes: Shape {
             path.addLine(to: CGPoint(x: x, y: lashTop))
         }
         return path
+    }
+}
+
+/// Every intention (featured first, via OfferStore's sort) as list rows, pushed from
+/// My prayer's "See all". Rows behave exactly as on My prayer: open detail, menu to
+/// feature, edit or delete. Pops back if the list empties.
+private struct AllIntentionsView: View {
+    @Environment(OfferStore.self) private var offer
+    @Environment(\.palette) private var palette
+    @Environment(\.dismiss) private var dismiss
+
+    var hideText: Bool
+    let onEdit: (OfferIntention) -> Void
+    let onPray: (OfferIntention) -> Void
+
+    @State private var titleScrollOffset: CGFloat = 0
+
+    var body: some View {
+        let items = offer.sortedIntentions
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                // Standard large-title space; rows start sectionTitleGap below the H1.
+                CollapsingTitleSpacer(height: CollapsingTitleMetrics.spacerHeight(gapBelowTitle: AppTheme.sectionTitleGap))
+
+                VStack(spacing: 0) {
+                    ForEach(items) { item in
+                        IntentionSecondaryRow(
+                            intention: item,
+                            hideText: hideText,
+                            allowsPin: items.count > 1,
+                            onPin: { offer.togglePin(id: item.id) },
+                            onEdit: { onEdit(item) },
+                            onDelete: { offer.delete(id: item.id) },
+                            onPray: { onPray(item) }
+                        )
+
+                        if item.id != items.last?.id {
+                            Hairline()
+                                .padding(.leading, 62)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, AppTheme.gutter)
+            .padding(.bottom, 108)
+        }
+        .scrollContentBackground(.hidden)
+        .background(palette.bg.ignoresSafeArea())
+        .guidePageChrome()
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
+        .collapsingTitleChrome("All intentions", scrollOffset: $titleScrollOffset) {
+            SettingsToolbarButton(symbol: "chevron.left", label: "Back") {
+                dismiss()
+            }
+        } trailing: {
+            EmptyView()
+        }
+        .navigationTitle("All intentions")
+        .background(SettingsSwipeBackEnabler())
+        .onChange(of: items.isEmpty) { _, isEmpty in
+            if isEmpty { dismiss() }
+        }
     }
 }
 
