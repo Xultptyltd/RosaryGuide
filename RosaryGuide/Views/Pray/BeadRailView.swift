@@ -7,6 +7,9 @@ import UIKit
 /// Geometry follows `buildRosary()` in rosaryguide.app (W≈330, H≈64, lx=96, lh=48).
 struct RosaryBeadMapView: View {
     var locus: BeadLocus?
+    /// Set before leaving the closing prayer so the display-link timeline is
+    /// not invalidated in the same turn as the finis screen.
+    var animationPaused: Bool = false
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -27,7 +30,7 @@ struct RosaryBeadMapView: View {
     private let layout = RosaryGeometry.shared
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { timeline in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || animationPaused)) { timeline in
             Canvas { context, size in
                 let s = min(size.width / layout.viewW, size.height / layout.viewH)
                 let ox = (size.width - layout.viewW * s) / 2

@@ -83,6 +83,10 @@ struct PrayView: View {
     @State private var didRecordCarry = false
     /// Locked when entering finis so Offered for survives session.complete() / store churn.
     @State private var completionIntentionTitle: String?
+    /// Chosen before the finis screen exists so its first update does not write UserDefaults.
+    @State private var completionQuote: CompletionQuote?
+    /// Stops the bead TimelineView before the finis screen is inserted.
+    @State private var beadTimelinePaused = false
 
     private var language: PrayerLanguage { settings.language }
     private var current: RosaryStep? {
@@ -184,7 +188,7 @@ struct PrayView: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                             if showBeads, let bead = step.bead {
-                                RosaryBeadMapView(locus: bead)
+                                RosaryBeadMapView(locus: bead, animationPaused: beadTimelinePaused)
                                     .padding(.horizontal, AppTheme.Space.md)
                                     .padding(.top, AppTheme.Space.xl)
                                     .padding(.bottom, AppTheme.Space.sm)
@@ -867,6 +871,10 @@ struct PrayView: View {
         Binding(
             get: { settings.language },
             set: { newValue in
+                // A segmented control can emit its current value while SwiftUI
+                // is updating the footer. Writing the session then invalidates
+                // the same update and the main thread never comes back.
+                guard newValue != settings.language else { return }
                 settings.language = newValue
                 if var current = sessionStore.session {
                     current.language = newValue
@@ -892,6 +900,7 @@ struct PrayView: View {
             mysterySet: launch.mysterySet,
             intentionTitle: completionIntentionTitle,
             intentionIsPapal: completionIntentionIsPapal,
+            quote: completionQuote ?? QuoteCatalog.quote(),
             onDone: { finishRosary() },
             onMichael: {
                 // Rosary is already marked complete on entering finis; Michael is optional continuation.
@@ -1004,6 +1013,8 @@ struct PrayView: View {
             chosenIntentionNote = resolvedId.flatMap { offer.intention(id: $0)?.note } ?? ""
             didRecordCarry = false
             completionIntentionTitle = nil
+            completionQuote = nil
+            beadTimelinePaused = false
             showingCompletion = false
         case .resume(let session):
             freshSetPending = nil
@@ -1021,6 +1032,8 @@ struct PrayView: View {
             chosenIntentionNote = session.intentionId.flatMap { offer.intention(id: $0)?.note } ?? ""
             didRecordCarry = false
             completionIntentionTitle = nil
+            completionQuote = nil
+            beadTimelinePaused = false
             showingCompletion = false
         }
         playHaptic()
@@ -1045,12 +1058,24 @@ struct PrayView: View {
     }
 
     private func showCompletionScreen() {
-        lockCompletionIntentionIfNeeded()
-        playHaptic()
-        // Leave the button's action before swapping in finis. Building that
-        // screen inside the button update is what wedged the main thread.
+        // Do not touch @State or UserDefaults in this button action. Device
+        // scene-update logs (0x8BADF00D) show the main thread still inside
+        // that update 10s later — ButtonBehavior, then Core Text variation
+        // fonts — so the bead TimelineView stops with the rest of the UI.
+        let title = resolvedIntentionTitleForCompletion()
+        let quote = QuoteCatalog.selectCompletionQuote()
         DispatchQueue.main.async {
-            showingCompletion = true
+            beadTimelinePaused = true
+            DispatchQueue.main.async {
+                if completionIntentionTitle == nil {
+                    completionIntentionTitle = title
+                }
+                completionQuote = quote
+                showingCompletion = true
+                DispatchQueue.main.async {
+                    QuoteCatalog.rememberCompletionQuote(quote)
+                }
+            }
         }
     }
 

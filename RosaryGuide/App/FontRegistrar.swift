@@ -72,24 +72,43 @@ enum FontRegistrar {
     }
 
     static func sansUI(_ size: CGFloat, weight: Font.Weight = .regular, textStyle: UIFont.TextStyle = .body) -> UIFont {
+        let weightAxis = axisWeight(weight)
+        let key = cacheKey(kind: "sans", size: size, axes: "wght=\(weightAxis)", textStyle: textStyle)
+        if let cached = uiFontCache[key] { return cached }
         let base = variableFont(
             names: sansCandidates,
             size: size,
-            variations: ["wght": axisWeight(weight)],
+            variations: ["wght": weightAxis],
             serifFallback: false
         )
-        return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
+        let scaled = UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
+        uiFontCache[key] = scaled
+        return scaled
     }
 
     static func serifUI(_ size: CGFloat, italic: Bool = false, opticalSize: CGFloat? = nil, textStyle: UIFont.TextStyle = .body) -> UIFont {
         let opsz = min(max(opticalSize ?? size, 6), 72)
+        let key = cacheKey(kind: italic ? "serifI" : "serif", size: size, axes: "wght=400,opsz=\(opsz)", textStyle: textStyle)
+        if let cached = uiFontCache[key] { return cached }
         let base = variableFont(
             names: italic ? serifItalicCandidates : serifCandidates,
             size: size,
             variations: ["wght": 400, "opsz": opsz],
             serifFallback: true
         )
-        return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
+        let scaled = UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
+        uiFontCache[key] = scaled
+        return scaled
+    }
+
+    /// Scene-update watchdog stacks land in `CTFontDescriptorCreateCopyWithAttributes`
+    /// because every text view built a new variation font. Cache the scaled
+    /// result so a pray-screen update does not re-enter Core Text.
+    private static var uiFontCache: [String: UIFont] = [:]
+
+    private static func cacheKey(kind: String, size: CGFloat, axes: String, textStyle: UIFont.TextStyle) -> String {
+        let category = UIApplication.shared.preferredContentSizeCategory.rawValue
+        return "\(kind)|\(size)|\(axes)|\(textStyle.rawValue)|\(category)"
     }
 
     private static func axisWeight(_ weight: Font.Weight) -> CGFloat {

@@ -7,6 +7,7 @@ struct CompletionView: View {
     var mysterySet: MysterySetKind
     var intentionTitle: String?
     var intentionIsPapal: Bool = false
+    var quote: CompletionQuote
     var onDone: () -> Void
     var onMichael: (() -> Void)?
 
@@ -23,7 +24,6 @@ struct CompletionView: View {
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
 
     @State private var contentPhase: ContentPhase = .hidden
-    @State private var completionQuote = QuoteCatalog.freshCompletionQuote()
 
     private enum ContentPhase: Int, Comparable {
         case hidden = 0
@@ -191,13 +191,13 @@ struct CompletionView: View {
 
             // Short contemplative quote on the same surface treatment used elsewhere.
             VStack(spacing: compact ? AppTheme.Space.sm : AppTheme.Space.md) {
-                Text("“\(completionQuote.text)”")
+                Text("“\(quote.text)”")
                     .font(compact ? AppTheme.TypeRole.body : AppTheme.TypeRole.bodySmall)
                     .foregroundStyle(palette.dim)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text(completionQuote.attribution.uppercased())
+                Text(quote.attribution.uppercased())
                     .font(AppTheme.TypeRole.quoteAttribution)
                     .tracking(AppTheme.Component.quoteAttributionTracking)
                     .foregroundStyle(palette.faint)
@@ -209,7 +209,7 @@ struct CompletionView: View {
             .padding(.top, compact ? AppTheme.Space.xl : AppTheme.Space.xxl)
             .opacity(opacity(for: .rest))
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(completionQuote.text), \(completionQuote.attribution)")
+            .accessibilityLabel("\(quote.text), \(quote.attribution)")
 
             // Small breathing room before the pinned actions.
             Color.clear.frame(height: compact ? 16 : 24)

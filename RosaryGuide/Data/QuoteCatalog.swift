@@ -40,13 +40,23 @@ enum QuoteCatalog {
         return pool[day % pool.count]
     }
 
-    /// Pick a fresh short quote for the completion screen, avoiding the previous completion quote.
-    static func freshCompletionQuote(defaults: UserDefaults = .standard) -> CompletionQuote {
+    /// Pick a short quote without writing `UserDefaults`. Writing during a view
+    /// update posts a defaults notification and the scene update never returns.
+    static func selectCompletionQuote(defaults: UserDefaults = .standard) -> CompletionQuote {
         let pool = shortQuotes.isEmpty ? all : shortQuotes
         let lastQuoteId = defaults.string(forKey: lastCompletionQuoteKey)
         let candidates = pool.count > 1 ? pool.filter { $0.id != lastQuoteId } : pool
-        let selected = candidates.randomElement() ?? pool[0]
-        defaults.set(selected.id, forKey: lastCompletionQuoteKey)
+        return candidates.randomElement() ?? pool[0]
+    }
+
+    static func rememberCompletionQuote(_ quote: CompletionQuote, defaults: UserDefaults = .standard) {
+        defaults.set(quote.id, forKey: lastCompletionQuoteKey)
+    }
+
+    /// Pick a fresh short quote for the completion screen, avoiding the previous completion quote.
+    static func freshCompletionQuote(defaults: UserDefaults = .standard) -> CompletionQuote {
+        let selected = selectCompletionQuote(defaults: defaults)
+        rememberCompletionQuote(selected, defaults: defaults)
         return selected
     }
 }
