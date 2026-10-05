@@ -3,6 +3,43 @@ import SwiftUI
 import UIKit
 #endif
 
+private struct PrayChromeButton: View {
+    @Environment(\.palette) private var palette
+
+    var system: String? = nil
+    var label: String? = nil
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            content
+                .foregroundStyle(palette.ink)
+                .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+        .background {
+            Circle()
+                .fill(.clear)
+                .guideFloatingGlass(in: Circle(), palette: palette)
+                .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
+        }
+        .guidePressable()
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if let system {
+            Image(systemName: system)
+                .guideSymbol(size: 13, weight: .semibold)
+        } else if let label {
+            Text(label)
+                .font(AppTheme.TypeRole.label(weight: .medium))
+        }
+    }
+}
+
 struct PrayView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(SessionStore.self) private var sessionStore
@@ -979,7 +1016,7 @@ struct PrayView: View {
     }
 
     private func roundControl(system: String? = nil, label: String? = nil, action: @escaping () -> Void) -> some View {
-        GuideChromeButton(system: system, label: label, action: action)
+        PrayChromeButton(system: system, label: label, action: action)
             .accessibilityLabel(label ?? system ?? "Control")
     }
 

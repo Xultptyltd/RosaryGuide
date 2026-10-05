@@ -135,15 +135,13 @@ struct SettingsView: View {
         .guidePageChrome()
         .toolbar(.hidden, for: .navigationBar)
         .collapsingTitleChrome("Your profile", scrollOffset: $titleScrollOffset) {
-            GuideChromeButton(system: "xmark") {
+            SettingsToolbarButton(symbol: "xmark", label: "Close") {
                 if let onClose {
                     onClose()
                 } else {
                     dismiss()
                 }
             }
-            .accessibilityLabel("Close")
-            .settingsHeaderButtonAlignment()
         } trailing: {
             EmptyView()
         }
@@ -416,6 +414,28 @@ private struct SettingsMailComposer: UIViewControllerRepresentable {
     }
 }
 
+private struct SettingsToolbarButton: View {
+    @Environment(\.palette) private var palette
+    let symbol: String
+    let label: String
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .guideSymbol(size: 16, weight: .semibold)
+                .foregroundStyle(palette.ink)
+                .frame(
+                    width: AppTheme.Accessibility.minHitTarget,
+                    height: AppTheme.Accessibility.minHitTarget
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+}
+
 private struct UnlockTrialCard: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
@@ -681,11 +701,9 @@ private struct SettingsDetailScaffold<Content: View>: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         .collapsingTitleChrome(title, scrollOffset: $titleScrollOffset) {
-            GuideChromeButton(system: "chevron.left") {
+            SettingsToolbarButton(symbol: "chevron.left", label: "Back") {
                 dismiss()
             }
-            .accessibilityLabel("Back")
-            .settingsHeaderButtonAlignment()
         } trailing: {
             EmptyView()
         }
@@ -867,13 +885,5 @@ private struct SettingsFootnote: View {
             .foregroundStyle(palette.dim)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, AppTheme.Space.lg - AppTheme.sectionGap)
-    }
-}
-
-private extension View {
-    /// The collapsing-title toolbar row is 40pt tall; the prayer flow header row is the
-    /// 44pt hit target. Nudge down 2pt so the button centre matches the prayer flow's.
-    func settingsHeaderButtonAlignment() -> some View {
-        offset(y: (AppTheme.Accessibility.minHitTarget - CollapsingTitleMetrics.toolbarRowHeight) / 2)
     }
 }

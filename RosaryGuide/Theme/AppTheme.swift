@@ -831,46 +831,6 @@ struct GuideSectionLabel: View {
     }
 }
 
-/// Round glass chrome button used in page headers: the rosary prayer flow's close (×)
-/// and the Settings close (×) / back (‹) buttons. 40pt glass circle, 13pt semibold
-/// symbol in ink, 44pt hit target.
-struct GuideChromeButton: View {
-    @Environment(\.palette) private var palette
-
-    var system: String? = nil
-    var label: String? = nil
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            content
-                .foregroundStyle(palette.ink)
-                .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
-        .background {
-            Circle()
-                .fill(.clear)
-                .guideFloatingGlass(in: Circle(), palette: palette)
-                .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
-        }
-        .guidePressable()
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        if let system {
-            Image(systemName: system)
-                .guideSymbol(size: 13, weight: .semibold)
-        } else if let label {
-            Text(label)
-                .font(AppTheme.TypeRole.label(weight: .medium))
-        }
-    }
-}
-
 /// Shared secondary copy style for Home mystery themes and papal intention captions.
 struct GuideThemeSummaryStyle: ViewModifier {
     @Environment(\.palette) private var palette
