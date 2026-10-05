@@ -22,7 +22,6 @@ struct CompletionView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SettingsStore.self) private var settings
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
 
     /// Always the dark ceremony palette. Reading the inherited palette would
@@ -73,41 +72,28 @@ struct CompletionView: View {
         return intentionTitle
     }
 
-    private var prefersCompactType: Bool {
-        // xxxLarge already scales title/quote enough to push Offered for under Done
-        // on a non-scrolling layout; don't wait for accessibility sizes.
-        dynamicTypeSize >= .xxxLarge
-    }
-
-    /// Short enough that Done and Saint Michael both sit above the home
-    /// indicator on an iPhone 14 Pro (852pt, ~759pt inside the safe area).
-    private var heroHeight: CGFloat { prefersCompactType ? 112 : 148 }
-
     var body: some View {
         // No scroll. A GeometryReader that measured itself and locked a
         // frame re-entered until the main thread never returned. The icon
         // slot is a fixed 88pt frame; its background reader does not change that size.
         ZStack {
             VStack(spacing: 0) {
+                // The spare room above the tick is the artwork. It fades to
+                // black at the bottom edge, so the statue reads down to just
+                // above the check instead of stopping in a short top band.
                 MysteryArtworkView(
                     set: mysterySet,
                     mysteryNumber: nil,
                     slug: nil,
-                    kind: .heroTall,
-                    cropTop: 0.45
+                    kind: .heroTall
                 )
-                .frame(height: heroHeight)
-                .frame(maxWidth: .infinity)
-                .clipped()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .overlay { heroFade }
+                .clipped()
+                .ignoresSafeArea(edges: .top)
                 .opacity(resting ? 1 : 0)
                 .offset(y: resting ? 0 : 28)
                 .accessibilityHidden(true)
-
-                // Spare room sits above the tick group. The intention chip
-                // sits 12pt above the quote (40pt when there is no intention),
-                // and Done stays 36pt under the quote.
-                Spacer(minLength: 0)
 
                 iconSlot
                     .padding(.top, 8)
@@ -194,13 +180,15 @@ struct CompletionView: View {
         }
     }
 
+    /// Clear through most of the artwork. The dissolve is only the last
+    /// stretch, so the image meets black just above the tick.
     private var heroFade: some View {
         LinearGradient(
             stops: [
-                .init(color: pageBg.opacity(0.12), location: 0),
-                .init(color: pageBg.opacity(0.28), location: 0.35),
-                .init(color: pageBg.opacity(0.72), location: 0.68),
-                .init(color: pageBg.opacity(0.94), location: 0.88),
+                .init(color: pageBg.opacity(0.20), location: 0),
+                .init(color: pageBg.opacity(0), location: 0.16),
+                .init(color: pageBg.opacity(0), location: 0.70),
+                .init(color: pageBg.opacity(0.55), location: 0.86),
                 .init(color: pageBg, location: 1)
             ],
             startPoint: .top,
