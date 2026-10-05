@@ -1,5 +1,8 @@
 import SwiftUI
 import Lottie
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// Native player for the Rosary Tick composition. The splash screen still uses
 /// the bundled web player; that view cannot travel from the center of the
@@ -9,8 +12,11 @@ struct RosaryTickPlayer: UIViewRepresentable {
     /// The composition fades every layer out by frame 96; holding frame 82
     /// keeps the tick on screen so it can travel into the icon slot.
     static let holdProgress: AnimationProgressTime = 82.0 / 96.0
+    /// Trim of the tick stroke reaches 100% at frame 70 (30 fps).
+    static let strokeDoneProgress: AnimationProgressTime = 70.0 / 96.0
 
     var plays: Bool
+    var hapticsEnabled: Bool
     var onComplete: () -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -58,10 +64,23 @@ struct RosaryTickPlayer: UIViewRepresentable {
                 return
             }
             if plays {
-                animationView.play(fromProgress: 0, toProgress: RosaryTickPlayer.holdProgress, loopMode: .playOnce) { finished in
+                context.coordinator.prepareTickHaptic()
+                animationView.play(
+                    fromProgress: 0,
+                    toProgress: RosaryTickPlayer.strokeDoneProgress,
+                    loopMode: .playOnce
+                ) { finished in
                     guard finished else { return }
-                    animationView.currentProgress = RosaryTickPlayer.holdProgress
-                    DispatchQueue.main.async { context.coordinator.onComplete() }
+                    context.coordinator.playTickHaptic(enabled: hapticsEnabled)
+                    animationView.play(
+                        fromProgress: RosaryTickPlayer.strokeDoneProgress,
+                        toProgress: RosaryTickPlayer.holdProgress,
+                        loopMode: .playOnce
+                    ) { finished in
+                        guard finished else { return }
+                        animationView.currentProgress = RosaryTickPlayer.holdProgress
+                        DispatchQueue.main.async { context.coordinator.onComplete() }
+                    }
                 }
             } else {
                 animationView.currentProgress = RosaryTickPlayer.holdProgress
@@ -80,9 +99,28 @@ struct RosaryTickPlayer: UIViewRepresentable {
 
     final class Coordinator {
         var didStart = false
+        var didTickHaptic = false
         var animationView: LottieAnimationView?
         var onComplete: () -> Void
+        #if canImport(UIKit)
+        private let tickHaptic = UIImpactFeedbackGenerator(style: .light)
+        #endif
         init(onComplete: @escaping () -> Void) { self.onComplete = onComplete }
+
+        func prepareTickHaptic() {
+            #if canImport(UIKit)
+            tickHaptic.prepare()
+            #endif
+        }
+
+        /// One light tap when the tick stroke finishes. Not a buzz.
+        func playTickHaptic(enabled: Bool) {
+            guard enabled, !didTickHaptic else { return }
+            didTickHaptic = true
+            #if canImport(UIKit)
+            tickHaptic.impactOccurred(intensity: 0.7)
+            #endif
+        }
     }
 }
 

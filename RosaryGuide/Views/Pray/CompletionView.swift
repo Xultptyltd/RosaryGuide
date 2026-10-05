@@ -12,6 +12,7 @@ struct CompletionView: View {
     var onMichael: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(SettingsStore.self) private var settings
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
 
@@ -98,9 +99,9 @@ struct CompletionView: View {
                     .offset(y: resting ? 0 : 108)
                     .opacity(resting ? 1 : 0)
 
-                // 32pt here plus the 4pt top padding on the buttons is 36pt
-                // from the quote card to Done. Fixed, so it does not grow.
-                Color.clear.frame(height: 32)
+                // Extra space stays above the buttons so Done and Saint Michael
+                // sit on the bottom safe area. A fixed 36pt gap pulled them up.
+                Spacer(minLength: 0)
 
                 actions()
                     .offset(y: resting ? 0 : 108)
@@ -129,7 +130,7 @@ struct CompletionView: View {
     private var iconSlot: some View {
         Group {
             if reduceMotion {
-                RosaryTickPlayer(plays: false, onComplete: {})
+                RosaryTickPlayer(plays: false, hapticsEnabled: false, onComplete: {})
                     .frame(width: Self.tickRest, height: Self.tickRest)
             } else {
                 Color.clear
@@ -157,7 +158,7 @@ struct CompletionView: View {
             let fitted = min(proxy.size.width, proxy.size.height) - Self.tickMargin * 2
             // First state only. About 30% smaller than the fitted canvas; the 88pt slot is unchanged.
             let play = max(Self.tickRest, fitted * 0.7)
-            RosaryTickPlayer(plays: true, onComplete: morphIn)
+            RosaryTickPlayer(plays: true, hapticsEnabled: settings.hapticsEnabled, onComplete: morphIn)
                 .frame(width: play, height: play)
                 .scaleEffect(landed ? Self.tickRest / play : 1)
                 .position(landed ? target : center)
@@ -279,7 +280,7 @@ struct CompletionView: View {
         }
         .padding(.horizontal, AppTheme.gutter)
         .padding(.top, 4)
-        .padding(.bottom, 12)
+        .padding(.bottom, 0)
     }
 }
 
