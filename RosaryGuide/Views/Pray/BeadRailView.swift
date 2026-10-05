@@ -28,6 +28,13 @@ struct RosaryBeadMapView: View {
     }()
 
     private let layout = RosaryGeometry.shared
+    /// When the current bead last moved. Drives a one-off pulse on the
+    /// existing timeline; no extra timers or views.
+    @SwiftUI.State private var advancedAt: Date = .distantPast
+
+    /// Advance pulse: scale up and back with a brief glow.
+    private static let advanceDuration: TimeInterval = 0.3
+    private static let advanceScale: CGFloat = 0.18
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || animationPaused)) { timeline in
@@ -37,10 +44,15 @@ struct RosaryBeadMapView: View {
                 let oy = (size.height - layout.viewH * s) / 2
                 context.translateBy(x: ox, y: oy)
                 context.scaleBy(x: s, y: s)
-                paint(&context, phase: pulsePhase(at: timeline.date))
+                paint(&context, phase: pulsePhase(at: timeline.date), advance: advanceProgress(at: timeline.date))
             }
         }
         .frame(height: 118)
+        .onChange(of: locus) { _, _ in
+            // Reduce Motion: no pulse, the bead simply changes.
+            guard !reduceMotion, !animationPaused else { return }
+            advancedAt = Date()
+        }
         .accessibilityLabel("Rosary beads")
         .accessibilityValue(valueLabel)
     }
@@ -60,24 +72,40 @@ struct RosaryBeadMapView: View {
         }
     }
 
+    /// 0...1 through the advance pulse, nil when none is running.
+    private func advanceProgress(at date: Date) -> CGFloat? {
+        guard !reduceMotion else { return nil }
+        let t = date.timeIntervalSince(advancedAt) / Self.advanceDuration
+        guard t >= 0, t < 1 else { return nil }
+        return CGFloat(t)
+    }
+
+    /// 1 → 1.18 → 1 over the pulse.
+    private func advanceBoost(_ progress: CGFloat?) -> CGFloat {
+        guard let progress else { return 1 }
+        return 1 + Self.advanceScale * sin(.pi * progress)
+    }
+
     private func pulsePhase(at date: Date) -> CGFloat {
         guard !reduceMotion else { return 0 }
         let cycle = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: AppTheme.Component.beadPulseCycle) / AppTheme.Component.beadPulseCycle
         return CGFloat(cycle)
     }
 
-    private func paint(_ context: inout GraphicsContext, phase: CGFloat) {
+    private func paint(_ context: inout GraphicsContext, phase: CGFloat, advance: CGFloat? = nil) {
         let cord = mix(palette.dim, onto: palette.prayBg, amount: colorScheme == .light ? 0.55 : 0.40)
         // Draw cord only between beads (website pearls sit on top of an opaque cord gap).
         paintCordSegments(&context, color: cord)
         paintPulse(&context, phase: phase)
+        paintAdvanceGlow(&context, progress: advance)
+        let boost = advanceBoost(advance)
 
         for bead in layout.beads {
             let state = state(of: bead.locus)
             if bead.isSpace {
                 paintSpace(&context, bead: bead, state: state)
             } else {
-                paintPearl(&context, at: bead.point, large: bead.large, state: state)
+                paintPearl(&context, at: bead.point, large: bead.large, state: state, boost: state == .now ? boost : 1)
             }
         }
         paintMedal(&context, at: layout.medal, state: state(of: .closing))
@@ -103,6 +131,17 @@ struct RosaryBeadMapView: View {
         let inner = circleRect(center: target.point, radius: innerRadius)
         context.fill(Path(ellipseIn: inner), with: .color(palette.beadPulseFill.opacity(fillOpacity)))
         context.stroke(Path(ellipseIn: outer), with: .color(palette.beadPulseStroke.opacity(outerOpacity)), lineWidth: target.lineWidth)
+    }
+
+    /// Brief soft glow behind the bead that just became current.
+    private func paintAdvanceGlow(_ context: inout GraphicsContext, progress: CGFloat?) {
+        guard let progress, let target = pulseTarget else { return }
+        let radius = target.baseRadius * (0.9 + 0.5 * easeOutCubic(progress))
+        let opacity = 0.32 * Double(1 - progress)
+        context.fill(
+            Path(ellipseIn: circleRect(center: target.point, radius: radius)),
+            with: .color(palette.accent.opacity(opacity))
+        )
     }
 
     private func easeOutCubic(_ value: CGFloat) -> CGFloat {
@@ -173,8 +212,8 @@ struct RosaryBeadMapView: View {
         }
     }
 
-    private func paintPearl(_ context: inout GraphicsContext, at p: CGPoint, large: Bool, state: State) {
-        let r: CGFloat = large ? 3.45 : 2.25
+    private func paintPearl(_ context: inout GraphicsContext, at p: CGPoint, large: Bool, state: State, boost: CGFloat = 1) {
+        let r: CGFloat = (large ? 3.45 : 2.25) * boost
         let disk = CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2)
         // Opaque underlay so the cord never shows through (website pearls are color-mix solids).
         context.fill(Path(ellipseIn: disk), with: .color(palette.prayBg))
