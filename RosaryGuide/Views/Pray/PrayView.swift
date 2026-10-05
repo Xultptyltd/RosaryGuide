@@ -1281,7 +1281,11 @@ struct PrayView: View {
             expandedTitle: "Done",
             scrollLabel: "Scroll to read the prayer",
             onScroll: scrollToBottom,
-            onAdvance: { returnToFinishScreen() }
+            onAdvance: {
+                // Light tap, same as the circle. Fires before the dismiss, which stays immediate.
+                HapticService.play(.light, enabled: settings.hapticsEnabled)
+                returnToFinishScreen()
+            }
         )
     }
 
