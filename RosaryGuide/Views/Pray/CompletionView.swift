@@ -104,7 +104,7 @@ struct CompletionView: View {
                 .accessibilityHidden(true)
 
                 // Spare room sits above the tick group. The intention chip
-                // sits 16pt above the quote (40pt when there is no intention),
+                // sits 12pt above the quote (40pt when there is no intention),
                 // and Done stays 36pt under the quote.
                 Spacer(minLength: 0)
 
@@ -234,24 +234,27 @@ struct CompletionView: View {
                     .layoutPriority(1)
             }
 
-            Color.clear.frame(height: hasIntention ? 16 : 40)
+            Color.clear.frame(height: hasIntention ? 12 : 40)
 
-            VStack(spacing: 6) {
-                Text("“\(quote.text)”")
-                    .font(AppTheme.TypeRole.bodySmall)
-                    .foregroundStyle(palette.dim)
+            VStack(spacing: 8) {
+                Text(quote.text)
+                    .font(AppTheme.serif(18, italic: true, opticalSize: 18, relativeTo: .body))
+                    .foregroundStyle(palette.completionTitle.opacity(0.88))
                     .multilineTextAlignment(.center)
+                    .lineSpacing(2)
                     .lineLimit(3)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.9)
+                    .padding(.horizontal, 8)
 
                 Text(quote.attribution.uppercased())
                     .font(AppTheme.TypeRole.quoteAttribution)
-                    .tracking(AppTheme.Component.quoteAttributionTracking)
-                    .foregroundStyle(palette.faint)
+                    .tracking(0.8)
+                    .foregroundStyle(palette.completionLabel)
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .padding(12)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
             .guideCard(fill: palette.surface)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(quote.text), \(quote.attribution)")
