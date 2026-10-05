@@ -274,13 +274,13 @@ struct OfferView: View {
                         )
                         .guideNavList(pageGutter: AppTheme.gutter)
                         // Featured card to the Pope's card.
-                        .padding(.top, currentIntention == nil ? 0 : AppTheme.Space.lg)
+                        .padding(.top, currentIntention == nil ? 0 : AppTheme.Space.md)
                     }
 
                     addIntentionButton(title: "Add an intention", matchesLearnStyle: true)
                         .guideNavList(pageGutter: AppTheme.gutter)
                         // Featured / Pope's card to the Add button.
-                        .padding(.top, (currentIntention == nil && papalSuggestion == nil) ? 0 : AppTheme.Space.lg)
+                        .padding(.top, (currentIntention == nil && papalSuggestion == nil) ? 0 : AppTheme.Space.md)
 
                     VStack(spacing: 0) {
                         ForEach(secondaryIntentions) { item in
