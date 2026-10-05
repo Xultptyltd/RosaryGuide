@@ -98,7 +98,9 @@ struct CompletionView: View {
                     .offset(y: resting ? 0 : 108)
                     .opacity(resting ? 1 : 0)
 
-                Spacer(minLength: 8)
+                // 32pt here plus the 4pt top padding on the buttons is 36pt
+                // from the quote card to Done. Fixed, so it does not grow.
+                Color.clear.frame(height: 32)
 
                 actions()
                     .offset(y: resting ? 0 : 108)
