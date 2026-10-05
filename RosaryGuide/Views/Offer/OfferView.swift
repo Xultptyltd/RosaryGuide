@@ -105,7 +105,7 @@ struct OfferView: View {
 
                     emptyOrDivider
 
-                    if let papalSuggestion {
+                    if let papalSuggestion = visiblePapalSuggestion {
                         EmptyPapalIntentionCard(
                             monthLine: papalEmptyMonthLine(for: papalSuggestion)
                         ) {
@@ -202,6 +202,25 @@ struct OfferView: View {
     private var papalSuggestion: SuggestedIntention? {
         suggestions.first(where: isPapalSuggestion)
     }
+    /// This month's Pope's card, hidden only while this month's intention is in the
+    /// user's list. Per month: the suggestion id is "pope-<yearMonth>", so October's
+    /// adopted intention ("pope-2026-10") does not hide November's card.
+    /// Removing it brings the card back.
+    private var visiblePapalSuggestion: SuggestedIntention? {
+        guard let papalSuggestion, !hasAdoptedThisMonthsPapal(papalSuggestion) else { return nil }
+        return papalSuggestion
+    }
+
+    /// Matches on the month's id. A title match only counts for an untagged intention
+    /// (typed by hand), so an earlier month's tagged intention with the same wording
+    /// never hides a new month's card.
+    private func hasAdoptedThisMonthsPapal(_ item: SuggestedIntention) -> Bool {
+        offer.sortedIntentions.contains {
+            $0.sourceId == item.id
+                || ($0.sourceId == nil
+                    && $0.title.compare(item.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame)
+        }
+    }
     private var currentMonthTitle: String {
         Date().formatted(.dateTime.month(.wide).year())
     }
@@ -289,7 +308,7 @@ struct OfferView: View {
                         .guideNavList(pageGutter: AppTheme.gutter)
                     }
 
-                    if let papalSuggestion {
+                    if let papalSuggestion = visiblePapalSuggestion {
                         PapalMonthCard(
                             item: papalSuggestion,
                             isAdded: hasAdoptedSuggestion(papalSuggestion),
@@ -307,7 +326,7 @@ struct OfferView: View {
                     }
                         .guideNavList(pageGutter: AppTheme.gutter)
                         // Featured / Pope's card to the Add button.
-                        .padding(.top, (currentIntention == nil && papalSuggestion == nil) ? 0 : AppTheme.Space.md)
+                        .padding(.top, (currentIntention == nil && visiblePapalSuggestion == nil) ? 0 : AppTheme.Space.md)
 
                     VStack(spacing: 0) {
                         ForEach(secondaryIntentions) { item in
