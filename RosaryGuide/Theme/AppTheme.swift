@@ -450,6 +450,14 @@ enum CollapsingTitleMetrics {
     static let largeTitleBlockHeight: CGFloat = 92
     static let largeSize: CGFloat = 54
     static let smallSize: CGFloat = 17
+    /// Bottom of the expanded H1's text frame, measured from the top of the scroll
+    /// content (title centre 31pt + half the 54pt Instrument Sans line height).
+    static let largeTitleBottom: CGFloat = 64
+
+    /// `CollapsingTitleSpacer` height that starts the next element `gap` below the expanded H1.
+    static func spacerHeight(gapBelowTitle gap: CGFloat) -> CGFloat {
+        largeTitleBottom + gap
+    }
 
     static func progress(forScrollOffset y: CGFloat) -> CGFloat {
         let linear = min(1, max(0, y / distance))
@@ -513,7 +521,10 @@ struct MorphingNavTitle: View {
                 t
             )
             let measured = titleWidth > 0 ? titleWidth : size * CGFloat(title.count) * 0.55
-            let xLeading = gutter + measured * 0.5
+            // Long titles shrink to fit between the gutters (short titles stay at 1).
+            let available = max(1, geo.size.width - gutter * 2)
+            let fit = min(1, available / max(measured, 1))
+            let xLeading = gutter + measured * fit * 0.5
             let xCenter = geo.size.width * 0.5
             let x = CollapsingTitleMetrics.lerp(xLeading, xCenter, t)
 
@@ -529,6 +540,7 @@ struct MorphingNavTitle: View {
                     }
                 )
                 .onPreferenceChange(MorphingTitleWidthKey.self) { titleWidth = $0 }
+                .scaleEffect(fit)
                 .position(x: x, y: y)
         }
         // Tall enough for the expanded H1 under the toolbar; overlay only — no inset growth.

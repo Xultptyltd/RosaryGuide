@@ -37,13 +37,13 @@ struct SettingsView: View {
 
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                // The expanded H1's text frame ends about 64pt below the top of the
-                // scroll content (title centre 31pt + half of the 54pt line height).
-                // Size the spacer so the Premium card starts sectionTitleGap below it.
-                CollapsingTitleSpacer(height: 64 + AppTheme.sectionTitleGap - AppTheme.Space.xl)
+                VStack(alignment: .leading, spacing: 0) {
+                    // Standard large-title space; the Premium card starts sectionTitleGap below the H1.
+                    CollapsingTitleSpacer(height: CollapsingTitleMetrics.spacerHeight(gapBelowTitle: AppTheme.sectionTitleGap))
 
-                UnlockTrialCard {
-                    placeholderMessage = "Premium trials will be available when subscriptions are configured."
+                    UnlockTrialCard {
+                        placeholderMessage = "Premium trials will be available when subscriptions are configured."
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
@@ -81,7 +81,7 @@ struct SettingsView: View {
                     }
 
                     SettingsSection(title: "Help & support") {
-                        SettingsNavigationRow(title: "Frequently Asked Questions", icon: "questionmark.circle", destination: .faqs)
+                        SettingsNavigationRow(title: "Frequently asked questions", icon: "questionmark.circle", destination: .faqs)
                         SettingsActionRow(title: "Report a problem", icon: "exclamationmark.bubble") {
                             showReportChoice = true
                         }
@@ -98,7 +98,7 @@ struct SettingsView: View {
                         SettingsActionRow(title: "Replay welcome", icon: "sparkles") {
                             showOnboardingPreview = true
                         }
-                        SettingsActionRow(title: "Terms of Service", icon: "doc.text", accessory: .externalLink) {
+                        SettingsActionRow(title: "Terms of service", icon: "doc.text", accessory: .externalLink) {
                             open("https://xult.ltd/terms/")
                         }
                         SettingsActionRow(title: "Privacy", icon: "hand.raised", accessory: .externalLink) {
@@ -120,10 +120,11 @@ struct SettingsView: View {
         }
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
+        .background(SettingsSwipeBackEnabler())
         .guidePageChrome()
         .toolbar(.hidden, for: .navigationBar)
-        .collapsingTitleChrome("your profile.", scrollOffset: $titleScrollOffset) {
-            SettingsCloseButton {
+        .collapsingTitleChrome("Your profile", scrollOffset: $titleScrollOffset) {
+            SettingsToolbarButton(symbol: "xmark", label: "Close") {
                 if let onClose {
                     onClose()
                 } else {
@@ -133,7 +134,7 @@ struct SettingsView: View {
         } trailing: {
             EmptyView()
         }
-        .navigationTitle("your profile.")
+        .navigationTitle("Your profile")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: SettingsDestination.self) { destination in
             destinationView(destination)
@@ -402,13 +403,15 @@ private struct SettingsMailComposer: UIViewControllerRepresentable {
     }
 }
 
-private struct SettingsCloseButton: View {
+private struct SettingsToolbarButton: View {
     @Environment(\.palette) private var palette
+    let symbol: String
+    let label: String
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "xmark")
+            Image(systemName: symbol)
                 .guideSymbol(size: 16, weight: .semibold)
                 .foregroundStyle(palette.ink)
                 .frame(
@@ -418,7 +421,7 @@ private struct SettingsCloseButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Close")
+        .accessibilityLabel(label)
     }
 }
 
@@ -452,7 +455,7 @@ private struct UnlockTrialCard: View {
             }
 
             Button(action: action) {
-                Text("Unlock Free Trial")
+                Text("Unlock free trial")
                     .font(AppTheme.TypeRole.settingsRow(weight: .semibold))
                     .foregroundStyle(palette.secondaryButtonText)
                     .frame(maxWidth: .infinity)
@@ -661,17 +664,20 @@ private struct SettingsDivider: View {
 
 private struct SettingsDetailScaffold<Content: View>: View {
     @Environment(\.palette) private var palette
+    @Environment(\.dismiss) private var dismiss
     let title: String
     @ViewBuilder var content: () -> Content
 
+    @State private var titleScrollOffset: CGFloat = 0
+
     var body: some View {
-        ScrollView {
+        ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
-                Text(title)
-                    .font(AppTheme.TypeRole.settingsTitle)
-                    .foregroundStyle(palette.ink)
-                    .accessibilityAddTraits(.isHeader)
-                    .padding(.top, AppTheme.Space.xl)
+                // Standard large-title space; the first section starts
+                // sectionTitleGap below the H1 (the stack adds sectionGap).
+                CollapsingTitleSpacer(
+                    height: CollapsingTitleMetrics.spacerHeight(gapBelowTitle: AppTheme.sectionTitleGap) - AppTheme.sectionGap
+                )
 
                 content()
             }
@@ -680,8 +686,38 @@ private struct SettingsDetailScaffold<Content: View>: View {
         }
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
-        .navigationTitle(title)
+        .guidePageChrome()
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
+        .collapsingTitleChrome(title, scrollOffset: $titleScrollOffset) {
+            SettingsToolbarButton(symbol: "chevron.left", label: "Back") {
+                dismiss()
+            }
+        } trailing: {
+            EmptyView()
+        }
+        .navigationTitle(title)
+    }
+}
+
+/// Keeps the edge-swipe back gesture working on Settings pages, which hide the
+/// system navigation bar to use the collapsing large title. Only allows the
+/// swipe when there is a page to go back to.
+private struct SettingsSwipeBackEnabler: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> Controller { Controller() }
+    func updateUIViewController(_ uiViewController: Controller, context: Context) {}
+
+    final class Controller: UIViewController, UIGestureRecognizerDelegate {
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            guard let pop = navigationController?.interactivePopGestureRecognizer else { return }
+            pop.isEnabled = true
+            pop.delegate = self
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            (navigationController?.viewControllers.count ?? 0) > 1
+        }
     }
 }
 
@@ -693,7 +729,7 @@ private struct SettingsAccountScreen: View {
     var onSignOut: () -> Void
 
     var body: some View {
-        SettingsDetailScaffold(title: "account.") {
+        SettingsDetailScaffold(title: "Account") {
             if auth.isSignedIn {
                 SettingsSection(title: "You") {
                     SettingsValueOnlyRow(title: "Name", icon: "person", value: auth.displayName ?? "Not set")
@@ -761,7 +797,7 @@ private struct SettingsPremiumScreen: View {
     @Binding var placeholderMessage: String?
 
     var body: some View {
-        SettingsDetailScaffold(title: "premium.") {
+        SettingsDetailScaffold(title: "Premium") {
             UnlockTrialCard {
                 placeholderMessage = "Premium trials will be available when subscriptions are configured."
             }
@@ -770,7 +806,7 @@ private struct SettingsPremiumScreen: View {
                 SettingsValueActionRow(title: "Lifetime Premium", icon: "infinity", value: "save 40%") {
                     placeholderMessage = "Lifetime Premium is not available yet."
                 }
-                SettingsActionRow(title: "Restore Purchase", icon: "arrow.clockwise") {
+                SettingsActionRow(title: "Restore purchase", icon: "arrow.clockwise") {
                     placeholderMessage = "Purchases are not configured yet."
                 }
             }
@@ -780,7 +816,7 @@ private struct SettingsPremiumScreen: View {
 
 private struct SettingsFAQScreen: View {
     var body: some View {
-        SettingsDetailScaffold(title: "frequently asked questions.") {
+        SettingsDetailScaffold(title: "Frequently asked questions") {
             SettingsSection(title: "Rosary Guide") {
                 SettingsValueOnlyRow(title: "Do intentions sync?", icon: "questionmark.circle", value: "Yes")
                 SettingsValueOnlyRow(title: "Can I pray offline?", icon: "questionmark.circle", value: "Yes")
@@ -796,7 +832,7 @@ private struct SettingsFAQScreen: View {
 
 private struct SettingsWidgetsScreen: View {
     var body: some View {
-        SettingsDetailScaffold(title: "widgets.") {
+        SettingsDetailScaffold(title: "Widgets") {
             SettingsSection(title: "Widgets") {
                 SettingsValueOnlyRow(title: "Daily mysteries", icon: "sun.max", value: "Coming soon")
                 SettingsValueOnlyRow(title: "Feast days", icon: "calendar", value: "Coming soon")
@@ -813,7 +849,7 @@ private struct SettingsAcknowledgementsScreen: View {
     @Binding var placeholderMessage: String?
 
     var body: some View {
-        SettingsDetailScaffold(title: "acknowledgements.") {
+        SettingsDetailScaffold(title: "Acknowledgements") {
             SettingsSection(title: "Libraries") {
                 SettingsActionRow(title: "Firebase", icon: "flame") {
                     placeholderMessage = "Firebase is used for private account sign-in and synced intentions."
