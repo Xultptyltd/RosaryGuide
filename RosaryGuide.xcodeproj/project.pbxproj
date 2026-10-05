@@ -37,6 +37,7 @@
 		8F62025B36D09F46E23C493B /* ArtCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63A4454F491B38C212CC931 /* ArtCatalog.swift */; };
 		8F878F57D693A3DE796BB485 /* IntentionSuggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C5E677CA4145DB823FC9DA /* IntentionSuggestions.swift */; };
 		92CDCB58703677D509CA6491 /* MysteryArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29555CF3A426924297A6D05 /* MysteryArtworkView.swift */; };
+		A1AFEA3EC07D99F520B3D572 /* IntentionSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2434B0C2353CC2E9F240EC5E /* IntentionSurface.swift */; };
 		94514832BFC69572CD2AC5CD /* RosarySequenceBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 991251FFFCB12E381DCA553A /* RosarySequenceBuilder.swift */; };
 		95590D86845CE1AA6A25E770 /* OfferIntention.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7983533187CBC65D694102A4 /* OfferIntention.swift */; };
 		98170303FFF360ECF63D9EEC /* FeastsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF863537C38D8D4053DADC66 /* FeastsView.swift */; };
@@ -139,6 +140,7 @@
 		BD04A739CD276BFD692104B7 /* HowToPrayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToPrayView.swift; sourceTree = "<group>"; };
 		BD36BF90207B9099879DC954 /* BeadRailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeadRailView.swift; sourceTree = "<group>"; };
 		C29555CF3A426924297A6D05 /* MysteryArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MysteryArtworkView.swift; sourceTree = "<group>"; };
+		2434B0C2353CC2E9F240EC5E /* IntentionSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentionSurface.swift; sourceTree = "<group>"; };
 		C7E8F9A0B1C2D3E4F5A60718 /* LiturgicalVerseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiturgicalVerseCatalog.swift; sourceTree = "<group>"; };
 		D7D77BDA7A9A0D515ADDDF0D /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		D9EF17A3557946A382A9BB17 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fonts; sourceTree = "<group>"; };
@@ -272,6 +274,7 @@
 				65622D107422099E4F60DE1E /* AppTheme.swift */,
 				F63A4454F491B38C212CC931 /* ArtCatalog.swift */,
 				C29555CF3A426924297A6D05 /* MysteryArtworkView.swift */,
+				2434B0C2353CC2E9F240EC5E /* IntentionSurface.swift */,
 			);
 			path = Theme;
 			sourceTree = "<group>";
@@ -541,6 +544,7 @@
 				F17192475C3C5E005FFA1934 /* AppTheme.swift in Sources */,
 				A1C00101A1B2C3D4E5F60102 /* AppIconService.swift in Sources */,
 				92CDCB58703677D509CA6491 /* MysteryArtworkView.swift in Sources */,
+				A1AFEA3EC07D99F520B3D572 /* IntentionSurface.swift in Sources */,
 				98170303FFF360ECF63D9EEC /* FeastsView.swift in Sources */,
 				780D2F681F67657B70F8EF92 /* HomeView.swift in Sources */,
 				B2C3D4E5F60718293A4B5C6D /* HomeSettingsDrawer.swift in Sources */,

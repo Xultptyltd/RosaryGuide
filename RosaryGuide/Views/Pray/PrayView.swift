@@ -856,87 +856,20 @@ struct PrayView: View {
 
 
 
-    /// Quiet inline intention metadata under the Sign of the Cross title.
+    /// Intention surface under the Sign of the Cross title.
     /// Optional — never blocks Next. Tap opens the picker; × clears.
     private var chosenOfferIntention: OfferIntention? {
         chosenIntentionId.flatMap { offer.intention(id: $0) }
     }
 
-    @ViewBuilder
     private var signOfCrossIntentionBlock: some View {
-        let hasIntention = !chosenIntentionTitle.isEmpty
-        let resolved = chosenOfferIntention
-        let displayTitle = resolved.map {
-            IntentionPrivacy.displayTitle($0, hidden: hideIntentionText)
-        } ?? IntentionPrivacy.displayText(chosenIntentionTitle, hidden: hideIntentionText)
-
-        HStack(alignment: .center, spacing: AppTheme.Space.sm) {
-            Text("For:")
-                .font(AppTheme.TypeRole.themeSummary)
-                .foregroundStyle(palette.dim)
-
-            if hasIntention {
-                Button {
-                    showIntentionSheet = true
-                } label: {
-                    HStack(spacing: AppTheme.Space.sm) {
-                        // Avatar only when we have a known intention (papal portrait / glyph).
-                        if let resolved {
-                            IntentionIconView(
-                                accent: resolved.accent,
-                                emoji: resolved.displayEmoji,
-                                size: 27,
-                                usesPopePortrait: resolved.isPapal
-                            )
-                        }
-                        Text(displayTitle)
-                            .font(AppTheme.TypeRole.bodySmall(weight: .medium))
-                            .foregroundStyle(palette.ink)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
-                            .multilineTextAlignment(.leading)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("For: \(displayTitle)")
-                .accessibilityHint("Opens intention picker")
-
-                Button {
-                    clearChosenIntention()
-                } label: {
-                    Image(systemName: "xmark")
-                        .guideSymbol(size: 15, weight: .semibold)
-                        .foregroundStyle(palette.secondaryText)
-                        .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear intention")
-                .accessibilityHint("Returns to Add an intention")
-            } else {
-                Button {
-                    showIntentionSheet = true
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("Add an intention")
-                            .font(AppTheme.TypeRole.bodySmall(weight: .medium))
-                            .foregroundStyle(palette.accent)
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right")
-                            .guideSymbol(size: 12, weight: .semibold)
-                            .foregroundStyle(palette.accent.opacity(0.75))
-                            .accessibilityHidden(true)
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("For: Add an intention")
-                .accessibilityHint("Opens intention picker")
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        IntentionSurface(
+            title: chosenIntentionTitle,
+            intention: chosenOfferIntention,
+            hidesText: hideIntentionText,
+            onOpen: { showIntentionSheet = true },
+            onClear: { clearChosenIntention() }
+        )
         .padding(.bottom, AppTheme.Space.xl)
     }
 
