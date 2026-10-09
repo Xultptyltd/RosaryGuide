@@ -24,7 +24,11 @@ final class AuthStore: NSObject {
     /// Name from the sign-in provider, when it shared one.
     private(set) var displayName: String?
     private(set) var isWorking = false
+    private(set) var activeSignInProvider: Provider?
     var errorMessage: String?
+
+    var isSigningInWithApple: Bool { activeSignInProvider == .apple }
+    var isSigningInWithGoogle: Bool { activeSignInProvider == .google }
 
     private var authHandle: AuthStateDidChangeListenerHandle?
     private var currentNonce: String?
@@ -61,8 +65,7 @@ final class AuthStore: NSObject {
         let request = ASAuthorizationAppleIDProvider().createRequest()
         request.nonce = Self.sha256(nonce)
 
-        isWorking = true
-        errorMessage = nil
+        beginWork(signInProvider: .apple)
 
         let controller = ASAuthorizationController(authorizationRequests: [request])
         controller.delegate = self
@@ -84,8 +87,7 @@ final class AuthStore: NSObject {
             return
         }
 
-        isWorking = true
-        errorMessage = nil
+        beginWork(signInProvider: .google)
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
         GIDSignIn.sharedInstance.signIn(withPresenting: root) { [weak self] result, error in
             Task { @MainActor in
@@ -136,8 +138,7 @@ final class AuthStore: NSObject {
         let deletedProvider = provider
         let appleCode = pendingAppleAuthorizationCode
         pendingAppleAuthorizationCode = nil
-        isWorking = true
-        errorMessage = nil
+        beginWork()
 
         Task { @MainActor in
             if deletedProvider == .apple {
@@ -174,7 +175,7 @@ final class AuthStore: NSObject {
                 GIDSignIn.sharedInstance.signOut()
             }
             self.apply(user: nil)
-            self.isWorking = false
+            self.endWork()
             completion(true)
         }
     }
@@ -182,7 +183,7 @@ final class AuthStore: NSObject {
     /// Clears anything kept for a deletion that will not go ahead.
     func cancelPendingAccountDeletion() {
         pendingAppleAuthorizationCode = nil
-        isWorking = false
+        endWork()
     }
 
     func reauthenticateForSensitiveOperation(completion: @escaping @MainActor @Sendable (Bool) -> Void) {
@@ -243,7 +244,7 @@ final class AuthStore: NSObject {
                     return
                 }
                 self.apply(user: result?.user)
-                self.isWorking = false
+                self.endWork()
             }
         }
     }
@@ -257,8 +258,7 @@ final class AuthStore: NSObject {
         let request = ASAuthorizationAppleIDProvider().createRequest()
         request.nonce = Self.sha256(nonce)
 
-        isWorking = true
-        errorMessage = nil
+        beginWork(signInProvider: .apple)
 
         let controller = ASAuthorizationController(authorizationRequests: [request])
         controller.delegate = self
@@ -278,8 +278,7 @@ final class AuthStore: NSObject {
             return
         }
 
-        isWorking = true
-        errorMessage = nil
+        beginWork(signInProvider: .google)
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
         GIDSignIn.sharedInstance.signIn(withPresenting: root) { [weak self] result, error in
             Task { @MainActor in
@@ -312,7 +311,7 @@ final class AuthStore: NSObject {
                             return
                         }
 
-                        self.isWorking = false
+                        self.endWork()
                         completion(true)
                     }
                 }
@@ -320,9 +319,20 @@ final class AuthStore: NSObject {
         }
     }
 
+    private func beginWork(signInProvider: Provider? = nil) {
+        isWorking = true
+        activeSignInProvider = signInProvider
+        errorMessage = nil
+    }
+
+    private func endWork() {
+        isWorking = false
+        activeSignInProvider = nil
+    }
+
     private func finishWith(_ message: String?) {
         errorMessage = message
-        isWorking = false
+        endWork()
     }
 
     private func apply(user: User?) {
@@ -475,7 +485,7 @@ extension AuthStore: ASAuthorizationControllerDelegate {
 
                         self.pendingAppleAuthorizationCode = authorizationCode
                         self.appleAuthPurpose = nil
-                        self.isWorking = false
+                        self.endWork()
                         completion(true)
                     }
                 }

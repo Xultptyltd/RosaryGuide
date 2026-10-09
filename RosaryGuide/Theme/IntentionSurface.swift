@@ -63,18 +63,7 @@ struct IntentionSurface: View {
                 .accessibilityHint("Returns to Add an intention")
             } else {
                 Button(action: onOpen) {
-                    HStack(spacing: 4) {
-                        Text("Add an intention")
-                            .font(AppTheme.TypeRole.bodySmall(weight: .medium))
-                            .foregroundStyle(palette.accent)
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right")
-                            .guideSymbol(size: 12, weight: .semibold)
-                            .foregroundStyle(palette.accent.opacity(0.75))
-                            .accessibilityHidden(true)
-                    }
-                    .frame(minHeight: AppTheme.Accessibility.minHitTarget)
-                    .contentShape(Rectangle())
+                    GuideTextButtonLabel(title: "Add an intention")
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Add an intention")

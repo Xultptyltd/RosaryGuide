@@ -19,22 +19,29 @@ struct PrayHubView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
+                VStack(alignment: .leading, spacing: 0) {
                     VStack(alignment: .leading, spacing: 0) {
-                        CollapsingTitleSpacer()
+                        CollapsingTitleSpacer(height: CollapsingTitleMetrics.firstComponentSpacerHeight)
                         introCard
-                            .padding(.top, AppTheme.Space.sm)
                     }
                     .guideReveal()
+
+                    GuideSectionBoundary(gutter: pageGutter)
 
                     prayersSection
                         .guideReveal(delay: 0.06)
 
+                    GuideSectionBoundary(gutter: pageGutter)
+
                     mysteriesSection
                         .guideReveal(delay: 0.1)
 
+                    GuideSectionBoundary(gutter: pageGutter)
+
                     questionsSection
                         .guideReveal(delay: 0.14)
+
+                    GuideSectionBoundary(gutter: pageGutter)
 
                     prayTodayCard
                         .guideReveal(delay: 0.18)
@@ -63,7 +70,7 @@ struct PrayHubView: View {
         VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
             HStack(alignment: .top, spacing: AppTheme.Space.md) {
                 Text("Learn the Rosary")
-                    .font(AppTheme.TypeRole.title)
+                    .font(AppTheme.sans(32, weight: .regular, relativeTo: .largeTitle))
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -87,12 +94,11 @@ struct PrayHubView: View {
                 HStack {
                     Text("Begin walkthrough")
                         .font(AppTheme.TypeRole.callout(weight: .semibold))
-                    Spacer()
-                    Image(systemName: "arrow.right")
-                        .font(AppTheme.TypeRole.label(weight: .semibold))
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .foregroundStyle(palette.primaryButtonText)
                 .padding(.horizontal, AppTheme.Space.lg)
+                .multilineTextAlignment(.center)
                 .frame(height: AppTheme.Component.pillHeight)
                 .background(palette.primaryButtonFill, in: Capsule())
             }
@@ -188,12 +194,11 @@ struct PrayHubView: View {
                 HStack {
                     Text(cta)
                         .font(AppTheme.TypeRole.callout(weight: .semibold))
-                    Spacer()
-                    Image(systemName: "arrow.right")
-                        .font(AppTheme.TypeRole.label(weight: .semibold))
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .foregroundStyle(palette.secondaryButtonText)
                 .padding(.horizontal, AppTheme.Space.lg)
+                .multilineTextAlignment(.center)
                 .frame(height: AppTheme.Component.pillHeight)
                 .background(palette.secondaryButtonFill, in: Capsule())
             }
@@ -232,9 +237,7 @@ struct PrayHubView: View {
 
         return VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.easeInOut(duration: 0.18)) {
-                    expandedPrayerId = isOpen ? nil : prayer.id
-                }
+                expandedPrayerId = isOpen ? nil : prayer.id
             } label: {
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -261,7 +264,7 @@ struct PrayHubView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(prayer.title.primary(for: settings.language))
             .accessibilityValue(isOpen ? "Expanded" : "Collapsed")
-            .accessibilityHint(isOpen ? "Collapses the prayer" : "Expands the prayer")
+            .accessibilityHint(isOpen ? "Collapses prayer" : "Expands prayer")
 
             if isOpen {
                 Text(prayer.text.primary(for: settings.language))
@@ -271,9 +274,10 @@ struct PrayHubView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.trailing, AppTheme.Space.sm)
                     .padding(.bottom, AppTheme.Space.xl)
-                    .transition(.opacity)
+                    .transition(MotionTokens.accordionTransition)
             }
         }
+        .guideAccordion(isExpanded: isOpen)
     }
 
     private func wherePrayerAppears(_ prayer: Prayer) -> String {
@@ -294,9 +298,7 @@ struct PrayHubView: View {
 
         return VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.easeInOut(duration: 0.18)) {
-                    expandedQuestion = isOpen ? nil : article
-                }
+                expandedQuestion = isOpen ? nil : article
             } label: {
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     Text(article.title)
@@ -317,7 +319,7 @@ struct PrayHubView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(article.title)
             .accessibilityValue(isOpen ? "Expanded" : "Collapsed")
-            .accessibilityHint(isOpen ? "Collapses the answer" : "Expands the answer")
+            .accessibilityHint(isOpen ? "Collapses answer" : "Expands answer")
 
             if isOpen {
                 VStack(alignment: .leading, spacing: AppTheme.Space.md) {
@@ -331,9 +333,10 @@ struct PrayHubView: View {
                 }
                 .padding(.trailing, AppTheme.Space.sm)
                 .padding(.bottom, AppTheme.Space.xl)
-                .transition(.opacity)
+                    .transition(MotionTokens.accordionTransition)
             }
         }
+        .guideAccordion(isExpanded: isOpen)
     }
 
     @ViewBuilder
@@ -352,7 +355,7 @@ struct PrayHubView: View {
 
     private func learnRow(_ row: LearnRow) -> some View {
         HStack(alignment: .center, spacing: AppTheme.Space.md) {
-            MysterySetLetterIcon(set: row.mysterySet, size: 44)
+            MysterySetIcon(set: row.mysterySet)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(row.title)
@@ -367,9 +370,6 @@ struct PrayHubView: View {
 
             Spacer(minLength: 8)
 
-            Image(systemName: "chevron.right")
-                .font(AppTheme.TypeRole.caption(weight: .semibold))
-                .foregroundStyle(palette.faint)
         }
         .padding(.vertical, AppTheme.Space.lg)
         .contentShape(Rectangle())
@@ -591,12 +591,11 @@ private struct LearnMysteryDetailView: View {
                     HStack {
                         Text("Pray these mysteries")
                             .font(AppTheme.TypeRole.callout(weight: .semibold))
-                        Spacer()
-                        Image(systemName: "arrow.right")
-                            .font(AppTheme.TypeRole.label(weight: .semibold))
+                        .frame(maxWidth: .infinity, alignment: .center)
                     }
                     .foregroundStyle(palette.primaryButtonText)
                     .padding(.horizontal, AppTheme.Space.lg)
+                    .multilineTextAlignment(.center)
                     .frame(height: AppTheme.Component.pillHeight)
                     .background(palette.primaryButtonFill, in: Capsule())
                 }
@@ -616,13 +615,7 @@ private struct LearnMysteryDetailView: View {
 
         return VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(MotionTokens.selection) {
-                    if isExpanded {
-                        expandedMysteries.remove(mystery.id)
-                    } else {
-                        expandedMysteries.insert(mystery.id)
-                    }
-                }
+                if isExpanded { expandedMysteries.remove(mystery.id) } else { expandedMysteries.insert(mystery.id) }
             } label: {
                 HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
                     Text("\(index + 1)")
@@ -666,9 +659,10 @@ private struct LearnMysteryDetailView: View {
                 .padding(.leading, 44)
                 .padding(.trailing, AppTheme.Space.sm)
                 .padding(.bottom, AppTheme.Space.md)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(MotionTokens.accordionTransition)
             }
         }
+        .guideAccordion(isExpanded: isExpanded)
     }
 }
 

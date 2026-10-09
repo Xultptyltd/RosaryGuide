@@ -27,7 +27,9 @@ struct HomeView: View {
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
     @State private var openFeastID: String?
     @State private var weekFeastInfo: DatedFeast?
+    @State private var pendingFeastDetail: DatedFeast?
     @State private var selectedMysteryDetail: Mystery?
+    @State private var pendingMysteryPrayer: PrayLaunch?
     @State private var mysteryScrollID: String?
     @State private var selectedLiturgicalVerse: LiturgicalVerse?
     @State private var showSettingsDrawer = false
@@ -122,6 +124,9 @@ struct HomeView: View {
             .guidePageChrome()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: DatedFeast.self) { item in
+                FeastDetailView(prayLaunch: $prayLaunch, item: item)
+            }
         }
         .background {
             GeometryReader { geo in
@@ -150,13 +155,23 @@ struct HomeView: View {
             .environment(offer)
             .environment(\.palette, palette)
         }
-        .sheet(item: $weekFeastInfo) { item in
+        .sheet(item: $weekFeastInfo, onDismiss: {
+            if let item = pendingFeastDetail {
+                pendingFeastDetail = nil
+                navigationPath.append(item)
+            }
+        }) { item in
             weekFeastSheet(item)
-                .presentationDetents([.height(weekFeastSheetHeight(for: item))])
+                .presentationDetents([.height(weekFeastSheetHeight(for: item)), .large])
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(AppTheme.containerRadius)
         }
-        .sheet(item: $selectedMysteryDetail) { mystery in
+        .sheet(item: $selectedMysteryDetail, onDismiss: {
+            if let launch = pendingMysteryPrayer {
+                pendingMysteryPrayer = nil
+                prayLaunch = launch
+            }
+        }) { mystery in
             mysteryDetailSheet(mystery)
                 .presentationDetents([.height(mysteryDetailSheetHeight(for: mystery)), .large])
                 .presentationDragIndicator(.visible)
@@ -294,7 +309,7 @@ struct HomeView: View {
                 Image(systemName: "square.and.arrow.up")
                     .guideSymbol(size: 15, weight: .medium)
                 Text("Share Rosary Guide")
-                    .font(AppTheme.TypeRole.callout(weight: .medium))
+                    .font(AppTheme.TypeRole.callout)
                     .lineLimit(1)
             }
             .foregroundStyle(palette.tertiaryButtonText)
@@ -349,25 +364,28 @@ struct HomeView: View {
                 }
                 .guideReveal(delay: 0.14)
 
+            GuideSectionBoundary(gutter: gutter)
+
             mysteryRail(gutter: gutter)
-                .padding(.top, AppTheme.decadesGap)
 
             if Self.showDailyScriptureOnHome {
                 liturgicalVerseSection
                     .padding(.top, AppTheme.sectionGap)
             }
 
+            GuideSectionBoundary(gutter: gutter)
+
             VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
                 GuideSectionLabel(text: "Upcoming feast days", prominence: .strong)
                 comingUpSection
             }
-                .padding(.top, AppTheme.sectionGap)
+
+            GuideSectionBoundary(gutter: gutter)
 
             VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
                 GuideSectionLabel(text: "This week", prominence: .strong)
                 weekGlance
             }
-                .padding(.top, AppTheme.sectionGap)
 
             shareAppButton
                 .frame(maxWidth: .infinity)
@@ -424,7 +442,7 @@ struct HomeView: View {
                         ZStack {
                             IntentionIconView(
                                 accent: currentIntention?.accent ?? .mintGreen,
-                                emoji: currentIntention?.displayEmoji ?? "🙏",
+                                emoji: currentIntention?.displayEmoji ?? "❤️",
                                 size: 52,
                                 usesPopePortrait: currentIntention?.isPapal == true
                             )
@@ -435,9 +453,6 @@ struct HomeView: View {
                             .font(AppTheme.TypeRole.body(weight: .semibold))
                             .foregroundStyle(palette.ink)
                         Spacer(minLength: 8)
-                        Image(systemName: "chevron.right")
-                            .guideSymbol(size: 12, weight: .semibold)
-                            .foregroundStyle(palette.faint)
                     }
 
                     if let currentIntention {
@@ -450,14 +465,15 @@ struct HomeView: View {
                             .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                         HStack {
                             Text("Change intention")
-                                .font(AppTheme.TypeRole.label(weight: .medium))
+                                .font(AppTheme.TypeRole.buttonTertiary)
+                                .underline()
                             Spacer()
                             Image(systemName: "pencil")
                                 .guideSymbol(size: 13, weight: .medium)
                         }
-                        .foregroundStyle(palette.accent)
+                        .foregroundStyle(palette.textPrimary)
                         .padding(.horizontal, AppTheme.Space.lg)
-                        .padding(.vertical, AppTheme.Space.sm)
+                        .padding(.vertical, AppTheme.Component.textButtonVerticalPadding)
                     } else {
                         HStack {
                             Text("Add an intention")
@@ -489,10 +505,7 @@ struct HomeView: View {
             selectedLiturgicalVerse = verse
         } label: {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-                Text("DAILY SCRIPTURE")
-                    .font(AppTheme.TypeRole.sectionLabel)
-                    .tracking(1.15)
-                    .foregroundStyle(palette.dim)
+                GuideSectionLabel(text: "Daily Scripture", prominence: .strong)
 
                 Text(verse.homeDisplayExcerpt)
                     .font(AppTheme.TypeRole.body)
@@ -513,9 +526,6 @@ struct HomeView: View {
                         }
                     }
                     Spacer(minLength: AppTheme.Space.sm)
-                    Image(systemName: "chevron.right")
-                        .guideSymbol(size: 12, weight: .semibold)
-                        .foregroundStyle(palette.dim)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -530,10 +540,7 @@ struct HomeView: View {
     private func liturgicalVerseSheet(_ verse: LiturgicalVerse) -> some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-                Text("DAILY SCRIPTURE")
-                    .font(AppTheme.TypeRole.sectionLabel)
-                    .tracking(1.15)
-                    .foregroundStyle(palette.dim)
+                GuideSectionLabel(text: "Daily Scripture", prominence: .strong)
 
                 Text(verse.reference)
                     .font(AppTheme.TypeRole.sectionTitle)
@@ -548,7 +555,7 @@ struct HomeView: View {
 
                 Text(verse.fullText)
                     .font(AppTheme.TypeRole.bodySmall)
-                    .foregroundStyle(palette.ink.opacity(0.86))
+                    .foregroundStyle(palette.textPrimary)
                     .lineSpacing(7)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -619,30 +626,15 @@ struct HomeView: View {
                             feastDateText(featured.date)
                         }
                         Text(featured.feast.shortTitle)
-                            .font(AppTheme.TypeRole.cardTitle)
+                            .font(AppTheme.TypeRole.headingSecondary)
                             .foregroundStyle(palette.ink)
                             .lineLimit(3)
                             .minimumScaleFactor(0.82)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, AppTheme.Space.xl)
-                    .padding(.vertical, AppTheme.Space.xl)
-                    .background {
-                        if isToday {
-                            // Soft brand-blue glow on text panel only: bottom-up fade through ~50% of text section.
-                            LinearGradient(
-                                stops: [
-                                    .init(color: .clear, location: 0),
-                                    .init(color: .clear, location: 0.50),
-                                    .init(color: palette.accent.opacity(colorScheme == .dark ? 0.14 : 0.08), location: 0.78),
-                                    .init(color: palette.accent.opacity(colorScheme == .dark ? 0.30 : 0.18), location: 1)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                            .allowsHitTesting(false)
-                        }
-                    }
+                    .padding(.vertical, AppTheme.Component.feastPreviewTextPadding)
+
                 }
             }
             .buttonStyle(.plain)
@@ -653,17 +645,15 @@ struct HomeView: View {
                 NavigationLink {
                     FeastDetailView(prayLaunch: $prayLaunch, item: item)
                 } label: {
-                    HStack(spacing: AppTheme.Space.md) {
+                    HStack(alignment: .top, spacing: AppTheme.Space.md) {
                         feastDateText(item.date)
                             .frame(width: 64, alignment: .leading)
                         Text(item.feast.shortTitle)
                             .font(AppTheme.TypeRole.bodySmall)
                             .foregroundStyle(palette.ink)
-                            .lineLimit(1)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                         Spacer()
-                        Image(systemName: "chevron.right")
-                            .guideSymbol(size: 11, weight: .semibold)
-                            .foregroundStyle(palette.faint)
                     }
                     .padding(.horizontal, AppTheme.Space.xl)
                     .padding(.vertical, AppTheme.Space.md)
@@ -694,8 +684,7 @@ struct HomeView: View {
                         .padding(.horizontal, AppTheme.Space.xl)
 
                     if index < MysteryCalendar.week(containing: today).count - 1 {
-                        Divider()
-                            .overlay(palette.hair)
+                        Hairline()
                             .padding(.horizontal, AppTheme.Space.xl)
                     }
                 }
@@ -709,69 +698,65 @@ struct HomeView: View {
         let prayed = session.prayed(on: day)
         let isToday = Calendar.current.isDateInToday(day)
 
-        return HStack(alignment: .center, spacing: AppTheme.Space.md) {
-            // Weekday+date stay at 9; crown spacing ~50% of prior 4 (→2).
-            HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.xs) {
-                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
-                    Text(day.formatted(.dateTime.weekday(.wide)))
-                        .font(AppTheme.TypeRole.bodySmall)
-                        .foregroundStyle(palette.ink)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
-
-                    if isToday {
-                            Text("TODAY")
-                                .font(AppTheme.TypeRole.caption(weight: .semibold))
-                                .tracking(0.6)
-                                .foregroundStyle(palette.todayPillText)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(palette.todayPillFill, in: Capsule())
-                    } else {
-                        Text(day.formatted(.dateTime.day().month(.abbreviated)).uppercased())
-                            .font(AppTheme.TypeRole.label(weight: .medium))
-                            .foregroundStyle(palette.dim)
-                            .lineLimit(1)
-                    }
-                }
-
-                if let feast = assignment.feast {
-                    Button {
-                        HapticService.play(.light, enabled: settings.hapticsEnabled)
-                        weekFeastInfo = feast
-                    } label: {
-                        Image(systemName: "crown.fill")
-                            .guideSymbol(size: 11, weight: .semibold)
-                            .foregroundStyle(palette.accent)
-                            .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
-                            .offset(x: -4)
-                            .contentShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Feast day")
-                    .accessibilityValue(feast.feast.shortTitle)
-                    .accessibilityHint("Shows feast details")
-                }
-            }
-
-            Spacer(minLength: 12)
-
-            HStack(spacing: 8) {
-                Text(assignment.set.shortName)
-                    .font(AppTheme.TypeRole.callout)
-                    .foregroundStyle(palette.dim)
+        return HStack(alignment: .center, spacing: AppTheme.Space.sm) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                Text(day.formatted(.dateTime.weekday(.wide)))
+                    .font(AppTheme.TypeRole.body)
+                    .foregroundStyle(palette.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
-
-                if prayed {
-                    Image(systemName: "checkmark.circle.fill")
-                        .guideSymbol(size: 12, weight: .semibold)
-                        .foregroundStyle(palette.accent)
-                        .accessibilityHidden(true)
+                HStack(spacing: AppTheme.Space.sm) {
+                    Text(day.formatted(.dateTime.day().month(.abbreviated)))
+                        .font(AppTheme.TypeRole.caption)
+                        .foregroundStyle(palette.textSecondary)
+                    if let feast = assignment.feast {
+                        Button {
+                            HapticService.play(.light, enabled: settings.hapticsEnabled)
+                            weekFeastInfo = feast
+                        } label: {
+                            Image(systemName: "crown.fill")
+                                .guideSymbol(size: 12, weight: .regular)
+                                .foregroundStyle(palette.feastIndicator)
+                                .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                                .contentShape(Rectangle())
+                                .padding(-16)
+                        }
+                        .buttonStyle(.plain)
+                        .zIndex(1)
+                        .accessibilityLabel("Feast day")
+                        .accessibilityValue(feast.feast.shortTitle)
+                        .accessibilityHint("Shows feast details")
+                    }
+                    if isToday {
+                        Text("Today")
+                            .font(AppTheme.TypeRole.caption)
+                            .foregroundStyle(palette.todayPillText)
+                            .padding(.horizontal, AppTheme.Space.sm)
+                            .padding(.vertical, 2)
+                            .background(palette.todayPillFill, in: Capsule())
+                    }
                 }
+                .fixedSize(horizontal: true, vertical: false)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(assignment.set.shortName)
+                .font(AppTheme.TypeRole.callout)
+                .foregroundStyle(isToday ? palette.textPrimary : palette.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+
+            if prayed {
+                Image(systemName: "checkmark.circle.fill")
+                    .guideSymbol(size: 16, weight: .regular)
+                    .foregroundStyle(palette.accent)
+                    .frame(width: 20, height: 20)
+                    .accessibilityHidden(true)
             }
         }
-        .frame(minHeight: 50)
+        .padding(.vertical, AppTheme.Space.sm)
+        .frame(minHeight: 60)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(weekAccessibilityLabel(day: day, assignment: assignment, prayed: prayed))
         .accessibilityValue(prayed ? "Prayed" : "Not yet prayed")
@@ -792,48 +777,53 @@ struct HomeView: View {
     }
 
     private func weekFeastSheet(_ item: DatedFeast) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-            HStack(alignment: .center, spacing: AppTheme.Space.sm) {
-                Image(systemName: "crown.fill")
-                    .guideSymbol(size: 14, weight: .semibold)
-                    .foregroundStyle(palette.accent)
-                Text(item.feast.rank.title.uppercased())
-                    .font(AppTheme.TypeRole.caption(weight: .semibold))
-                    .tracking(1.8)
-                    .foregroundStyle(palette.dim)
-                    .offset(y: 1.5)
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                        Image(systemName: "crown.fill")
+                            .guideSymbol(size: 12, weight: .regular)
+                            .foregroundStyle(palette.feastIndicator)
+                        Text("\(item.feast.rank.title) · \(item.date.formatted(.dateTime.day().month(.wide).year()))")
+                            .font(AppTheme.TypeRole.caption)
+                            .foregroundStyle(palette.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Text(item.feast.shortTitle)
+                        .font(AppTheme.TypeRole.headingPrimary)
+                        .foregroundStyle(palette.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Text(weekFeastDescription(for: item.feast))
+                    .font(AppTheme.TypeRole.body)
+                    .lineSpacing(5)
+                    .foregroundStyle(palette.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-
-            Text(item.feast.shortTitle)
-                .font(AppTheme.TypeRole.sectionTitle)
-                .foregroundStyle(palette.ink)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(item.date.formatted(.dateTime.weekday(.wide).day().month(.wide).year()))
-                .font(AppTheme.TypeRole.label(weight: .medium))
-                .foregroundStyle(palette.dim)
-
-            Text(weekFeastDescription(for: item.feast))
-                .font(AppTheme.TypeRole.themeSummary)
-                .lineSpacing(5)
-                .foregroundStyle(palette.ink.opacity(0.82))
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
+            .padding(.horizontal, AppTheme.gutter)
+            .padding(.top, AppTheme.Space.xxl)
+            .padding(.bottom, AppTheme.Space.xl)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .padding(.horizontal, AppTheme.gutter)
-        .padding(.top, AppTheme.Space.xxl)
-        .padding(.bottom, AppTheme.Space.xl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            PillButton(title: "Explore this feast", filled: false) {
+                pendingFeastDetail = item
+                weekFeastInfo = nil
+            }
+            .padding(.horizontal, AppTheme.gutter)
+            .padding(.vertical, AppTheme.Space.lg)
+            .background(palette.bg)
+        }
         .background(palette.bg)
     }
 
     private func weekFeastSheetHeight(for item: DatedFeast) -> CGFloat {
-        let titleLines = item.feast.shortTitle.count > 34 ? 2 : 1
+        let titleLines = item.feast.shortTitle.count > 28 ? 2 : 1
         let description = weekFeastDescription(for: item.feast)
         let descriptionLines = CGFloat(max(3, Int(ceil(Double(description.count) / 42.0))))
-        let estimated = 162 + CGFloat(titleLines * 36) + (descriptionLines * 25)
-        return min(max(estimated, 340), 520)
+        let estimated = 184 + CGFloat(titleLines * 40) + descriptionLines * 25 + AppTheme.Component.pillHeight
+        return dynamicTypeSize.isAccessibilitySize ? 640 : min(max(estimated, 460), 640)
     }
 
     private func weekFeastDescription(for feast: Feast) -> String {
@@ -1044,7 +1034,7 @@ struct HomeView: View {
                 .frame(width: geo.size.width)
                 .clipped()
             }
-            .frame(height: dynamicTypeSize.isAccessibilitySize ? 620 : 438)
+            .frame(height: dynamicTypeSize.isAccessibilitySize ? 500 : 340)
             .padding(.horizontal, -gutter)
 
             mysteryPageDots
@@ -1089,56 +1079,26 @@ struct HomeView: View {
         } label: {
             VStack(alignment: .leading, spacing: 0) {
                 MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false)
-                    .frame(height: 168)
+                    .frame(height: 144)
                     .clipped()
 
                 VStack(alignment: .leading, spacing: 0) {
                     Text(mystery.title.primary(for: settings.language))
-                        .font(AppTheme.TypeRole.body(weight: .semibold))
+                        .font(AppTheme.TypeRole.cardTitle)
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, AppTheme.Space.sm)
-                        .padding(.horizontal, AppTheme.Space.xl)
 
-                    Text(mystery.scriptureExcerpt.primary(for: settings.language))
-                        .font(AppTheme.TypeRole.themeSummary)
-                        .foregroundStyle(palette.dim)
-                        .lineSpacing(5)
-                        .lineLimit(3)
-                        .truncationMode(.tail)
-                        .fixedSize(horizontal: false, vertical: true)
+                    GuideTextButtonLabel(title: "Read more")
                         .padding(.top, AppTheme.Space.sm)
-                        .padding(.horizontal, AppTheme.Space.xl)
-
-                    Text(mystery.scriptureReference)
-                        .font(AppTheme.TypeRole.caption)
-                        .foregroundStyle(palette.faint)
-                        .padding(.top, AppTheme.Space.sm)
-                        .padding(.horizontal, AppTheme.Space.xl)
-
-                    VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                        Hairline()
-                            .padding(.horizontal, AppTheme.Space.xl)
-                        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
-                            Text("Fruit")
-                                .font(AppTheme.TypeRole.caption)
-                                .foregroundStyle(palette.faint)
-                            Text(mystery.fruit.primary(for: settings.language))
-                                .font(AppTheme.TypeRole.caption)
-                                .foregroundStyle(palette.ink)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .padding(.horizontal, AppTheme.Space.xl)
-                    }
-                    .padding(.top, AppTheme.Space.lg)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                 }
+                .padding(.horizontal, AppTheme.Space.xl)
                 .padding(.top, AppTheme.Space.lg)
                 .padding(.bottom, AppTheme.Space.xl)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : 418, alignment: .top)
+            .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : 320, alignment: .top)
             .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
             .guideSoftShadow(elevated: colorScheme == .light)
@@ -1147,60 +1107,59 @@ struct HomeView: View {
         .guidePressable()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(mysteryAccessibilityLabel(mystery))
-        .accessibilityHint("Shows mystery details, Scripture, and fruit")
+        .accessibilityHint("Read more about this mystery, its Scripture, and fruit")
     }
 
     private func mysteryAccessibilityLabel(_ mystery: Mystery) -> String {
-        "Mystery \(mystery.number), \(mystery.title.primary(for: settings.language)). \(mystery.scriptureExcerpt.primary(for: settings.language)) Fruit, \(mystery.fruit.primary(for: settings.language))."
+        "Mystery \(mystery.number), \(mystery.title.primary(for: settings.language))."
     }
 
     private func mysteryDetailSheet(_ mystery: Mystery) -> some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-                HStack(alignment: .center, spacing: AppTheme.Space.sm) {
-                    Text(mystery.set.shortName.uppercased())
-                        .font(AppTheme.TypeRole.caption(weight: .semibold))
-                        .tracking(1.8)
+            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    Text("\(OrdinalWord.english(mystery.number)) mystery · \(mystery.set.name.primary(for: settings.language))")
+                        .font(AppTheme.TypeRole.caption)
                         .foregroundStyle(palette.dim)
-                        .offset(y: 1.5)
+                    Text(mystery.title.primary(for: settings.language))
+                        .font(AppTheme.TypeRole.headingPrimary)
+                        .foregroundStyle(palette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-
-                Text(mystery.title.primary(for: settings.language))
-                    .font(AppTheme.TypeRole.sectionTitle)
-                    .foregroundStyle(palette.ink)
-                    .fixedSize(horizontal: false, vertical: true)
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                     Text(mystery.scriptureExcerpt.primary(for: settings.language))
-                        .font(AppTheme.TypeRole.themeSummary)
+                        .font(AppTheme.TypeRole.body)
                         .lineSpacing(5)
-                        .foregroundStyle(palette.ink.opacity(0.82))
+                        .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
-
                     Text(mystery.scriptureReference)
                         .font(AppTheme.TypeRole.caption)
-                        .foregroundStyle(palette.faint)
+                        .foregroundStyle(palette.dim)
                 }
 
-                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                    Hairline()
-                    HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
-                        Text("Fruit")
-                            .font(AppTheme.TypeRole.caption)
-                            .foregroundStyle(palette.faint)
-                        Text(mystery.fruit.primary(for: settings.language))
-                            .font(AppTheme.TypeRole.bodySmall(weight: .medium))
-                            .foregroundStyle(palette.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    GuideSectionLabel(text: "Fruit of this mystery", prominence: .strong)
+                    Text(mystery.fruit.primary(for: settings.language))
+                        .font(AppTheme.TypeRole.body)
+                        .foregroundStyle(palette.dim)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-
-                Spacer(minLength: 0)
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, AppTheme.Space.xxl)
             .padding(.bottom, AppTheme.Space.xl)
             .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            PillButton(title: "Pray this decade", filled: false) {
+                pendingMysteryPrayer = .fresh(mystery.set, intentionId: chosenIntentionId ?? currentIntention?.id,
+                                             startingDecade: mystery.number)
+                selectedMysteryDetail = nil
+            }
+            .padding(.horizontal, AppTheme.gutter)
+            .padding(.vertical, AppTheme.Space.lg)
+            .background(palette.bg)
         }
         .background(palette.bg)
     }
@@ -1210,8 +1169,8 @@ struct HomeView: View {
         let excerpt = mystery.scriptureExcerpt.primary(for: settings.language)
         let titleLines = title.count > 28 ? 2 : 1
         let excerptLines = CGFloat(max(3, Int(ceil(Double(excerpt.count) / 42.0))))
-        let estimated = 168 + CGFloat(titleLines * 36) + (excerptLines * 25) + 72
-        return min(max(estimated, 360), 560)
+        let estimated = 240 + CGFloat(titleLines * 40) + excerptLines * 25 + AppTheme.Component.pillHeight
+        return dynamicTypeSize.isAccessibilitySize ? 640 : min(max(estimated, 460), 640)
     }
 
     private var upcomingMarian: [DatedFeast] {
@@ -1236,7 +1195,7 @@ struct HomeView: View {
                 ForEach(Array(upcomingMarian.enumerated()), id: \.element.id) { index, item in
                     let isOpen = openFeastID == item.id
                     Button {
-                        withAnimation(reduceMotion ? nil : MotionTokens.selection) {
+                        do {
                             openFeastID = isOpen ? nil : item.id
                         }
                     } label: {
@@ -1286,11 +1245,9 @@ struct HomeView: View {
                                 .lineSpacing(5)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.bottom, AppTheme.Space.lg)
-                                // Keep in the hierarchy and clip height so collapse fades
-                                // in place instead of sliding the copy up under the title.
+                                // Keep text mounted and reveal its height without fading.
                                 .fixedSize(horizontal: false, vertical: true)
                                 .frame(maxHeight: isOpen ? nil : 0, alignment: .top)
-                                .opacity(isOpen ? 1 : 0)
                                 .clipped()
                                 .accessibilityHidden(!isOpen)
                         }
@@ -1298,6 +1255,7 @@ struct HomeView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .guideAccordion(isExpanded: isOpen)
                     if index < upcomingMarian.count - 1 {
                         Hairline()
                     }

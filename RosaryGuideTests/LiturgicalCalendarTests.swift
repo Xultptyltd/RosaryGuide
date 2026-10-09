@@ -116,3 +116,101 @@ final class LiturgicalCalendarTests: XCTestCase {
         )
     }
 }
+
+
+final class FeastAgendaTests: XCTestCase {
+    private var calendar: Calendar {
+        var value = Calendar(identifier: .gregorian)
+        value.timeZone = TimeZone(secondsFromGMT: 0)!
+        value.firstWeekday = 2
+        return value
+    }
+    private func day(_ month: Int, _ day: Int, year: Int = 2026) -> Date {
+        calendar.date(from: DateComponents(year: year, month: month, day: day))!
+    }
+    private func feast(_ date: Date, index: Int = 0) -> DatedFeast {
+        DatedFeast(feast: FeastCatalog.all[index], date: date)
+    }
+    func testAgendaPartitionsDatesWithoutRepeatingFocus() {
+        let anchor = day(10, 9)
+        let dates = [anchor, day(10, 10), day(10, 15), day(11, 1), day(12, 1), day(1, 31, year: 2027), day(12, 31, year: 2027)]
+        let input = dates.map { feast($0) } + [feast(day(1, 1, year: 2028))]
+        let value = FeastAgenda(items: input, selectedDay: anchor, today: anchor, calendar: calendar)
+        XCTAssertEqual(value.sections.map(\.title), ["Today", "This week", "This month", "Next month", "Later this year", "Next year"])
+        let all = value.sections.flatMap(\.items)
+        XCTAssertEqual(all.map(\.date), dates)
+        XCTAssertEqual(Set(all.map(\.id)).count, all.count)
+    }
+    func testEmptyDayShowsAllFeastsOnNextDateOnlyOnce() {
+        let anchor = day(10, 9)
+        let next = day(10, 10)
+        let value = FeastAgenda(items: [feast(next), feast(next, index: 1), feast(day(10, 15))],
+                               selectedDay: anchor, today: anchor, calendar: calendar)
+        XCTAssertEqual(value.sections.map(\.title), ["Next", "This month"])
+        XCTAssertEqual(value.sections[0].items.count, 2)
+        XCTAssertEqual(value.sections.flatMap(\.items).count, 3)
+    }
+    func testEmptyAgendaAndPastDates() {
+        let anchor = day(10, 9)
+        XCTAssertTrue(FeastAgenda(items: [], selectedDay: anchor, calendar: calendar).sections.isEmpty)
+        XCTAssertTrue(FeastAgenda(items: [feast(day(10, 8))], selectedDay: anchor, calendar: calendar).sections.isEmpty)
+    }
+    func testSelectedFutureDayUsesItsDateAndYearBoundary() {
+        let anchor = day(12, 31)
+        let value = FeastAgenda(items: [feast(anchor), feast(day(1, 1, year: 2027)), feast(day(3, 31, year: 2027)),
+                                      feast(day(4, 1, year: 2027))],
+                               selectedDay: anchor, today: day(10, 9), calendar: calendar)
+        XCTAssertEqual(value.sections.first?.title, "")
+        XCTAssertEqual(value.sections.map(\.title), ["", "Next month", "Next year"])
+        XCTAssertEqual(value.sections.flatMap(\.items).count, 4)
+    }
+}
+
+
+extension FeastAgendaTests {
+    func testDecemberNextMonthDoesNotRepeatInNextYear() {
+        let anchor = day(12, 10)
+        let value = FeastAgenda(items: [feast(day(12, 11)), feast(day(1, 15, year: 2027)), feast(day(2, 1, year: 2027))],
+                               selectedDay: anchor, today: anchor, calendar: calendar)
+        XCTAssertEqual(value.sections.map(\.title), ["Next", "Next month", "Next year"])
+        XCTAssertEqual(value.sections[1].items.map(\.date), [day(1, 15, year: 2027)])
+        XCTAssertEqual(value.sections[2].items.map(\.date), [day(2, 1, year: 2027)])
+    }
+}
+
+final class FeastMonthLayoutTests: XCTestCase {
+    func testMonthAlignmentAndLeapDays() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.firstWeekday = 2
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        for (year, month, count, leading, rows) in [(2024, 2, 29, 3, 5), (2021, 2, 28, 0, 4), (2026, 8, 31, 5, 6)] {
+            let date = calendar.date(from: DateComponents(year: year, month: month, day: 1))!
+            let layout = FeastMonthLayout(month: date, calendar: calendar)
+            XCTAssertEqual(layout.cells.compactMap { $0 }.count, count)
+            XCTAssertEqual(layout.cells.prefix(while: { $0 == nil }).count, leading)
+            XCTAssertEqual(layout.rows, rows)
+            XCTAssertEqual(calendar.component(.day, from: layout.cells.compactMap { $0 }.last!), count)
+        }
+        calendar.firstWeekday = 1
+        let october = calendar.date(from: DateComponents(year: 2026, month: 10, day: 1))!
+        XCTAssertEqual(FeastMonthLayout(month: october, calendar: calendar).cells.prefix(while: { $0 == nil }).count, 4)
+    }
+}
+
+extension FeastAgendaTests {
+    func testNoRemainingFeastsThisMonthKeepsNextFeastInNextMonth() {
+        let anchor = day(10, 31)
+        let dates = [day(11, 1), day(11, 2), day(12, 8)]
+        let value = FeastAgenda(items: dates.map { feast($0) }, selectedDay: anchor,
+                               today: anchor, calendar: calendar)
+        XCTAssertEqual(value.sections.map(\.title), ["Next month", "Later this year"])
+        XCTAssertEqual(value.sections[0].items.map(\.date), Array(dates.prefix(2)))
+        XCTAssertEqual(value.sections.flatMap(\.items).map(\.date), dates)
+    }
+    func testNoRemainingDecemberFeastsUsesNextMonthForJanuary() {
+        let anchor = day(12, 31)
+        let value = FeastAgenda(items: [feast(day(1, 1, year: 2027))], selectedDay: anchor,
+                               today: anchor, calendar: calendar)
+        XCTAssertEqual(value.sections.map(\.title), ["Next month"])
+    }
+}

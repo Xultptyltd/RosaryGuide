@@ -176,10 +176,10 @@ struct OfferIntention: Identifiable, Hashable, Sendable {
         return "Until \(expiresAt.formatted(.dateTime.day().month(.abbreviated).year()))"
     }
 
-    /// Prefer stored glyph; otherwise papal cross or the default pray emoji.
+    /// Prefer stored glyph; otherwise papal cross or the default personal heart.
     var displayEmoji: String {
         if let emoji, !emoji.isEmpty { return emoji }
-        return isPapal ? "✝️" : "🙏"
+        return isPapal ? "✝️" : "❤️"
     }
 
     var usesGenericGlyph: Bool {

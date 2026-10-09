@@ -1,29 +1,34 @@
 import SwiftUI
 
 enum PrayLaunch: Identifiable, Hashable {
-    case fresh(MysterySetKind, intentionId: UUID? = nil)
+    case fresh(MysterySetKind, intentionId: UUID? = nil, startingDecade: Int? = nil)
     case resume(PrayerSession)
 
     var id: String {
         switch self {
-        case .fresh(let set, let intentionId):
+        case .fresh(let set, let intentionId, let decade):
             let suffix = intentionId?.uuidString ?? "none"
-            return "fresh-\(set.rawValue)-\(suffix)"
+            return "fresh-\(set.rawValue)-\(suffix)-\(decade ?? 0)"
         case .resume:
             return "resume"
         }
     }
 
+    func startIndex(in steps: [RosaryStep]) -> Int {
+        guard case .fresh(_, _, let decade) = self, let decade else { return 0 }
+        return steps.firstIndex { $0.decadeNumber == decade && $0.kind == .mysteryAnnouncement } ?? 0
+    }
+
     var mysterySet: MysterySetKind {
         switch self {
-        case .fresh(let set, _): set
+        case .fresh(let set, _, _): set
         case .resume(let session): session.mysterySet
         }
     }
 
     var intentionId: UUID? {
         switch self {
-        case .fresh(_, let intentionId): intentionId
+        case .fresh(_, let intentionId, _): intentionId
         case .resume(let session): session.intentionId
         }
     }
@@ -40,7 +45,7 @@ private enum AppTab: String, CaseIterable, Identifiable, Hashable {
         case .today: "Today"
         case .pray: "Learn"
         case .calendar: "Feasts"
-        case .intentions: "My prayer"
+        case .intentions: "Prayer"
         }
     }
 

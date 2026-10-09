@@ -126,7 +126,7 @@ struct RosaryBeadMapView: View {
         switch locus {
         case .crucifix:
             return PulseTarget(point: layout.crucifix, baseRadius: 15, expansion: 17, lineWidth: 2.2)
-        case .closing:
+        case .closing, .decadeOurFather(1):
             return PulseTarget(point: layout.medal, baseRadius: 14, expansion: 16, lineWidth: 2.0)
         default:
             guard let bead = layout.beads.first(where: { matches(locus, $0.locus) }) else { return nil }
@@ -146,6 +146,7 @@ struct RosaryBeadMapView: View {
 
     private func state(of candidate: BeadLocus) -> State {
         guard let locus else { return .future }
+        if candidate == .closing, locus == .decadeOurFather(1) { return .now }
         if matches(locus, candidate) { return .now }
         if order(candidate) < order(locus) { return .done }
         return .future
@@ -218,19 +219,25 @@ struct RosaryBeadMapView: View {
         #endif
     }
 
+    /// Construct the segment around its center directly, so rotation never
+    /// translates the marker off the chain on the loop's curves or bottom rail.
+    static func chainHighlightPath(at center: CGPoint, tangent: CGFloat) -> Path {
+        let dx = cos(tangent) * 3.4
+        let dy = sin(tangent) * 3.4
+        var path = Path()
+        path.move(to: CGPoint(x: center.x - dx, y: center.y - dy))
+        path.addLine(to: CGPoint(x: center.x + dx, y: center.y + dy))
+        return path
+    }
+
     private func paintSpace(_ context: inout GraphicsContext, bead: RosaryBead, state: State) {
         let p = bead.point
         switch state {
         case .future:
             return
         case .now:
-            var tick = Path()
-            tick.move(to: CGPoint(x: p.x - 3.4, y: p.y))
-            tick.addLine(to: CGPoint(x: p.x + 3.4, y: p.y))
             context.stroke(
-                tick.applying(CGAffineTransform(translationX: -p.x, y: -p.y)
-                    .rotated(by: bead.tangent)
-                    .translatedBy(x: p.x, y: p.y)),
+                Self.chainHighlightPath(at: p, tangent: bead.tangent),
                 with: .color(palette.accent),
                 lineWidth: 2.6
             )
@@ -239,10 +246,9 @@ struct RosaryBeadMapView: View {
                 with: .color(palette.accent.opacity(0.18))
             )
         case .done:
-            let r: CGFloat = 2.0
-            let disk = CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2)
-            context.fill(Path(ellipseIn: disk), with: .color(palette.prayBg))
-            context.fill(Path(ellipseIn: disk), with: .color(mix(palette.ink, onto: palette.prayBg, amount: 0.85)))
+            // The underlying cord remains visible; only the current chain
+            // prayer gets a distinct marker.
+            return
         }
     }
 
@@ -283,7 +289,7 @@ struct RosaryBeadMapView: View {
 
 // MARK: - Geometry (web buildRosary proportions)
 
-private struct RosaryBead {
+struct RosaryBead {
     var locus: BeadLocus
     var point: CGPoint
     var large: Bool
@@ -296,7 +302,7 @@ private struct CordNode {
     var radius: CGFloat
 }
 
-private struct RosaryGeometry {
+struct RosaryGeometry {
     static let shared = RosaryGeometry()
 
     let viewW: CGFloat
@@ -307,7 +313,7 @@ private struct RosaryGeometry {
     let loopPath: Path
     let beads: [RosaryBead]
     /// Crucifix → pendant beads → medal → loop beads → medal (for segmented cord).
-    let cordNodes: [CordNode]
+    private let cordNodes: [CordNode]
 
     init() {
         // Web constants
@@ -346,7 +352,6 @@ private struct RosaryGeometry {
 
         // Loop bead order from join (left mid), clockwise
         var specs: [(BeadLocus, Bool, Bool)] = []
-        specs.append((.decadeOurFather(1), true, false))
         for i in 1...10 { specs.append((.decadeHail(1, i), false, false)) }
         specs.append((.decadeGlory(1), false, true))
         for d in 2...5 {
@@ -356,27 +361,29 @@ private struct RosaryGeometry {
         }
 
         func radius(large: Bool, space: Bool) -> CGFloat {
-            if space { return 2.0 }
+            // A prayer on the string divides a gap; it adds no bead radius.
+            if space { return 0 }
             return large ? rOF : rHM
         }
 
-        // Place evenly with HM clustering + OF gaps, starting just past medal join
+        // Fit the loop by expanding only the gaps, never bead radii. Reuse
+        // those exact gaps on the pendant so both parts have the same rhythm.
         let perimeter = 2 * (lw - 2 * r) + 2 * .pi * r
-        var distances: [CGFloat] = []
-        // medal → first loop bead (decade 1 Our Father)
-        distances.append(rMedal + rOF + gapOF * 0.55)
-        for i in 0..<(specs.count - 1) {
-            let a = specs[i], b = specs[i + 1]
-            let ra = radius(large: a.1, space: a.2)
-            let rb = radius(large: b.1, space: b.2)
+        func gapWeight(_ a: (BeadLocus, Bool, Bool), _ b: (BeadLocus, Bool, Bool)) -> CGFloat {
             let tight = !a.1 && !a.2 && !b.1 && !b.2
-            let aroundSpace = a.2 || b.2
-            let extra: CGFloat = tight ? gapHM : (aroundSpace ? gapOF * 0.55 : gapOF)
-            distances.append(ra + rb + extra)
+            return tight ? gapHM : ((a.2 || b.2) ? gapOF / 2 : gapOF)
         }
-        // last space → medal (unused for placement, keeps sum honest)
-        let sum = distances.reduce(0, +) + rMedal + 2.0 + gapOF * 0.4
-        let scale = perimeter / max(sum, 1)
+        var fixedDistances: [CGFloat] = [rMedal + radius(large: specs[0].1, space: specs[0].2)]
+        var gapWeights: [CGFloat] = [gapOF]
+        for (a, b) in zip(specs, specs.dropFirst()) {
+            fixedDistances.append(radius(large: a.1, space: a.2) + radius(large: b.1, space: b.2))
+            gapWeights.append(gapWeight(a, b))
+        }
+        let finalRadius = radius(large: specs.last!.1, space: specs.last!.2)
+        let fixedTotal = fixedDistances.reduce(0, +) + rMedal + finalRadius
+        let gapTotal = gapWeights.reduce(0, +) + gapOF / 2
+        let gapScale = (perimeter - fixedTotal) / gapTotal
+        let distances = zip(fixedDistances, gapWeights).map { $0 + $1 * gapScale }
 
         func stadiumPointAndTangent(distance: CGFloat) -> (CGPoint, CGFloat) {
             // Parameterize clockwise from left-mid (join)
@@ -426,17 +433,17 @@ private struct RosaryGeometry {
         }
 
         var loopBeads: [RosaryBead] = []
-        var cursor = distances[0] * scale
+        var cursor = distances[0]
         for (i, spec) in specs.enumerated() {
             let placed = stadiumPointAndTangent(distance: cursor)
             loopBeads.append(RosaryBead(locus: spec.0, point: placed.0, large: spec.1, isSpace: spec.2, tangent: placed.1))
             if i + 1 < distances.count {
-                cursor += distances[i + 1] * scale
+                cursor += distances[i + 1]
             }
         }
 
         // Pendant: out from medal — intro glory space, HM3, HM2, HM1, opening OF.
-        // The first decade's Our Father lives on the first large bead of the loop.
+        // The first decade's Our Father uses the medal; the loop starts with ten Hail Marys.
         let pend: [(BeadLocus, Bool, Bool)] = [
             (.openingGlory, false, true),
             (.openingHail(3), false, false),
@@ -445,17 +452,14 @@ private struct RosaryGeometry {
             (.openingOurFather, true, false)
         ]
         var pendantBeads: [RosaryBead] = []
-        var x = lx - (rMedal + rOF + gapOF * 0.7)
+        var x = lx - (rMedal + radius(large: pend[0].1, space: pend[0].2) + gapOF / 2 * gapScale)
         for (i, item) in pend.enumerated() {
             pendantBeads.append(RosaryBead(locus: item.0, point: CGPoint(x: x, y: cy), large: item.1, isSpace: item.2))
             if i < pend.count - 1 {
                 let next = pend[i + 1]
                 let ra = radius(large: item.1, space: item.2)
                 let rb = radius(large: next.1, space: next.2)
-                let tight = !item.1 && !item.2 && !next.1 && !next.2
-                let aroundSpace = item.2 || next.2
-                let extra: CGFloat = tight ? gapHM : (aroundSpace ? gapOF * 0.55 : gapOF)
-                x -= ra + rb + extra
+                x -= ra + rb + gapWeight(item, next) * gapScale
             }
         }
 
@@ -465,7 +469,7 @@ private struct RosaryGeometry {
             preconditionFailure("Pendant must include the opening Our Father bead")
         }
         let openOF = openingOF.point.x
-        let join = openOF - rOF - gapOF
+        let join = openOF - rOF - gapOF * gapScale
         let cxH: CGFloat = 40
         let foot = join - cxH
         let crucifix = CGPoint(x: join - cxH / 2, y: cy)
@@ -531,9 +535,11 @@ struct SevenStageTrack: View {
                         .fill(barColor(stage))
                         .frame(height: 4)
                         .frame(maxWidth: .infinity)
-                        // Hit target ~44pt, but visual gap under ticks ≈ web 1.35rem (not 18+18).
+                        // 20pt from the visible close circle: 2pt hit-area inset,
+                        // 4pt header padding, then 14pt above the bars.
                         .padding(.top, 14)
                         .padding(.bottom, 8)
+                        .frame(minHeight: AppTheme.Accessibility.minHitTarget, alignment: .top)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

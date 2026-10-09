@@ -430,6 +430,7 @@ final class AccountSyncStore {
     }
 
     private func activateLocalData(for uid: String) {
+        session.activateMilestoneOwner(uid)
         switch activeOwner {
         case uid:
             break // Already this account's data, including any changes made while signed out.

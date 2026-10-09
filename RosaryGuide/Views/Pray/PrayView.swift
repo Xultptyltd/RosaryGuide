@@ -45,6 +45,7 @@ struct PrayView: View {
     @Environment(SessionStore.self) private var sessionStore
     @Environment(OfferStore.self) private var offer
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -111,6 +112,7 @@ struct PrayView: View {
     @State private var chosenIntentionTitle: String = ""
     @State private var chosenIntentionNote: String = ""
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
+    @State private var signOfCrossIntentionFrame: CGRect = .zero
     @State private var showIntentionSheet = false
     @State private var didRecordCarry = false
     /// Locked when entering finis so Offered for survives session.complete() / store churn.
@@ -123,6 +125,9 @@ struct PrayView: View {
     @State private var beadTimelinePaused = false
     /// Black veil over the closing prayer. Beads keep running underneath until this covers them.
     @State private var finishBlack: Double = 0
+    @State private var activePrayerStart: Date?
+    @State private var pendingActivePrayerTime: TimeInterval = 0
+    @State private var prayerAutosaveTask: Task<Void, Never>?
 
     private var language: PrayerLanguage { settings.language }
     private var current: RosaryStep? {
@@ -158,20 +163,37 @@ struct PrayView: View {
         .onAppear {
             guard !didConfigure else { return }
             didConfigure = true
-            if case .fresh(let set, _) = launch, sessionStore.resumableSession != nil {
+            if case .fresh(let set, _, _) = launch, sessionStore.resumableSession != nil {
                 freshSetPending = set
                 confirmReplace = true
             } else {
                 configure()
             }
+            startActivePrayerTimerIfNeeded()
+            startPrayerAutosave()
             #if canImport(UIKit)
             UIApplication.shared.isIdleTimerDisabled = true
             #endif
         }
         .onDisappear {
+            stopPrayerAutosave()
+            saveActivePrayerTime(continueTiming: false)
             #if canImport(UIKit)
             UIApplication.shared.isIdleTimerDisabled = false
             #endif
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active:
+                startActivePrayerTimerIfNeeded()
+                startPrayerAutosave()
+            case .inactive, .background:
+                stopPrayerAutosave()
+                saveActivePrayerTime(continueTiming: false)
+            @unknown default:
+                stopPrayerAutosave()
+                saveActivePrayerTime(continueTiming: false)
+            }
         }
         .gesture(
             DragGesture(minimumDistance: 50).onEnded { value in
@@ -185,7 +207,7 @@ struct PrayView: View {
                 configure()
             }
             Button("Cancel", role: .cancel) {
-                dismiss()
+                closePrayerFlow()
             }
         } message: {
             Text("You already have a rosary in progress today. Starting fresh will replace it once you move past the first step.")
@@ -202,7 +224,9 @@ struct PrayView: View {
             .onDisappear {
                 sessionStore.updateIntention(
                     id: chosenIntentionId,
-                    title: chosenIntentionTitle.isEmpty ? nil : chosenIntentionTitle
+                    title: chosenIntentionTitle.isEmpty ? nil : chosenIntentionTitle,
+                    category: chosenIntentionId.flatMap { offer.intention(id: $0)?.category },
+                    sourceId: chosenIntentionId.flatMap { offer.intention(id: $0)?.sourceId }
                 )
             }
         }
@@ -233,10 +257,6 @@ struct PrayView: View {
                     }
 
                     ZStack {
-                        if step.kind == .signOfTheCross {
-                            edgeTapZones
-                        }
-
                         VStack(spacing: 0) {
                             standardPrayColumn(step, scrollHeight: geo.size.height)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -253,6 +273,18 @@ struct PrayView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .coordinateSpace(name: "prayerNavigationContent")
+                    .simultaneousGesture(
+                        SpatialTapGesture().onEnded { tap in
+                            guard step.kind == .signOfTheCross,
+                                  !signOfCrossIntentionFrame.contains(tap.location) else { return }
+                            if tap.location.x >= geo.size.width * 0.85 {
+                                advance()
+                            } else if tap.location.x <= geo.size.width * 0.15 {
+                                retreat()
+                            }
+                        }
+                    )
 
                     footer(step)
                 }
@@ -602,15 +634,16 @@ struct PrayView: View {
                         if !pinTop { Spacer(minLength: 0) }
                         VStack(alignment: .leading, spacing: 0) {
                             locus(step)
-                            if step.kind == .signOfTheCross {
-                                signOfCrossIntentionBlock
-                            }
                             BilingualStack(
                                 text: step.body,
                                 language: language,
                                 font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
                                 pointSize: 21 * settings.textSize.scale
                             )
+                            if step.kind == .signOfTheCross {
+                                signOfCrossIntentionBlock
+                                    .padding(.top, AppTheme.Space.xl)
+                            }
                         }
                         .padding(.horizontal, AppTheme.gutter)
                         // At least 48pt from the close button to this title.
@@ -766,7 +799,7 @@ struct PrayView: View {
             HStack {
                 // Text size lives in Settings. Close stays trailing.
                 Spacer()
-                roundControl(system: "xmark") { dismiss() }
+                roundControl(system: "xmark") { closePrayerFlow() }
                     .accessibilityLabel("Close")
             }
             progressNowLabel(step)
@@ -809,7 +842,7 @@ struct PrayView: View {
                 HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
                     Text(OrdinalWord.roman(mystery.number))
                         .font(AppTheme.TypeRole.body(weight: .medium))
-                        .foregroundStyle(palette.ink.opacity(0.72))
+                        .foregroundStyle(palette.textSecondary)
                     Text("\(OrdinalWord.english(mystery.number)) \(mystery.set.shortName)")
                         .font(AppTheme.TypeRole.caption(weight: .medium))
                         .tracking(2.0)
@@ -870,6 +903,11 @@ struct PrayView: View {
             onOpen: { showIntentionSheet = true },
             onClear: { clearChosenIntention() }
         )
+        .onGeometryChange(for: CGRect.self) { geometry in
+            geometry.frame(in: .named("prayerNavigationContent"))
+        } action: { frame in
+            signOfCrossIntentionFrame = frame
+        }
         .padding(.bottom, AppTheme.Space.xl)
     }
 
@@ -930,7 +968,7 @@ struct PrayView: View {
                         Text("Fruit")
                             .font(AppTheme.sans(step.isPlate ? 12 : 14, weight: .medium))
                             .tracking(step.isPlate ? 0.8 : 0)
-                            .foregroundStyle(palette.faint.opacity(step.isPlate ? 0.85 : 1))
+                            .foregroundStyle(palette.textSecondary)
                         Text(fruit.primary(for: .english))
                             .font(AppTheme.TypeRole.bodySmall(weight: .medium))
                             .foregroundStyle(palette.ink)
@@ -1501,6 +1539,7 @@ struct PrayView: View {
     // MARK: - Navigation
 
     private func markRosaryCompletedIfNeeded() {
+        checkpointActivePrayerTime()
         // Record completion when the ceremonial screen appears so St Michael
         // continuation cannot undo or re-trigger tracking.
         if !didRecordCarry, let id = chosenIntentionId {
@@ -1519,21 +1558,77 @@ struct PrayView: View {
 
     private func finishRosary() {
         markRosaryCompletedIfNeeded()
+        stopPrayerAutosave()
         dismiss()
+    }
+
+    private func closePrayerFlow() {
+        stopPrayerAutosave()
+        saveActivePrayerTime(continueTiming: false)
+        dismiss()
+    }
+
+    private func startActivePrayerTimerIfNeeded() {
+        guard activePrayerStart == nil else { return }
+        guard didConfigure else { return }
+        guard !showingCompletion else { return }
+        activePrayerStart = Date()
+    }
+
+    private func checkpointActivePrayerTime() {
+        saveActivePrayerTime(continueTiming: false)
+    }
+
+    private func saveActivePrayerTime(continueTiming: Bool) {
+        guard let start = activePrayerStart else { return }
+        let now = Date()
+        activePrayerStart = continueTiming ? now : nil
+        let duration = max(0, now.timeIntervalSince(start))
+        if sessionStore.session != nil {
+            sessionStore.addActivePrayerTime(duration + pendingActivePrayerTime)
+            pendingActivePrayerTime = 0
+        } else {
+            pendingActivePrayerTime += duration
+        }
+    }
+
+    private func startPrayerAutosave() {
+        guard prayerAutosaveTask == nil else { return }
+        prayerAutosaveTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    saveActivePrayerTime(continueTiming: true)
+                }
+            }
+        }
+    }
+
+    private func stopPrayerAutosave() {
+        prayerAutosaveTask?.cancel()
+        prayerAutosaveTask = nil
+    }
+
+    private func flushPendingActivePrayerTimeIfNeeded() {
+        guard pendingActivePrayerTime > 0, sessionStore.session != nil else { return }
+        sessionStore.addActivePrayerTime(pendingActivePrayerTime)
+        pendingActivePrayerTime = 0
     }
 
     private func configure() {
         switch launch {
-        case .fresh(let set, let intentionId):
-            // Do not persist yet — step 0 must not wipe a resumable session.
-            freshSetPending = set
+        case .fresh(let set, let intentionId, _):
+            freshSetPending = nil
             steps = RosarySequenceBuilder.build(set: set)
-            index = 0
+            index = launch.startIndex(in: steps)
             let resolvedId = intentionId
             let resolvedTitle = resolvedId.flatMap { offer.intention(id: $0)?.title } ?? ""
             chosenIntentionId = resolvedId
             chosenIntentionTitle = resolvedTitle
             chosenIntentionNote = resolvedId.flatMap { offer.intention(id: $0)?.note } ?? ""
+            sessionStore.start(set: set, language: settings.language, intentionId: resolvedId, intentionTitle: resolvedTitle.isEmpty ? nil : resolvedTitle, intentionCategory: resolvedId.flatMap { offer.intention(id: $0)?.category }, intentionSourceId: resolvedId.flatMap { offer.intention(id: $0)?.sourceId })
+            sessionStore.updateStep(index)
             didRecordCarry = false
             completionIntentionTitle = nil
             completionIntentionFace = nil
@@ -1541,12 +1636,19 @@ struct PrayView: View {
             beadTimelinePaused = false
             finishBlack = 0
             showingCompletion = false
+            pendingActivePrayerTime = 0
         case .resume(let session):
             freshSetPending = nil
             steps = RosarySequenceBuilder.build(set: session.mysterySet)
             index = min(session.stepIndex, max(steps.count - 1, 0))
             if var current = sessionStore.session {
                 current.language = settings.language
+                if current.intentionSourceId == nil, let id = current.intentionId {
+                    current.intentionSourceId = offer.intention(id: id)?.sourceId
+                }
+                if current.intentionCategory == nil, let id = current.intentionId {
+                    current.intentionCategory = offer.intention(id: id)?.category
+                }
                 sessionStore.session = current
             }
             chosenIntentionId = session.intentionId
@@ -1562,8 +1664,10 @@ struct PrayView: View {
             beadTimelinePaused = false
             finishBlack = 0
             showingCompletion = false
+            pendingActivePrayerTime = 0
         }
         playHaptic()
+        startActivePrayerTimerIfNeeded()
     }
 
     private func advance() {
@@ -1581,7 +1685,15 @@ struct PrayView: View {
             finishRosary()
             return
         }
+        recordCompletedDecadeIfNeeded()
         move(to: index + 1)
+    }
+
+    private func recordCompletedDecadeIfNeeded() {
+        guard current?.kind == .fatima, let decadeNumber = current?.decadeNumber else { return }
+        checkpointActivePrayerTime()
+        sessionStore.recordCompletedDecadeIfNeeded(decadeNumber)
+        startActivePrayerTimerIfNeeded()
     }
 
     private func showCompletionScreen() {
@@ -1627,8 +1739,10 @@ struct PrayView: View {
     }
 
     private func move(to next: Int) {
+        checkpointActivePrayerTime()
         if let set = freshSetPending, next > 0 {
-            sessionStore.start(set: set, language: settings.language, intentionId: chosenIntentionId, intentionTitle: chosenIntentionTitle.isEmpty ? nil : chosenIntentionTitle)
+            sessionStore.start(set: set, language: settings.language, intentionId: chosenIntentionId, intentionTitle: chosenIntentionTitle.isEmpty ? nil : chosenIntentionTitle, intentionCategory: chosenIntentionId.flatMap { offer.intention(id: $0)?.category }, intentionSourceId: chosenIntentionId.flatMap { offer.intention(id: $0)?.sourceId })
+            flushPendingActivePrayerTimeIfNeeded()
             freshSetPending = nil
         }
         if steps.indices.contains(next), steps[next].isFinis {

@@ -113,12 +113,11 @@ struct HowToPrayView: View {
 
     private func stepRow(_ step: HowToPrayStep) -> some View {
         let isOpen = openStep == step.id
+
         return VStack(alignment: .leading, spacing: 0) {
             Button {
                 HapticService.play(.light, enabled: settings.hapticsEnabled)
-                withAnimation(reduceMotion ? nil : MotionTokens.selection) {
-                    openStep = isOpen ? nil : step.id
-                }
+                openStep = isOpen ? nil : step.id
             } label: {
                 HStack(alignment: .top, spacing: AppTheme.Space.lg) {
                     Text("\(step.id)")
@@ -157,9 +156,10 @@ struct HowToPrayView: View {
                     .padding(.leading, 36)
                     .padding(.trailing, 8)
                     .padding(.bottom, AppTheme.Space.lg)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(MotionTokens.accordionTransition)
             }
         }
+        .guideAccordion(isExpanded: isOpen)
     }
 
     private var weekdayCard: some View {

@@ -3,20 +3,19 @@ import SwiftUI
 import UIKit
 #endif
 
-/// Compact circle icon: mystery-set letter on a soft fill (Learn list rows).
-struct MysterySetLetterIcon: View {
-    var set: MysterySetKind
-    var size: CGFloat = 44
+/// Shared mystery avatar for Learn and Journey History.
+struct MysterySetIcon: View {
+    let set: MysterySetKind
 
     var body: some View {
         ZStack {
-            Circle()
-                .fill(set.letterFill)
-            Text(set.letter)
-                .font(AppTheme.TypeRole.avatarLetter(for: size))
+            Circle().fill(set.letterFill)
+            MysterySetLineGlyph(set: set)
+                .stroke(style: AppTheme.MysteryIcon.strokeStyle)
+                .frame(width: AppTheme.MysteryIcon.glyphSize, height: AppTheme.MysteryIcon.glyphSize)
                 .foregroundStyle(set.letterOn)
         }
-        .frame(width: size, height: size)
+        .frame(width: AppTheme.MysteryIcon.circleSize, height: AppTheme.MysteryIcon.circleSize)
         .accessibilityHidden(true)
     }
 }
@@ -250,6 +249,71 @@ struct Hairline: View {
     }
 }
 
+/// Shared section divider using the surface colour token and mirrored PNG endpoints.
+struct GuideSectionDivider: View {
+    @Environment(\.palette) private var palette
+    var inset: CGFloat = 0
+
+    var body: some View {
+        HStack(spacing: 0) {
+            endpoint("SectionDividerLeft")
+            Rectangle()
+                .fill(fill)
+                .frame(height: AppTheme.Component.sectionDividerHeight)
+            endpoint("SectionDividerRight")
+        }
+        .padding(.horizontal, inset)
+        .frame(maxWidth: .infinity)
+        .frame(height: AppTheme.Component.sectionDividerEndpointHeight)
+        .accessibilityHidden(true)
+    }
+
+    private func endpoint(_ name: String) -> some View {
+        Image(name)
+            .renderingMode(.template)
+            .resizable()
+            .interpolation(.high)
+            .foregroundStyle(fill)
+            .frame(width: AppTheme.Component.sectionDividerEndpointWidth,
+                   height: AppTheme.Component.sectionDividerEndpointHeight)
+    }
+
+    private var fill: Color { palette.surface }
+}
+
+/// Shared full-bleed section boundary with 16pt clear space on both sides.
+struct GuideSectionBoundary: View {
+    var gutter: CGFloat = AppTheme.gutter
+    var body: some View {
+        GuideSectionDivider()
+            .padding(.horizontal, -gutter)
+            .padding(.vertical, AppTheme.Space.lg)
+    }
+}
+
+/// Section label row used with `GuideSectionDivider` for count headings such as
+/// "Featured (4)" while staying on the app typography and colour token paths.
+struct GuideDividerSectionHeader: View {
+    @Environment(\.palette) private var palette
+    var title: String
+    var count: Int?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+            GuideSectionDivider()
+            GuideSectionLabel(text: label, prominence: .strong)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private var label: String {
+        guard let count else { return title }
+        return "\(title) (\(count))"
+    }
+}
+
 // MARK: - Row dividers (no hairline under the last row)
 
 extension EnvironmentValues {
@@ -298,6 +362,24 @@ extension View {
     }
 }
 
+/// Shared label for plain text actions; the enclosing Button owns its action.
+struct GuideTextButtonLabel: View {
+    let title: String
+    var fillsWidth = true
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        Text(title)
+            .font(AppTheme.TypeRole.buttonTertiary)
+            .underline()
+            .foregroundStyle(palette.textPrimary)
+            .multilineTextAlignment(.leading)
+            .padding(.vertical, AppTheme.Component.textButtonVerticalPadding)
+            .frame(maxWidth: fillsWidth ? .infinity : nil, alignment: .leading)
+            .contentShape(Rectangle())
+    }
+}
+
 struct PillButton: View {
     var title: String
     var filled: Bool = true
@@ -314,7 +396,7 @@ struct PillButton: View {
             action()
         } label: {
             Text(title)
-                .font(AppTheme.TypeRole.callout(weight: filled ? .semibold : .medium))
+                .font(AppTheme.TypeRole.callout)
                 .foregroundStyle(filled ? palette.primaryButtonText : (tertiary ? palette.tertiaryButtonText : palette.learnMoreButtonText))
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)
@@ -325,5 +407,32 @@ struct PillButton: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Shape adapter for the canonical theme paths.
+struct MysterySetLineGlyph: Shape {
+    let set: MysterySetKind
+
+    func path(in rect: CGRect) -> Path {
+        AppTheme.MysteryIcon.path(for: set, in: rect)
+    }
+}
+
+
+/// Shape adapter for the shared intention paths.
+struct IntentionLineGlyph: Shape {
+    let glyph: AppTheme.IntentionIcon.Glyph
+
+    func path(in rect: CGRect) -> Path {
+        AppTheme.IntentionIcon.path(for: glyph, in: rect)
+    }
+}
+
+
+struct MilestoneLineGlyph: Shape {
+    let glyph: AppTheme.MilestoneIcon.Glyph
+    func path(in rect: CGRect) -> Path {
+        AppTheme.MilestoneIcon.path(for: glyph, in: rect)
     }
 }

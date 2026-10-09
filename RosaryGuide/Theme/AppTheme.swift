@@ -18,7 +18,7 @@ enum AppTheme {
     static let brandAccentDarkHighContrast = marianBlueDarkHighContrast
     static let destructiveMenuRed = Color(hex: 0xFF3B30)
     /// Soft avatar fills — light/dark pairs from the product colour table.
-    /// Shared by intention avatars and Learn mystery-set letter icons.
+    /// Shared by intention avatars and mystery-set icons.
     /// Green → Personal / Joyful; Marian Blue → Someone else / Luminous;
     /// Purple → Church & world / Sorrowful; Peach → Glorious (fourth).
     static let intentionMintGreen = Color(light: 0xC3EDE6, dark: 0x0C615A)
@@ -159,7 +159,9 @@ struct ThemePalette {
     var textPrimary: Color { .primary }
     /// The app's single secondary grey. Use this for all supporting,
     /// disabled-looking, metadata, and explanatory copy.
-    var textSecondary: Color { .secondary }
+    var textSecondary: Color {
+        scheme == .light ? Color(hex: 0x757575) : Color(hex: 0xAEAEAE)
+    }
 
     /// The app's single grouped/elevated surface color.
     ///
@@ -238,17 +240,17 @@ struct ThemePalette {
     var beadMedalRim: Color {
         scheme == .light
             ? Color(hex: 0xC7C2B3)
-            : Color.white.opacity(0.55)
+            : Color(hex: 0x8C8C8C)
     }
     var beadMedalRimFuture: Color {
         scheme == .light
             ? beadMedalRim
-            : Color.white.opacity(0.32)
+            : Color(hex: 0x525252)
     }
     var beadMedalField: Color {
         scheme == .light
             ? Color(hex: 0x332E29)
-            : Color.black.opacity(0.55)
+            : Color(hex: 0x252525)
     }
     var beadMedalGlyph: Color {
         Color.white.opacity(scheme == .light ? 0.55 : 0.70)
@@ -459,6 +461,11 @@ enum CollapsingTitleMetrics {
     /// Bottom of the expanded H1's text frame, measured from the top of the scroll
     /// content (title centre 31pt + half the 54pt Instrument Sans line height).
     static let largeTitleBottom: CGFloat = 64
+    /// Tab roots add 8pt above their content; reserve the remainder here.
+    static let firstComponentGap: CGFloat = AppTheme.Space.xxl
+    static var firstComponentSpacerHeight: CGFloat {
+        spacerHeight(gapBelowTitle: firstComponentGap) - AppTheme.Space.sm
+    }
 
     /// `CollapsingTitleSpacer` height that starts the next element `gap` below the expanded H1.
     static func spacerHeight(gapBelowTitle gap: CGFloat) -> CGFloat {
@@ -860,11 +867,32 @@ extension View {
 
 /// Spring and duration tokens — GPU-friendly transform/opacity only; always honor Reduce Motion.
 enum MotionTokens {
+    static let accordion = Animation.easeInOut(duration: 0.18)
+    static let accordionTransition = AnyTransition.identity
+    static let calendarReturn = Animation.easeInOut(duration: 0.45)
     static let press = Animation.spring(response: 0.28, dampingFraction: 0.72)
     static let selection = Animation.spring(response: 0.38, dampingFraction: 0.82)
     static let reveal = Animation.spring(response: 0.52, dampingFraction: 0.86)
     static let soft = Animation.easeOut(duration: 0.22)
     static let pressScale: CGFloat = 0.97
+}
+
+/// Scope expansion animation to its row so unrelated page text does not crossfade.
+struct GuideAccordionMotion: ViewModifier {
+    let isExpanded: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .contentTransition(.identity)
+            .animation(reduceMotion ? nil : MotionTokens.accordion, value: isExpanded)
+    }
+}
+
+extension View {
+    func guideAccordion(isExpanded: Bool) -> some View {
+        modifier(GuideAccordionMotion(isExpanded: isExpanded))
+    }
 }
 
 struct GuidePressStyle: ButtonStyle {
@@ -1061,27 +1089,37 @@ extension AppTheme {
         static let section: CGFloat = 44
     }
 
-    /// Type roles — 4pt typographic scale, with Instrument Sans / Newsreader pairing.
+    /// Type roles — product style guide scale, with Instrument Sans / Newsreader pairing.
     enum TypeRole {
-        static var display: Font { AppTheme.sans(56, weight: .regular, relativeTo: .largeTitle) }
-        static var title: Font { AppTheme.sans(40, weight: .regular, relativeTo: .title) }
-        static var title2: Font { AppTheme.sans(32, weight: .regular, relativeTo: .title) }
-        static var title3: Font { AppTheme.sans(28, weight: .regular, relativeTo: .title2) }
-        static var headline: Font { AppTheme.sans(24, weight: .semibold, relativeTo: .title3) }
-        static func headline(weight: Font.Weight = .semibold) -> Font {
-            AppTheme.sans(24, weight: weight, relativeTo: .title3)
+        static let headingPrimaryLineHeight: CGFloat = 40
+        static let headingSecondaryLineHeight: CGFloat = 28
+        static let bodyLineHeight: CGFloat = 24
+        static let captionLineHeight: CGFloat = 16
+
+        static var display: Font { headingPrimary }
+        static var title: Font { headingPrimary }
+        static var title2: Font { headingPrimary }
+        static var title3: Font { headingSecondary }
+        static var headline: Font { headingSecondary }
+        static var headingPrimary: Font { AppTheme.sans(32, weight: .regular, relativeTo: .largeTitle) }
+        static var headingSecondary: Font { AppTheme.sans(22, weight: .regular, relativeTo: .title2) }
+        static var headingSecondaryBold: Font { headingSecondary }
+        static func headline(weight: Font.Weight = .regular) -> Font {
+            AppTheme.sans(22, weight: regularized(weight), relativeTo: .title2)
         }
-        static var body: Font { AppTheme.sans(20, relativeTo: .body) }
+        static var body: Font { AppTheme.sans(16, relativeTo: .body) }
         static func body(weight: Font.Weight = .regular) -> Font {
-            AppTheme.sans(20, weight: weight, relativeTo: .body)
+            AppTheme.sans(16, weight: regularized(weight), relativeTo: .body)
         }
-        static var callout: Font { AppTheme.sans(16, relativeTo: .callout) }
+        static var bodyBold: Font { body }
+        static var buttonTertiary: Font { body }
+        static var callout: Font { body }
         static func callout(weight: Font.Weight = .regular) -> Font {
-            AppTheme.sans(16, weight: weight, relativeTo: .callout)
+            AppTheme.sans(16, weight: regularized(weight), relativeTo: .callout)
         }
         static var caption: Font { AppTheme.sans(12, weight: .regular, relativeTo: .caption) }
         static func caption(weight: Font.Weight = .regular) -> Font {
-            AppTheme.sans(12, weight: weight, relativeTo: .caption)
+            AppTheme.sans(12, weight: regularized(weight), relativeTo: .caption)
         }
         static var serifSmall: Font { AppTheme.serif(16, opticalSize: 16, relativeTo: .body) }
         static var serifBody: Font { AppTheme.serif(20, opticalSize: 20, relativeTo: .body) }
@@ -1092,7 +1130,7 @@ extension AppTheme {
             AppTheme.sans(AppTheme.grid(size * 0.42, minimum: 12), weight: .semibold, relativeTo: .body)
         }
         static func prayerText(scale: CGFloat) -> Font {
-            AppTheme.sans(AppTheme.grid(20 * scale, minimum: 16), relativeTo: .body)
+            AppTheme.sans(max(16, 18 * scale), relativeTo: .body)
         }
 
         // Compatibility aliases. New code should use the simpler scale above.
@@ -1101,31 +1139,51 @@ extension AppTheme {
         static var sectionTitle: Font { title3 }
         static var titleSmall: Font { headline }
         static var cardTitle: Font { headline }
-        static func titleSmall(weight: Font.Weight = .semibold) -> Font { headline(weight: weight) }
+        static func titleSmall(weight: Font.Weight = .regular) -> Font { headline(weight: weight) }
         static var bodySmall: Font { callout }
         static func bodySmall(weight: Font.Weight = .regular) -> Font { callout(weight: weight) }
         static var themeSummary: Font { callout }
-        static var label: Font { caption(weight: .medium) }
-        static func label(weight: Font.Weight = .medium) -> Font { caption(weight: weight) }
+        static var label: Font { caption }
+        static func label(weight: Font.Weight = .regular) -> Font { caption(weight: weight) }
         static var segmentedControl: Font { AppTheme.sans(14, weight: .medium, relativeTo: .callout) }
 #if canImport(UIKit)
         static var segmentedControlUIFont: UIFont { FontRegistrar.sansUI(14, weight: .medium) }
 #endif
-        static var sectionLabel: Font { caption(weight: .medium) }
-        static var quoteAttribution: Font { caption(weight: .medium) }
-        static var settingsTitle: Font { AppTheme.sans(34, weight: .semibold, relativeTo: .largeTitle) }
-        static var settingsCardTitle: Font { AppTheme.sans(20, weight: .semibold, relativeTo: .title3) }
-        static var settingsRow: Font { AppTheme.sans(17, weight: .regular, relativeTo: .body) }
+        static var sectionLabel: Font { caption }
+        static var quoteAttribution: Font { caption }
+        static var settingsTitle: Font { headingPrimary }
+        static var settingsCardTitle: Font { headingSecondaryBold }
+        static var settingsRow: Font { body }
         static func settingsRow(weight: Font.Weight = .regular) -> Font {
-            AppTheme.sans(17, weight: weight, relativeTo: .body)
+            body(weight: weight)
         }
-        static var settingsMeta: Font { AppTheme.sans(13, weight: .regular, relativeTo: .callout) }
+        static var settingsMeta: Font { caption }
+
+        private static func regularized(_ weight: Font.Weight) -> Font.Weight {
+            if weight == .semibold || weight == .bold || weight == .heavy || weight == .black {
+                return .regular
+            }
+            return weight
+        }
     }
 
     /// Shared chrome measurements.
     enum Component {
+        static let calendarHandleWidth: CGFloat = 36
+        static let calendarHandleHeight: CGFloat = 4
+        static let calendarHandleDividerGap: CGFloat = 2
+        static let calendarHandleDotGap: CGFloat = 12
+        static let calendarSnapThreshold: CGFloat = 24
+        static let calendarWeekdayHeaderHeight: CGFloat = 20
+        static let feastCalendarDayHeight: CGFloat = 52
+        static let feastCalendarWeekCount = 5
+        static let feastPreviewTextPadding: CGFloat = AppTheme.Space.xl + 2
         /// CSS `--btn-h: 3.3rem` ≈ 52pt.
         static let pillHeight: CGFloat = 52
+        static let textButtonVerticalPadding: CGFloat = 10
+        static let sectionDividerHeight: CGFloat = 8
+        static let sectionDividerEndpointWidth: CGFloat = 16
+        static let sectionDividerEndpointHeight: CGFloat = 40
         static let chipPaddingV: CGFloat = Space.sm
         static let chipPaddingH: CGFloat = Space.md
         static let panelStrokeWidth: CGFloat = 1
@@ -1172,5 +1230,287 @@ extension AppTheme {
 
     enum Accessibility {
         static let minHitTarget: CGFloat = 44
+    }
+}
+
+
+extension AppTheme {
+    /// Canonical mystery icon paths and drawing tokens, shared by every screen.
+    enum MysteryIcon {
+        static let circleSize: CGFloat = 44
+        static let glyphSize: CGFloat = circleSize * LineIcon.glyphRatio
+        static let pathGridSize = LineIcon.pathGridSize
+        static var strokeStyle: StrokeStyle { LineIcon.strokeStyle }
+
+        static func path(for set: MysterySetKind, in rect: CGRect) -> Path {
+            var path = Path()
+            func move(_ x: CGFloat, _ y: CGFloat) {
+                path.move(to: CGPoint(x: x, y: y))
+            }
+            func line(_ x: CGFloat, _ y: CGFloat) {
+                path.addLine(to: CGPoint(x: x, y: y))
+            }
+            func curve(_ x: CGFloat, _ y: CGFloat, _ c1x: CGFloat, _ c1y: CGFloat, _ c2x: CGFloat, _ c2y: CGFloat) {
+                path.addCurve(to: CGPoint(x: x, y: y), control1: CGPoint(x: c1x, y: c1y), control2: CGPoint(x: c2x, y: c2y))
+            }
+
+            switch set {
+            case .joyful:
+                // Three lily petals above a gently curved stem and a single leaf.
+                move(12, 12)
+                curve(12, 2.5, 9, 9, 10, 5)
+                curve(12, 12, 14, 5, 15, 9)
+                move(12, 12)
+                curve(4, 5.5, 7.5, 12, 4.5, 9)
+                curve(12, 12, 8, 5.5, 11, 8)
+                move(12, 12)
+                curve(20, 5.5, 16.5, 12, 19.5, 9)
+                curve(12, 12, 16, 5.5, 13, 8)
+                move(12, 12)
+                curve(11, 21.5, 13, 15, 10, 18)
+                move(11.4, 18)
+                curve(17.5, 14, 12, 15, 14.5, 14)
+                curve(11.4, 18, 17, 17, 14, 19)
+            case .luminous:
+                path.addEllipse(in: CGRect(x: 7.5, y: 7.5, width: 9, height: 9))
+                for index in 0..<8 {
+                    let angle = CGFloat(index) * .pi / 4
+                    move(12 + cos(angle) * 7.5, 12 + sin(angle) * 7.5)
+                    line(12 + cos(angle) * 10, 12 + sin(angle) * 10)
+                }
+            case .sorrowful:
+                // Latin proportions distinguish this from a generic plus symbol.
+                move(10.3, 2.5)
+                line(13.7, 2.5)
+                line(13.7, 8)
+                line(19, 8)
+                line(19, 11.4)
+                line(13.7, 11.4)
+                line(13.7, 21.5)
+                line(10.3, 21.5)
+                line(10.3, 11.4)
+                line(5, 11.4)
+                line(5, 8)
+                line(10.3, 8)
+                path.closeSubpath()
+            case .glorious:
+                // Open, three-point crown with a quiet double band.
+                move(5, 16.5)
+                line(3, 6.5)
+                line(8.5, 11)
+                line(12, 3.5)
+                line(15.5, 11)
+                line(21, 6.5)
+                line(19, 16.5)
+                path.closeSubpath()
+                move(5, 19.5)
+                line(19, 19.5)
+            }
+
+            return path.applying(CGAffineTransform(scaleX: rect.width / pathGridSize, y: rect.height / pathGridSize))
+                .applying(CGAffineTransform(translationX: rect.minX, y: rect.minY))
+        }
+    }
+}
+
+
+extension AppTheme {
+    /// Shared drawing language for mystery and intention vector icons.
+    enum LineIcon {
+        static let pathGridSize: CGFloat = 24
+        static let glyphRatio: CGFloat = 0.5
+        static let lineWidth: CGFloat = 1.25
+        static var strokeStyle: StrokeStyle {
+            StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+        }
+    }
+
+    enum IntentionIcon {
+        enum Glyph: CaseIterable {
+            case hands, people, church, cross, heart, dove
+        }
+
+        static func glyph(for emoji: String, accent: IntentionAccent) -> Glyph {
+            switch emoji {
+            case "🙏": return .heart
+            case "👥": return .people
+            case "🌍", "🌎", "🌏": return .church
+            case "✝️", "✝", "†": return .cross
+            case "❤️", "❤", "♥️", "♥": return .heart
+            case "🕊️", "🕊": return .dove
+            default:
+                switch accent {
+                case .mintGreen: return .heart
+                case .skyBlue: return .people
+                case .purple: return .church
+                }
+            }
+        }
+
+        static func path(for glyph: Glyph, in rect: CGRect) -> Path {
+            if glyph == .cross { return MysteryIcon.path(for: .sorrowful, in: rect) }
+            var path = Path()
+            func move(_ x: CGFloat, _ y: CGFloat) { path.move(to: CGPoint(x: x, y: y)) }
+            func line(_ x: CGFloat, _ y: CGFloat) { path.addLine(to: CGPoint(x: x, y: y)) }
+            func curve(_ x: CGFloat, _ y: CGFloat, _ a: CGFloat, _ b: CGFloat, _ c: CGFloat, _ d: CGFloat) {
+                path.addCurve(to: CGPoint(x: x, y: y), control1: CGPoint(x: a, y: b), control2: CGPoint(x: c, y: d))
+            }
+            switch glyph {
+            case .hands:
+                // Two raised palms meet at the fingertips; sleeves anchor the silhouette.
+                move(4, 19)
+                line(7, 14)
+                line(9, 4)
+                curve(12, 4, 9.3, 2, 12, 2)
+                line(12, 12)
+                curve(9, 18, 12, 15, 10.5, 17)
+                line(7, 21)
+                path.closeSubpath()
+                move(20, 19)
+                line(17, 14)
+                line(15, 4)
+                curve(12, 4, 14.7, 2, 12, 2)
+                move(12, 12)
+                curve(15, 18, 12, 15, 13.5, 17)
+                line(17, 21)
+                line(20, 19)
+                move(5.5, 16.5)
+                line(9, 19)
+                move(18.5, 16.5)
+                line(15, 19)
+            case .people:
+                path.addEllipse(in: CGRect(x: 4.5, y: 3.5, width: 6, height: 6))
+                path.addEllipse(in: CGRect(x: 13.5, y: 3.5, width: 6, height: 6))
+                move(2, 20)
+                line(2, 17)
+                curve(13, 17, 2, 11, 13, 11)
+                line(13, 20)
+                line(2, 20)
+                move(15, 20)
+                line(22, 20)
+                line(22, 17)
+                curve(15, 12.5, 22, 13, 18, 11.5)
+            case .church:
+                move(12, 2)
+                line(12, 6)
+                move(10, 3.5)
+                line(14, 3.5)
+                move(7, 11)
+                line(12, 6)
+                line(17, 11)
+                line(17, 21)
+                line(7, 21)
+                path.closeSubpath()
+                move(7, 12)
+                line(3, 15)
+                line(3, 21)
+                line(21, 21)
+                line(21, 15)
+                line(17, 12)
+                move(10, 21)
+                line(10, 17)
+                curve(14, 17, 10, 14.5, 14, 14.5)
+                line(14, 21)
+                path.addEllipse(in: CGRect(x: 10.7, y: 10, width: 2.6, height: 2.6))
+            case .heart:
+                move(12, 21)
+                curve(3, 7, 9, 18, 1, 12)
+                curve(12, 6, 5, 2, 10, 3)
+                curve(21, 7, 14, 3, 19, 2)
+                curve(12, 21, 23, 12, 15, 18)
+                path.closeSubpath()
+            case .dove:
+                move(4, 19)
+                curve(10, 11, 8, 18, 10, 15)
+                curve(7, 3, 8, 9, 7, 6)
+                curve(16, 10, 12, 4, 14, 7)
+                curve(20, 10, 17, 7, 20, 7)
+                line(22, 11)
+                line(19.5, 12)
+                curve(10, 18, 18, 16, 14, 18)
+                line(4, 19)
+                path.closeSubpath()
+                move(10, 18)
+                line(6, 21)
+            case .cross: break
+            }
+            return path.applying(CGAffineTransform(scaleX: rect.width / LineIcon.pathGridSize, y: rect.height / LineIcon.pathGridSize))
+                .applying(CGAffineTransform(translationX: rect.minX, y: rect.minY))
+        }
+    }
+}
+
+
+extension AppTheme {
+    /// Canonical milestone icon mapping and vector paths.
+    enum MilestoneIcon {
+        enum Glyph: String, CaseIterable {
+            case rosary, calendar, lily, crown, mysterySets, people, church, papalKeys
+        }
+        static func glyph(for id: String) -> Glyph {
+            switch id {
+            case "marian-feasts-1": return .lily
+            case "our-lady-of-the-rosary": return .crown
+            case "all-mysteries": return .mysterySets
+            case "rosary-for-another": return .people
+            case "rosary-for-church": return .church
+            case "rosary-for-pope": return .papalKeys
+            default: return id.hasPrefix("days-") ? .calendar : .rosary
+            }
+        }
+        static func path(for glyph: Glyph, in rect: CGRect) -> Path {
+            switch glyph {
+            case .lily: return MysteryIcon.path(for: .joyful, in: rect)
+            case .crown: return MysteryIcon.path(for: .glorious, in: rect)
+            case .people: return IntentionIcon.path(for: .people, in: rect)
+            case .church: return IntentionIcon.path(for: .church, in: rect)
+            default: break
+            }
+            var path = Path()
+            func move(_ x: CGFloat, _ y: CGFloat) { path.move(to: CGPoint(x: x, y: y)) }
+            func line(_ x: CGFloat, _ y: CGFloat) { path.addLine(to: CGPoint(x: x, y: y)) }
+            switch glyph {
+            case .rosary:
+                // A loop of beads and a suspended Latin cross.
+                for index in 0..<12 {
+                    let angle = CGFloat(index) * .pi / 6
+                    let x = 12 + cos(angle) * 7.5
+                    let y = 9.5 + sin(angle) * 6.5
+                    path.addEllipse(in: CGRect(x: x - 0.9, y: y - 0.9, width: 1.8, height: 1.8))
+                }
+                move(12, 17)
+                line(12, 22)
+                move(9.5, 19)
+                line(14.5, 19)
+            case .calendar:
+                path.addRoundedRect(in: CGRect(x: 3, y: 5, width: 18, height: 16), cornerSize: CGSize(width: 2, height: 2))
+                move(7, 2.5); line(7, 7)
+                move(17, 2.5); line(17, 7)
+                move(3, 10); line(21, 10)
+                for y in [CGFloat(14), CGFloat(17.5)] {
+                    for x in [CGFloat(7), CGFloat(12), CGFloat(17)] {
+                        move(x - 0.5, y); line(x + 0.5, y)
+                    }
+                }
+            case .mysterySets:
+                // Four equal, joined circles represent the four mystery sets.
+                for origin in [CGPoint(x: 3.5, y: 3.5), CGPoint(x: 12.5, y: 3.5), CGPoint(x: 3.5, y: 12.5), CGPoint(x: 12.5, y: 12.5)] {
+                    path.addEllipse(in: CGRect(origin: origin, size: CGSize(width: 8, height: 8)))
+                }
+            case .papalKeys:
+                // Crossed keys, the traditional emblem of Saint Peter's office.
+                path.addEllipse(in: CGRect(x: 3, y: 3, width: 6, height: 6))
+                path.addEllipse(in: CGRect(x: 15, y: 3, width: 6, height: 6))
+                move(8, 8); line(19, 19)
+                line(17, 21); line(15, 19)
+                move(16, 8); line(5, 19)
+                line(7, 21); line(9, 19)
+                move(16, 16); line(18, 14)
+                move(8, 16); line(6, 14)
+            default: break
+            }
+            return path.applying(CGAffineTransform(scaleX: rect.width / LineIcon.pathGridSize, y: rect.height / LineIcon.pathGridSize))
+                .applying(CGAffineTransform(translationX: rect.minX, y: rect.minY))
+        }
     }
 }

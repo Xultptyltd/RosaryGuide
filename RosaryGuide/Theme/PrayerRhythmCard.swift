@@ -247,10 +247,12 @@ struct PrayerRhythmCard: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var rhythm: PrayerRhythm
+    var isLocked = false
 
     private enum Metric {
         static let radius: CGFloat = AppTheme.containerRadius
         static let horizontalPadding: CGFloat = 20
+        static let trailingPadding: CGFloat = 12
         static let topPadding: CGFloat = 16
         static let bottomPadding: CGFloat = 16
         static let iconSize = CGSize(width: 24, height: 26)
@@ -272,7 +274,8 @@ struct PrayerRhythmCard: View {
                 stacked
             }
         }
-        .padding(.horizontal, Metric.horizontalPadding)
+        .padding(.leading, Metric.horizontalPadding)
+        .padding(.trailing, Metric.trailingPadding)
         .padding(.top, Metric.topPadding)
         .padding(.bottom, Metric.bottomPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -306,6 +309,12 @@ struct PrayerRhythmCard: View {
             }
             .frame(maxHeight: .infinity)
             .fixedSize(horizontal: true, vertical: false)
+
+            Color.clear
+                .frame(width: 12)
+
+            trailingAffordance
+                .frame(maxHeight: .infinity, alignment: .center)
         }
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -320,6 +329,9 @@ struct PrayerRhythmCard: View {
                 .padding(.top, AppTheme.Space.xl)
             dotGrid
                 .padding(.top, AppTheme.Space.md)
+            trailingAffordance
+                .padding(.top, AppTheme.Space.md)
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 
@@ -373,7 +385,7 @@ struct PrayerRhythmCard: View {
     private func caption(size: CGFloat) -> some View {
         Text(rhythm.caption)
             .font(AppTheme.sans(size, relativeTo: .subheadline))
-            .foregroundStyle(palette.ink.opacity(isDark ? 0.72 : 0.62))
+            .foregroundStyle(palette.textSecondary)
     }
 
     // MARK: Right column
@@ -385,7 +397,7 @@ struct PrayerRhythmCard: View {
                 .frame(width: Metric.headerGlyph.width, height: Metric.headerGlyph.height)
             Text(rhythm.monthName)
                 .font(AppTheme.sans(15, relativeTo: .subheadline))
-                .foregroundStyle(palette.ink.opacity(isDark ? 0.82 : 0.75))
+                .foregroundStyle(palette.textSecondary)
                 .lineLimit(1)
         }
     }
@@ -400,6 +412,27 @@ struct PrayerRhythmCard: View {
                 }
             }
         }
+    }
+
+    private var trailingAffordance: some View {
+        HStack(spacing: 6) {
+            if isLocked {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 10, weight: .semibold))
+                Text("Guide+")
+                    .font(AppTheme.TypeRole.caption)
+            }
+        }
+        .foregroundStyle(isLocked ? palette.accent : palette.ink.opacity(isDark ? 0.62 : 0.52))
+        .padding(.horizontal, isLocked ? 8 : 0)
+        .padding(.vertical, isLocked ? 5 : 0)
+        .background {
+            if isLocked {
+                Capsule(style: .continuous)
+                    .fill(palette.accent.opacity(isDark ? 0.18 : 0.12))
+            }
+        }
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder

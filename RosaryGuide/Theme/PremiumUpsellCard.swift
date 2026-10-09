@@ -32,7 +32,7 @@ struct PremiumUpsellCard: View {
                         .foregroundStyle(gold)
                     Text(subtitle)
                         .font(AppTheme.sans(15, relativeTo: .subheadline))
-                        .foregroundStyle(palette.ink.opacity(isDark ? 0.86 : 0.78))
+                        .foregroundStyle(palette.textSecondary)
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }

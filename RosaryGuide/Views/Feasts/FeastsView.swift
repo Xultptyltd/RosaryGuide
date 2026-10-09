@@ -1,460 +1,370 @@
 import SwiftUI
 
+/// Disjoint agenda groups relative to the selected day, including year boundaries.
+struct FeastAgenda {
+    struct Section: Identifiable {
+        let title: String
+        let items: [DatedFeast]
+        var id: String { title }
+    }
+    let sections: [Section]
+
+    init(items: [DatedFeast], selectedDay: Date, today: Date = Date(), calendar: Calendar = .current) {
+        let start = calendar.startOfDay(for: selectedDay)
+        let weekEnd = calendar.dateInterval(of: .weekOfYear, for: start)!.end
+        let monthEnd = calendar.dateInterval(of: .month, for: start)!.end
+        let nextMonthEnd = calendar.date(byAdding: .month, value: 1, to: monthEnd)!
+        let yearEnd = calendar.dateInterval(of: .year, for: start)!.end
+        let horizon = calendar.date(byAdding: .year, value: 1, to: yearEnd)!
+        let upcoming = items.filter { $0.date >= start && $0.date < horizon }.sorted {
+            $0.date == $1.date ? $0.id < $1.id : $0.date < $1.date
+        }
+        let selected = upcoming.filter { calendar.isDate($0.date, inSameDayAs: start) }
+        let focus: [DatedFeast]
+        if !selected.isEmpty {
+            focus = selected
+        } else if let next = upcoming.first, next.date < monthEnd {
+            focus = upcoming.filter { calendar.isDate($0.date, inSameDayAs: next.date) }
+        } else {
+            focus = []
+        }
+        var result: [Section] = []
+        if !focus.isEmpty {
+            let title = selected.isEmpty ? "Next"
+                : calendar.isDate(start, inSameDayAs: today) ? "Today" : ""
+            result.append(Section(title: title, items: focus))
+        }
+        let focusedIDs = Set(focus.map(\.id))
+        let remaining = upcoming.filter { !focusedIDs.contains($0.id) }
+        let titles = ["This week", "This month", "Next month", "Later this year", "Next year"]
+        var buckets = Array(repeating: [DatedFeast](), count: titles.count)
+        for item in remaining {
+            let index: Int
+            if item.date < weekEnd && item.date < monthEnd { index = 0 }
+            else if item.date < monthEnd { index = 1 }
+            else if item.date < nextMonthEnd { index = 2 }
+            else if item.date < yearEnd { index = 3 }
+            else { index = 4 }
+            buckets[index].append(item)
+        }
+        for index in titles.indices where !buckets[index].isEmpty {
+            result.append(Section(title: titles[index], items: buckets[index]))
+        }
+        sections = result
+    }
+}
+
+/// Month cells aligned to the user's first weekday, without dates from adjacent months.
+struct FeastMonthLayout {
+    let cells: [Date?]
+    var rows: Int { cells.count / 7 }
+    init(month: Date, calendar: Calendar = .current) {
+        let start = calendar.dateInterval(of: .month, for: month)!.start
+        let count = calendar.range(of: .day, in: .month, for: start)!.count
+        let leading = (calendar.component(.weekday, from: start) - calendar.firstWeekday + 7) % 7
+        var days = Array<Date?>(repeating: nil, count: leading)
+        days += (0..<count).map { calendar.date(byAdding: .day, value: $0, to: start) }
+        days += Array<Date?>(repeating: nil, count: (7 - days.count % 7) % 7)
+        cells = days
+    }
+}
+
 struct FeastsView: View {
     @Binding var prayLaunch: PrayLaunch?
-    @Environment(SettingsStore.self) private var settings
     @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var colorScheme
-
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var calendarExpanded = false
+    @State private var calendarDrag: CGFloat?
     @State private var filter: FeastScope = .all
-    @State private var visibleMonth: Date = Date()
-    @State private var selectedDay: Date?
+    @State private var weekOffset = 0
+    @State private var expandedWeek: Int? = 0
+    @State private var selectedDay: Date = Calendar.current.startOfDay(for: Date())
     @State private var titleScrollOffset: CGFloat = 0
     @State private var navigationPath = NavigationPath()
 
     private var calendar: Calendar { .current }
-
-    private var todayStart: Date { calendar.startOfDay(for: Date()) }
-
-    private var resolvedSelectedDay: Date {
-        selectedDay ?? todayStart
+    private var today: Date { calendar.startOfDay(for: Date()) }
+    private var feasts: [DatedFeast] {
+        let year = calendar.component(.year, from: selectedDay)
+        let all = (year...year + 1).flatMap { FeastCatalog.dated(in: $0, calendar: calendar) }
+        return filter == .marian ? all.filter(\.feast.isMarian) : all
     }
-
-    private var feastDaysInVisibleMonth: [Date: [DatedFeast]] {
-        let year = calendar.component(.year, from: visibleMonth)
-        let month = calendar.component(.month, from: visibleMonth)
-        var items = FeastCatalog.dated(in: year) + FeastCatalog.dated(in: year + 1) + FeastCatalog.dated(in: year - 1)
-        items = items.filter {
-            calendar.component(.year, from: $0.date) == year
-                && calendar.component(.month, from: $0.date) == month
-        }
-        if filter == .marian {
-            items = items.filter(\.feast.isMarian)
-        }
-        return Dictionary(grouping: items, by: { calendar.startOfDay(for: $0.date) })
-    }
-
-    /// Feasts on the currently selected day (filter-aware).
-    private var selectedDayFeasts: [DatedFeast] {
-        var items = FeastCatalog.feasts(on: resolvedSelectedDay)
-        if filter == .marian {
-            items = items.filter(\.feast.isMarian)
-        }
-        return items
-    }
-
-    /// When the selected day is empty, the next upcoming feast for the “Next” focus.
-    private var nextFeastAfterSelection: DatedFeast? {
-        let start = calendar.startOfDay(for: resolvedSelectedDay)
-        var items = FeastCatalog.upcoming(from: calendar.date(byAdding: .day, value: 1, to: start) ?? start, limit: 36)
-        if filter == .marian {
-            items = items.filter(\.feast.isMarian)
-        }
-        return items.first
-    }
-
-    private var focusedFeasts: [DatedFeast] {
-        if !selectedDayFeasts.isEmpty { return selectedDayFeasts }
-        if let next = nextFeastAfterSelection { return [next] }
-        return []
-    }
-
-    private var focusedShowsSelectedDay: Bool {
-        !selectedDayFeasts.isEmpty
-    }
-
-    private var focusedPrimary: DatedFeast? {
-        focusedFeasts.first
-    }
-
-    private var upcomingItems: [DatedFeast] {
-        var items: [DatedFeast]
-        if filter == .marian {
-            items = Array(FeastCatalog.upcoming(from: Date(), limit: 48).filter(\.feast.isMarian))
-        } else {
-            items = FeastCatalog.upcoming(from: Date(), limit: 18)
-        }
-        // Avoid duplicating the focused feast(s) in the Upcoming list.
-        let focusedIDs = Set(focusedFeasts.map(\.id))
-        return Array(items.filter { !focusedIDs.contains($0.id) }.prefix(9))
-    }
-
-
+    private var agenda: FeastAgenda { FeastAgenda(items: feasts, selectedDay: selectedDay) }
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                    VStack(spacing: 0) {
-                        CollapsingTitleSpacer()
-
-                        Picker("Scope", selection: $filter) {
-                            ForEach(FeastScope.allCases) { option in
-                                Text(option.title).tag(option)
-                            }
-                        }
-                        .guideSegmentedControl()
-                        .frame(maxWidth: .infinity)
+                VStack(alignment: .leading, spacing: 0) {
+                    CollapsingTitleSpacer(height: CollapsingTitleMetrics.firstComponentSpacerHeight)
+                    Picker("Scope", selection: $filter) {
+                        ForEach(FeastScope.allCases) { Text($0.title).tag($0) }
                     }
-                    // Visible gap from the scope tabs' track to the calendar card: 16pt.
-                    // The stack's spacing is 24; the track overhangs its frame slightly.
-                    .padding(
-                        .bottom,
-                        AppTheme.Space.lg + AppTheme.Component.segmentedControlVisualOverflow - AppTheme.Space.xl
-                    )
+                    .guideSegmentedControl()
 
-                    FeastMonthCalendar(
-                        month: $visibleMonth,
-                        selectedDay: $selectedDay,
-                        feastDays: feastDaysInVisibleMonth
-                    )
+                    HStack {
+                        Text(weekStart(weekOffset).formatted(.dateTime.month(.wide).year()))
+                            .font(AppTheme.TypeRole.callout(weight: .medium))
+                            .foregroundStyle(palette.ink)
+                        Spacer()
+                        if weekOffset != 0 || !calendar.isDate(selectedDay, inSameDayAs: today) {
+                            Button {
+                                selectedDay = today
+                                withAnimation(reduceMotion ? nil : MotionTokens.calendarReturn) {
+                                    if calendarExpanded {
+                                        expandedWeek = 0
+                                    } else {
+                                        weekOffset = 0
+                                        expandedWeek = 0
+                                    }
+                                }
+                            }
+                            label: {
+                                GuideTextButtonLabel(title: "Today", fillsWidth: false)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .frame(minHeight: AppTheme.Accessibility.minHitTarget)
+                    .padding(.top, AppTheme.Space.lg)
 
-                    focusedDaySection
+                    weekdayHeader
+                    ZStack(alignment: .top) {
+                        // Keep both scrollers mounted so settling never recreates their days.
+                        rollingCalendar
+                            .opacity(calendarExpanded ? 0 : 1)
+                            .animation(nil, value: calendarExpanded)
+                            .allowsHitTesting(!calendarExpanded && calendarDrag == nil)
+                            .accessibilityHidden(calendarExpanded)
+                        expandedCalendar
+                            .opacity(calendarExpanded ? 1 : 0)
+                            .animation(nil, value: calendarExpanded)
+                            .allowsHitTesting(calendarExpanded && calendarDrag == nil)
+                            .accessibilityHidden(!calendarExpanded)
+                    }
+                    .frame(height: revealedCalendarHeight, alignment: .top)
+                    .clipped()
+                    .contentShape(Rectangle())
+                    calendarHandle
+                    GuideSectionDivider()
+                        .allowsHitTesting(false)
+                        .padding(.horizontal, -AppTheme.gutter)
+                        .padding(.top, AppTheme.Component.calendarHandleDividerGap)
+                        .padding(.bottom, AppTheme.Space.lg)
 
-                    upcomingSection
-
+                    let sections = agenda.sections
+                    if sections.isEmpty {
+                        Text("No upcoming feasts for this selection.")
+                            .font(AppTheme.TypeRole.bodySmall)
+                            .foregroundStyle(palette.dim)
+                    } else {
+                        ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                            if index > 0 { GuideSectionBoundary() }
+                            agendaSection(section)
+                        }
+                    }
                 }
                 .padding(.horizontal, AppTheme.gutter)
                 .padding(.top, AppTheme.Space.sm)
-                .padding(.bottom, 108)
+                .padding(.bottom, AppTheme.tabBarContentClearance)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .scrollIndicators(.hidden)
+            .scrollDisabled(calendarDrag != nil)
             .tint(palette.accent)
             .guidePageChrome()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .collapsingTitleChrome("Feasts", scrollOffset: $titleScrollOffset)
-            .onAppear {
-                if selectedDay == nil {
-                    selectedDay = todayStart
-                }
-            }
         }
     }
 
-    // MARK: - Focused day
+    private func weekStart(_ offset: Int) -> Date {
+        let start = calendar.dateInterval(of: .weekOfYear, for: today)!.start
+        return calendar.date(byAdding: .weekOfYear, value: offset, to: start)!
+    }
 
-    private var focusedDaySection: some View {
-        Group {
-            if !focusedFeasts.isEmpty {
-                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                    VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-                        GuideSectionLabel(text: focusedSectionTitle, prominence: .strong)
-
-                        VStack(spacing: 0) {
-                            ForEach(Array(focusedFeasts.enumerated()), id: \.element.id) { index, item in
-                                NavigationLink {
-                                    FeastDetailView(prayLaunch: $prayLaunch, item: item)
-                                } label: {
-                                    FeastTimelineRow(item: item)
-                                }
-                                .buttonStyle(.plain)
-
-                                if index < focusedFeasts.count - 1 {
-                                    Hairline()
-                                        .padding(.leading, 62)
-                                }
+    private var rollingCalendar: some View {
+        let offsets = min(-12, weekOffset)...max(26, weekOffset)
+        let firstYear = calendar.component(.year, from: weekStart(offsets.lowerBound))
+        let lastYear = calendar.component(.year, from: calendar.date(byAdding: .day,
+            value: AppTheme.Component.feastCalendarWeekCount * 7 - 1, to: weekStart(offsets.upperBound))!)
+        let stripFeasts = (firstYear...lastYear).flatMap { FeastCatalog.dated(in: $0, calendar: calendar) }
+            .filter { filter == .all || $0.feast.isMarian }
+        let feastDays = Set(stripFeasts.map { calendar.startOfDay(for: $0.date) })
+        return TabView(selection: $weekOffset) {
+            ForEach(offsets, id: \.self) { offset in
+                VStack(spacing: AppTheme.Space.xs) {
+                    ForEach(0..<AppTheme.Component.feastCalendarWeekCount, id: \.self) { row in
+                        HStack(spacing: AppTheme.Space.xs) {
+                            ForEach(0..<7, id: \.self) { column in
+                                let day = calendar.date(byAdding: .day, value: row * 7 + column, to: weekStart(offset))!
+                                dayButton(day, hasFeast: feastDays.contains(calendar.startOfDay(for: day)), showsWeekday: false)
                             }
                         }
-                        .guideNavList(pageGutter: AppTheme.gutter)
-                    }
-
-                    if focusedShowsSelectedDay, let primary = focusedPrimary {
-                        feastActionRow(for: primary)
+                        .frame(height: AppTheme.Component.feastCalendarDayHeight)
                     }
                 }
+                .tag(offset)
             }
         }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(height: expandedCalendarHeight)
     }
 
-    private var focusedSectionTitle: String {
-        if focusedShowsSelectedDay {
-            if calendar.isDateInToday(resolvedSelectedDay) {
-                return "Today"
-            }
-            return resolvedSelectedDay.formatted(.dateTime.day().month(.wide))
-        }
-        return "Next"
-    }
-
-    private func feastActionRow(for item: DatedFeast) -> some View {
-        HStack(spacing: AppTheme.Space.sm) {
-            NavigationLink {
-                FeastDetailView(prayLaunch: $prayLaunch, item: item)
-            } label: {
-                Text("Learn")
-                    .font(AppTheme.TypeRole.callout(weight: .semibold))
-                    .foregroundStyle(palette.secondaryButtonText)
-                    .padding(.horizontal, 28)
-                    .frame(height: AppTheme.Component.pillHeight)
-                    .background(palette.secondaryButtonFill, in: Capsule())
-            }
-            .buttonStyle(.plain)
-            .guidePressable()
-
-            Button {
-                let set = item.feast.suggestedMysterySet
-                    ?? MysteryCalendar.assignment(on: item.date).set
-                prayLaunch = .fresh(set)
-            } label: {
-                HStack(spacing: 8) {
-                    Text("Pray this Rosary")
-                        .font(AppTheme.TypeRole.callout(weight: .semibold))
-                    Image(systemName: "arrow.right")
-                        .font(AppTheme.TypeRole.label(weight: .semibold))
-                }
-                .foregroundStyle(palette.primaryButtonText)
-                .frame(maxWidth: .infinity)
-                .frame(height: AppTheme.Component.pillHeight)
-                .background(palette.primaryButtonFill, in: Capsule())
-            }
-            .buttonStyle(.plain)
-            .guidePressable()
-        }
-    }
-
-    // MARK: - Upcoming
-
-    private var upcomingSection: some View {
-        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-            GuideSectionLabel(
-                text: filter == .marian ? "Upcoming Marian feasts" : "Upcoming",
-                prominence: .strong
-            )
-
-            VStack(spacing: 0) {
-                ForEach(Array(upcomingItems.enumerated()), id: \.element.id) { index, item in
-                    NavigationLink {
-                        FeastDetailView(prayLaunch: $prayLaunch, item: item)
-                    } label: {
-                        FeastTimelineRow(item: item)
+    private var expandedCalendar: some View {
+        let offsets = min(-52, weekOffset)...max(104, weekOffset)
+        let firstYear = calendar.component(.year, from: weekStart(offsets.lowerBound))
+        let lastYear = calendar.component(.year, from: calendar.date(byAdding: .day, value: 6, to: weekStart(offsets.upperBound))!)
+        let items = (firstYear...lastYear).flatMap { FeastCatalog.dated(in: $0, calendar: calendar) }
+            .filter { filter == .all || $0.feast.isMarian }
+        let feastDays = Set(items.map { calendar.startOfDay(for: $0.date) })
+        return ScrollView(.vertical, showsIndicators: false) {
+            LazyVStack(spacing: AppTheme.Space.xs) {
+                ForEach(offsets, id: \.self) { offset in
+                    HStack(spacing: AppTheme.Space.xs) {
+                        ForEach(0..<7, id: \.self) { column in
+                            let day = calendar.date(byAdding: .day, value: column, to: weekStart(offset))!
+                            dayButton(day, hasFeast: feastDays.contains(calendar.startOfDay(for: day)), showsWeekday: false)
+                        }
                     }
-                    .buttonStyle(.plain)
-
-                    if index < upcomingItems.count - 1 {
-                        Hairline()
-                            .padding(.leading, 62)
-                    }
+                    .frame(height: AppTheme.Component.feastCalendarDayHeight)
+                    .id(offset)
                 }
             }
-            .guideNavList(pageGutter: AppTheme.gutter)
+            .scrollTargetLayout()
         }
+        .scrollTargetBehavior(.viewAligned)
+        .scrollPosition(id: $expandedWeek, anchor: .top)
+        .onChange(of: expandedWeek) { _, offset in
+            if calendarExpanded, let offset { weekOffset = offset }
+        }
+        .onChange(of: weekOffset) { _, offset in
+            if !calendarExpanded { expandedWeek = offset }
+        }
+        .frame(height: expandedCalendarHeight)
     }
 
-
-    // MARK: - Week strip feast lookup
-
-
-}
-
-// MARK: - Month calendar
-
-private struct FeastMonthCalendar: View {
-    @Binding var month: Date
-    @Binding var selectedDay: Date?
-    var feastDays: [Date: [DatedFeast]]
-
-    @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var colorScheme
-
-    private var calendar: Calendar { .current }
-
-    private var monthTitle: String {
-        month.formatted(.dateTime.month(.wide).year())
+    private var expandedCalendarHeight: CGFloat {
+        let rows = AppTheme.Component.feastCalendarWeekCount
+        return CGFloat(rows) * AppTheme.Component.feastCalendarDayHeight + CGFloat(rows - 1) * AppTheme.Space.xs
     }
 
-    private var weekdaySymbols: [String] {
-        let symbols = calendar.veryShortWeekdaySymbols
+    private var revealedCalendarHeight: CGFloat {
+        let collapsed = AppTheme.Component.feastCalendarDayHeight
+        let base = calendarExpanded ? expandedCalendarHeight : collapsed
+        return min(expandedCalendarHeight, max(collapsed, base + (calendarDrag ?? 0)))
+    }
+
+    private var weekdayHeader: some View {
+        let symbols = calendar.veryShortStandaloneWeekdaySymbols
         let first = calendar.firstWeekday - 1
-        return Array(symbols[first...] + symbols[..<first])
-    }
-
-    private var dayRows: [[Date?]] {
-        let cells = days
-        var rows: [[Date?]] = []
-        var i = 0
-        while i < cells.count {
-            let end = min(i + 7, cells.count)
-            var row = Array(cells[i..<end])
-            while row.count < 7 { row.append(nil) }
-            rows.append(row)
-            i = end
-        }
-        return rows
-    }
-
-    private var days: [Date?] {
-        guard let monthInterval = calendar.dateInterval(of: .month, for: month),
-              let firstWeek = calendar.dateInterval(of: .weekOfMonth, for: monthInterval.start) else {
-            return []
-        }
-        let weekCount = calendar.range(of: .weekOfMonth, in: .month, for: month)?.count ?? 6
-        var cursor = firstWeek.start
-        var cells: [Date?] = []
-        for _ in 0..<(7 * weekCount) {
-            if calendar.isDate(cursor, equalTo: month, toGranularity: .month) {
-                cells.append(cursor)
-            } else {
-                cells.append(nil)
+        let weekdays = Array(symbols[first...] + symbols[..<first])
+        return HStack(spacing: AppTheme.Space.xs) {
+            ForEach(0..<7, id: \.self) { index in
+                Text(weekdays[index])
+                    .font(AppTheme.TypeRole.caption)
+                    .foregroundStyle(palette.dim)
+                    .frame(maxWidth: .infinity)
             }
-            guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
-            cursor = next
         }
-        return cells
+        .frame(height: AppTheme.Component.calendarWeekdayHeaderHeight)
+        .padding(.bottom, AppTheme.Space.sm)
     }
 
-    var body: some View {
-        VStack(spacing: AppTheme.Space.md) {
-            HStack {
-                Button {
-                    shiftMonth(-1)
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .guideSymbol(size: 14, weight: .semibold)
-                        .foregroundStyle(palette.ink)
-                        .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
-                        .background(palette.surface, in: Circle())
+    private var calendarHandle: some View {
+        Capsule()
+            .fill(palette.dim)
+            .frame(width: AppTheme.Component.calendarHandleWidth, height: AppTheme.Component.calendarHandleHeight)
+            .frame(maxWidth: .infinity)
+            // Center the touch region on the visible capsule, including space below it.
+            // Negative outer padding keeps the existing visual gaps without shrinking hit testing.
+            .frame(height: AppTheme.Accessibility.minHitTarget)
+            .contentShape(Rectangle())
+            .highPriorityGesture(calendarHandleGesture, including: .all)
+            .padding(.top, -((AppTheme.Accessibility.minHitTarget - AppTheme.Component.calendarHandleHeight) / 2
+                - AppTheme.Component.calendarHandleDotGap))
+            .padding(.bottom, -(AppTheme.Accessibility.minHitTarget - AppTheme.Component.calendarHandleHeight) / 2)
+            .zIndex(1)
+            .accessibilityLabel("Calendar handle")
+            .accessibilityValue(calendarExpanded ? "Upcoming weeks" : "Week view")
+            .accessibilityHint("Drag down to expand the calendar, or up to collapse it")
+    }
+
+    // Measure in a stationary coordinate space: the handle itself moves during a pull.
+    // Local coordinates feed that movement back into translation and make the rows jitter.
+    private var calendarHandleGesture: some Gesture {
+        DragGesture(minimumDistance: 3, coordinateSpace: .global)
+                .onChanged { value in
+                    guard abs(value.translation.height) > abs(value.translation.width) else { return }
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { calendarDrag = value.translation.height }
                 }
-                .buttonStyle(.plain)
-                .guideHitTarget()
-                .accessibilityLabel("Previous month")
-
-                Spacer(minLength: 0)
-                Text(monthTitle)
-                    .font(AppTheme.TypeRole.body)
-                    .foregroundStyle(palette.ink)
-                Spacer(minLength: 0)
-
-                Button {
-                    shiftMonth(1)
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .guideSymbol(size: 14, weight: .semibold)
-                        .foregroundStyle(palette.ink)
-                        .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
-                        .background(palette.surface, in: Circle())
-                }
-                .buttonStyle(.plain)
-                .guideHitTarget()
-                .accessibilityLabel("Next month")
-            }
-
-            VStack(spacing: AppTheme.Space.sm) {
-                HStack(spacing: 0) {
-                    ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
-                        Text(symbol)
-                            .font(AppTheme.TypeRole.caption(weight: .medium))
-                            .tracking(0.4)
-                            .textCase(.uppercase)
-                            .foregroundStyle(palette.faint)
-                            .frame(maxWidth: .infinity)
-                            .padding(.bottom, 2)
+                .onEnded { value in
+                    guard calendarDrag != nil else { return }
+                    let projected = value.predictedEndTranslation.height
+                    let distance = value.translation.height
+                    let threshold = AppTheme.Component.calendarSnapThreshold
+                    let expanded = calendarExpanded
+                        ? !(distance < -threshold || projected < -threshold)
+                        : distance > threshold || projected > threshold
+                    if expanded && !calendarExpanded { expandedWeek = weekOffset }
+                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.28, extraBounce: 0)) {
+                        calendarExpanded = expanded
+                        calendarDrag = nil
                     }
                 }
-
-                ForEach(Array(dayRows.enumerated()), id: \.offset) { _, row in
-                    HStack(spacing: 0) {
-                        ForEach(Array(row.enumerated()), id: \.offset) { _, day in
-                            if let day {
-                                dayCell(day)
-                            } else {
-                                Color.clear
-                                    .frame(height: 40)
-                                    .frame(maxWidth: .infinity)
-                            }
-                        }
-                    }
-                }
-            }
-
-        }
-        .padding(.horizontal, 14)
-        .padding(.top, 14)
-        .padding(.bottom, 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-        .guideSoftShadow(elevated: colorScheme == .light)
     }
 
-    @ViewBuilder
-    private func dayCell(_ day: Date) -> some View {
-        let start = calendar.startOfDay(for: day)
-        let feasts = feastDays[start] ?? []
-        let hasFeast = !feasts.isEmpty
-        let hasMarian = feasts.contains(where: \.feast.isMarian)
-        let isSelected = selectedDay.map { calendar.isDate($0, inSameDayAs: day) } ?? false
-        let isToday = calendar.isDateInToday(day)
-
-        Button {
-            withAnimation(MotionTokens.selection) {
-                selectedDay = start
-            }
-        } label: {
+    private func dayButton(_ day: Date, hasFeast: Bool, showsWeekday: Bool = true) -> some View {
+        let selected = calendar.isDate(day, inSameDayAs: selectedDay)
+        let isToday = calendar.isDate(day, inSameDayAs: today)
+        return Button { selectedDay = day } label: {
             VStack(spacing: AppTheme.Space.xs) {
-                Text("\(calendar.component(.day, from: day))")
-                    .font(AppTheme.TypeRole.bodySmall(weight: isSelected || isToday ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? palette.primaryButtonText : (hasFeast ? palette.ink : palette.dim))
-                    .frame(width: 32, height: 32)
-                    .background {
-                        if isSelected {
-                            Circle().fill(palette.primaryButtonFill)
-                        } else if isToday {
-                            Circle().strokeBorder(palette.primaryButtonFill.opacity(0.55), lineWidth: 1.2)
-                        }
-                    }
-
-                HStack(spacing: AppTheme.Space.xs) {
-                    if hasMarian {
-                        Circle()
-                            .fill(isSelected ? palette.primaryButtonText.opacity(0.9) : palette.primaryButtonFill)
-                            .frame(width: 4, height: 4)
-                    } else if hasFeast {
-                        Circle()
-                            .fill(isSelected ? palette.primaryButtonText.opacity(0.7) : palette.faint)
-                            .frame(width: 4, height: 4)
-                    } else {
-                        Color.clear.frame(width: 4, height: 4)
-                    }
+                if showsWeekday {
+                    Text(calendar.veryShortStandaloneWeekdaySymbols[calendar.component(.weekday, from: day) - 1])
+                        .font(AppTheme.TypeRole.caption)
+                        .foregroundStyle(palette.dim)
                 }
-                .frame(height: 4)
+                Text(day.formatted(.dateTime.day()))
+                    .font(AppTheme.TypeRole.callout(weight: selected ? .semibold : .regular))
+                    .foregroundStyle(selected ? palette.onAccent : palette.ink)
+                    .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                    .background(selected ? palette.accent : .clear, in: Circle())
+                    .overlay { if isToday && !selected { Circle().stroke(palette.accent, lineWidth: 1) } }
+                Circle()
+                    .fill(hasFeast ? palette.accent : .clear)
+                    .frame(width: 4, height: 4)
             }
             .frame(maxWidth: .infinity)
-            .frame(minHeight: AppTheme.Accessibility.minHitTarget)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(accessibilityLabel(for: day, feasts: feasts, isToday: isToday))
-        .accessibilityHint(hasFeast ? "Selects this feast day" : "Selects this date")
+        .accessibilityLabel(day.formatted(date: .complete, time: .omitted) + (hasFeast ? ", feast day" : ""))
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
-    private func accessibilityLabel(for day: Date, feasts: [DatedFeast], isToday: Bool) -> String {
-        var parts: [String] = [day.formatted(.dateTime.weekday(.wide).month(.wide).day())]
-        if isToday { parts.append("Today") }
-        if !feasts.isEmpty {
-            parts.append(feasts.map(\.feast.shortTitle).joined(separator: ", "))
-        }
-        return parts.joined(separator: ", ")
-    }
-
-    private func shiftMonth(_ delta: Int) {
-        guard let next = calendar.date(byAdding: .month, value: delta, to: month) else { return }
-        withAnimation(MotionTokens.selection) {
-            month = next
-            if let selectedDay, calendar.isDate(selectedDay, equalTo: next, toGranularity: .month) {
-                return
+    private func agendaSection(_ section: FeastAgenda.Section) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+            if !section.title.isEmpty {
+                GuideSectionLabel(text: section.title, prominence: .strong)
+                    .accessibilityAddTraits(.isHeader)
             }
-            // Prefer today when jumping back to the current month; otherwise first of month.
-            if calendar.isDate(next, equalTo: Date(), toGranularity: .month) {
-                selectedDay = calendar.startOfDay(for: Date())
-            } else if let first = calendar.date(from: calendar.dateComponents([.year, .month], from: next)) {
-                selectedDay = first
+            VStack(spacing: 0) {
+                ForEach(Array(section.items.enumerated()), id: \.element.id) { index, item in
+                    NavigationLink {
+                        FeastDetailView(prayLaunch: $prayLaunch, item: item)
+                    } label: {
+                        FeastTimelineRow(item: item, topPadding: index == 0 ? 0 : 14,
+                                         bottomPadding: index == section.items.count - 1 ? 0 : 14)
+                    }
+                    .buttonStyle(.plain)
+                    if index < section.items.count - 1 { Hairline().padding(.leading, 76) }
+                }
             }
         }
     }
+
 }
-
-// MARK: - Scope
 
 private enum FeastScope: String, CaseIterable, Identifiable {
     case all
@@ -474,6 +384,8 @@ private enum FeastScope: String, CaseIterable, Identifiable {
 
 private struct FeastTimelineRow: View {
     var item: DatedFeast
+    var topPadding: CGFloat = 14
+    var bottomPadding: CGFloat = 14
     @Environment(\.palette) private var palette
 
     var body: some View {
@@ -500,11 +412,9 @@ private struct FeastTimelineRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Image(systemName: "chevron.right")
-                .guideSymbol(size: 12, weight: .semibold)
-                .foregroundStyle(palette.faint)
         }
-        .padding(.vertical, 14)
+        .padding(.top, topPadding)
+        .padding(.bottom, bottomPadding)
         .contentShape(Rectangle())
     }
 }
@@ -563,11 +473,6 @@ struct FeastDetailView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationTitle(feast.shortTitle)
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            if expandedPrayerID == nil {
-                expandedPrayerID = prayersForDay.first?.id
-            }
-        }
     }
 
     private var featuredPrayer: FeastRelatedPrayer? {
@@ -624,11 +529,17 @@ struct FeastDetailView: View {
 
     private var feastGuideSections: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-            atAGlanceCard
-            meaningSection
-            keepTheDaySection
-            prayersForDaySection
-            scriptureRosarySection
+            VStack(alignment: .leading, spacing: 0) {
+                meaningSection
+                atAGlanceCard
+                    .padding(.top, AppTheme.Space.xl)
+                GuideSectionBoundary()
+                keepTheDaySection
+                GuideSectionBoundary()
+                prayersForDaySection
+                GuideSectionBoundary()
+                scriptureRosarySection
+            }
 
             if let indulgence = feast.indulgenceNote {
                 guideTextCard(
@@ -947,7 +858,7 @@ struct FeastDetailView: View {
                     .foregroundStyle(palette.primaryButtonText)
                     .frame(width: 32)
 
-                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                VStack(alignment: .center, spacing: AppTheme.Space.xs) {
                     Text("Pray with this feast")
                         .font(AppTheme.TypeRole.callout(weight: .semibold))
                         .foregroundStyle(palette.primaryButtonText)
@@ -955,12 +866,11 @@ struct FeastDetailView: View {
                         .font(AppTheme.TypeRole.label)
                         .foregroundStyle(palette.primaryButtonText.opacity(0.72))
                 }
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
 
-                Spacer()
+                Color.clear.frame(width: 32)
 
-                Image(systemName: "arrow.right")
-                    .font(AppTheme.TypeRole.label(weight: .semibold))
-                    .foregroundStyle(palette.primaryButtonText)
             }
             .padding(.horizontal, 18)
             .frame(minHeight: 64)
@@ -1018,8 +928,6 @@ struct FeastDetailView: View {
                     Text("Pray this prayer")
                         .font(AppTheme.TypeRole.label(weight: .medium))
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(AppTheme.TypeRole.caption(weight: .semibold))
                 }
                 .foregroundStyle(palette.ink)
                 .padding(.top, 2)
@@ -1138,9 +1046,6 @@ struct FeastDetailView: View {
                 .font(AppTheme.TypeRole.serifBody)
                 .foregroundStyle(palette.ink)
             Spacer()
-            Image(systemName: "chevron.right")
-                .guideSymbol(size: 12, weight: .semibold)
-                .foregroundStyle(palette.faint)
         }
         .padding(.vertical, 17)
         .contentShape(Rectangle())
@@ -1181,11 +1086,10 @@ struct FeastDetailView: View {
 
     private func prayerCard(_ prayer: FeastRelatedPrayer) -> some View {
         let isExpanded = expandedPrayerID == prayer.id
+
         return VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.easeInOut(duration: 0.18)) {
-                    expandedPrayerID = isExpanded ? nil : prayer.id
-                }
+                expandedPrayerID = isExpanded ? nil : prayer.id
             } label: {
                 HStack(alignment: .center, spacing: 12) {
                     Text(prayer.title)
@@ -1193,11 +1097,11 @@ struct FeastDetailView: View {
                         .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
+
                     Image(systemName: "chevron.down")
                         .guideSymbol(size: 12, weight: .semibold)
                         .foregroundStyle(palette.faint)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                        .animation(.easeInOut(duration: 0.18), value: isExpanded)
                 }
                 .padding(.horizontal, 18)
                 .padding(.vertical, 16)
@@ -1206,7 +1110,7 @@ struct FeastDetailView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(prayer.title)
             .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
-            .accessibilityHint(isExpanded ? "Collapses the prayer" : "Expands the prayer")
+            .accessibilityHint(isExpanded ? "Collapses prayer" : "Expands prayer")
 
             if isExpanded {
                 VStack(alignment: .leading, spacing: AppTheme.Space.md) {
@@ -1233,10 +1137,12 @@ struct FeastDetailView: View {
                 }
                 .padding(.horizontal, 18)
                 .padding(.bottom, 18)
+                    .transition(MotionTokens.accordionTransition)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .guideRowGroup()
+        .guideAccordion(isExpanded: isExpanded)
     }
 
     private func prayerText(_ prayer: FeastRelatedPrayer) -> String {
@@ -1361,11 +1267,10 @@ private struct FeastRelatedPrayersView: View {
 
     private func prayerCard(_ prayer: FeastRelatedPrayer) -> some View {
         let isExpanded = expandedPrayerID == prayer.id
+
         return VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.easeInOut(duration: 0.18)) {
-                    expandedPrayerID = isExpanded ? nil : prayer.id
-                }
+                expandedPrayerID = isExpanded ? nil : prayer.id
             } label: {
                 HStack(alignment: .center, spacing: 12) {
                     Text(prayer.title)
@@ -1385,7 +1290,7 @@ private struct FeastRelatedPrayersView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(prayer.title)
             .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
-            .accessibilityHint(isExpanded ? "Collapses the prayer" : "Expands the prayer")
+            .accessibilityHint(isExpanded ? "Collapses prayer" : "Expands prayer")
 
             if isExpanded {
                 VStack(alignment: .leading, spacing: AppTheme.Space.md) {
@@ -1411,11 +1316,13 @@ private struct FeastRelatedPrayersView: View {
                         }
                 }
                 .padding(.bottom, 18)
+                    .transition(MotionTokens.accordionTransition)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 2)
         .rowBottomDivider()
+        .guideAccordion(isExpanded: isExpanded)
     }
 
     private func prayerText(_ prayer: FeastRelatedPrayer) -> String {

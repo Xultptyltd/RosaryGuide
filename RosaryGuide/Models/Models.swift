@@ -334,14 +334,89 @@ struct CompletionQuote: Identifiable, Hashable, Codable, Sendable {
 }
 
 struct PrayerSession: Codable, Equatable, Hashable, Sendable {
+    var id: UUID
     var mysterySet: MysterySetKind
     var stepIndex: Int
     var startedAt: Date
     var updatedAt: Date
+    var activeDuration: TimeInterval
+    var completedDecades: Set<Int>
+    var lastCompletedDecadeActiveDuration: TimeInterval
     var includeSaintMichael: Bool
     var language: PrayerLanguage
     var intentionId: UUID?
     var intentionTitle: String?
+    /// Frozen intention type for offering milestones; older sessions decode as unknown.
+    var intentionCategory: IntentionCategory?
+    var intentionSourceId: String?
+
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case mysterySet
+        case stepIndex
+        case startedAt
+        case updatedAt
+        case activeDuration
+        case completedDecades
+        case lastCompletedDecadeActiveDuration
+        case includeSaintMichael
+        case language
+        case intentionId
+        case intentionTitle
+        case intentionCategory
+        case intentionSourceId
+    }
+
+    init(
+        id: UUID = UUID(),
+        mysterySet: MysterySetKind,
+        stepIndex: Int,
+        startedAt: Date,
+        updatedAt: Date,
+        activeDuration: TimeInterval = 0,
+        completedDecades: Set<Int> = [],
+        lastCompletedDecadeActiveDuration: TimeInterval = 0,
+        includeSaintMichael: Bool,
+        language: PrayerLanguage,
+        intentionId: UUID?,
+        intentionTitle: String?,
+        intentionCategory: IntentionCategory? = nil,
+        intentionSourceId: String? = nil
+    ) {
+        self.id = id
+        self.mysterySet = mysterySet
+        self.stepIndex = stepIndex
+        self.startedAt = startedAt
+        self.updatedAt = updatedAt
+        self.activeDuration = activeDuration
+        self.completedDecades = completedDecades
+        self.lastCompletedDecadeActiveDuration = lastCompletedDecadeActiveDuration
+        self.includeSaintMichael = includeSaintMichael
+        self.language = language
+        self.intentionId = intentionId
+        self.intentionTitle = intentionTitle
+        self.intentionCategory = intentionCategory
+        self.intentionSourceId = intentionSourceId
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        mysterySet = try container.decode(MysterySetKind.self, forKey: .mysterySet)
+        stepIndex = try container.decode(Int.self, forKey: .stepIndex)
+        startedAt = try container.decode(Date.self, forKey: .startedAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        activeDuration = try container.decodeIfPresent(TimeInterval.self, forKey: .activeDuration) ?? 0
+        completedDecades = try container.decodeIfPresent(Set<Int>.self, forKey: .completedDecades) ?? []
+        lastCompletedDecadeActiveDuration = try container.decodeIfPresent(TimeInterval.self, forKey: .lastCompletedDecadeActiveDuration) ?? 0
+        includeSaintMichael = try container.decode(Bool.self, forKey: .includeSaintMichael)
+        language = try container.decode(PrayerLanguage.self, forKey: .language)
+        intentionId = try container.decodeIfPresent(UUID.self, forKey: .intentionId)
+        intentionTitle = try container.decodeIfPresent(String.self, forKey: .intentionTitle)
+        intentionCategory = try container.decodeIfPresent(IntentionCategory.self, forKey: .intentionCategory)
+        intentionSourceId = try container.decodeIfPresent(String.self, forKey: .intentionSourceId)
+    }
 
     var continueCTATitle: String {
         let steps = RosarySequenceBuilder.build(set: mysterySet)

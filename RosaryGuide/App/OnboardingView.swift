@@ -236,19 +236,19 @@ private struct OnboardingSignInView: View {
                     Spacer(minLength: 0)
 
                     VStack(spacing: AppTheme.Space.md) {
-                        OnboardingAuthButton(title: auth.isWorking ? "Signing in..." : "Continue with Apple", systemImage: "apple.logo", filled: true) {
+                        OnboardingAuthButton(title: auth.isSigningInWithApple ? "Signing in..." : "Continue with Apple", systemImage: "apple.logo", filled: true) {
                             HapticService.play(.medium, enabled: settings.hapticsEnabled)
                             auth.signInWithApple()
                         }
                         .disabled(auth.isWorking)
-                        .accessibilityLabel(auth.isWorking ? "Signing in with Apple" : "Continue with Apple")
+                        .accessibilityLabel(auth.isSigningInWithApple ? "Signing in with Apple" : "Continue with Apple")
 
-                        OnboardingAuthButton(title: "Continue with Google", letter: "G", filled: false) {
+                        OnboardingAuthButton(title: auth.isSigningInWithGoogle ? "Signing in..." : "Continue with Google", letter: "G", filled: false) {
                             HapticService.play(.medium, enabled: settings.hapticsEnabled)
                             auth.signInWithGoogle()
                         }
                         .disabled(auth.isWorking)
-                        .accessibilityLabel("Continue with Google")
+                        .accessibilityLabel(auth.isSigningInWithGoogle ? "Signing in with Google" : "Continue with Google")
 
                         if let message = auth.errorMessage {
                             Text(message)

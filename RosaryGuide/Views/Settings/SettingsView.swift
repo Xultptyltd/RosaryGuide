@@ -122,7 +122,7 @@ struct SettingsView: View {
                     placeholderMessage = "Premium trials will be available when subscriptions are configured."
                 }
 
-                VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
+                VStack(alignment: .leading, spacing: 0) {
                     SettingsSection(title: "General") {
                         // App UI language. English is the only option for now; this is
                         // separate from the Eng/Lat/Both prayer toggle in the rosary flow,
@@ -148,6 +148,8 @@ struct SettingsView: View {
                         }
                     }
 
+                    GuideSectionBoundary()
+
                     SettingsSection(title: "Account") {
                         if auth.isSignedIn {
                             SettingsValueOnlyRow(
@@ -157,7 +159,7 @@ struct SettingsView: View {
                             )
                         } else {
                             SettingsActionRow(
-                                title: auth.isWorking ? "Signing in..." : "Continue with Apple",
+                                title: auth.isSigningInWithApple ? "Signing in..." : "Continue with Apple",
                                 icon: "apple.logo",
                                 accessory: .none
                             ) {
@@ -166,15 +168,11 @@ struct SettingsView: View {
                             }
                             .disabled(auth.isWorking)
 
-                            SettingsActionRow(title: "Continue with Google", icon: "g.circle", accessory: .none) {
+                            SettingsActionRow(title: auth.isSigningInWithGoogle ? "Signing in..." : "Continue with Google", icon: "g.circle", accessory: .none) {
                                 HapticService.play(.medium, enabled: settings.hapticsEnabled)
                                 auth.signInWithGoogle()
                             }
                             .disabled(auth.isWorking)
-                        }
-
-                        SettingsActionRow(title: "Clear app history", icon: "trash", destructive: true) {
-                            confirmClearAppHistory = true
                         }
 
                         SettingsNavigationRow(title: "Premium", icon: "crown", value: "Upgrade", destination: .aboutPremium)
@@ -182,8 +180,10 @@ struct SettingsView: View {
 
                     if !auth.isSignedIn, let message = auth.errorMessage {
                         SettingsFootnote(message)
-                            .padding(.top, -AppTheme.sectionGap + AppTheme.Space.lg)
+                            .padding(.top, AppTheme.Space.lg)
                     }
+
+                    GuideSectionBoundary()
 
                     SettingsSection(title: "Help & support") {
                         SettingsNavigationRow(title: "Frequently asked questions", icon: "questionmark.circle", destination: .faqs)
@@ -197,6 +197,8 @@ struct SettingsView: View {
                             requestReview()
                         }
                     }
+
+                    GuideSectionBoundary()
 
                     SettingsSection(title: "About") {
                         SettingsNavigationRow(title: "Widgets", icon: "square.grid.2x2", destination: .widgets)
@@ -213,11 +215,14 @@ struct SettingsView: View {
                     }
 
                     if auth.isSignedIn {
-                        // sectionGap (44pt) above, same header as the other sections.
+                        GuideSectionBoundary()
                         SettingsSection(title: "Manage account") {
                             SettingsActionRow(title: "Sign out", icon: "rectangle.portrait.and.arrow.right") {
                                 auth.signOut()
                                 dismiss()
+                            }
+                            SettingsActionRow(title: "Clear app history", icon: "trash", destructive: true) {
+                                confirmClearAppHistory = true
                             }
                             SettingsActionRow(
                                 title: auth.isWorking ? "Deleting..." : "Delete account",
@@ -657,6 +662,7 @@ private struct SettingsRowIcon: View {
 
 private struct SettingsRowChrome: View {
     @Environment(\.palette) private var palette
+    @Environment(\.showsRowDivider) private var showsRowDivider
     let title: String
     var icon: String?
     var subtitle: String?
@@ -702,17 +708,12 @@ private struct SettingsRowChrome: View {
             switch accessory {
             case .none:
                 EmptyView()
-            case .chevron:
-                Image(systemName: "chevron.right")
-                    .guideSymbol(size: AppTheme.Component.profileChevronSize, weight: .semibold)
-                    .foregroundStyle(palette.dim)
-            case .externalLink:
-                Image(systemName: AppTheme.Component.profileExternalLinkSymbol)
-                    .guideSymbol(size: AppTheme.Component.profileExternalLinkSize, weight: .semibold)
-                    .foregroundStyle(palette.dim)
+            case .chevron, .externalLink:
+                EmptyView()
             }
         }
         .frame(minHeight: AppTheme.Component.profileRowHeight)
+        .padding(.bottom, showsRowDivider ? 0 : -AppTheme.Space.lg)
         .contentShape(Rectangle())
         .overlay(alignment: .bottom) { SettingsDivider() }
     }
@@ -725,13 +726,7 @@ private struct SettingsRowChrome: View {
 private struct AppIconChoices: View {
     @Environment(AppIconService.self) private var appIcon
     @Environment(\.palette) private var palette
-
-    #if DEBUG
-    @Bindable private var premium = PremiumDebugOverride.shared
-    private var isPremium: Bool { premium.isPremium }
-    #else
-    private var isPremium: Bool { false }
-    #endif
+    @Environment(\.showsRowDivider) private var showsRowDivider
 
     private let previewSize: CGFloat = 64
     private let tileSpacing = AppTheme.Space.md
@@ -774,6 +769,7 @@ private struct AppIconChoices: View {
             .padding(.trailing, -tileRowShift)
         }
         .padding(.vertical, AppTheme.Space.lg)
+        .padding(.bottom, showsRowDivider ? 0 : -AppTheme.Space.lg)
         .overlay(alignment: .bottom) { SettingsDivider() }
         .onAppear { appIcon.refreshFromSystem() }
         .accessibilityElement(children: .contain)
@@ -782,29 +778,17 @@ private struct AppIconChoices: View {
     @ViewBuilder
     private func iconCell(_ option: AppIconOption) -> some View {
         let selected = appIcon.current == option
-        // Free users can see the current icon but cannot switch; other tiles open Premium.
-        let locked = !isPremium && !selected
-        let label = iconLabel(option, selected: selected, dimmed: locked)
-        if locked {
-            NavigationLink(value: SettingsDestination.aboutPremium) {
-                label
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("\(option.title) app icon, Rosary Guide+")
-            .accessibilityHint("Opens Premium")
-        } else {
-            Button {
-                if !selected { appIcon.select(option) }
-            } label: {
-                label
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("\(option.title) app icon")
-            .accessibilityAddTraits(selected ? [.isSelected] : [])
+        Button {
+            if !selected { appIcon.select(option) }
+        } label: {
+            iconLabel(option, selected: selected)
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(option.title) app icon")
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
     }
 
-    private func iconLabel(_ option: AppIconOption, selected: Bool, dimmed: Bool) -> some View {
+    private func iconLabel(_ option: AppIconOption, selected: Bool) -> some View {
         VStack(spacing: AppTheme.Space.sm) {
             Image(option.previewImageName)
                 .resizable()
@@ -823,12 +807,10 @@ private struct AppIconChoices: View {
                     radius: selected ? 6 : 0,
                     y: selected ? 2 : 0
                 )
-                .opacity(dimmed ? 0.55 : 1)
 
             Text(option.title)
                 .font(AppTheme.TypeRole.themeSummary)
                 .foregroundStyle(selected ? palette.accent : palette.dim)
-                .opacity(dimmed ? 0.7 : 1)
         }
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
