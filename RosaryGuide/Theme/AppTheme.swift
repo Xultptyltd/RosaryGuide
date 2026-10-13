@@ -8,8 +8,8 @@ enum AppTheme {
     /// The app's one explicit brand color. Everything else routes through
     /// Apple semantic colors so Light/Dark, contrast, and accessibility modes
     /// can do their work at the system layer.
-    static let marianBlue = Color(hex: 0x0054FF)
-    static let marianBlueHighContrast = Color(hex: 0x0054FF)
+    static let marianBlue = Color(uiColor: .systemBlue)
+    static let marianBlueHighContrast = Color(uiColor: .systemBlue)
     static let marianBlueDark = marianBlue
     static let marianBlueDarkHighContrast = marianBlueHighContrast
     static let brandAccent = marianBlue

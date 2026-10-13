@@ -2258,7 +2258,7 @@ struct IntentionEditorSheet: View {
                             .font(AppTheme.TypeRole.bodySmall(weight: .medium))
                             .foregroundStyle(palette.ink)
                     }
-                    .tint(palette.accent)
+                    .tint(Color(uiColor: .systemGreen))
                     .padding(.horizontal, AppTheme.Space.lg)
                     .padding(.vertical, AppTheme.Space.md)
                     .guideCard(

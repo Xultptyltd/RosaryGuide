@@ -1075,7 +1075,7 @@ private struct SettingsToggleRow: View {
                     .foregroundStyle(palette.ink)
             }
         }
-        .tint(palette.accent)
+        .tint(Color(uiColor: .systemGreen))
         .frame(minHeight: AppTheme.Component.profileRowHeight)
         .overlay(alignment: .bottom) { SettingsDivider() }
     }
