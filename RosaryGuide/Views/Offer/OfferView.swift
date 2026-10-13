@@ -2212,6 +2212,7 @@ struct IntentionEditorSheet: View {
                     VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                     editorFieldSection(label: "Intention") {
                         TextField("For my family", text: $title, axis: .vertical)
+                            .tint(palette.accent)
                             .font(AppTheme.TypeRole.body)
                             .foregroundStyle(palette.ink)
                             .lineLimit(2...5)
@@ -2246,6 +2247,7 @@ struct IntentionEditorSheet: View {
                                 .accessibilityLabel("Notes (read-only)")
                         } else {
                             TextField("Optional", text: $note, axis: .vertical)
+                                .tint(palette.accent)
                                 .font(AppTheme.TypeRole.themeSummary)
                                 .foregroundStyle(palette.ink)
                                 .lineLimit(3...6)

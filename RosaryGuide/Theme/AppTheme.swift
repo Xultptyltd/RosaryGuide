@@ -8,8 +8,8 @@ enum AppTheme {
     /// The app's one explicit brand color. Everything else routes through
     /// Apple semantic colors so Light/Dark, contrast, and accessibility modes
     /// can do their work at the system layer.
-    static let marianBlue = Color(uiColor: .systemBlue)
-    static let marianBlueHighContrast = Color(uiColor: .systemBlue)
+    static let marianBlue = Color(hex: 0x0054FF)
+    static let marianBlueHighContrast = Color(hex: 0x0054FF)
     static let marianBlueDark = marianBlue
     static let marianBlueDarkHighContrast = marianBlueHighContrast
     static let brandAccent = marianBlue
@@ -318,7 +318,6 @@ struct ThemedRoot<Content: View>: View {
         let palette = ThemePalette(scheme: colorScheme, contrast: colorSchemeContrast)
         content()
             .environment(\.palette, palette)
-            .tint(palette.accent)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(palette.bg.ignoresSafeArea())
             .onAppear {
