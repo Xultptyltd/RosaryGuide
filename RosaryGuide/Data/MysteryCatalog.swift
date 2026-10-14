@@ -123,3 +123,63 @@ enum MysteryCatalog {
              "Revelation 12:1", "05-coronation")
     ]
 }
+
+/// Mystery scripture by translation, for the same verse windows as `Mystery.scriptureReference`.
+/// Douay-Rheims: Challoner revision, 1899 American edition (public domain).
+/// Latin Vulgate: Clementine Vulgate (public domain). Both checked against bible-api.com's
+/// public-domain `dra` and `clementine` texts. RSV-2CE is the catalog's original excerpt.
+enum MysteryScripture {
+    static func excerpt(for mystery: Mystery, translation: BibleTranslation) -> String {
+        switch translation {
+        case .rsv2ce: mystery.scriptureExcerpt.english
+        case .douayRheims: douayRheims[mystery.id] ?? mystery.scriptureExcerpt.english
+        case .vulgate: vulgate[mystery.id] ?? mystery.scriptureExcerpt.english
+        }
+    }
+
+    static let douayRheims: [String: String] = [
+        "joyful-1": "And in the sixth month, the angel Gabriel was sent from God into a city of Galilee, called Nazareth, to a virgin espoused to a man whose name was Joseph, of the house of David; and the virgin’s name was Mary.",
+        "joyful-2": "And it came to pass, that when Elizabeth heard the salutation of Mary, the infant leaped in her womb. And Elizabeth was filled with the Holy Ghost: and she cried out with a loud voice, and said: Blessed art thou among women, and blessed is the fruit of thy womb.",
+        "joyful-3": "And she brought forth her firstborn son, and wrapped him up in swaddling clothes, and laid him in a manger; because there was no room for them in the inn.",
+        "joyful-4": "And after the days of her purification, according to the law of Moses, were accomplished, they carried him to Jerusalem, to present him to the Lord.",
+        "joyful-5": "And it came to pass, that, after three days, they found him in the temple, sitting in the midst of the doctors, hearing them, and asking them questions.",
+        "luminous-1": "And Jesus being baptized, forthwith came out of the water: and lo, the heavens were opened to him: and he saw the Spirit of God descending as a dove, and coming upon him. And behold a voice from heaven, saying: This is my beloved Son, in whom I am well pleased.",
+        "luminous-2": "And the wine failing, the mother of Jesus saith to him: They have no wine. His mother saith to the waiters: Whatsoever he shall say to you, do ye.",
+        "luminous-3": "The time is accomplished, and the kingdom of God is at hand: repent, and believe the gospel.",
+        "luminous-4": "And after six days Jesus taketh unto him Peter and James, and John his brother, and bringeth them up into a high mountain apart: and he was transfigured before them. And his face did shine as the sun: and his garments became white as snow.",
+        "luminous-5": "And whilst they were at supper, Jesus took bread, and blessed, and broke: and gave to his disciples, and said: Take ye, and eat. This is my body.",
+        "sorrowful-1": "Then he saith to them: My soul is sorrowful even unto death: stay you here, and watch with me. And going a little further, he fell upon his face, praying, and saying: My Father, if it be possible, let this chalice pass from me. Nevertheless not as I will, but as thou wilt.",
+        "sorrowful-2": "Then he released to them Barabbas, and having scourged Jesus, delivered him unto them to be crucified.",
+        "sorrowful-3": "And platting a crown of thorns, they put it upon his head, and a reed in his right hand. And bowing the knee before him, they mocked him, saying: Hail, king of the Jews.",
+        "sorrowful-4": "And they forced one Simon a Cyrenian who passed by, coming out of the country, the father of Alexander and of Rufus, to take up his cross. And they bring him into the place called Golgotha, which being interpreted is, The place of Calvary.",
+        "sorrowful-5": "And when they were come to the place which is called Calvary, they crucified him there; and the robbers, one on the right hand, and the other on the left. And Jesus crying out with a loud voice, said: Father, into thy hands I commend my spirit. And saying this, he gave up the ghost.",
+        "glorious-1": "Why seek you the living with the dead? He is not here, but is risen.",
+        "glorious-2": "And the Lord Jesus, after he had spoken to them, was taken up into heaven, and sitteth on the right hand of God.",
+        "glorious-3": "And there appeared to them parted tongues as it were of fire, and it sat upon every one of them: and they were all filled with the Holy Ghost, and they began to speak with divers tongues, according as the Holy Ghost gave them to speak.",
+        "glorious-4": "For behold from henceforth all generations shall call me blessed. Because he that is mighty, hath done great things to me; and holy is his name.",
+        "glorious-5": "And a great sign appeared in heaven: A woman clothed with the sun, and the moon under her feet, and on her head a crown of twelve stars.",
+    ]
+
+    static let vulgate: [String: String] = [
+        "joyful-1": "In mense autem sexto, missus est angelus Gabriel a Deo in civitatem Galilææ, cui nomen Nazareth, ad virginem desponsatam viro, cui nomen erat Joseph, de domo David: et nomen virginis Maria.",
+        "joyful-2": "Et factum est, ut audivit salutationem Mariæ Elisabeth, exsultavit infans in utero ejus: et repleta est Spiritu Sancto Elisabeth: et exclamavit voce magna, et dixit: Benedicta tu inter mulieres, et benedictus fructus ventris tui.",
+        "joyful-3": "Et peperit filium suum primogenitum, et pannis eum involvit, et reclinavit eum in præsepio: quia non erat eis locus in diversorio.",
+        "joyful-4": "Et postquam impleti sunt dies purgationis ejus secundum legem Moysi, tulerunt illum in Jerusalem, ut sisterent eum Domino.",
+        "joyful-5": "Et factum est, post triduum invenerunt illum in templo sedentem in medio doctorum, audientem illos, et interrogantem eos.",
+        "luminous-1": "Baptizatus autem Jesus, confestim ascendit de aqua, et ecce aperti sunt ei cæli: et vidit Spiritum Dei descendentem sicut columbam, et venientem super se. Et ecce vox de cælis dicens: Hic est Filius meus dilectus, in quo mihi complacui.",
+        "luminous-2": "Et deficiente vino, dicit mater Jesu ad eum: Vinum non habent. Dicit mater ejus ministris: Quodcumque dixerit vobis, facite.",
+        "luminous-3": "Impletum est tempus, et appropinquavit regnum Dei: pœnitemini, et credite Evangelio.",
+        "luminous-4": "Et post dies sex assumit Jesus Petrum, et Jacobum, et Joannem fratrem ejus, et ducit illos in montem excelsum seorsum: et transfiguratus est ante eos. Et resplenduit facies ejus sicut sol: vestimenta autem ejus facta sunt alba sicut nix.",
+        "luminous-5": "Cœnantibus autem eis, accepit Jesus panem, et benedixit, ac fregit, deditque discipulis suis, et ait: Accipite, et comedite: hoc est corpus meum.",
+        "sorrowful-1": "Tunc ait illis: Tristis est anima mea usque ad mortem: sustinete hic, et vigilate mecum. Et progressus pusillum, procidit in faciem suam, orans, et dicens: Pater mi, si possibile est, transeat a me calix iste: verumtamen non sicut ego volo, sed sicut tu.",
+        "sorrowful-2": "Tunc dimisit illis Barabbam: Jesum autem flagellatum tradidit eis ut crucifigeretur.",
+        "sorrowful-3": "Et plectentes coronam de spinis, posuerunt super caput ejus, et arundinem in dextera ejus. Et genu flexo ante eum, illudebant ei, dicentes: Ave rex Judæorum.",
+        "sorrowful-4": "Et angariaverunt prætereuntem quempiam, Simonem Cyrenæum venientem de villa, patrem Alexandri et Rufi, ut tolleret crucem ejus. Et perducunt illum in Golgotha locum: quod est interpretatum Calvariæ locus.",
+        "sorrowful-5": "Et postquam venerunt in locum qui vocatur Calvariæ, ibi crucifixerunt eum: et latrones, unum a dextris, et alterum a sinistris. Et clamans voce magna Jesus ait: Pater, in manus tuas commendo spiritum meum. Et hæc dicens, expiravit.",
+        "glorious-1": "Quid quæritis viventem cum mortuis? Non est hic, sed surrexit.",
+        "glorious-2": "Et Dominus quidem Jesus postquam locutus est eis, assumptus est in cælum, et sedet a dextris Dei.",
+        "glorious-3": "Et apparuerunt illis dispertitæ linguæ tamquam ignis, seditque supra singulos eorum: et repleti sunt omnes Spiritu Sancto, et cœperunt loqui variis linguis, prout Spiritus Sanctus dabat eloqui illis.",
+        "glorious-4": "Ecce enim ex hoc beatam me dicent omnes generationes, quia fecit mihi magna qui potens est: et sanctum nomen ejus.",
+        "glorious-5": "Et signum magnum apparuit in cælo: mulier amicta sole, et luna sub pedibus ejus, et in capite ejus corona stellarum duodecim.",
+    ]
+}

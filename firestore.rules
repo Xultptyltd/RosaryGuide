@@ -82,6 +82,31 @@ service cloud.firestore {
       return value in ['english', 'latin', 'bilingual'];
     }
 
+    // Rosary settings (RosaryConfig). Optional; the app keeps it local until these rules are deployed.
+    function validRosaryConfig(config) {
+      let flags = [
+        'showScripture',
+        'fatimaPrayer',
+        'oSacrament',
+        'closingPrayers',
+        'memorare',
+        'saintMichael',
+        'intentionsStep',
+        'openingIntentionLines'
+      ];
+      return config is map
+        && config.keys().hasOnly(flags.concat(['translation']))
+        && (!('translation' in config) || config.translation in ['rsv2ce', 'douayRheims', 'vulgate'])
+        && (!('showScripture' in config) || config.showScripture is bool)
+        && (!('fatimaPrayer' in config) || config.fatimaPrayer is bool)
+        && (!('oSacrament' in config) || config.oSacrament is bool)
+        && (!('closingPrayers' in config) || config.closingPrayers is bool)
+        && (!('memorare' in config) || config.memorare is bool)
+        && (!('saintMichael' in config) || config.saintMichael is bool)
+        && (!('intentionsStep' in config) || config.intentionsStep is bool)
+        && (!('openingIntentionLines' in config) || config.openingIntentionLines is bool);
+    }
+
     function validPreferences() {
       let data = request.resource.data;
       let fields = [
@@ -100,8 +125,9 @@ service cloud.firestore {
         'updatedAt'
       ];
 
-      return data.keys().hasOnly(fields)
+      return data.keys().hasOnly(fields.concat(['rosaryConfig']))
         && data.keys().hasAll(fields)
+        && (!('rosaryConfig' in data) || validRosaryConfig(data.rosaryConfig))
         && data.schemaVersion == 1
         && data.appearance in ['system', 'light', 'dark']
         && prayerLanguage(data.prayerLanguage)
@@ -139,7 +165,8 @@ service cloud.firestore {
         'intentionId',
         'intentionTitle',
         'intentionIds',
-        'intentionTitles'
+        'intentionTitles',
+        'rosaryConfig'
       ];
       let required = [
         'mysterySet',
@@ -164,7 +191,8 @@ service cloud.firestore {
         && (!('intentionId' in session) || (session.intentionId is string && validIntentionId(session.intentionId)))
         && (!('intentionTitle' in session) || validString(session.intentionTitle, 0, 160))
         && (!('intentionIds' in session) || validIntentionIdList(session.intentionIds))
-        && (!('intentionTitles' in session) || validIntentionTitleList(session.intentionTitles));
+        && (!('intentionTitles' in session) || validIntentionTitleList(session.intentionTitles))
+        && (!('rosaryConfig' in session) || validRosaryConfig(session.rosaryConfig));
     }
 
     // Up to 4 offered intentions per Rosary; entries match the single-field limits.

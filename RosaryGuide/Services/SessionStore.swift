@@ -199,7 +199,7 @@ final class SessionStore {
         }
     }
 
-    func start(set: MysterySetKind, language: PrayerLanguage, intentionId: UUID? = nil, intentionTitle: String? = nil, intentionIds: [UUID]? = nil, intentionTitles: [String]? = nil, intentionCategory: IntentionCategory? = nil, intentionSourceId: String? = nil) {
+    func start(set: MysterySetKind, language: PrayerLanguage, intentionId: UUID? = nil, intentionTitle: String? = nil, intentionIds: [UUID]? = nil, intentionTitles: [String]? = nil, intentionCategory: IntentionCategory? = nil, intentionSourceId: String? = nil, rosaryConfig: RosaryConfig = .default) {
         let now = Date()
         session = PrayerSession(
             mysterySet: set,
@@ -207,14 +207,15 @@ final class SessionStore {
             startedAt: now,
             updatedAt: now,
             activeDuration: 0,
-            includeSaintMichael: false,
+            includeSaintMichael: rosaryConfig.saintMichael,
             language: language,
             intentionId: intentionId,
             intentionTitle: intentionTitle,
             intentionIds: intentionIds,
             intentionTitles: intentionTitles,
             intentionCategory: intentionCategory,
-            intentionSourceId: intentionSourceId
+            intentionSourceId: intentionSourceId,
+            rosaryConfig: rosaryConfig
         )
     }
 
@@ -595,6 +596,8 @@ final class SessionStore {
                 }
                 incoming.intentionCategory = incoming.intentionCategory ?? session?.intentionCategory
                 incoming.intentionSourceId = incoming.intentionSourceId ?? session?.intentionSourceId
+                // Rosary settings are local only for now; keep the steps this Rosary was built with.
+                if let local = session { incoming.rosaryConfig = local.rosaryConfig }
             }
             session = incoming
         } else {

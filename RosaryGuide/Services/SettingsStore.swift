@@ -17,6 +17,7 @@ final class SettingsStore {
         /// Shared with the `@AppStorage` readers in the intention views.
         static let hideIntentionText = "offer.hideIntentionText"
         static let appIcon = "settings.appIcon"
+        static let rosaryConfig = "settings.rosaryConfig"
         static let updatedAt = "settings.updatedAt"
     }
 
@@ -52,6 +53,24 @@ final class SettingsStore {
             defaults.set(includeSaintMichael, forKey: Keys.saintMichael)
             userChanged()
         }
+    }
+
+    /// Rosary settings (scripture, optional prayers, intention step). Local only:
+    /// not synced until the Firestore rules that accept it are deployed.
+    /// Saint Michael lives in `includeSaintMichael`; read `currentRosaryConfig`.
+    var rosaryConfig: RosaryConfig {
+        didSet {
+            if let data = try? JSONEncoder().encode(rosaryConfig) {
+                defaults.set(data, forKey: Keys.rosaryConfig)
+            }
+        }
+    }
+
+    /// The config a new Rosary is built with.
+    var currentRosaryConfig: RosaryConfig {
+        var config = rosaryConfig
+        config.saintMichael = includeSaintMichael
+        return config
     }
 
     /// Haptics are always on; there is no longer a setting to turn them off.
@@ -142,6 +161,8 @@ final class SettingsStore {
         rosaryLanguage = legacyLanguage
         appearance = AppearancePreference(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
         includeSaintMichael = defaults.object(forKey: Keys.saintMichael) as? Bool ?? false
+        rosaryConfig = defaults.data(forKey: Keys.rosaryConfig)
+            .flatMap { try? JSONDecoder().decode(RosaryConfig.self, from: $0) } ?? .default
         // Drop any stored "off" from the old Haptics toggle.
         defaults.removeObject(forKey: Keys.haptics)
         textSize = PrayerTextSize(rawValue: defaults.string(forKey: Keys.textSize) ?? "") ?? .medium
@@ -224,6 +245,7 @@ final class SettingsStore {
         rosaryLanguage = .english
         appearance = .system
         includeSaintMichael = false
+        rosaryConfig = .default
         textSize = .medium
         dailyReminderEnabled = false
         dailyReminderMinutes = 19 * 60

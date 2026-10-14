@@ -89,6 +89,8 @@ struct PrayView: View {
     @State private var pairGeneration = 0
     @State private var showingCompletion = false
     @State private var freshSetPending: MysterySetKind?
+    /// Rosary settings this Rosary was built with (fresh: Settings; resume: the saved session).
+    @State private var activeConfig: RosaryConfig = .default
 
     /// Mystery set for the Rosary in progress (may differ from the calendar day).
     private var intentionSheetMysterySet: MysterySetKind {
@@ -1078,12 +1080,15 @@ struct PrayView: View {
     private func announceBody(_ step: RosaryStep) -> some View {
         let scriptureSize = (step.isPlate ? 20.0 : 21.0) * settings.textSize.scale
         return VStack(alignment: .leading, spacing: step.isPlate ? 12 : 10) {
+            // Scripture can be switched off in Rosary settings.
+            if !step.body.english.isEmpty {
             BilingualStack(
                 text: step.body,
                 language: .english,
                 font: AppTheme.sans(scriptureSize),
                 pointSize: scriptureSize
             )
+            }
             if let ref = step.scriptureReference {
                 Text(ref)
                     .font(AppTheme.sans(step.isPlate ? 11 : 12))
@@ -1200,7 +1205,8 @@ struct PrayView: View {
             intentionFace: completionIntentionFace,
             quote: completionQuote ?? QuoteCatalog.quote(),
             onDone: { finishRosary() },
-            onMichael: {
+            // Saint Michael switched on in Rosary settings is already a step; no extra offer.
+            onMichael: activeConfig.saintMichael ? nil : {
                 // Rosary is already marked complete on entering finis; Michael is optional continuation.
                 showingMichael = true
                 HapticService.play(.medium, enabled: settings.hapticsEnabled)
@@ -1748,7 +1754,8 @@ struct PrayView: View {
         switch launch {
         case .fresh(let set, let intentionId, _):
             freshSetPending = nil
-            steps = RosarySequenceBuilder.build(set: set)
+            activeConfig = settings.currentRosaryConfig
+            steps = RosarySequenceBuilder.build(set: set, config: activeConfig)
             index = launch.startIndex(in: steps)
             // A launch from an intention pre-selects it on the intention step.
             let resolvedId = intentionId.flatMap { offer.intention(id: $0) != nil ? $0 : nil }
@@ -1767,7 +1774,8 @@ struct PrayView: View {
             pendingActivePrayerTime = 0
         case .resume(let session):
             freshSetPending = nil
-            steps = RosarySequenceBuilder.build(set: session.mysterySet)
+            activeConfig = session.rosaryConfig
+            steps = RosarySequenceBuilder.build(set: session.mysterySet, config: activeConfig)
             index = min(session.stepIndex, max(steps.count - 1, 0))
             if var current = sessionStore.session {
                 current.language = settings.language
@@ -1805,7 +1813,7 @@ struct PrayView: View {
             move(to: index + 1)
             return
         }
-        if current?.kind == .signOfTheCross, index < steps.count - 1 {
+        if current?.kind == .signOfTheCross, activeConfig.intentionsStep, index < steps.count - 1 {
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
                 showingIntentionStep = true
             }
@@ -1818,7 +1826,9 @@ struct PrayView: View {
             return
         }
 
-        if current?.kind == .concludingPrayer {
+        if current?.isLastPrayer == true {
+            // With the closing group off, the last prayer can also close decade five.
+            recordCompletedDecadeIfNeeded()
             showCompletionScreen()
             return
         }
@@ -1832,7 +1842,7 @@ struct PrayView: View {
     }
 
     private func recordCompletedDecadeIfNeeded() {
-        guard current?.kind == .fatima, let decadeNumber = current?.decadeNumber else { return }
+        guard current?.closesDecade == true, let decadeNumber = current?.decadeNumber else { return }
         checkpointActivePrayerTime()
         sessionStore.recordCompletedDecadeIfNeeded(decadeNumber)
         startActivePrayerTimerIfNeeded()
@@ -1886,7 +1896,7 @@ struct PrayView: View {
         let previous = index - 1
         move(to: previous)
         // Stepping back from the Creed lands on the intention step, not past it.
-        if steps.indices.contains(previous), steps[previous].kind == .signOfTheCross {
+        if activeConfig.intentionsStep, steps.indices.contains(previous), steps[previous].kind == .signOfTheCross {
             showingIntentionStep = true
         }
     }
@@ -1899,7 +1909,8 @@ struct PrayView: View {
             intentionIds: chosenIntentionIds,
             intentionTitles: chosenIntentionTitles,
             intentionCategory: first?.category,
-            intentionSourceId: first?.sourceId
+            intentionSourceId: first?.sourceId,
+            rosaryConfig: activeConfig
         )
     }
 

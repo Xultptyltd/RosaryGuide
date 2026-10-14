@@ -6,6 +6,7 @@ import UserNotifications
 
 private enum SettingsDestination: Hashable {
     case notifications
+    case rosary
     case aboutPremium
     case faqs
     case widgets
@@ -146,6 +147,12 @@ struct SettingsView: View {
                         if appIcon.supportsAlternateIcons {
                             AppIconChoices()
                         }
+                    }
+
+                    GuideSectionBoundary()
+
+                    SettingsSection(title: "Rosary") {
+                        SettingsNavigationRow(title: "Rosary settings", icon: "circle.dotted", destination: .rosary)
                     }
 
                     GuideSectionBoundary()
@@ -408,6 +415,8 @@ struct SettingsView: View {
             SettingsWidgetsScreen()
         case .notifications:
             SettingsNotificationsScreen()
+        case .rosary:
+            SettingsRosaryScreen()
         case .acknowledgements:
             SettingsAcknowledgementsScreen()
         case .license(let id):
@@ -1120,6 +1129,82 @@ private struct SettingsTimeRow: View {
     }
 }
 
+/// Rosary settings: prayer text, scripture, optional prayers and intentions.
+/// Prayer config is saved on each new Rosary, so a Rosary in progress keeps its steps.
+private struct SettingsRosaryScreen: View {
+    @Environment(SettingsStore.self) private var settings
+
+    var body: some View {
+        @Bindable var settings = settings
+        SettingsDetailScaffold(title: "Rosary settings") {
+            VStack(alignment: .leading, spacing: 0) {
+                SettingsSection(title: "Prayer text") {
+                    SettingsMenuRow(title: "Prayer language", icon: "character.book.closed", value: settings.language.title) {
+                        Picker("Prayer language", selection: $settings.language) {
+                            ForEach(PrayerLanguage.appCases) { option in
+                                Text(option.title).tag(option)
+                            }
+                        }
+                    }
+                    SettingsMenuRow(title: "Text size", icon: "textformat.size", value: Self.title(for: settings.textSize)) {
+                        Picker("Text size", selection: $settings.textSize) {
+                            ForEach(PrayerTextSize.allCases) { size in
+                                Text(Self.title(for: size)).tag(size)
+                            }
+                        }
+                    }
+                }
+
+                GuideSectionBoundary()
+
+                SettingsSection(title: "Scripture") {
+                    SettingsMenuRow(title: "Bible translation", icon: "book", value: settings.rosaryConfig.translation.title) {
+                        Picker("Bible translation", selection: $settings.rosaryConfig.translation) {
+                            ForEach(BibleTranslation.allCases) { translation in
+                                Text(translation.title).tag(translation)
+                            }
+                        }
+                    }
+                    SettingsToggleRow(title: "Show scripture", icon: "text.quote", isOn: $settings.rosaryConfig.showScripture)
+                }
+
+                GuideSectionBoundary()
+
+                SettingsSection(title: "Each decade") {
+                    SettingsToggleRow(title: "Fatima prayer", icon: "flame", isOn: $settings.rosaryConfig.fatimaPrayer)
+                    SettingsToggleRow(title: "O Sacrament most holy", icon: "sun.max", isOn: $settings.rosaryConfig.oSacrament)
+                }
+
+                GuideSectionBoundary()
+
+                SettingsSection(title: "Closing prayers") {
+                    SettingsToggleRow(title: "Hail, holy Queen and closing prayer", icon: "crown", isOn: $settings.rosaryConfig.closingPrayers)
+                    SettingsToggleRow(title: "Memorare", icon: "heart", isOn: $settings.rosaryConfig.memorare)
+                    SettingsToggleRow(title: "Saint Michael the Archangel", icon: "shield", isOn: $settings.includeSaintMichael)
+                }
+
+                GuideSectionBoundary()
+
+                SettingsSection(title: "Intentions") {
+                    SettingsToggleRow(title: "Offer this Rosary step", icon: "hands.sparkles", isOn: $settings.rosaryConfig.intentionsStep)
+                    SettingsToggleRow(title: "Faith, hope and charity lines", icon: "text.alignleft", isOn: $settings.rosaryConfig.openingIntentionLines)
+                }
+
+                SettingsFootnote("Changes apply to your next Rosary")
+                    .padding(.top, AppTheme.Space.lg)
+            }
+        }
+    }
+
+    private static func title(for size: PrayerTextSize) -> String {
+        switch size {
+        case .small: "Small"
+        case .medium: "Medium"
+        case .large: "Large"
+        }
+    }
+}
+
 private struct SettingsAcknowledgementsScreen: View {
     var body: some View {
         SettingsDetailScaffold(title: "Acknowledgements") {
@@ -1127,6 +1212,12 @@ private struct SettingsAcknowledgementsScreen: View {
                 ForEach(LicenseCatalog.all) { entry in
                     SettingsNavigationRow(title: entry.name, destination: .license(entry.id))
                 }
+            }
+
+            SettingsSection(title: "Scripture") {
+                SettingsValueOnlyRow(title: "RSV-2CE", value: "Ignatius Press")
+                SettingsValueOnlyRow(title: "Douay-Rheims (Challoner, 1899)", value: "Public domain")
+                SettingsValueOnlyRow(title: "Clementine Vulgate", value: "Public domain")
             }
         }
     }

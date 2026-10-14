@@ -351,6 +351,8 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
     /// Frozen intention type (first intention) for offering milestones; older sessions decode as unknown.
     var intentionCategory: IntentionCategory?
     var intentionSourceId: String?
+    /// Steps this Rosary was built with; older sessions decode as `.default`.
+    var rosaryConfig: RosaryConfig
 
 
     enum CodingKeys: String, CodingKey {
@@ -370,6 +372,7 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
         case intentionTitles
         case intentionCategory
         case intentionSourceId
+        case rosaryConfig
     }
 
     static let maxIntentions = 4
@@ -402,7 +405,8 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
         intentionIds: [UUID]? = nil,
         intentionTitles: [String]? = nil,
         intentionCategory: IntentionCategory? = nil,
-        intentionSourceId: String? = nil
+        intentionSourceId: String? = nil,
+        rosaryConfig: RosaryConfig = .default
     ) {
         self.id = id
         self.mysterySet = mysterySet
@@ -418,6 +422,7 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
         self.intentionTitles = Array((intentionTitles ?? intentionTitle.map { [$0] } ?? []).prefix(Self.maxIntentions))
         self.intentionCategory = intentionCategory
         self.intentionSourceId = intentionSourceId
+        self.rosaryConfig = rosaryConfig
     }
 
     init(from decoder: Decoder) throws {
@@ -441,6 +446,7 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
             ?? legacyTitle.map { [$0] } ?? []
         intentionCategory = try container.decodeIfPresent(IntentionCategory.self, forKey: .intentionCategory)
         intentionSourceId = try container.decodeIfPresent(String.self, forKey: .intentionSourceId)
+        rosaryConfig = (try? container.decodeIfPresent(RosaryConfig.self, forKey: .rosaryConfig)) ?? .default
     }
 
     func encode(to encoder: Encoder) throws {
@@ -462,10 +468,11 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
         try container.encode(intentionTitles, forKey: .intentionTitles)
         try container.encodeIfPresent(intentionCategory, forKey: .intentionCategory)
         try container.encodeIfPresent(intentionSourceId, forKey: .intentionSourceId)
+        try container.encode(rosaryConfig, forKey: .rosaryConfig)
     }
 
     var continueCTATitle: String {
-        let steps = RosarySequenceBuilder.build(set: mysterySet)
+        let steps = RosarySequenceBuilder.build(set: mysterySet, config: rosaryConfig)
         let idx = min(max(stepIndex, 0), max(steps.count - 1, 0))
         if steps.indices.contains(idx) {
             return "Continue — \(steps[idx].stage.continuePhrase)"
@@ -547,6 +554,71 @@ enum BeadLocus: Hashable, Codable {
     case decadeGlory(Int)
     case decadeFatima(Int)
     case closing
+}
+
+/// Bible translation for the mystery scripture on each decade's announcement.
+/// Catholic editions only. RSV-2CE is the app's original text (licensed);
+/// Douay-Rheims (Challoner, 1899 American ed.) and the Clementine Vulgate are public domain.
+enum BibleTranslation: String, CaseIterable, Codable, Identifiable, Sendable {
+    case rsv2ce
+    case douayRheims
+    case vulgate
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .rsv2ce: "RSV-2CE"
+        case .douayRheims: "Douay-Rheims"
+        case .vulgate: "Latin Vulgate"
+        }
+    }
+}
+
+/// How the user prays the Rosary. Saved on each `PrayerSession` so a resumed
+/// Rosary rebuilds the same steps (and `stepIndex` keeps its meaning) even if
+/// Settings changed meanwhile. Local only until the Firestore rules are deployed.
+struct RosaryConfig: Codable, Equatable, Hashable, Sendable {
+    var translation: BibleTranslation = .rsv2ce
+    var showScripture = true
+    var fatimaPrayer = true
+    /// O Sacrament most holy, after the Fatima prayer in each decade.
+    var oSacrament = false
+    /// Hail, holy Queen + versicle + closing prayer, as one group.
+    var closingPrayers = true
+    var memorare = false
+    var saintMichael = false
+    /// The "Offer this Rosary for" step after the Sign of the Cross.
+    var intentionsStep = true
+    /// Faith / hope / charity lines on the three opening Hail Marys.
+    var openingIntentionLines = true
+
+    /// Matches the fixed sequence from before this setting existed.
+    static let `default` = RosaryConfig()
+
+    init() {}
+
+    enum CodingKeys: String, CodingKey {
+        case translation, showScripture, fatimaPrayer, oSacrament, closingPrayers
+        case memorare, saintMichael, intentionsStep, openingIntentionLines
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = RosaryConfig()
+        func bool(_ key: CodingKeys, _ fallback: Bool) -> Bool {
+            (try? c.decodeIfPresent(Bool.self, forKey: key)) ?? fallback
+        }
+        translation = (try? c.decodeIfPresent(BibleTranslation.self, forKey: .translation)) ?? d.translation
+        showScripture = bool(.showScripture, d.showScripture)
+        fatimaPrayer = bool(.fatimaPrayer, d.fatimaPrayer)
+        oSacrament = bool(.oSacrament, d.oSacrament)
+        closingPrayers = bool(.closingPrayers, d.closingPrayers)
+        memorare = bool(.memorare, d.memorare)
+        saintMichael = bool(.saintMichael, d.saintMichael)
+        intentionsStep = bool(.intentionsStep, d.intentionsStep)
+        openingIntentionLines = bool(.openingIntentionLines, d.openingIntentionLines)
+    }
 }
 
 /// Counts that open a sentence read as words: "Two Rosaries offered this week".

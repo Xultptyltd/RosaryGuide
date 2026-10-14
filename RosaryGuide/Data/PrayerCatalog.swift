@@ -197,6 +197,8 @@ enum PrayerCatalog {
         case .versicle: versicle
         case .concludingPrayer: concluding
         case .saintMichael: saintMichael
+        case .oSacrament: sacramentMostHoly
+        case .memorare: memorare
         case .mysteryAnnouncement, .completion: nil
         }
     }

@@ -179,3 +179,92 @@ final class RosarySpacingTests: XCTestCase {
         }
     }
 }
+
+final class RosaryConfigTests: XCTestCase {
+    private func count(_ edit: (inout RosaryConfig) -> Void) -> Int {
+        var config = RosaryConfig.default
+        edit(&config)
+        return RosarySequenceBuilder.build(set: .joyful, config: config).count
+    }
+
+    func testStepCountsPerCombination() {
+        XCTAssertEqual(RosarySequenceBuilder.build(set: .joyful).count, 81)
+        XCTAssertEqual(count { _ in }, 81)
+        XCTAssertEqual(count { $0.fatimaPrayer = false }, 76)
+        XCTAssertEqual(count { $0.oSacrament = true }, 86)
+        XCTAssertEqual(count { $0.closingPrayers = false }, 78)
+        XCTAssertEqual(count { $0.memorare = true }, 82)
+        XCTAssertEqual(count { $0.saintMichael = true }, 82)
+        XCTAssertEqual(count { $0.memorare = true; $0.saintMichael = true; $0.oSacrament = true }, 88)
+        XCTAssertEqual(count { $0.fatimaPrayer = false; $0.closingPrayers = false }, 73)
+    }
+
+    func testDecadeEndsAndLastPrayerFollowConfig() {
+        for config in [RosaryConfig.default, { var c = RosaryConfig(); c.fatimaPrayer = false; c.closingPrayers = false; return c }(),
+                       { var c = RosaryConfig(); c.oSacrament = true; c.memorare = true; c.saintMichael = true; return c }()] {
+            let steps = RosarySequenceBuilder.build(set: .sorrowful, config: config)
+            XCTAssertEqual(steps.filter(\.closesDecade).map(\.decadeNumber), [1, 2, 3, 4, 5])
+            XCTAssertEqual(steps.filter(\.isLastPrayer).count, 1)
+            XCTAssertEqual(steps.firstIndex(where: \.isLastPrayer), steps.count - 2)
+            XCTAssertEqual(steps.last?.kind, .completion)
+            XCTAssertEqual(Set(steps.map(\.stage)).count, 7)
+        }
+        var extras = RosaryConfig()
+        extras.memorare = true
+        extras.saintMichael = true
+        let closing = RosarySequenceBuilder.build(set: .glorious, config: extras).suffix(6).map(\.kind)
+        XCTAssertEqual(closing, [.hailHolyQueen, .versicle, .concludingPrayer, .memorare, .saintMichael, .completion])
+    }
+
+    func testScriptureTranslationAndOpeningLines() {
+        var config = RosaryConfig()
+        config.translation = .douayRheims
+        var plate = RosarySequenceBuilder.build(set: .joyful, config: config).first { $0.isPlate }
+        XCTAssertTrue(plate?.body.english.hasPrefix("And in the sixth month, the angel Gabriel") == true)
+        config.translation = .vulgate
+        plate = RosarySequenceBuilder.build(set: .joyful, config: config).first { $0.isPlate }
+        XCTAssertTrue(plate?.body.english.hasPrefix("In mense autem sexto") == true)
+        config.showScripture = false
+        plate = RosarySequenceBuilder.build(set: .joyful, config: config).first { $0.isPlate }
+        XCTAssertEqual(plate?.body.english, "")
+        XCTAssertNil(plate?.scriptureReference)
+        for mystery in MysteryCatalog.all {
+            XCTAssertNotNil(MysteryScripture.douayRheims[mystery.id], mystery.id)
+            XCTAssertNotNil(MysteryScripture.vulgate[mystery.id], mystery.id)
+        }
+        config = RosaryConfig()
+        config.openingIntentionLines = false
+        let opening = RosarySequenceBuilder.build(set: .joyful, config: config).filter { $0.stage == .opening && $0.kind == .hailMary }
+        XCTAssertEqual(opening.count, 3)
+        XCTAssertTrue(opening.allSatisfy { $0.subtitle == nil && $0.intention == nil })
+    }
+
+    func testResumeUsesSavedConfig() throws {
+        var config = RosaryConfig()
+        config.closingPrayers = false
+        config.memorare = true
+        let session = PrayerSession(mysterySet: .luminous, stepIndex: 77, startedAt: Date(), updatedAt: Date(),
+                                    includeSaintMichael: false, language: .english, intentionId: nil, intentionTitle: nil,
+                                    rosaryConfig: config)
+        let decoded = try JSONDecoder().decode(PrayerSession.self, from: JSONEncoder().encode(session))
+        XCTAssertEqual(decoded.rosaryConfig, config)
+        let steps = RosarySequenceBuilder.build(set: decoded.mysterySet, config: decoded.rosaryConfig)
+        XCTAssertEqual(steps.count, 79)
+        XCTAssertEqual(steps[decoded.stepIndex].kind, .memorare)
+    }
+
+    func testOldSessionDecodesToDefaultConfig() throws {
+        let session = PrayerSession(mysterySet: .joyful, stepIndex: 12, startedAt: Date(), updatedAt: Date(),
+                                    includeSaintMichael: false, language: .english, intentionId: nil, intentionTitle: nil)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(session)) as? [String: Any])
+        object.removeValue(forKey: "rosaryConfig")
+        let decoded = try JSONDecoder().decode(PrayerSession.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertEqual(decoded.rosaryConfig, .default)
+        XCTAssertEqual(RosarySequenceBuilder.build(set: .joyful, config: decoded.rosaryConfig).count, 81)
+        // Partial configs (future/older fields) fall back per field.
+        let partial = try JSONDecoder().decode(RosaryConfig.self, from: Data(#"{"memorare":true}"#.utf8))
+        XCTAssertTrue(partial.memorare)
+        XCTAssertTrue(partial.fatimaPrayer)
+        XCTAssertEqual(partial.translation, .rsv2ce)
+    }
+}

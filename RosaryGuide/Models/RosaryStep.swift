@@ -12,6 +12,8 @@ enum RosaryStepKind: Hashable, Codable {
     case versicle
     case concludingPrayer
     case saintMichael
+    case oSacrament
+    case memorare
     case completion
 }
 
@@ -29,6 +31,10 @@ struct RosaryStep: Identifiable, Hashable {
     var stage: PrayTrackStage
     var bead: BeadLocus?
     var scriptureReference: String?
+    /// Last step of a decade (Fatima, O Sacrament or Glory be, depending on settings).
+    var closesDecade = false
+    /// Last prayer before the finis screen; its button reads "Finish".
+    var isLastPrayer = false
 
     var isOpening: Bool { stage == .opening }
     var isClosing: Bool { stage == .closing || kind == .completion }
@@ -51,11 +57,11 @@ struct RosaryStep: Identifiable, Hashable {
     }
 
     var nextLabel: String {
+        if isLastPrayer { return "Finish" }
         switch kind {
-        case .mysteryAnnouncement: "Continue"
-        case .completion: "Amen"
-        case .concludingPrayer: "Finish"
-        default: "Next"
+        case .mysteryAnnouncement: return "Continue"
+        case .completion: return "Amen"
+        default: return "Next"
         }
     }
 }

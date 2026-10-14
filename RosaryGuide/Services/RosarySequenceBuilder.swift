@@ -1,7 +1,7 @@
 import Foundation
 
 enum RosarySequenceBuilder {
-    static func build(set: MysterySetKind) -> [RosaryStep] {
+    static func build(set: MysterySetKind, config: RosaryConfig = .default) -> [RosaryStep] {
         var steps: [RosaryStep] = []
         var id = 0
 
@@ -53,11 +53,12 @@ enum RosarySequenceBuilder {
         append(.creed, haptic: .medium, stage: .opening, bead: .crucifix)
         append(.ourFather, haptic: .medium, stage: .opening, bead: .openingOurFather)
         for (index, intention) in PrayerCatalog.openingIntentions.enumerated() {
+            let line = config.openingIntentionLines ? intention : nil
             append(
                 .hailMary,
-                subtitle: intention,
+                subtitle: line,
                 hailMary: index + 1,
-                intention: intention,
+                intention: line,
                 haptic: .light,
                 stage: .opening,
                 bead: .openingHail(index + 1)
@@ -71,14 +72,19 @@ enum RosarySequenceBuilder {
             append(
                 .mysteryAnnouncement,
                 title: mystery.title,
-                body: mystery.scriptureExcerpt,
+                body: config.showScripture
+                    ? {
+                        let text = MysteryScripture.excerpt(for: mystery, translation: config.translation)
+                        return BilingualText(english: text, latin: text)
+                    }()
+                    : BilingualText(english: "", latin: ""),
                 subtitle: mystery.fruit,
                 mystery: mystery,
                 decade: decade,
                 haptic: .heavy,
                 stage: stage,
                 bead: .decadeOurFather(decade),
-                scriptureReference: mystery.scriptureReference
+                scriptureReference: config.showScripture ? mystery.scriptureReference : nil
             )
             append(.ourFather, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeOurFather(decade))
             for bead in 1...10 {
@@ -93,12 +99,28 @@ enum RosarySequenceBuilder {
                 )
             }
             append(.gloryBe, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeGlory(decade))
-            append(.fatima, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeFatima(decade))
+            if config.fatimaPrayer {
+                append(.fatima, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeFatima(decade))
+            }
+            if config.oSacrament {
+                append(.oSacrament, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeFatima(decade))
+            }
+            steps[steps.count - 1].closesDecade = true
         }
 
-        append(.hailHolyQueen, haptic: .medium, stage: .closing, bead: .closing)
-        append(.versicle, haptic: .medium, stage: .closing, bead: .closing)
-        append(.concludingPrayer, haptic: .medium, stage: .closing, bead: .closing)
+        // Extra closing prayers share the closing medal on the bead map.
+        if config.closingPrayers {
+            append(.hailHolyQueen, haptic: .medium, stage: .closing, bead: .closing)
+            append(.versicle, haptic: .medium, stage: .closing, bead: .closing)
+            append(.concludingPrayer, haptic: .medium, stage: .closing, bead: .closing)
+        }
+        if config.memorare {
+            append(.memorare, haptic: .medium, stage: .closing, bead: .closing)
+        }
+        if config.saintMichael {
+            append(.saintMichael, haptic: .medium, stage: .closing, bead: .closing)
+        }
+        steps[steps.count - 1].isLastPrayer = true
 
         // The finis screen picks its own quote. Do not call freshCompletionQuote
         // here: it writes UserDefaults, and this builder runs from view bodies
