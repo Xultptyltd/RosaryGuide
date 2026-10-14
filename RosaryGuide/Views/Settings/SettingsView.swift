@@ -144,7 +144,7 @@ struct SettingsView: View {
                             }
                         }
 
-                        SettingsNavigationRow(title: "Notifications", icon: "bell", value: notificationsSummary, destination: .notifications)
+                        SettingsNavigationRow(title: "Notifications", icon: "bell", destination: .notifications)
 
                         if appIcon.supportsAlternateIcons {
                             AppIconChoices()
@@ -179,7 +179,7 @@ struct SettingsView: View {
                             .disabled(auth.isWorking)
                         }
 
-                        SettingsNavigationRow(title: "Premium", icon: "crown", value: "Upgrade", destination: .aboutPremium)
+                        SettingsNavigationRow(title: "Premium", icon: "crown", destination: .aboutPremium)
                     }
 
                     if !auth.isSignedIn, let message = auth.errorMessage {
@@ -572,12 +572,12 @@ private struct SettingsNavigationRow: View {
     let title: String
     var icon: String?
     var subtitle: String?
-    var value: String?
     let destination: SettingsDestination
 
+    // Rows that push a page show only a trailing chevron, never a value.
     var body: some View {
         NavigationLink(value: destination) {
-            SettingsRowChrome(title: title, icon: icon, subtitle: subtitle, value: value, accessory: .chevron)
+            SettingsRowChrome(title: title, icon: icon, subtitle: subtitle, value: nil, accessory: .chevron)
         }
         .buttonStyle(.plain)
     }
