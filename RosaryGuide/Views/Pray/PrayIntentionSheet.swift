@@ -349,8 +349,6 @@ private struct IntentionRadioRow: View {
     let onDelete: () -> Void
     /// Checkbox style for the multi-select intention step; radio otherwise.
     var multiSelect = false
-    /// Card padding; the intention step uses `Space.lg`, the Home sheet keeps 14.
-    var rowPadding: CGFloat = 14
 
     @State private var showingDeleteAlert = false
 
@@ -408,8 +406,8 @@ private struct IntentionRadioRow: View {
                     .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
                     .accessibilityHidden(true)
             }
-            .padding(.horizontal, rowPadding)
-            .padding(.vertical, rowPadding)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
             .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
@@ -485,7 +483,7 @@ struct IntentionMultiSelectList: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             ForEach(unadoptedPapalSuggestions) { item in
                 selectCard(
                     title: item.title,
@@ -515,8 +513,7 @@ struct IntentionMultiSelectList: View {
                         selectedIds.removeAll { $0 == item.id }
                         offer.delete(id: item.id)
                     },
-                    multiSelect: true,
-                    rowPadding: AppTheme.Space.lg
+                    multiSelect: true
                 )
                 .disabled(atLimit && !selected)
                 .opacity(atLimit && !selected ? 0.4 : 1)
@@ -544,7 +541,7 @@ struct IntentionMultiSelectList: View {
             .buttonStyle(.plain)
             .guidePressable()
             .accessibilityLabel("Add an intention")
-            .padding(.top, AppTheme.Space.sm)
+            .padding(.top, AppTheme.Space.xs)
         }
         .sheet(item: $editorRoute) { route in
             IntentionEditorSheet(
@@ -638,7 +635,7 @@ struct IntentionMultiSelectList: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(AppTheme.Space.lg)
+            .padding(14)
             .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)

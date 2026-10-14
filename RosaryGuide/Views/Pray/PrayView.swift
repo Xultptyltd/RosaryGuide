@@ -883,7 +883,7 @@ struct PrayView: View {
             }
 
             ScrollView {
-                VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                         Text("Offer this Rosary for")
                             .font(AppTheme.TypeRole.modalTitle)
@@ -902,7 +902,7 @@ struct PrayView: View {
                 }
                 .padding(.horizontal, AppTheme.gutter)
                 .padding(.top, prayerTitleTopPadding)
-                .padding(.bottom, AppTheme.Space.xl)
+                .padding(.bottom, AppTheme.Space.lg)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollIndicators(.hidden)
