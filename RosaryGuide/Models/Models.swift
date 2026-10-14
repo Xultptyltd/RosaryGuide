@@ -344,9 +344,11 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
     var lastCompletedDecadeActiveDuration: TimeInterval
     var includeSaintMichael: Bool
     var language: PrayerLanguage
-    var intentionId: UUID?
-    var intentionTitle: String?
-    /// Frozen intention type for offering milestones; older sessions decode as unknown.
+    /// Intentions offered for this Rosary (up to `PrayerSession.maxIntentions`), in pick order.
+    var intentionIds: [UUID]
+    /// Display titles frozen when chosen; parallel to `intentionIds` where possible.
+    var intentionTitles: [String]
+    /// Frozen intention type (first intention) for offering milestones; older sessions decode as unknown.
     var intentionCategory: IntentionCategory?
     var intentionSourceId: String?
 
@@ -364,8 +366,24 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
         case language
         case intentionId
         case intentionTitle
+        case intentionIds
+        case intentionTitles
         case intentionCategory
         case intentionSourceId
+    }
+
+    static let maxIntentions = 4
+
+    /// First offered intention. Kept for older call sites and the legacy single-value schema.
+    var intentionId: UUID? {
+        get { intentionIds.first }
+        set { intentionIds = newValue.map { [$0] } ?? [] }
+    }
+
+    /// First offered intention title. Setting it replaces the list with a single title.
+    var intentionTitle: String? {
+        get { intentionTitles.first }
+        set { intentionTitles = newValue.map { [$0] } ?? [] }
     }
 
     init(
@@ -381,6 +399,8 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
         language: PrayerLanguage,
         intentionId: UUID?,
         intentionTitle: String?,
+        intentionIds: [UUID]? = nil,
+        intentionTitles: [String]? = nil,
         intentionCategory: IntentionCategory? = nil,
         intentionSourceId: String? = nil
     ) {
@@ -394,8 +414,8 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
         self.lastCompletedDecadeActiveDuration = lastCompletedDecadeActiveDuration
         self.includeSaintMichael = includeSaintMichael
         self.language = language
-        self.intentionId = intentionId
-        self.intentionTitle = intentionTitle
+        self.intentionIds = Array((intentionIds ?? intentionId.map { [$0] } ?? []).prefix(Self.maxIntentions))
+        self.intentionTitles = Array((intentionTitles ?? intentionTitle.map { [$0] } ?? []).prefix(Self.maxIntentions))
         self.intentionCategory = intentionCategory
         self.intentionSourceId = intentionSourceId
     }
@@ -412,10 +432,36 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
         lastCompletedDecadeActiveDuration = try container.decodeIfPresent(TimeInterval.self, forKey: .lastCompletedDecadeActiveDuration) ?? 0
         includeSaintMichael = try container.decode(Bool.self, forKey: .includeSaintMichael)
         language = try container.decode(PrayerLanguage.self, forKey: .language)
-        intentionId = try container.decodeIfPresent(UUID.self, forKey: .intentionId)
-        intentionTitle = try container.decodeIfPresent(String.self, forKey: .intentionTitle)
+        // Migration: sessions saved before multi-intention only carry the single keys.
+        let legacyId = try container.decodeIfPresent(UUID.self, forKey: .intentionId)
+        let legacyTitle = try container.decodeIfPresent(String.self, forKey: .intentionTitle)
+        intentionIds = try container.decodeIfPresent([UUID].self, forKey: .intentionIds)
+            ?? legacyId.map { [$0] } ?? []
+        intentionTitles = try container.decodeIfPresent([String].self, forKey: .intentionTitles)
+            ?? legacyTitle.map { [$0] } ?? []
         intentionCategory = try container.decodeIfPresent(IntentionCategory.self, forKey: .intentionCategory)
         intentionSourceId = try container.decodeIfPresent(String.self, forKey: .intentionSourceId)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(mysterySet, forKey: .mysterySet)
+        try container.encode(stepIndex, forKey: .stepIndex)
+        try container.encode(startedAt, forKey: .startedAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
+        try container.encode(activeDuration, forKey: .activeDuration)
+        try container.encode(completedDecades, forKey: .completedDecades)
+        try container.encode(lastCompletedDecadeActiveDuration, forKey: .lastCompletedDecadeActiveDuration)
+        try container.encode(includeSaintMichael, forKey: .includeSaintMichael)
+        try container.encode(language, forKey: .language)
+        // Single keys stay so an older build can still resume the first intention.
+        try container.encodeIfPresent(intentionId, forKey: .intentionId)
+        try container.encodeIfPresent(intentionTitle, forKey: .intentionTitle)
+        try container.encode(intentionIds, forKey: .intentionIds)
+        try container.encode(intentionTitles, forKey: .intentionTitles)
+        try container.encodeIfPresent(intentionCategory, forKey: .intentionCategory)
+        try container.encodeIfPresent(intentionSourceId, forKey: .intentionSourceId)
     }
 
     var continueCTATitle: String {

@@ -12,6 +12,13 @@ struct CompletedPrayerSession: Codable, Equatable, Hashable, Identifiable, Senda
     var intentionTitle: String?
     var intentionCategory: IntentionCategory? = nil
     var intentionSourceId: String? = nil
+    /// All offered intentions. Nil on records saved before multi-intention; fall back to the single fields.
+    var intentionIds: [UUID]? = nil
+    var intentionTitles: [String]? = nil
+
+    var allIntentionTitles: [String] {
+        OfferedIntentions.titles(intentionTitles, legacy: intentionTitle)
+    }
 }
 
 struct CompletedDecadeSession: Codable, Equatable, Hashable, Identifiable, Sendable {
@@ -23,6 +30,31 @@ struct CompletedDecadeSession: Codable, Equatable, Hashable, Identifiable, Senda
     var duration: TimeInterval
     var intentionId: UUID?
     var intentionTitle: String?
+    var intentionIds: [UUID]? = nil
+    var intentionTitles: [String]? = nil
+
+    var allIntentionTitles: [String] {
+        OfferedIntentions.titles(intentionTitles, legacy: intentionTitle)
+    }
+}
+
+/// Display helpers for one or more offered intentions.
+enum OfferedIntentions {
+    static func titles(_ titles: [String]?, legacy: String?) -> [String] {
+        let source = titles ?? legacy.map { [$0] } ?? []
+        return source
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// "A", "A and B", "A, B and C".
+    static func summary(_ titles: [String]) -> String? {
+        switch titles.count {
+        case 0: nil
+        case 1: titles[0]
+        default: titles.dropLast().joined(separator: ", ") + " and " + titles[titles.count - 1]
+        }
+    }
 }
 
 @Observable
@@ -53,8 +85,8 @@ final class SessionStore {
                 // Advancing a bead is frequent; starting, finishing, discarding or changing the
                 // intention is what other devices need to hear about promptly.
                 let significant = oldValue?.startedAt != session?.startedAt
-                    || oldValue?.intentionId != session?.intentionId
-                    || oldValue?.intentionTitle != session?.intentionTitle
+                    || oldValue?.intentionIds != session?.intentionIds
+                    || oldValue?.intentionTitles != session?.intentionTitles
                 onUserChange?(significant)
             }
         }
@@ -167,7 +199,7 @@ final class SessionStore {
         }
     }
 
-    func start(set: MysterySetKind, language: PrayerLanguage, intentionId: UUID? = nil, intentionTitle: String? = nil, intentionCategory: IntentionCategory? = nil, intentionSourceId: String? = nil) {
+    func start(set: MysterySetKind, language: PrayerLanguage, intentionId: UUID? = nil, intentionTitle: String? = nil, intentionIds: [UUID]? = nil, intentionTitles: [String]? = nil, intentionCategory: IntentionCategory? = nil, intentionSourceId: String? = nil) {
         let now = Date()
         session = PrayerSession(
             mysterySet: set,
@@ -179,9 +211,23 @@ final class SessionStore {
             language: language,
             intentionId: intentionId,
             intentionTitle: intentionTitle,
+            intentionIds: intentionIds,
+            intentionTitles: intentionTitles,
             intentionCategory: intentionCategory,
             intentionSourceId: intentionSourceId
         )
+    }
+
+    /// Replaces the offered intentions (up to `PrayerSession.maxIntentions`).
+    /// Category / source describe the first intention, as before.
+    func updateIntentions(ids: [UUID], titles: [String], category: IntentionCategory? = nil, sourceId: String? = nil) {
+        guard var current = session else { return }
+        current.intentionIds = Array(ids.prefix(PrayerSession.maxIntentions))
+        current.intentionTitles = Array(titles.prefix(PrayerSession.maxIntentions))
+        current.intentionCategory = category
+        current.intentionSourceId = sourceId
+        current.updatedAt = Date()
+        session = current
     }
 
     func updateIntention(id: UUID?, title: String?, category: IntentionCategory? = nil, sourceId: String? = nil) {
@@ -226,7 +272,9 @@ final class SessionStore {
             completedAt: completedAt,
             duration: duration,
             intentionId: current.intentionId,
-            intentionTitle: current.intentionTitle
+            intentionTitle: current.intentionTitle,
+            intentionIds: current.intentionIds,
+            intentionTitles: current.intentionTitles
         )
         completedDecades.append(record)
         completedDecades.sort { $0.completedAt > $1.completedAt }
@@ -313,7 +361,9 @@ final class SessionStore {
             intentionId: session.intentionId,
             intentionTitle: session.intentionTitle,
             intentionCategory: session.intentionCategory,
-            intentionSourceId: session.intentionSourceId
+            intentionSourceId: session.intentionSourceId,
+            intentionIds: session.intentionIds,
+            intentionTitles: session.intentionTitles
         )
         completedSessions.append(record)
         completedSessions.sort { $0.completedAt > $1.completedAt }
@@ -538,6 +588,11 @@ final class SessionStore {
                incoming.mysterySet == session?.mysterySet,
                incoming.intentionId == session?.intentionId {
                 incoming.id = session?.id ?? incoming.id
+                // Sync carries only the first intention; keep the local full list.
+                if let local = session, incoming.intentionIds.count <= 1 {
+                    incoming.intentionIds = local.intentionIds
+                    incoming.intentionTitles = local.intentionTitles
+                }
                 incoming.intentionCategory = incoming.intentionCategory ?? session?.intentionCategory
                 incoming.intentionSourceId = incoming.intentionSourceId ?? session?.intentionSourceId
             }

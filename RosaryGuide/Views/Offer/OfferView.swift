@@ -3307,10 +3307,10 @@ private struct PrayerJourneyView: View {
 
     private var historyRows: [JourneyHistoryRow.Model] {
         let recorded = completedSessions.map { session in
-            JourneyHistoryRow.Model(date: session.completedAt, mystery: session.mysterySet, duration: session.duration, intentionTitle: session.intentionTitle, kind: .rosary)
+            JourneyHistoryRow.Model(date: session.completedAt, mystery: session.mysterySet, duration: session.duration, intentionTitle: OfferedIntentions.summary(session.allIntentionTitles), kind: .rosary)
         }
         let decades = completedDecades.map { decade in
-            JourneyHistoryRow.Model(date: decade.completedAt, mystery: decade.mysterySet, duration: decade.duration, intentionTitle: decade.intentionTitle, kind: .decade(decade.decadeNumber))
+            JourneyHistoryRow.Model(date: decade.completedAt, mystery: decade.mysterySet, duration: decade.duration, intentionTitle: OfferedIntentions.summary(decade.allIntentionTitles), kind: .decade(decade.decadeNumber))
         }
         let recordedDays = Set(recorded.map { Calendar.current.startOfDay(for: $0.date).timeIntervalSince1970 })
         let legacy = prayedDayStarts

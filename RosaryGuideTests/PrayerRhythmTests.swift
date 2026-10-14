@@ -349,4 +349,77 @@ final class MilestonePersistenceTests: XCTestCase {
             XCTAssertEqual(store.session?.intentionSourceId, "pope-2026-10")
         }
     }
+
+    // MARK: - Multiple intentions
+
+    func testLegacySingleIntentionSessionMigratesToArrays() throws {
+        let id = UUID()
+        let legacy = PrayerSession(mysterySet: .joyful, stepIndex: 3, startedAt: Date(), updatedAt: Date(),
+                                   includeSaintMichael: false, language: .english,
+                                   intentionId: id, intentionTitle: "Family")
+        var json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy)) as! [String: Any]
+        json.removeValue(forKey: "intentionIds")
+        json.removeValue(forKey: "intentionTitles")
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let decoded = try JSONDecoder().decode(PrayerSession.self, from: data)
+        XCTAssertEqual(decoded.intentionIds, [id])
+        XCTAssertEqual(decoded.intentionTitles, ["Family"])
+    }
+
+    func testMultipleIntentionsRoundTripAndKeepLegacyKeys() throws {
+        let ids = [UUID(), UUID(), UUID()]
+        let session = PrayerSession(mysterySet: .sorrowful, stepIndex: 1, startedAt: Date(), updatedAt: Date(),
+                                    includeSaintMichael: false, language: .english,
+                                    intentionId: nil, intentionTitle: nil,
+                                    intentionIds: ids, intentionTitles: ["A", "B", "C"])
+        let data = try JSONEncoder().encode(session)
+        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        XCTAssertEqual(json["intentionId"] as? String, ids[0].uuidString)
+        XCTAssertEqual(json["intentionTitle"] as? String, "A")
+        let decoded = try JSONDecoder().decode(PrayerSession.self, from: data)
+        XCTAssertEqual(decoded.intentionIds, ids)
+        XCTAssertEqual(decoded.intentionTitles, ["A", "B", "C"])
+    }
+
+    func testIntentionsAreCappedAtFour() {
+        let session = PrayerSession(mysterySet: .glorious, stepIndex: 0, startedAt: Date(), updatedAt: Date(),
+                                    includeSaintMichael: false, language: .english,
+                                    intentionId: nil, intentionTitle: nil,
+                                    intentionIds: (0..<6).map { _ in UUID() }, intentionTitles: nil)
+        XCTAssertEqual(session.intentionIds.count, PrayerSession.maxIntentions)
+    }
+
+    func testCompletedRosaryKeepsAllIntentionsAndOldRecordsFallBack() {
+        isolated { defaults in
+            let store = SessionStore(defaults: defaults)
+            let ids = [UUID(), UUID()]
+            store.start(set: .joyful, language: .english, intentionIds: ids, intentionTitles: ["Mum", "Peace"])
+            store.complete()
+            XCTAssertEqual(store.completedSessions.first?.intentionIds, ids)
+            XCTAssertEqual(store.completedSessions.first?.allIntentionTitles, ["Mum", "Peace"])
+        }
+        let old = CompletedPrayerSession(id: UUID(), mysterySet: .joyful, startedAt: Date(), completedAt: Date(),
+                                         duration: 60, intentionId: UUID(), intentionTitle: "Church")
+        XCTAssertEqual(old.allIntentionTitles, ["Church"])
+    }
+
+    func testSyncWithOnlyFirstIntentionKeepsLocalList() {
+        isolated { defaults in
+            let store = SessionStore(defaults: defaults)
+            let ids = [UUID(), UUID(), UUID()]
+            store.start(set: .joyful, language: .english, intentionIds: ids, intentionTitles: ["A", "B", "C"])
+            var remote = store.syncedProgress
+            remote.session?.intentionIds = [ids[0]] // cloud schema carries only the first intention
+            remote.session?.intentionTitles = ["A"]
+            store.applySynced(remote)
+            XCTAssertEqual(store.session?.intentionIds, ids)
+        }
+    }
+
+    func testOfferedIntentionsSummary() {
+        XCTAssertNil(OfferedIntentions.summary([]))
+        XCTAssertEqual(OfferedIntentions.summary(["A"]), "A")
+        XCTAssertEqual(OfferedIntentions.summary(["A", "B"]), "A and B")
+        XCTAssertEqual(OfferedIntentions.summary(["A", "B", "C"]), "A, B and C")
+    }
 }

@@ -130,9 +130,10 @@ struct SyncedProgress: Codable, Equatable {
         if var session = copy.session {
             session.startedAt = session.startedAt.syncRounded
             session.updatedAt = session.updatedAt.syncRounded
-            if let title = session.intentionTitle, title.count > 160 {
-                session.intentionTitle = String(title.prefix(160))
-            }
+            session.intentionIds = Array(session.intentionIds.prefix(PrayerSession.maxIntentions))
+            session.intentionTitles = session.intentionTitles
+                .prefix(PrayerSession.maxIntentions)
+                .map { $0.count > 160 ? String($0.prefix(160)) : $0 }
             copy.session = session
         }
         let cutoff = Self.cutoffDayKey()
@@ -246,7 +247,10 @@ private extension SyncedProgress {
                 includeSaintMichael: includeSaintMichael,
                 language: language,
                 intentionId: (map["intentionId"] as? String).flatMap(UUID.init(uuidString:)),
-                intentionTitle: map["intentionTitle"] as? String
+                intentionTitle: map["intentionTitle"] as? String,
+                // Older clients only write the single keys; the initializer falls back to them.
+                intentionIds: (map["intentionIds"] as? [String])?.compactMap(UUID.init(uuidString:)),
+                intentionTitles: map["intentionTitles"] as? [String]
             )
         }
 
@@ -285,6 +289,9 @@ private extension SyncedProgress {
             if let title = session.intentionTitle {
                 map["intentionTitle"] = title
             }
+            // The deployed rules (firestore.rules `validSession`) only allow the single
+            // intention keys, so only the first intention syncs until the rules accept
+            // `intentionIds` / `intentionTitles`. Extra intentions stay on this device.
             data["session"] = map
         }
         return data

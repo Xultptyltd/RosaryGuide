@@ -347,6 +347,8 @@ private struct IntentionRadioRow: View {
     let onPin: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
+    /// Checkbox style for the multi-select intention step; radio otherwise.
+    var multiSelect = false
 
     @State private var showingDeleteAlert = false
 
@@ -365,7 +367,7 @@ private struct IntentionRadioRow: View {
     var body: some View {
         Button(action: onChoose) {
             HStack(alignment: .center, spacing: 12) {
-                Image(systemName: selected ? "circle.inset.filled" : "circle")
+                Image(systemName: selected ? (multiSelect ? "checkmark.circle.fill" : "circle.inset.filled") : "circle")
                     .guideSymbol(size: 22, weight: .regular)
                     .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
@@ -441,5 +443,206 @@ private struct IntentionRadioRow: View {
         } message: {
             Text("This will delete “\(displayTitle)” from your intentions.")
         }
+    }
+}
+
+/// Multi-select intention list for the "Offer this Rosary for" prayer step.
+/// Holy Father + saved intentions, up to `PrayerSession.maxIntentions`; at the limit the
+/// unselected rows dim and disable. "No specific intention" clears every selection.
+struct IntentionMultiSelectList: View {
+    @Environment(OfferStore.self) private var offer
+    @Environment(\.palette) private var palette
+
+    @Binding var selectedIds: [UUID]
+    var mysterySet: MysterySetKind
+
+    @State private var popeStore = PopeIntentionStore.shared
+    @State private var editorRoute: EditorRoute?
+    @State private var showingPremium = false
+    @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
+
+    private let cardMinHeight: CGFloat = 64
+    private var limit: Int { PrayerSession.maxIntentions }
+    private var atLimit: Bool { selectedIds.count >= limit }
+
+    private var papalSuggestions: [SuggestedIntention] {
+        IntentionSuggestions.forDay(popeStore: popeStore).filter {
+            $0.id.hasPrefix("pope-")
+                || $0.sourceLabel.lowercased().contains("pope")
+                || $0.sourceLabel.lowercased().contains("holy father")
+        }
+    }
+
+    private var unadoptedPapalSuggestions: [SuggestedIntention] {
+        papalSuggestions.filter { suggestion in
+            !offer.sortedIntentions.contains {
+                $0.sourceId == suggestion.id
+                    || $0.title.compare(suggestion.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+            }
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+            ForEach(unadoptedPapalSuggestions) { item in
+                selectCard(
+                    title: item.title,
+                    subtitle: "Holy Father’s Intention",
+                    showsPope: true,
+                    selected: false
+                ) {
+                    adoptSuggestion(item)
+                }
+                .disabled(atLimit)
+                .opacity(atLimit ? 0.4 : 1)
+                .accessibilityLabel("Holy Father: \(item.title)")
+            }
+
+            ForEach(offer.sortedIntentions(for: mysterySet)) { item in
+                let selected = selectedIds.contains(item.id)
+                IntentionRadioRow(
+                    item: item,
+                    hideText: hideIntentionText,
+                    selected: selected,
+                    allowsPin: offer.sortedIntentions.count > 1,
+                    cardMinHeight: cardMinHeight,
+                    onChoose: { toggle(item.id) },
+                    onPin: { offer.togglePin(id: item.id) },
+                    onEdit: { editorRoute = .edit(item) },
+                    onDelete: {
+                        selectedIds.removeAll { $0 == item.id }
+                        offer.delete(id: item.id)
+                    },
+                    multiSelect: true
+                )
+                .disabled(atLimit && !selected)
+                .opacity(atLimit && !selected ? 0.4 : 1)
+            }
+
+            selectCard(
+                title: "No specific intention",
+                subtitle: nil,
+                showsPope: false,
+                selected: selectedIds.isEmpty
+            ) {
+                selectedIds = []
+            }
+
+            PillButton(title: "Add an intention", filled: false) {
+                // Free users at the intention limit go to Rosary Guide+ instead of the editor.
+                if offer.canAddIntention {
+                    editorRoute = .create
+                } else {
+                    showingPremium = true
+                }
+            }
+            .accessibilityLabel("Add an intention")
+            .padding(.top, AppTheme.Space.xs)
+        }
+        .sheet(item: $editorRoute) { route in
+            IntentionEditorSheet(
+                route: route,
+                initialMystery: mysterySet,
+                onSaved: { saved in
+                    if !selectedIds.contains(saved.id), selectedIds.count < limit {
+                        selectedIds.append(saved.id)
+                    }
+                },
+                onDeleted: { deleted in
+                    selectedIds.removeAll { $0 == deleted.id }
+                }
+            )
+            .environment(offer)
+            .environment(\.palette, palette)
+        }
+        .sheet(isPresented: $showingPremium) {
+            NavigationStack {
+                PremiumScreen(note: IntentionLimit.premiumNote)
+            }
+            .environment(\.palette, palette)
+        }
+    }
+
+    private func toggle(_ id: UUID) {
+        if let index = selectedIds.firstIndex(of: id) {
+            selectedIds.remove(at: index)
+        } else if selectedIds.count < limit {
+            selectedIds.append(id)
+        }
+    }
+
+    /// Saves the Holy Father's intention (locked as papal) and selects it.
+    private func adoptSuggestion(_ item: SuggestedIntention) {
+        guard selectedIds.count < limit else { return }
+        if let existing = offer.sortedIntentions.first(where: {
+            $0.title.compare(item.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+        }) {
+            if existing.sourceId == nil {
+                var locked = existing
+                locked.sourceId = item.id
+                locked.category = .world
+                offer.update(locked)
+            }
+            if !selectedIds.contains(existing.id) { selectedIds.append(existing.id) }
+        } else if let created = offer.add(
+            title: item.title,
+            note: item.note,
+            sourceId: item.id,
+            category: .world,
+            accent: .purple,
+            emoji: "✝️"
+        ) {
+            selectedIds.append(created.id)
+        } else {
+            showingPremium = true
+        }
+    }
+
+    private func selectCard(
+        title: String,
+        subtitle: String?,
+        showsPope: Bool,
+        selected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(alignment: .center, spacing: AppTheme.Space.md) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .guideSymbol(size: 22, weight: .regular)
+                    .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
+                    .frame(width: 24, height: 24)
+
+                if showsPope {
+                    IntentionIconView(accent: .purple, emoji: "✝️", size: 44, usesPopePortrait: true)
+                }
+
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                    Text(title)
+                        .font(AppTheme.TypeRole.callout(weight: .semibold))
+                        .foregroundStyle(palette.ink)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(AppTheme.TypeRole.label)
+                            .foregroundStyle(palette.dim)
+                            .multilineTextAlignment(.leading)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+                    .fill(palette.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+                    .strokeBorder(selected ? palette.accent.opacity(0.45) : Color.clear, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

@@ -108,12 +108,12 @@ struct PrayView: View {
     @State private var plateLastDrag = Date.distantPast
     /// Measured header + progress track height (safe-area content, not status bar).
     @State private var plateChromeHeight: CGFloat = 96
-    @State private var chosenIntentionId: UUID?
-    @State private var chosenIntentionTitle: String = ""
-    @State private var chosenIntentionNote: String = ""
-    @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
-    @State private var signOfCrossIntentionFrame: CGRect = .zero
-    @State private var showIntentionSheet = false
+    /// Intentions offered for this Rosary, in pick order (up to `PrayerSession.maxIntentions`).
+    @State private var chosenIntentionIds: [UUID] = []
+    @State private var chosenIntentionTitles: [String] = []
+    /// Dedicated "Offer this Rosary for" step shown between Sign of the Cross and the Creed.
+    /// Not a `RosaryStep`, so saved `stepIndex` values keep their meaning.
+    @State private var showingIntentionStep = false
     @State private var didRecordCarry = false
     /// Locked when entering finis so Offered for survives session.complete() / store churn.
     @State private var completionIntentionTitle: String?
@@ -142,6 +142,8 @@ struct PrayView: View {
             } else if let current {
                 if current.isFinis {
                     finisLayer
+                } else if showingIntentionStep {
+                    intentionStepLayer(current)
                 } else {
                     prayLayer(current)
                 }
@@ -212,24 +214,6 @@ struct PrayView: View {
         } message: {
             Text("You already have a rosary in progress today. Starting fresh will replace it once you move past the first step.")
         }
-        .sheet(isPresented: $showIntentionSheet) {
-            PrayIntentionSheet(
-                chosenId: $chosenIntentionId,
-                chosenTitle: $chosenIntentionTitle,
-                chosenNote: $chosenIntentionNote,
-                mysterySet: intentionSheetMysterySet
-            )
-            .environment(offer)
-            .environment(\.palette, palette)
-            .onDisappear {
-                sessionStore.updateIntention(
-                    id: chosenIntentionId,
-                    title: chosenIntentionTitle.isEmpty ? nil : chosenIntentionTitle,
-                    category: chosenIntentionId.flatMap { offer.intention(id: $0)?.category },
-                    sourceId: chosenIntentionId.flatMap { offer.intention(id: $0)?.sourceId }
-                )
-            }
-        }
     }
 
     // MARK: - Main pray column
@@ -276,8 +260,7 @@ struct PrayView: View {
                     .coordinateSpace(name: "prayerNavigationContent")
                     .simultaneousGesture(
                         SpatialTapGesture().onEnded { tap in
-                            guard step.kind == .signOfTheCross,
-                                  !signOfCrossIntentionFrame.contains(tap.location) else { return }
+                            guard step.kind == .signOfTheCross else { return }
                             if tap.location.x >= geo.size.width * 0.85 {
                                 advance()
                             } else if tap.location.x <= geo.size.width * 0.15 {
@@ -640,10 +623,6 @@ struct PrayView: View {
                                 font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
                                 pointSize: 21 * settings.textSize.scale
                             )
-                            if step.kind == .signOfTheCross {
-                                signOfCrossIntentionBlock
-                                    .padding(.top, AppTheme.Space.xl)
-                            }
                         }
                         .padding(.horizontal, AppTheme.gutter)
                         // At least 48pt from the close button to this title.
@@ -889,33 +868,73 @@ struct PrayView: View {
 
 
 
-    /// Intention surface under the Sign of the Cross title.
-    /// Optional — never blocks Next. Tap opens the picker; × clears.
-    private var chosenOfferIntention: OfferIntention? {
-        chosenIntentionId.flatMap { offer.intention(id: $0) }
-    }
+    // MARK: - Intention step
 
-    private var signOfCrossIntentionBlock: some View {
-        IntentionSurface(
-            title: chosenIntentionTitle,
-            intention: chosenOfferIntention,
-            hidesText: hideIntentionText,
-            onOpen: { showIntentionSheet = true },
-            onClear: { clearChosenIntention() }
-        )
-        .onGeometryChange(for: CGRect.self) { geometry in
-            geometry.frame(in: .named("prayerNavigationContent"))
-        } action: { frame in
-            signOfCrossIntentionFrame = frame
+    /// First chosen intention (category, papal flag and resume all key off it).
+    private var chosenIntentionId: UUID? { chosenIntentionIds.first }
+
+    /// "Offer this Rosary for": optional multi-select between Sign of the Cross and the Creed.
+    /// Same header and stage track as a prayer; no bead map.
+    private func intentionStepLayer(_ step: RosaryStep) -> some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 0) {
+                header(step)
+                SevenStageTrack(current: step.stage) { jump(to: $0) }
+            }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                    VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                        Text("Offer this Rosary for")
+                            .font(AppTheme.TypeRole.modalTitle)
+                            .foregroundStyle(palette.ink)
+                            .tracking(-0.2)
+                        Text("Choose up to \(PrayerSession.maxIntentions) intentions, or continue without one")
+                            .font(AppTheme.TypeRole.bodySmall)
+                            .foregroundStyle(palette.dim)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    IntentionMultiSelectList(
+                        selectedIds: intentionSelection,
+                        mysterySet: intentionSheetMysterySet
+                    )
+                }
+                .padding(.horizontal, AppTheme.gutter)
+                .padding(.top, prayerTitleTopPadding)
+                .padding(.bottom, AppTheme.Space.lg)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .scrollIndicators(.hidden)
+
+            PillButton(title: "Continue", filled: false, action: advance)
+                .padding(.horizontal, AppTheme.gutter)
+                .padding(.top, AppTheme.Space.md)
+                .padding(.bottom, AppTheme.Space.lg)
+                .background(palette.prayBg)
         }
-        .padding(.bottom, AppTheme.Space.xl)
     }
 
-    private func clearChosenIntention() {
-        chosenIntentionId = nil
-        chosenIntentionTitle = ""
-        chosenIntentionNote = ""
-        sessionStore.updateIntention(id: nil, title: nil)
+    private var intentionSelection: Binding<[UUID]> {
+        Binding(
+            get: { chosenIntentionIds },
+            set: { ids in
+                let limited = Array(ids.prefix(PrayerSession.maxIntentions))
+                chosenIntentionIds = limited
+                chosenIntentionTitles = limited.map { offer.intention(id: $0)?.title ?? "" }
+                persistChosenIntentions()
+            }
+        )
+    }
+
+    private func persistChosenIntentions() {
+        let first = chosenIntentionId.flatMap { offer.intention(id: $0) }
+        sessionStore.updateIntentions(
+            ids: chosenIntentionIds,
+            titles: chosenIntentionTitles,
+            category: first?.category,
+            sourceId: first?.sourceId
+        )
     }
 
     /// Website `.lead`: italic dim, with the virtue / "your intention" in stronger ink.
@@ -1080,32 +1099,35 @@ struct PrayView: View {
     }
 
     private var completionIntentionIsPapal: Bool {
-        let id = chosenIntentionId ?? sessionStore.session?.intentionId ?? launch.intentionId
-        return id.flatMap { offer.intention(id: $0)?.isPapal } ?? false
+        guard completionIntentionIds.count == 1 else { return false }
+        return completionIntentionIds.first.flatMap { offer.intention(id: $0)?.isPapal } ?? false
+    }
+
+    private var completionIntentionIds: [UUID] {
+        if !chosenIntentionIds.isEmpty { return chosenIntentionIds }
+        if let ids = sessionStore.session?.intentionIds, !ids.isEmpty { return ids }
+        return launch.intentionId.map { [$0] } ?? []
     }
 
     /// Resolve the display title from live state, session, or OfferStore — then freeze it.
+    /// Several intentions read as "A, B and C".
     private func resolvedIntentionTitleForCompletion() -> String? {
-        let trimmedChosen = chosenIntentionTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmedChosen.isEmpty { return trimmedChosen }
+        let chosen = OfferedIntentions.titles(chosenIntentionTitles, legacy: nil)
+        if !chosen.isEmpty { return OfferedIntentions.summary(chosen) }
 
-        if let raw = sessionStore.session?.intentionTitle {
-            let sessionTitle = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !sessionTitle.isEmpty { return sessionTitle }
-        }
+        let stored = OfferedIntentions.titles(sessionStore.session?.intentionTitles, legacy: nil)
+        if !stored.isEmpty { return OfferedIntentions.summary(stored) }
 
-        let id = chosenIntentionId ?? sessionStore.session?.intentionId ?? launch.intentionId
-        if let id, let found = offer.intention(id: id) {
-            let title = found.title.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !title.isEmpty { return title }
-        }
-        return nil
+        let looked = OfferedIntentions.titles(completionIntentionIds.compactMap { offer.intention(id: $0)?.title }, legacy: nil)
+        return OfferedIntentions.summary(looked)
     }
 
     /// Snapshot the category icon at the same moment as the title.
+    /// Icon only for a single intention; several intentions have no one face.
     private func resolvedIntentionFaceForCompletion() -> CompletionIntentionFace? {
-        let id = chosenIntentionId ?? sessionStore.session?.intentionId ?? launch.intentionId
-        guard let id, let found = offer.intention(id: id) else { return nil }
+        guard completionIntentionIds.count == 1,
+              let id = completionIntentionIds.first,
+              let found = offer.intention(id: id) else { return nil }
         return CompletionIntentionFace(
             accent: found.accent,
             emoji: found.displayEmoji,
@@ -1119,10 +1141,6 @@ struct PrayView: View {
         }
         if completionIntentionFace == nil {
             completionIntentionFace = resolvedIntentionFaceForCompletion()
-        }
-        // Keep live fields aligned so carry / resume paths stay consistent.
-        if let locked = completionIntentionTitle, chosenIntentionTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            chosenIntentionTitle = locked
         }
     }
 
@@ -1542,8 +1560,8 @@ struct PrayView: View {
         checkpointActivePrayerTime()
         // Record completion when the ceremonial screen appears so St Michael
         // continuation cannot undo or re-trigger tracking.
-        if !didRecordCarry, let id = chosenIntentionId {
-            offer.recordCarry(id: id)
+        if !didRecordCarry, !chosenIntentionIds.isEmpty {
+            chosenIntentionIds.forEach { offer.recordCarry(id: $0) }
             didRecordCarry = true
         }
         if sessionStore.session != nil {
@@ -1622,12 +1640,12 @@ struct PrayView: View {
             freshSetPending = nil
             steps = RosarySequenceBuilder.build(set: set)
             index = launch.startIndex(in: steps)
-            let resolvedId = intentionId
-            let resolvedTitle = resolvedId.flatMap { offer.intention(id: $0)?.title } ?? ""
-            chosenIntentionId = resolvedId
-            chosenIntentionTitle = resolvedTitle
-            chosenIntentionNote = resolvedId.flatMap { offer.intention(id: $0)?.note } ?? ""
-            sessionStore.start(set: set, language: settings.language, intentionId: resolvedId, intentionTitle: resolvedTitle.isEmpty ? nil : resolvedTitle, intentionCategory: resolvedId.flatMap { offer.intention(id: $0)?.category }, intentionSourceId: resolvedId.flatMap { offer.intention(id: $0)?.sourceId })
+            // A launch from an intention pre-selects it on the intention step.
+            let resolvedId = intentionId.flatMap { offer.intention(id: $0) != nil ? $0 : nil }
+            chosenIntentionIds = resolvedId.map { [$0] } ?? []
+            chosenIntentionTitles = chosenIntentionIds.map { offer.intention(id: $0)?.title ?? "" }
+            showingIntentionStep = false
+            startSession(set: set)
             sessionStore.updateStep(index)
             didRecordCarry = false
             completionIntentionTitle = nil
@@ -1651,12 +1669,13 @@ struct PrayView: View {
                 }
                 sessionStore.session = current
             }
-            chosenIntentionId = session.intentionId
-            let title = session.intentionTitle
-                ?? session.intentionId.flatMap { offer.intention(id: $0)?.title }
-                ?? ""
-            chosenIntentionTitle = title
-            chosenIntentionNote = session.intentionId.flatMap { offer.intention(id: $0)?.note } ?? ""
+            chosenIntentionIds = session.intentionIds
+            chosenIntentionTitles = session.intentionIds.enumerated().map { offset, id in
+                session.intentionTitles.indices.contains(offset)
+                    ? session.intentionTitles[offset]
+                    : offer.intention(id: id)?.title ?? ""
+            }
+            showingIntentionStep = false
             didRecordCarry = false
             completionIntentionTitle = nil
             completionIntentionFace = nil
@@ -1671,6 +1690,19 @@ struct PrayView: View {
     }
 
     private func advance() {
+        if showingIntentionStep {
+            // Intention is optional: Continue always moves on to the next prayer.
+            move(to: index + 1)
+            return
+        }
+        if current?.kind == .signOfTheCross, index < steps.count - 1 {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+                showingIntentionStep = true
+            }
+            playHaptic()
+            return
+        }
+
         if current?.isFinis == true {
             finishRosary()
             return
@@ -1734,14 +1766,37 @@ struct PrayView: View {
 
     private func retreat() {
         guard !showingCompletion else { return }
+        if showingIntentionStep {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+                showingIntentionStep = false
+            }
+            return
+        }
         guard index > 0 else { return }
-        move(to: index - 1)
+        let previous = index - 1
+        move(to: previous)
+        // Stepping back from the Creed lands on the intention step, not past it.
+        if steps.indices.contains(previous), steps[previous].kind == .signOfTheCross {
+            showingIntentionStep = true
+        }
+    }
+
+    private func startSession(set: MysterySetKind) {
+        let first = chosenIntentionId.flatMap { offer.intention(id: $0) }
+        sessionStore.start(
+            set: set,
+            language: settings.language,
+            intentionIds: chosenIntentionIds,
+            intentionTitles: chosenIntentionTitles,
+            intentionCategory: first?.category,
+            intentionSourceId: first?.sourceId
+        )
     }
 
     private func move(to next: Int) {
         checkpointActivePrayerTime()
         if let set = freshSetPending, next > 0 {
-            sessionStore.start(set: set, language: settings.language, intentionId: chosenIntentionId, intentionTitle: chosenIntentionTitle.isEmpty ? nil : chosenIntentionTitle, intentionCategory: chosenIntentionId.flatMap { offer.intention(id: $0)?.category }, intentionSourceId: chosenIntentionId.flatMap { offer.intention(id: $0)?.sourceId })
+            startSession(set: set)
             flushPendingActivePrayerTimeIfNeeded()
             freshSetPending = nil
         }
@@ -1749,6 +1804,7 @@ struct PrayView: View {
             lockCompletionIntentionIfNeeded()
         }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+            showingIntentionStep = false
             index = next
         }
         if next > 0 {
