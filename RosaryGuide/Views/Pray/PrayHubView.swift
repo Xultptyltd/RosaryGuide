@@ -318,9 +318,9 @@ struct PrayHubView: View {
         case "glory-be": "Prayed after each decade."
         case "hail-holy-queen": "Prayed near the close."
         case "concluding": "The last prayer of the Rosary."
-        case "sacrament-most-holy": "A short prayer to Jesus in the Eucharist."
-        case "memorare": "Often added after the Rosary."
-        case "saint-michael": "Often added after the Rosary."
+        case "sacrament-most-holy": "End of each decade"
+        case "memorare": "End of the Rosary"
+        case "saint-michael": "Last prayer of the Rosary"
         default: "Part of the traditional Rosary."
         }
     }
