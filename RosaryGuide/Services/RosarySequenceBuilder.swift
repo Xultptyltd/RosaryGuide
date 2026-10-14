@@ -1,6 +1,41 @@
 import Foundation
 
+/// Stable identity of a step across configs: the same prayer at the same place
+/// in the Rosary keeps its identity when other prayers are added or removed.
+struct RosaryStepIdentity: Hashable {
+    let kind: RosaryStepKind
+    let stage: PrayTrackStage
+    let decade: Int?
+    let hailMary: Int?
+}
+
+extension RosaryStep {
+    var identity: RosaryStepIdentity {
+        RosaryStepIdentity(kind: kind, stage: stage, decade: decadeNumber, hailMary: hailMaryNumber)
+    }
+}
+
 enum RosarySequenceBuilder {
+    /// Maps a position in `old` to the equivalent position in `new` (same set, different config).
+    /// A surviving step keeps its identity. If the current step was removed, the user lands on
+    /// the first step after the last surviving step before it, so already-prayed steps are not
+    /// replayed and a prayer newly added right there comes next.
+    static func remap(index: Int, from old: [RosaryStep], to new: [RosaryStep]) -> Int {
+        guard !new.isEmpty else { return 0 }
+        guard old.indices.contains(index) else { return min(max(index, 0), new.count - 1) }
+        var lookup: [RosaryStepIdentity: Int] = [:]
+        for (offset, step) in new.enumerated() where lookup[step.identity] == nil {
+            lookup[step.identity] = offset
+        }
+        if let same = lookup[old[index].identity] { return same }
+        for previous in stride(from: index - 1, through: 0, by: -1) {
+            if let mapped = lookup[old[previous].identity] {
+                return min(mapped + 1, new.count - 1)
+            }
+        }
+        return 0
+    }
+
     static func build(set: MysterySetKind, config: RosaryConfig = .default) -> [RosaryStep] {
         var steps: [RosaryStep] = []
         var id = 0

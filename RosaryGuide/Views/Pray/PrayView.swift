@@ -173,6 +173,9 @@ struct PrayView: View {
             }
         }
         .foregroundStyle(palette.ink)
+        .onChange(of: settings.currentRosaryConfig) { _, config in
+            applyLiveConfig(config)
+        }
         .onAppear {
             guard !didConfigure else { return }
             didConfigure = true
@@ -1774,9 +1777,17 @@ struct PrayView: View {
             pendingActivePrayerTime = 0
         case .resume(let session):
             freshSetPending = nil
-            activeConfig = session.rosaryConfig
+            // Rebuild with the saved config, then carry the position into current Settings.
+            let saved = RosarySequenceBuilder.build(set: session.mysterySet, config: session.rosaryConfig)
+            let savedIndex = min(session.stepIndex, max(saved.count - 1, 0))
+            activeConfig = settings.currentRosaryConfig
             steps = RosarySequenceBuilder.build(set: session.mysterySet, config: activeConfig)
-            index = min(session.stepIndex, max(steps.count - 1, 0))
+            index = RosarySequenceBuilder.remap(index: savedIndex, from: saved, to: steps)
+            if activeConfig != session.rosaryConfig {
+                recordDecadeIfRemoved(saved.indices.contains(savedIndex) ? saved[savedIndex] : nil)
+                sessionStore.updateRosaryConfig(activeConfig)
+                sessionStore.updateStep(index)
+            }
             if var current = sessionStore.session {
                 current.language = settings.language
                 if current.intentionSourceId == nil, let id = current.intentionId {
@@ -1839,6 +1850,32 @@ struct PrayView: View {
         }
         recordCompletedDecadeIfNeeded()
         move(to: index + 1)
+    }
+
+    /// Rosary settings changed while praying: rebuild from here on, keeping the place.
+    private func applyLiveConfig(_ config: RosaryConfig) {
+        guard didConfigure, config != activeConfig, !steps.isEmpty,
+              !showingCompletion, !showingMichael, current?.isFinis != true else { return }
+        let rebuilt = RosarySequenceBuilder.build(set: launch.mysterySet, config: config)
+        let newIndex = RosarySequenceBuilder.remap(index: index, from: steps, to: rebuilt)
+        // Session not started yet (replace prompt open): it is created later with activeConfig.
+        let ownsSession = freshSetPending == nil
+        if ownsSession { recordDecadeIfRemoved(current, in: rebuilt) }
+        activeConfig = config
+        steps = rebuilt
+        index = newIndex
+        if ownsSession {
+            sessionStore.updateRosaryConfig(config)
+            sessionStore.updateStep(newIndex)
+        }
+    }
+
+    /// A removed step that closed its decade (e.g. Fatima switched off while on it) still counts it.
+    private func recordDecadeIfRemoved(_ step: RosaryStep?, in rebuilt: [RosaryStep]? = nil) {
+        guard let step, step.closesDecade, let decade = step.decadeNumber else { return }
+        let target = rebuilt ?? steps
+        guard !target.contains(where: { $0.identity == step.identity }) else { return }
+        sessionStore.recordCompletedDecadeIfNeeded(decade)
     }
 
     private func recordCompletedDecadeIfNeeded() {

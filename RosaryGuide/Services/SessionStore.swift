@@ -241,6 +241,15 @@ final class SessionStore {
         session = current
     }
 
+    /// Rosary settings changed mid-Rosary: the session is now built with `config`.
+    func updateRosaryConfig(_ config: RosaryConfig) {
+        guard var current = session, current.rosaryConfig != config else { return }
+        current.rosaryConfig = config
+        current.includeSaintMichael = config.saintMichael
+        current.updatedAt = Date()
+        session = current
+    }
+
     func updateStep(_ index: Int) {
         guard var current = session else { return }
         current.stepIndex = index

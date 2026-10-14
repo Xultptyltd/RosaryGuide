@@ -1130,7 +1130,7 @@ private struct SettingsTimeRow: View {
 }
 
 /// Rosary settings: prayer text, scripture, optional prayers and intentions.
-/// Prayer config is saved on each new Rosary, so a Rosary in progress keeps its steps.
+/// Changes also apply live to a Rosary in progress (see `RosarySequenceBuilder.remap`).
 private struct SettingsRosaryScreen: View {
     @Environment(SettingsStore.self) private var settings
 
@@ -1139,7 +1139,7 @@ private struct SettingsRosaryScreen: View {
         SettingsDetailScaffold(title: "Rosary settings") {
             VStack(alignment: .leading, spacing: 0) {
                 SettingsSection(title: "Scripture") {
-                    SettingsMenuRow(title: "Bible translation", icon: "book", value: settings.rosaryConfig.translation.title) {
+                    SettingsMenuRow(title: "Bible translation", value: settings.rosaryConfig.translation.title) {
                         Picker("Bible translation", selection: $settings.rosaryConfig.translation) {
                             ForEach(BibleTranslation.allCases) { translation in
                                 Text(translation.title).tag(translation)
@@ -1167,9 +1167,6 @@ private struct SettingsRosaryScreen: View {
                 SettingsSection(title: "Intentions") {
                     SettingsToggleRow(title: "Choose intentions", isOn: $settings.rosaryConfig.intentionsStep)
                 }
-
-                SettingsFootnote("Changes apply to your next Rosary")
-                    .padding(.top, AppTheme.Space.lg)
             }
         }
     }

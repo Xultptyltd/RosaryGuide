@@ -267,3 +267,61 @@ final class RosaryConfigTests: XCTestCase {
         XCTAssertEqual(partial.translation, .rsv2ce)
     }
 }
+
+final class RosaryRemapTests: XCTestCase {
+    private func config(_ edit: (inout RosaryConfig) -> Void) -> RosaryConfig {
+        var c = RosaryConfig()
+        edit(&c)
+        return c
+    }
+
+    func testFatimaOffMidDecadeKeepsSameStep() {
+        let old = RosarySequenceBuilder.build(set: .joyful)
+        let new = RosarySequenceBuilder.build(set: .joyful, config: config { $0.fatimaPrayer = false })
+        let index = old.firstIndex { $0.decadeNumber == 2 && $0.kind == .hailMary && $0.hailMaryNumber == 5 }!
+        let mapped = RosarySequenceBuilder.remap(index: index, from: old, to: new)
+        XCTAssertEqual(new[mapped].identity, old[index].identity)
+        XCTAssertEqual(mapped, index - 1) // decade 1 lost its Fatima prayer
+        XCTAssertTrue(new.firstIndex { $0.decadeNumber == 2 && $0.kind == .gloryBe }.map { new[$0].closesDecade } == true)
+    }
+
+    func testMemorareOnNearEndComesNext() {
+        let old = RosarySequenceBuilder.build(set: .glorious)
+        let new = RosarySequenceBuilder.build(set: .glorious, config: config { $0.memorare = true })
+        let index = old.firstIndex { $0.kind == .concludingPrayer }!
+        let mapped = RosarySequenceBuilder.remap(index: index, from: old, to: new)
+        XCTAssertEqual(new[mapped].kind, .concludingPrayer)
+        XCTAssertEqual(new[mapped + 1].kind, .memorare)
+        XCTAssertTrue(new[mapped + 1].isLastPrayer)
+        XCTAssertFalse(new[mapped].isLastPrayer)
+    }
+
+    func testRemovedCurrentStepMovesToNextSurvivor() {
+        let old = RosarySequenceBuilder.build(set: .sorrowful)
+        let fatimaOff = RosarySequenceBuilder.build(set: .sorrowful, config: config { $0.fatimaPrayer = false })
+        let fatima2 = old.firstIndex { $0.kind == .fatima && $0.decadeNumber == 2 }!
+        let mapped = RosarySequenceBuilder.remap(index: fatima2, from: old, to: fatimaOff)
+        XCTAssertEqual(fatimaOff[mapped].kind, .mysteryAnnouncement)
+        XCTAssertEqual(fatimaOff[mapped].decadeNumber, 3)
+
+        // Closing group removed while on the versicle: Memorare (still on) comes next.
+        let withMemorare = config { $0.memorare = true }
+        let before = RosarySequenceBuilder.build(set: .sorrowful, config: withMemorare)
+        let after = RosarySequenceBuilder.build(set: .sorrowful, config: config { $0.memorare = true; $0.closingPrayers = false })
+        let versicle = before.firstIndex { $0.kind == .versicle }!
+        XCTAssertEqual(after[RosarySequenceBuilder.remap(index: versicle, from: before, to: after)].kind, .memorare)
+
+        // Nothing left after it: lands on the finis step.
+        let bare = RosarySequenceBuilder.build(set: .sorrowful, config: config { $0.closingPrayers = false })
+        XCTAssertEqual(bare[RosarySequenceBuilder.remap(index: old.firstIndex { $0.kind == .versicle }!, from: old, to: bare)].kind, .completion)
+    }
+
+    func testTranslationChangeKeepsPositionAndSwapsScripture() {
+        let old = RosarySequenceBuilder.build(set: .joyful)
+        let new = RosarySequenceBuilder.build(set: .joyful, config: config { $0.translation = .douayRheims })
+        let plate = old.firstIndex { $0.isPlate }!
+        let mapped = RosarySequenceBuilder.remap(index: plate, from: old, to: new)
+        XCTAssertEqual(mapped, plate)
+        XCTAssertTrue(new[mapped].body.english.hasPrefix("And in the sixth month, the angel Gabriel"))
+    }
+}
