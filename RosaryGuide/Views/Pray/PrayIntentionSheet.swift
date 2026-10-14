@@ -46,8 +46,26 @@ struct PrayIntentionSheet: View {
 
     private var noneSelected: Bool { chosenId == nil && chosenTitle.isEmpty }
 
-    /// Four or more saved intentions need the full-height sheet so the list is usable.
-    private var prefersLargeDetent: Bool { offer.sortedIntentions.count >= 4 }
+    /// Measured height of the list (incl. its padding). Re-measured on every layout, so
+    /// item count changes and multi-line titles always update the detent.
+    @State private var contentHeight: CGFloat = 0
+    @State private var selectedDetent: PresentationDetent = .large
+
+    /// Inline navigation bar + grabber area above the scroll content.
+    private let sheetChromeHeight: CGFloat = 64
+
+    /// Fits the sheet to its content; falls back to `.large` (scrolling) until measured
+    /// or when the content would take more than ~90% of the screen.
+    private var fittedDetent: PresentationDetent {
+        guard contentHeight > 0 else { return .large }
+        let total = contentHeight + sheetChromeHeight
+        let screen = UIScreen.main.bounds.height
+        return total > screen * 0.9 ? .large : .height(ceil(total))
+    }
+
+    private var availableDetents: Set<PresentationDetent> {
+        fittedDetent == .large ? [.large] : [fittedDetent, .large]
+    }
 
     private let cardMinHeight: CGFloat = 64
 
@@ -86,6 +104,9 @@ struct PrayIntentionSheet: View {
                 .padding(.horizontal, AppTheme.gutter)
                 .padding(.top, 8)
                 .padding(.bottom, 28)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                    contentHeight = height
+                }
             }
             .scrollIndicators(.hidden)
             .background(palette.bg)
@@ -120,7 +141,10 @@ struct PrayIntentionSheet: View {
             }
             .environment(\.palette, palette)
         }
-        .presentationDetents(prefersLargeDetent ? [.large] : [.medium, .large])
+        .presentationDetents(availableDetents, selection: $selectedDetent)
+        .onChange(of: fittedDetent, initial: true) { _, detent in
+            selectedDetent = detent
+        }
         .presentationDragIndicator(.visible)
     }
 
