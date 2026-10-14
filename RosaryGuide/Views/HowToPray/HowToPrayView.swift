@@ -24,7 +24,7 @@ struct RosaryWalkthroughView: View {
                         if page == 0 {
                             heroCard("WalkthroughRosaryIntro", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top)
                         } else if page == 1 {
-                            heroCard("WalkthroughRosaryStructure", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top)
+                            plainHero("WalkthroughRosaryStructure", height: activeHeroHeight + geometry.safeAreaInsets.top)
                         } else if page == 2 {
                             heroCard("WalkthroughRosaryDecade", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top, popsOut: false)
                         } else {
@@ -112,6 +112,23 @@ struct RosaryWalkthroughView: View {
     private func retreat() {
         if page == 0 { onClose() }
         else { withAnimation(reduceMotion ? nil : MotionTokens.soft) { page -= 1 } }
+    }
+
+    /// Full-bleed photo hero with the standard page-colour fade at the bottom.
+    private func plainHero(_ imageName: String, height: CGFloat) -> some View {
+        GeometryReader { geometry in
+            Image(imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: geometry.size.width, height: height)
+                .clipped()
+                .overlay(alignment: .bottom) {
+                    LinearGradient(colors: [palette.prayBg.opacity(0), palette.prayBg], startPoint: .top, endPoint: .bottom)
+                        .frame(height: min(GuideWalkthroughLayout.fadeHeight, height))
+                }
+        }
+        .frame(height: height)
+        .accessibilityHidden(true)
     }
 
     /// Shared walkthrough hero: art cutout on a Marian blue card, optionally rising above
