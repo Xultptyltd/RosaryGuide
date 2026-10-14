@@ -134,7 +134,7 @@ struct SettingsView: View {
                             }
                         }
 
-                        SettingsNavigationRow(title: "Customise your Rosary", icon: "circle.dotted", destination: .rosary)
+                        SettingsNavigationRow(title: "Customise rosary", icon: "slider.horizontal.3", destination: .rosary)
 
                         SettingsMenuRow(title: "Color theme", icon: "circle.lefthalf.filled", value: settings.appearance.title) {
                             Picker("Color theme", selection: $settings.appearance) {
@@ -763,9 +763,9 @@ private struct AppIconChoices: View {
         .padding(.vertical, AppTheme.Space.lg)
         // As the last row, trim so the card sits Space.lg above the section band.
         // Measured untrimmed card-to-band gap was ~52pt (row padding, boundary padding
-        // and the boundary's empty frame); lg + md + sm takes it to ~16. The trim lives
+        // and the boundary's empty frame); trim measured in render to leave Space.lg. The trim lives
         // in a child view so it reads `showsRowDivider` after DividedRows sets it.
-        .modifier(SettingsLastRowBottomTrim(amount: AppTheme.Space.lg + AppTheme.Space.md + AppTheme.Space.sm))
+        .modifier(SettingsLastRowBottomTrim(amount: AppTheme.Space.lg + AppTheme.Space.md))
         .overlay(alignment: .bottom) { SettingsDivider() }
         .onAppear { appIcon.refreshFromSystem() }
         .accessibilityElement(children: .contain)
@@ -1157,7 +1157,7 @@ private struct SettingsRosaryScreen: View {
 
     var body: some View {
         @Bindable var settings = settings
-        SettingsDetailScaffold(title: "Customise your Rosary") {
+        SettingsDetailScaffold(title: "Customise rosary") {
             VStack(alignment: .leading, spacing: 0) {
                 DividedRows {
                     SettingsToggleRow(title: "Choose intentions", isOn: $settings.rosaryConfig.intentionsStep)
