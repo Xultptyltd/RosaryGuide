@@ -225,7 +225,10 @@ struct RosaryWalkthroughView: View {
                         card.frame(height: cardHeight)
                     }
                 }
-            // Statue cutouts bake their own bottom fade, so no overlay draws over the marble.
+            // Fade to the page colour in front of the statue so the text sits on black.
+            LinearGradient(colors: [palette.prayBg.opacity(0), palette.prayBg], startPoint: .top, endPoint: .bottom)
+                .frame(height: min(GuideWalkthroughLayout.fadeHeight, cardHeight))
+                .clipShape(card)
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 Text("\(set.shortName) Mysteries")
                     .font(AppTheme.TypeRole.callout(weight: .semibold))
