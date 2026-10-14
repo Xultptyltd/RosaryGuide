@@ -148,7 +148,7 @@ struct FeastsView: View {
                     GuideSectionDivider()
                         .allowsHitTesting(false)
                         .padding(.horizontal, -AppTheme.gutter)
-                        .padding(.top, AppTheme.Space.md)
+                        .padding(.top, AppTheme.Component.calendarHandleDividerGap)
                         .padding(.bottom, AppTheme.Space.md)
 
                     let sections = agenda.sections
