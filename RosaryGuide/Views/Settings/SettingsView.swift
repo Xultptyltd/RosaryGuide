@@ -1140,6 +1140,12 @@ private struct SettingsRosaryScreen: View {
         SettingsDetailScaffold(title: "Rosary settings") {
             VStack(alignment: .leading, spacing: 0) {
                 DividedRows {
+                    SettingsToggleRow(title: "Choose intentions", isOn: $settings.rosaryConfig.intentionsStep)
+                }
+
+                GuideSectionBoundary()
+
+                SettingsSection(title: "Each decade", icon: "repeat") {
                     SettingsMenuRow(title: "Bible translation", value: settings.rosaryConfig.translation.title) {
                         Picker("Bible translation", selection: $settings.rosaryConfig.translation) {
                             ForEach(BibleTranslation.allCases) { translation in
@@ -1147,11 +1153,6 @@ private struct SettingsRosaryScreen: View {
                             }
                         }
                     }
-                }
-
-                GuideSectionBoundary()
-
-                SettingsSection(title: "Each decade", icon: "repeat") {
                     SettingsToggleRow(title: "Fatima prayer", isOn: $settings.rosaryConfig.fatimaPrayer)
                     SettingsToggleRow(title: "O Sacrament most holy", isOn: $settings.rosaryConfig.oSacrament)
                 }
@@ -1161,12 +1162,6 @@ private struct SettingsRosaryScreen: View {
                 SettingsSection(title: "Closing prayers", icon: "moon.stars") {
                     SettingsToggleRow(title: "Hail, holy Queen", isOn: $settings.rosaryConfig.closingPrayers)
                     SettingsToggleRow(title: "Memorare", isOn: $settings.rosaryConfig.memorare)
-                }
-
-                GuideSectionBoundary()
-
-                DividedRows {
-                    SettingsToggleRow(title: "Choose intentions", isOn: $settings.rosaryConfig.intentionsStep)
                 }
             }
         }
