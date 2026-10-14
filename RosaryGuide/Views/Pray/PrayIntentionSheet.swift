@@ -411,7 +411,7 @@ private struct IntentionRadioRow: View {
             )
             .padding(.trailing, 14)
         }
-        .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
+        .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
         } message: {

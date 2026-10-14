@@ -758,7 +758,7 @@ private struct NextRosaryIntentionCard: View {
                 .padding(.horizontal, AppTheme.Space.lg)
                 .padding(.bottom, AppTheme.Space.lg)
         }
-        .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
+        .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
         } message: {
@@ -806,7 +806,7 @@ private struct MyPrayerIntentionRow: View {
                 onDelete: { showingDeleteAlert = true }
             )
         }
-        .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
+        .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
         } message: {
@@ -1006,7 +1006,7 @@ private struct CurrentIntentionHero: View {
             .padding(.horizontal, AppTheme.Space.lg)
             .padding(.bottom, AppTheme.Space.lg)
         }
-        .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
+        .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
         } message: {
@@ -1451,7 +1451,7 @@ private struct IntentionSecondaryRow: View {
                 onDelete: { showingDeleteAlert = true }
             )
         }
-        .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
+        .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
         } message: {
@@ -1604,7 +1604,7 @@ private struct IntentionDetailView: View {
             }
         }
         .guideDetailChrome(detailNavigationTitle)
-        .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
+        .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
                 onDelete()
@@ -1956,7 +1956,7 @@ private struct IntentionRow: View {
         .accessibilityAction(named: "Delete intention") {
             showingDeleteAlert = true
         }
-        .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
+        .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
         } message: {
@@ -2355,7 +2355,7 @@ struct IntentionEditorSheet: View {
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
                 keyboardVisible = false
             }
-            .alert("Delete Intention?", isPresented: $showingDeleteAlert) {
+            .alert("Delete intention?", isPresented: $showingDeleteAlert) {
                 Button("Cancel", role: .cancel) {}
                 Button("Delete", role: .destructive) {
                     deleteEditingItem()
