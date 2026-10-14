@@ -89,8 +89,8 @@ final class PrayerRhythmTests: XCTestCase {
     func testAccessibilityLabel() {
         // Mondays 5 Oct, 28 Sep, 21 Sep: weekRun 3; only 5 Oct is in October.
         let r = rhythm([-2, -9, -16])
-        XCTAssertEqual(r.accessibilityLabel, "Prayer rhythm, 3 week streak, prayed 1 day in October. Becoming a habit.")
-        XCTAssertEqual(rhythm([0, -1, -2]).accessibilityLabel, "Prayer rhythm, 3 day streak, prayed 3 days in October. Three days in a row.")
+        XCTAssertEqual(r.accessibilityLabel, "Your rhythm, 3 week streak, prayed 1 day in October. Becoming a habit.")
+        XCTAssertEqual(rhythm([0, -1, -2]).accessibilityLabel, "Your rhythm, 3 day streak, prayed 3 days in October. Three days in a row.")
     }
 }
 

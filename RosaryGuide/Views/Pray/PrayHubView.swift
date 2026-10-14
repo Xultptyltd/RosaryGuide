@@ -457,9 +457,9 @@ private enum LearnArticle: String, Identifiable {
         switch self {
         case .whatIsRosary:
             [
-                "The Rosary is a way of praying with the Blessed Virgin Mary while meditating on the life, death, and glory of Jesus.",
-                "Its repeated prayers are not meant to fill silence with noise. They create a steady rhythm so the heart can stay with each mystery.",
-                "A full Rosary is usually five decades. Each decade focuses on one mystery from the Gospel and ends by returning praise to the Trinity."
+                "The Rosary is the Gospel story told in prayer. Each decade honours a mystery in the life of Our Lord and His Blessed Mother.",
+                "A decade is one Our Father, ten Hail Marys and one Glory be. Five decades are usually prayed together, meditating on one set of mysteries.",
+                "Our Lady has often asked us to pray it against evil. United with her, we ask for the conversion of hearts and peace in the world."
             ]
         case .beads:
             [

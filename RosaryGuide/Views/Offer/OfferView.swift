@@ -365,7 +365,7 @@ struct OfferView: View {
         if PremiumStatus.isPremium {
             showingJourney = true
         } else {
-            premiumNote = "Prayer rhythm is included with Rosary Guide+. It keeps a record of your prayer rhythm, history and milestones."
+            premiumNote = "Your rhythm is included with Rosary Guide+. It keeps a record of your prayer rhythm, history and milestones."
             showingPremium = true
         }
     }
@@ -3150,7 +3150,7 @@ private struct PrayerJourneyView: View {
         }
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
-        .guideDetailChrome("Prayer rhythm")
+        .guideDetailChrome("Your rhythm")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -3172,7 +3172,7 @@ private struct PrayerJourneyView: View {
                 .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
 
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                Text("Prayer rhythm")
+                Text("Your rhythm")
                     .font(AppTheme.TypeRole.caption)
                     .foregroundStyle(palette.textSecondary)
                 Text(rhythmTitle)

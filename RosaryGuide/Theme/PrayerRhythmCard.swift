@@ -234,7 +234,7 @@ struct PrayerRhythm: Equatable {
 
     var accessibilityLabel: String {
         let days = prayedDaysThisMonth == 1 ? "1 day" : "\(prayedDaysThisMonth) days"
-        return "Prayer rhythm, \(bigNumber) \(unitWord) streak, prayed \(days) in \(monthName). \(caption)."
+        return "Your rhythm, \(bigNumber) \(unitWord) streak, prayed \(days) in \(monthName). \(caption)."
     }
 }
 
