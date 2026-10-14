@@ -28,17 +28,17 @@ struct PrayHubView: View {
 
                     GuideSectionBoundary(gutter: pageGutter)
 
-                    prayersSection
+                    mysteriesSection
                         .guideReveal(delay: 0.06)
 
                     GuideSectionBoundary(gutter: pageGutter)
 
-                    optionalPrayersSection
+                    prayersSection
                         .guideReveal(delay: 0.08)
 
                     GuideSectionBoundary(gutter: pageGutter)
 
-                    mysteriesSection
+                    optionalPrayersSection
                         .guideReveal(delay: 0.1)
 
                     GuideSectionBoundary(gutter: pageGutter)
