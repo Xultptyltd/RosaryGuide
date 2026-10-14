@@ -290,19 +290,6 @@ struct SettingsView: View {
         }
     }
 
-    /// Main-row value: the reminder time, "On" for feast alerts only, or "Off".
-    private var notificationsSummary: String {
-        if settings.dailyReminderEnabled {
-            let date = Calendar.current.date(
-                byAdding: .minute,
-                value: settings.dailyReminderMinutes,
-                to: Calendar.current.startOfDay(for: .now)
-            ) ?? .now
-            return date.formatted(date: .omitted, time: .shortened)
-        }
-        return settings.feastAlertsEnabled ? "On" : "Off"
-    }
-
     private var appVersion: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
