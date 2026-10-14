@@ -225,10 +225,7 @@ struct RosaryWalkthroughView: View {
                         card.frame(height: cardHeight)
                     }
                 }
-            // Same fade as the other walkthrough art, ending in the tile surface.
-            LinearGradient(colors: [AppTheme.marianBlue.opacity(0), AppTheme.marianBlue], startPoint: .top, endPoint: .bottom)
-                .frame(height: min(GuideWalkthroughLayout.fadeHeight, cardHeight))
-                .clipShape(card)
+            // Statue cutouts bake their own bottom fade, so no overlay draws over the marble.
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 Text("\(set.shortName) Mysteries")
                     .font(AppTheme.TypeRole.callout(weight: .semibold))
