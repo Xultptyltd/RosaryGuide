@@ -28,7 +28,7 @@ struct RosaryWalkthroughView: View {
                         } else if page == 2 {
                             structureArtwork(height: activeHeroHeight + geometry.safeAreaInsets.top, imageName: "WalkthroughRosaryDecade")
                         } else {
-                            imagePlaceholder(height: activeHeroHeight + geometry.safeAreaInsets.top)
+                            maryArtwork(height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top)
                         }
                     }
                     .offset(y: -geometry.safeAreaInsets.top)
@@ -142,6 +142,40 @@ struct RosaryWalkthroughView: View {
                         .frame(height: min(GuideWalkthroughLayout.fadeHeight, height))
                 }
         }
+        .frame(height: height)
+        .accessibilityHidden(true)
+    }
+
+    /// Final screen: Mary on a Marian blue card, her head rising above the top edge.
+    private func maryArtwork(height: CGFloat, topInset: CGFloat) -> some View {
+        let popOut = AppTheme.Space.xxl
+        let card = RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+        return GeometryReader { geometry in
+            let cardHeight = max(0, geometry.size.height - popOut)
+            ZStack(alignment: .bottom) {
+                card
+                    .fill(AppTheme.marianBlue)
+                    .frame(height: cardHeight)
+                Image("WalkthroughMary")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.horizontal, AppTheme.Space.lg)
+                    .mask {
+                        VStack(spacing: 0) {
+                            Rectangle().frame(height: popOut)
+                            card
+                        }
+                    }
+                // Same page-colour front fade as the mystery cards.
+                LinearGradient(colors: [palette.prayBg.opacity(0), palette.prayBg], startPoint: .top, endPoint: .bottom)
+                    .frame(height: min(GuideWalkthroughLayout.fadeHeight, cardHeight))
+                    .clipShape(card)
+            }
+        }
+        .padding(.top, topInset + AppTheme.Space.xxl + AppTheme.Space.xl)
+        .padding(.horizontal, AppTheme.gutter)
+        .padding(.bottom, AppTheme.Space.lg)
         .frame(height: height)
         .accessibilityHidden(true)
     }
