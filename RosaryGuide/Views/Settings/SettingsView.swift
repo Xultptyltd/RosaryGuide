@@ -552,11 +552,12 @@ private struct SettingsMailComposer: UIViewControllerRepresentable {
 
 private struct SettingsSection<Content: View>: View {
     let title: String
+    var icon: String? = nil
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            GuideSectionLabel(text: title, prominence: .strong)
+            GuideSectionLabel(text: title, prominence: .strong, icon: icon)
                 .accessibilityAddTraits(.isHeader)
                 .padding(.bottom, AppTheme.sectionTitleGap)
 
@@ -1138,7 +1139,7 @@ private struct SettingsRosaryScreen: View {
         @Bindable var settings = settings
         SettingsDetailScaffold(title: "Rosary settings") {
             VStack(alignment: .leading, spacing: 0) {
-                SettingsSection(title: "Scripture") {
+                SettingsSection(title: "Scripture", icon: "book") {
                     SettingsMenuRow(title: "Bible translation", value: settings.rosaryConfig.translation.title) {
                         Picker("Bible translation", selection: $settings.rosaryConfig.translation) {
                             ForEach(BibleTranslation.allCases) { translation in
@@ -1150,21 +1151,21 @@ private struct SettingsRosaryScreen: View {
 
                 GuideSectionBoundary()
 
-                SettingsSection(title: "Each decade") {
+                SettingsSection(title: "Each decade", icon: "repeat") {
                     SettingsToggleRow(title: "Fatima prayer", isOn: $settings.rosaryConfig.fatimaPrayer)
                     SettingsToggleRow(title: "O Sacrament most holy", isOn: $settings.rosaryConfig.oSacrament)
                 }
 
                 GuideSectionBoundary()
 
-                SettingsSection(title: "Closing prayers") {
+                SettingsSection(title: "Closing prayers", icon: "moon.stars") {
                     SettingsToggleRow(title: "Hail, holy Queen", isOn: $settings.rosaryConfig.closingPrayers)
                     SettingsToggleRow(title: "Memorare", isOn: $settings.rosaryConfig.memorare)
                 }
 
                 GuideSectionBoundary()
 
-                SettingsSection(title: "Intentions") {
+                SettingsSection(title: "Intentions", icon: "heart") {
                     SettingsToggleRow(title: "Choose intentions", isOn: $settings.rosaryConfig.intentionsStep)
                 }
             }

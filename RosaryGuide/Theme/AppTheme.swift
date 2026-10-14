@@ -817,8 +817,24 @@ struct GuideSectionLabel: View {
     var text: String
     var color: Color?
     var prominence: Prominence = .quiet
+    /// Optional SF Symbol before the heading, in the heading's font and colour.
+    var icon: String? = nil
 
     var body: some View {
+        if let icon {
+            HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                Image(systemName: icon)
+                    .font(font)
+                    .foregroundStyle(color ?? defaultColor)
+                    .accessibilityHidden(true)
+                label
+            }
+        } else {
+            label
+        }
+    }
+
+    private var label: some View {
         Text(text)
             .font(font)
             .foregroundStyle(color ?? defaultColor)
