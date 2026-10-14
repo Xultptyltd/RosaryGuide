@@ -33,6 +33,11 @@ struct PrayHubView: View {
 
                     GuideSectionBoundary(gutter: pageGutter)
 
+                    optionalPrayersSection
+                        .guideReveal(delay: 0.08)
+
+                    GuideSectionBoundary(gutter: pageGutter)
+
                     mysteriesSection
                         .guideReveal(delay: 0.1)
 
@@ -121,7 +126,31 @@ struct PrayHubView: View {
         ]
 
         return VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-            GuideSectionLabel(text: "The prayers", prominence: .strong)
+            GuideSectionLabel(text: "Prayers of the Rosary", prominence: .strong)
+
+            VStack(spacing: 0) {
+                ForEach(Array(prayers.enumerated()), id: \.element.id) { index, prayer in
+                    prayerAccordionRow(prayer: prayer)
+
+                    if index < prayers.count - 1 {
+                        Hairline()
+                    }
+                }
+            }
+            .padding(.horizontal, AppTheme.Space.lg)
+            .guideRowGroup()
+        }
+    }
+
+    private var optionalPrayersSection: some View {
+        let prayers: [Prayer] = [
+            PrayerCatalog.sacramentMostHoly,
+            PrayerCatalog.memorare,
+            PrayerCatalog.saintMichael
+        ]
+
+        return VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+            GuideSectionLabel(text: "Optional prayers", prominence: .strong)
 
             VStack(spacing: 0) {
                 ForEach(Array(prayers.enumerated()), id: \.element.id) { index, prayer in
@@ -289,6 +318,9 @@ struct PrayHubView: View {
         case "glory-be": "Prayed after each decade."
         case "hail-holy-queen": "Prayed near the close."
         case "concluding": "The last prayer of the Rosary."
+        case "sacrament-most-holy": "A short prayer to Jesus in the Eucharist."
+        case "memorare": "Often added after the Rosary."
+        case "saint-michael": "Often added after the Rosary."
         default: "Part of the traditional Rosary."
         }
     }

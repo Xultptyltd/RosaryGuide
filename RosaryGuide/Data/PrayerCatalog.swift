@@ -136,6 +136,15 @@ enum PrayerCatalog {
         )
     )
 
+    static let memorare = Prayer(
+        id: "memorare",
+        title: BilingualText(english: "Memorare", latin: "Memorare"),
+        text: BilingualText(
+            english: "Remember, O most gracious Virgin Mary, that never was it known that anyone who fled to thy protection, implored thy help, or sought thy intercession, was left unaided. Inspired by this confidence, I fly unto thee, O Virgin of virgins, my Mother. To thee do I come, before thee I stand, sinful and sorrowful. O Mother of the Word Incarnate, despise not my petitions, but in thy mercy hear and answer me. Amen.",
+            latin: "Memoráre, o piíssima Virgo María, non esse audítum a sǽculo, quemquam ad tua curréntem præsídia, tua implorántem auxília, tua peténtem suffrágia, esse derelíctum. Ego tali animátus confidéntia, ad te, Virgo Vírginum, Mater, curro, ad te vénio, coram te gemens peccátor assísto. Noli, Mater Verbi, verba mea despícere; sed audi propítia et exáudi. Amen."
+        )
+    )
+
     static let saintMichael = Prayer(
         id: "saint-michael",
         title: BilingualText(english: "Saint Michael the Archangel", latin: "Sancte Michael Archangele"),
@@ -150,6 +159,15 @@ enum PrayerCatalog {
 
             Imperet illi Deus, supplices deprecamur: tuque, Princeps militiae caelestis, Satanam aliosque spiritus malignos, qui ad perditionem animarum pervagantur in mundo, divina virtute in infernum detrude. Amen.
             """
+        )
+    )
+
+    static let sacramentMostHoly = Prayer(
+        id: "sacrament-most-holy",
+        title: BilingualText(english: "O Sacrament most holy", latin: "O Sacramentum sanctissimum"),
+        text: BilingualText(
+            english: "O Sacrament most holy, O Sacrament divine, all praise and all thanksgiving be every moment thine. Amen.",
+            latin: "O Sacraméntum sanctíssimum, o Sacraméntum divínum, omnis laus et omnis gratiárum áctio sit omni moménto tua. Amen."
         )
     )
 
