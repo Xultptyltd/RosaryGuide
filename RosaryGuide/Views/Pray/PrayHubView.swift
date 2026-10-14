@@ -136,8 +136,8 @@ struct PrayHubView: View {
                     }
                 }
             }
-            .padding(.horizontal, AppTheme.Space.lg)
-            .guideRowGroup()
+            // Same flat list as The mysteries (no surface).
+            .guideNavList(pageGutter: pageGutter)
         }
     }
 
@@ -161,8 +161,8 @@ struct PrayHubView: View {
                     }
                 }
             }
-            .padding(.horizontal, AppTheme.Space.lg)
-            .guideRowGroup()
+            // Same flat list as The mysteries (no surface).
+            .guideNavList(pageGutter: pageGutter)
         }
     }
 
@@ -268,7 +268,7 @@ struct PrayHubView: View {
             HStack(alignment: .center, spacing: AppTheme.Space.md) {
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     Text(prayer.title.primary(for: settings.language))
-                        .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                        .font(AppTheme.TypeRole.bodySmall)
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(wherePrayerAppears(prayer))
