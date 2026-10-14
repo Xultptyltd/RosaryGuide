@@ -1139,7 +1139,7 @@ private struct SettingsRosaryScreen: View {
         @Bindable var settings = settings
         SettingsDetailScaffold(title: "Rosary settings") {
             VStack(alignment: .leading, spacing: 0) {
-                SettingsSection(title: "Scripture", icon: "book") {
+                DividedRows {
                     SettingsMenuRow(title: "Bible translation", value: settings.rosaryConfig.translation.title) {
                         Picker("Bible translation", selection: $settings.rosaryConfig.translation) {
                             ForEach(BibleTranslation.allCases) { translation in
@@ -1165,7 +1165,7 @@ private struct SettingsRosaryScreen: View {
 
                 GuideSectionBoundary()
 
-                SettingsSection(title: "Intentions", icon: "heart") {
+                DividedRows {
                     SettingsToggleRow(title: "Choose intentions", isOn: $settings.rosaryConfig.intentionsStep)
                 }
             }
