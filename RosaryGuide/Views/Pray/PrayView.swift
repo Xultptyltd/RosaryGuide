@@ -883,7 +883,8 @@ struct PrayView: View {
             }
 
             ScrollView {
-                VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                // Space.xxl: subtitle to the first intention.
+                VStack(alignment: .leading, spacing: AppTheme.Space.xxl) {
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                         Text("Offer this Rosary for")
                             .font(AppTheme.TypeRole.modalTitle)
