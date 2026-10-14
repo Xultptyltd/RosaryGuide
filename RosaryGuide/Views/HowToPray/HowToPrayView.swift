@@ -26,7 +26,7 @@ struct RosaryWalkthroughView: View {
                         } else if page == 1 {
                             heroCard("WalkthroughRosaryStructure", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top, popsOut: false, fillsCard: true)
                         } else if page == 2 {
-                            heroCard("WalkthroughRosaryDecade", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top, popsOut: false)
+                            heroCard("WalkthroughRosaryDecade", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top, popsOut: false, cardFill: palette.surface)
                         } else {
                             heroCard("WalkthroughMary", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top, popsOut: false, fillsCard: true)
                         }
@@ -116,14 +116,14 @@ struct RosaryWalkthroughView: View {
 
     /// Shared walkthrough hero: art cutout on a Marian blue card, optionally rising above
     /// the card's top edge, with the page-colour front fade at the bottom.
-    private func heroCard(_ imageName: String, height: CGFloat, topInset: CGFloat, popsOut: Bool = true, fillsCard: Bool = false) -> some View {
+    private func heroCard(_ imageName: String, height: CGFloat, topInset: CGFloat, popsOut: Bool = true, fillsCard: Bool = false, cardFill: Color = AppTheme.marianBlue) -> some View {
         let popOut = popsOut ? AppTheme.Space.xxl : 0
         let card = RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
         return GeometryReader { geometry in
             let cardHeight = max(0, geometry.size.height - popOut)
             ZStack(alignment: .bottom) {
                 card
-                    .fill(AppTheme.marianBlue)
+                    .fill(cardFill)
                     .frame(height: cardHeight)
                 if fillsCard {
                     Image(imageName)
