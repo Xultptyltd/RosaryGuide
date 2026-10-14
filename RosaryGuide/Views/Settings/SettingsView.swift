@@ -1182,10 +1182,10 @@ private struct SettingsRosaryScreen: View {
                     SettingsToggleRow(title: "Memorare", isOn: $settings.rosaryConfig.memorare)
                 }
 
-                Button { confirmReset = true } label: {
-                    GuideTextButtonLabel(title: "Reset to default")
+                // Same grey tertiary pill as "Complete decade" in the prayer flow.
+                PillButton(title: "Reset to default", filled: false, tertiary: true) {
+                    confirmReset = true
                 }
-                .buttonStyle(.plain)
                 .padding(.top, AppTheme.Space.xl)
             }
         }
