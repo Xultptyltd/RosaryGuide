@@ -73,7 +73,7 @@ struct PrayHubView: View {
     private var introCard: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
             HStack(alignment: .top, spacing: AppTheme.Space.md) {
-                Text("Introduction")
+                Text("Introduction to the Rosary")
                     .font(AppTheme.sans(32, weight: .regular, relativeTo: .largeTitle))
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
