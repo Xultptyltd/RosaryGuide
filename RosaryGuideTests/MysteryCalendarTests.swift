@@ -232,11 +232,10 @@ final class RosaryConfigTests: XCTestCase {
             XCTAssertNotNil(MysteryScripture.douayRheims[mystery.id], mystery.id)
             XCTAssertNotNil(MysteryScripture.vulgate[mystery.id], mystery.id)
         }
-        config = RosaryConfig()
-        config.openingIntentionLines = false
-        let opening = RosarySequenceBuilder.build(set: .joyful, config: config).filter { $0.stage == .opening && $0.kind == .hailMary }
-        XCTAssertEqual(opening.count, 3)
-        XCTAssertTrue(opening.allSatisfy { $0.subtitle == nil && $0.intention == nil })
+        // Opening lines are always shown; an old stored "off" is ignored.
+        let oldLines = try? JSONDecoder().decode(RosaryConfig.self, from: Data(#"{"openingIntentionLines":false}"#.utf8))
+        let opening = RosarySequenceBuilder.build(set: .joyful, config: oldLines ?? .default).filter { $0.stage == .opening && $0.kind == .hailMary }
+        XCTAssertEqual(opening.map(\.subtitle), PrayerCatalog.openingIntentions)
     }
 
     func testResumeUsesSavedConfig() throws {

@@ -1138,25 +1138,6 @@ private struct SettingsRosaryScreen: View {
         @Bindable var settings = settings
         SettingsDetailScaffold(title: "Rosary settings") {
             VStack(alignment: .leading, spacing: 0) {
-                SettingsSection(title: "Prayer text") {
-                    SettingsMenuRow(title: "Prayer language", icon: "character.book.closed", value: settings.language.title) {
-                        Picker("Prayer language", selection: $settings.language) {
-                            ForEach(PrayerLanguage.appCases) { option in
-                                Text(option.title).tag(option)
-                            }
-                        }
-                    }
-                    SettingsMenuRow(title: "Text size", icon: "textformat.size", value: Self.title(for: settings.textSize)) {
-                        Picker("Text size", selection: $settings.textSize) {
-                            ForEach(PrayerTextSize.allCases) { size in
-                                Text(Self.title(for: size)).tag(size)
-                            }
-                        }
-                    }
-                }
-
-                GuideSectionBoundary()
-
                 SettingsSection(title: "Scripture") {
                     SettingsMenuRow(title: "Bible translation", icon: "book", value: settings.rosaryConfig.translation.title) {
                         Picker("Bible translation", selection: $settings.rosaryConfig.translation) {
@@ -1185,7 +1166,6 @@ private struct SettingsRosaryScreen: View {
 
                 SettingsSection(title: "Intentions") {
                     SettingsToggleRow(title: "Offer this Rosary step", isOn: $settings.rosaryConfig.intentionsStep)
-                    SettingsToggleRow(title: "Faith, hope and charity lines", isOn: $settings.rosaryConfig.openingIntentionLines)
                 }
 
                 SettingsFootnote("Changes apply to your next Rosary")
@@ -1194,13 +1174,6 @@ private struct SettingsRosaryScreen: View {
         }
     }
 
-    private static func title(for size: PrayerTextSize) -> String {
-        switch size {
-        case .small: "Small"
-        case .medium: "Medium"
-        case .large: "Large"
-        }
-    }
 }
 
 private struct SettingsAcknowledgementsScreen: View {

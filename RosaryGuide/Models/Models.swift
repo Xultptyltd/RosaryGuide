@@ -589,8 +589,6 @@ struct RosaryConfig: Codable, Equatable, Hashable, Sendable {
     var saintMichael = false
     /// The "Offer this Rosary for" step after the Sign of the Cross.
     var intentionsStep = true
-    /// Faith / hope / charity lines on the three opening Hail Marys.
-    var openingIntentionLines = true
 
     /// Matches the fixed sequence from before this setting existed.
     static let `default` = RosaryConfig()
@@ -600,7 +598,8 @@ struct RosaryConfig: Codable, Equatable, Hashable, Sendable {
     enum CodingKeys: String, CodingKey {
         // A stored `showScripture` from 2c2662c is ignored; scripture is always shown.
         case translation, fatimaPrayer, oSacrament, closingPrayers
-        case memorare, saintMichael, intentionsStep, openingIntentionLines
+        case memorare, saintMichael, intentionsStep
+        // A stored `openingIntentionLines` is ignored; the lines are always shown.
     }
 
     init(from decoder: Decoder) throws {
@@ -616,7 +615,6 @@ struct RosaryConfig: Codable, Equatable, Hashable, Sendable {
         memorare = bool(.memorare, d.memorare)
         saintMichael = bool(.saintMichael, d.saintMichael)
         intentionsStep = bool(.intentionsStep, d.intentionsStep)
-        openingIntentionLines = bool(.openingIntentionLines, d.openingIntentionLines)
     }
 }
 

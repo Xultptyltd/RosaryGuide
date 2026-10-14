@@ -53,12 +53,11 @@ enum RosarySequenceBuilder {
         append(.creed, haptic: .medium, stage: .opening, bead: .crucifix)
         append(.ourFather, haptic: .medium, stage: .opening, bead: .openingOurFather)
         for (index, intention) in PrayerCatalog.openingIntentions.enumerated() {
-            let line = config.openingIntentionLines ? intention : nil
             append(
                 .hailMary,
-                subtitle: line,
+                subtitle: intention,
                 hailMary: index + 1,
-                intention: line,
+                intention: intention,
                 haptic: .light,
                 stage: .opening,
                 bead: .openingHail(index + 1)
