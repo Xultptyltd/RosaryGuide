@@ -125,15 +125,6 @@ struct SettingsView: View {
 
                 VStack(alignment: .leading, spacing: 0) {
                     SettingsSection(title: "General") {
-                        // App UI language. English is the only option for now; this is
-                        // separate from the Eng/Lat/Both prayer toggle in the rosary flow,
-                        // so it never reads or writes settings.language.
-                        SettingsMenuRow(title: "Language", icon: "globe", value: "English") {
-                            Picker("Language", selection: .constant("English")) {
-                                Text("English").tag("English")
-                            }
-                        }
-
                         SettingsNavigationRow(title: "Customise rosary", icon: "slider.horizontal.3", destination: .rosary)
 
                         SettingsMenuRow(title: "Color theme", icon: "circle.lefthalf.filled", value: settings.appearance.title) {
