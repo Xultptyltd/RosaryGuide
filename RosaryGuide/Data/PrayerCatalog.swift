@@ -67,7 +67,7 @@ enum PrayerCatalog {
 
     static let gloryBe = Prayer(
         id: "glory-be",
-        title: BilingualText(english: "Glory Be", latin: "Gloria Patri"),
+        title: BilingualText(english: "Glory be", latin: "Gloria Patri"),
         text: BilingualText(
             english: """
             Glory be to the Father, and to the Son, and to the Holy Spirit.
@@ -84,7 +84,7 @@ enum PrayerCatalog {
 
     static let fatima = Prayer(
         id: "fatima",
-        title: BilingualText(english: "Fatima Prayer", latin: "O mi Iesu"),
+        title: BilingualText(english: "Fatima prayer", latin: "O mi Iesu"),
         text: BilingualText(
             english: "O my Jesus, forgive us our sins, save us from the fires of hell; lead all souls to Heaven, especially those who have most need of your mercy. Amen.",
             latin: "O mi Iesu, dimitte nobis peccata nostra, libera nos ab igne inferni, perduc omnes animas in caelum, praesertim maxime indigentes misericordia tua. Amen."
@@ -93,7 +93,7 @@ enum PrayerCatalog {
 
     static let hailHolyQueen = Prayer(
         id: "hail-holy-queen",
-        title: BilingualText(english: "Hail, Holy Queen", latin: "Salve Regina"),
+        title: BilingualText(english: "Hail, holy Queen", latin: "Salve Regina"),
         text: BilingualText(
             english: """
             Hail, Holy Queen, Mother of Mercy, our life, our sweetness and our hope. To thee do we cry, poor banished children of Eve. To thee do we send up our sighs, mourning and weeping in this valley of tears.
@@ -114,7 +114,7 @@ enum PrayerCatalog {
 
     static let versicle = Prayer(
         id: "versicle",
-        title: BilingualText(english: "The Versicle", latin: "Versiculum"),
+        title: BilingualText(english: "The versicle", latin: "Versiculum"),
         text: BilingualText(
             english: """
             V. Pray for us, O holy Mother of God.
@@ -129,7 +129,7 @@ enum PrayerCatalog {
 
     static let concluding = Prayer(
         id: "concluding",
-        title: BilingualText(english: "Closing Prayer", latin: "Oratio"),
+        title: BilingualText(english: "Closing prayer", latin: "Oratio"),
         text: BilingualText(
             english: "O God, whose Only Begotten Son, by his life, Death, and Resurrection, has purchased for us the rewards of eternal life, grant, we beseech thee, that while meditating on these mysteries of the most holy Rosary of the Blessed Virgin Mary, we may imitate what they contain and obtain what they promise, through the same Christ our Lord. Amen.",
             latin: "Deus, cuius Unigenitus per vitam, mortem et resurrectionem suam nobis salutis aeternae praemia comparavit: concede, quaesumus, ut haec mysteria sacratissimi Rosarii beatae Mariae Virginis recolentes, et imitemur quod continent, et quod promittunt assequamur. Per eundem Christum Dominum nostrum. Amen."

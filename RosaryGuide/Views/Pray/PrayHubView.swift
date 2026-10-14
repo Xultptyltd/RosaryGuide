@@ -86,7 +86,7 @@ struct PrayHubView: View {
                     .background(palette.accentTint, in: Circle())
             }
 
-            Text("A simple path through the prayers, mysteries, and tradition behind it.")
+            Text("Prayers, mysteries and how to pray")
                 .font(AppTheme.TypeRole.callout)
                 .lineSpacing(5)
                 .foregroundStyle(palette.dim)
@@ -208,7 +208,7 @@ struct PrayHubView: View {
                 .font(AppTheme.TypeRole.cardTitle)
                 .foregroundStyle(palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(resumable == nil ? "Use what you’ve learnt and pray today’s mysteries." : "\(set.shortName) Mysteries are waiting where you left off.")
+            Text(resumable == nil ? "Pray today’s mysteries" : "Pick up where you left off")
                 .font(AppTheme.TypeRole.themeSummary)
                 .lineSpacing(5)
                 .foregroundStyle(palette.dim)
@@ -312,18 +312,18 @@ struct PrayHubView: View {
 
     private func wherePrayerAppears(_ prayer: Prayer) -> String {
         switch prayer.id {
-        case "sign-of-the-cross": "Used at the beginning and end."
-        case "apostles-creed": "Prayed on the crucifix at the start."
-        case "our-father": "Prayed on each large bead."
-        case "hail-mary": "Prayed on the small beads."
-        case "glory-be": "Prayed after each decade."
-        case "fatima": "End of each decade"
-        case "hail-holy-queen": "Prayed near the close."
-        case "concluding": "The last prayer of the Rosary."
-        case "sacrament-most-holy": "End of each decade"
-        case "memorare": "End of the Rosary"
-        case "saint-michael": "Last prayer of the Rosary"
-        default: "Part of the traditional Rosary."
+        case "sign-of-the-cross": "Start and end"
+        case "apostles-creed": "On the crucifix, at the start"
+        case "our-father": "Start of each decade"
+        case "hail-mary": "Ten times each decade"
+        case "glory-be": "End of each decade"
+        case "fatima": "After each Glory be"
+        case "hail-holy-queen": "After the last decade"
+        case "concluding": "Closes the Rosary"
+        case "sacrament-most-holy": "After the Fatima prayer"
+        case "memorare": "After the Rosary"
+        case "saint-michael": "After the Rosary"
+        default: ""
         }
     }
 
@@ -565,14 +565,18 @@ private struct LearnPrayerDetailView: View {
 
     private var whereItAppears: String {
         switch prayer.id {
-        case "sign-of-the-cross": "Used at the beginning and end of the Rosary."
-        case "apostles-creed": "Prayed on the crucifix at the start."
-        case "our-father": "Prayed on each large bead, before every decade."
-        case "hail-mary": "Prayed on the small beads, especially the ten beads of each decade."
-        case "glory-be": "Prayed after each decade."
-        case "hail-holy-queen": "Prayed near the close of the Rosary."
-        case "concluding": "The last prayer of the Rosary."
-        default: "Part of the traditional flow of the Rosary."
+        case "sign-of-the-cross": "Start and end"
+        case "apostles-creed": "On the crucifix, at the start"
+        case "our-father": "Start of each decade"
+        case "hail-mary": "Ten times each decade"
+        case "glory-be": "End of each decade"
+        case "fatima": "After each Glory be"
+        case "hail-holy-queen": "After the last decade"
+        case "concluding": "Closes the Rosary"
+        case "sacrament-most-holy": "After the Fatima prayer"
+        case "memorare": "After the Rosary"
+        case "saint-michael": "After the Rosary"
+        default: ""
         }
     }
 }

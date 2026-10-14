@@ -29,7 +29,7 @@ enum HowToPrayContent {
         ),
         HowToPrayStep(
             id: 5,
-            title: BilingualText(english: "Glory Be", latin: "Glória Patri"),
+            title: BilingualText(english: "Glory be", latin: "Glória Patri"),
             body: "On the chain or large bead before the centerpiece, pray the Glory Be."
         ),
         HowToPrayStep(
