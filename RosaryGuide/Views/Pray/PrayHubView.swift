@@ -7,7 +7,6 @@ struct PrayHubView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Binding var prayLaunch: PrayLaunch?
     @State private var titleScrollOffset: CGFloat = 0
-    @State private var expandedPrayerId: String?
     @State private var expandedQuestion: LearnArticle?
     @State private var navigationPath = NavigationPath()
     @State private var pageGutter: CGFloat = AppTheme.gutter
@@ -130,7 +129,7 @@ struct PrayHubView: View {
 
             VStack(spacing: 0) {
                 ForEach(Array(prayers.enumerated()), id: \.element.id) { index, prayer in
-                    prayerAccordionRow(prayer: prayer)
+                    prayerNavRow(prayer: prayer)
 
                     if index < prayers.count - 1 {
                         Hairline()
@@ -155,7 +154,7 @@ struct PrayHubView: View {
 
             VStack(spacing: 0) {
                 ForEach(Array(prayers.enumerated()), id: \.element.id) { index, prayer in
-                    prayerAccordionRow(prayer: prayer)
+                    prayerNavRow(prayer: prayer)
 
                     if index < prayers.count - 1 {
                         Hairline()
@@ -262,52 +261,34 @@ struct PrayHubView: View {
         }
     }
 
-    private func prayerAccordionRow(prayer: Prayer) -> some View {
-        let isOpen = expandedPrayerId == prayer.id
-
-        return VStack(alignment: .leading, spacing: 0) {
-            Button {
-                expandedPrayerId = isOpen ? nil : prayer.id
-            } label: {
-                HStack(alignment: .center, spacing: AppTheme.Space.md) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(prayer.title.primary(for: settings.language))
-                            .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
-                            .foregroundStyle(palette.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(wherePrayerAppears(prayer))
-                            .font(AppTheme.TypeRole.label)
-                            .foregroundStyle(palette.dim)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 8)
-
-                    Image(systemName: "chevron.down")
-                        .font(AppTheme.TypeRole.caption(weight: .semibold))
-                        .foregroundStyle(palette.faint)
-                        .rotationEffect(.degrees(isOpen ? 180 : 0))
+    private func prayerNavRow(prayer: Prayer) -> some View {
+        NavigationLink {
+            LearnPrayerDetailView(prayer: prayer)
+        } label: {
+            HStack(alignment: .center, spacing: AppTheme.Space.md) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                    Text(prayer.title.primary(for: settings.language))
+                        .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                        .foregroundStyle(palette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(wherePrayerAppears(prayer))
+                        .font(AppTheme.TypeRole.label)
+                        .foregroundStyle(palette.dim)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.vertical, AppTheme.Space.lg)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(prayer.title.primary(for: settings.language))
-            .accessibilityValue(isOpen ? "Expanded" : "Collapsed")
-            .accessibilityHint(isOpen ? "Collapses prayer" : "Expands prayer")
 
-            if isOpen {
-                Text(prayer.text.primary(for: settings.language))
-                    .font(AppTheme.TypeRole.themeSummary)
-                    .lineSpacing(5)
-                    .foregroundStyle(palette.dim)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.trailing, AppTheme.Space.sm)
-                    .padding(.bottom, AppTheme.Space.xl)
-                    .transition(MotionTokens.accordionTransition)
+                Spacer(minLength: AppTheme.Space.sm)
+
+                // Same chevron as Settings navigation rows.
+                Image(systemName: "chevron.right")
+                    .guideSymbol(size: 12, weight: .regular)
+                    .foregroundStyle(palette.secondaryText)
+                    .accessibilityHidden(true)
             }
+            .padding(.vertical, AppTheme.Space.lg)
+            .contentShape(Rectangle())
         }
-        .guideAccordion(isExpanded: isOpen)
+        .buttonStyle(.plain)
     }
 
     private func wherePrayerAppears(_ prayer: Prayer) -> String {
@@ -531,36 +512,31 @@ private struct LearnPrayerDetailView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(\.palette) private var palette
     var prayer: Prayer
+    /// Page-local language; starts from the prayer language setting, never writes it.
+    @State private var language: PrayerLanguage?
+
+    private var shown: PrayerLanguage { language ?? settings.language }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                GuideSectionLabel(text: "Prayer", color: palette.dim)
-                Text(prayer.title.primary(for: settings.language))
-                    .font(AppTheme.TypeRole.screenTitle)
-                    .foregroundStyle(palette.ink)
-                    .fixedSize(horizontal: false, vertical: true)
+                Picker("Language", selection: Binding(get: { shown }, set: { language = $0 })) {
+                    Text("English").tag(PrayerLanguage.english)
+                    Text("Latin").tag(PrayerLanguage.latin)
+                    Text("Both").tag(PrayerLanguage.bilingual)
+                }
+                .guideSegmentedControl()
+                .labelsHidden()
+                .accessibilityLabel("Prayer language")
 
-                Text(whereItAppears)
-                    .font(AppTheme.TypeRole.themeSummary)
-                    .lineSpacing(6)
-                    .foregroundStyle(palette.dim)
-                    .padding(AppTheme.Space.lg)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-
-                Text(prayer.text.primary(for: settings.language))
-                    .font(AppTheme.TypeRole.body)
-                    .lineSpacing(9)
-                    .foregroundStyle(palette.ink)
-                    .fixedSize(horizontal: false, vertical: true)
+                BilingualStack(text: prayer.text, language: shown)
             }
             .padding(.horizontal, AppTheme.gutter)
-            .padding(.top, AppTheme.Space.xxl)
-            .padding(.bottom, 80)
+            .padding(.top, AppTheme.Space.lg)
+            .padding(.bottom, AppTheme.Space.section)
         }
         .background(palette.bg)
-        .guideDetailChrome(prayer.title.primary(for: settings.language))
+        .guideDetailChrome(prayer.title.english)
     }
 
     private var whereItAppears: String {
