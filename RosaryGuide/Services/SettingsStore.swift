@@ -57,7 +57,8 @@ final class SettingsStore {
 
     /// Rosary settings (scripture, optional prayers, intention step). Local only:
     /// not synced until the Firestore rules that accept it are deployed.
-    /// Saint Michael lives in `includeSaintMichael`; read `currentRosaryConfig`.
+    /// Saint Michael is not on the Rosary settings page; it stays the optional
+    /// button on the finish screen, so the config keeps its default (off).
     var rosaryConfig: RosaryConfig {
         didSet {
             if let data = try? JSONEncoder().encode(rosaryConfig) {
@@ -69,7 +70,7 @@ final class SettingsStore {
     /// The config a new Rosary is built with.
     var currentRosaryConfig: RosaryConfig {
         var config = rosaryConfig
-        config.saintMichael = includeSaintMichael
+        config.saintMichael = false
         return config
     }
 

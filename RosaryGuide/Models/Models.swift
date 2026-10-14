@@ -580,7 +580,6 @@ enum BibleTranslation: String, CaseIterable, Codable, Identifiable, Sendable {
 /// Settings changed meanwhile. Local only until the Firestore rules are deployed.
 struct RosaryConfig: Codable, Equatable, Hashable, Sendable {
     var translation: BibleTranslation = .rsv2ce
-    var showScripture = true
     var fatimaPrayer = true
     /// O Sacrament most holy, after the Fatima prayer in each decade.
     var oSacrament = false
@@ -599,7 +598,8 @@ struct RosaryConfig: Codable, Equatable, Hashable, Sendable {
     init() {}
 
     enum CodingKeys: String, CodingKey {
-        case translation, showScripture, fatimaPrayer, oSacrament, closingPrayers
+        // A stored `showScripture` from 2c2662c is ignored; scripture is always shown.
+        case translation, fatimaPrayer, oSacrament, closingPrayers
         case memorare, saintMichael, intentionsStep, openingIntentionLines
     }
 
@@ -610,7 +610,6 @@ struct RosaryConfig: Codable, Equatable, Hashable, Sendable {
             (try? c.decodeIfPresent(Bool.self, forKey: key)) ?? fallback
         }
         translation = (try? c.decodeIfPresent(BibleTranslation.self, forKey: .translation)) ?? d.translation
-        showScripture = bool(.showScripture, d.showScripture)
         fatimaPrayer = bool(.fatimaPrayer, d.fatimaPrayer)
         oSacrament = bool(.oSacrament, d.oSacrament)
         closingPrayers = bool(.closingPrayers, d.closingPrayers)

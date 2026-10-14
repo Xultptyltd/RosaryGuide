@@ -224,10 +224,10 @@ final class RosaryConfigTests: XCTestCase {
         config.translation = .vulgate
         plate = RosarySequenceBuilder.build(set: .joyful, config: config).first { $0.isPlate }
         XCTAssertTrue(plate?.body.english.hasPrefix("In mense autem sexto") == true)
-        config.showScripture = false
-        plate = RosarySequenceBuilder.build(set: .joyful, config: config).first { $0.isPlate }
-        XCTAssertEqual(plate?.body.english, "")
-        XCTAssertNil(plate?.scriptureReference)
+        XCTAssertEqual(plate?.scriptureReference, "Luke 1:26-27")
+        // Old stored configs with showScripture still decode.
+        let old = try? JSONDecoder().decode(RosaryConfig.self, from: Data(#"{"showScripture":false,"memorare":true}"#.utf8))
+        XCTAssertEqual(old?.memorare, true)
         for mystery in MysteryCatalog.all {
             XCTAssertNotNil(MysteryScripture.douayRheims[mystery.id], mystery.id)
             XCTAssertNotNil(MysteryScripture.vulgate[mystery.id], mystery.id)

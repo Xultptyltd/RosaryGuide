@@ -1165,29 +1165,27 @@ private struct SettingsRosaryScreen: View {
                             }
                         }
                     }
-                    SettingsToggleRow(title: "Show scripture", icon: "text.quote", isOn: $settings.rosaryConfig.showScripture)
                 }
 
                 GuideSectionBoundary()
 
                 SettingsSection(title: "Each decade") {
-                    SettingsToggleRow(title: "Fatima prayer", icon: "flame", isOn: $settings.rosaryConfig.fatimaPrayer)
-                    SettingsToggleRow(title: "O Sacrament most holy", icon: "sun.max", isOn: $settings.rosaryConfig.oSacrament)
+                    SettingsToggleRow(title: "Fatima prayer", isOn: $settings.rosaryConfig.fatimaPrayer)
+                    SettingsToggleRow(title: "O Sacrament most holy", isOn: $settings.rosaryConfig.oSacrament)
                 }
 
                 GuideSectionBoundary()
 
                 SettingsSection(title: "Closing prayers") {
-                    SettingsToggleRow(title: "Hail, holy Queen and closing prayer", icon: "crown", isOn: $settings.rosaryConfig.closingPrayers)
-                    SettingsToggleRow(title: "Memorare", icon: "heart", isOn: $settings.rosaryConfig.memorare)
-                    SettingsToggleRow(title: "Saint Michael the Archangel", icon: "shield", isOn: $settings.includeSaintMichael)
+                    SettingsToggleRow(title: "Hail, holy Queen and closing prayer", isOn: $settings.rosaryConfig.closingPrayers)
+                    SettingsToggleRow(title: "Memorare", isOn: $settings.rosaryConfig.memorare)
                 }
 
                 GuideSectionBoundary()
 
                 SettingsSection(title: "Intentions") {
-                    SettingsToggleRow(title: "Offer this Rosary step", icon: "hands.sparkles", isOn: $settings.rosaryConfig.intentionsStep)
-                    SettingsToggleRow(title: "Faith, hope and charity lines", icon: "text.alignleft", isOn: $settings.rosaryConfig.openingIntentionLines)
+                    SettingsToggleRow(title: "Offer this Rosary step", isOn: $settings.rosaryConfig.intentionsStep)
+                    SettingsToggleRow(title: "Faith, hope and charity lines", isOn: $settings.rosaryConfig.openingIntentionLines)
                 }
 
                 SettingsFootnote("Changes apply to your next Rosary")

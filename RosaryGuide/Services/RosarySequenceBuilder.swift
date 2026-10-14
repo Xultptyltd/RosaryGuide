@@ -72,19 +72,17 @@ enum RosarySequenceBuilder {
             append(
                 .mysteryAnnouncement,
                 title: mystery.title,
-                body: config.showScripture
-                    ? {
-                        let text = MysteryScripture.excerpt(for: mystery, translation: config.translation)
-                        return BilingualText(english: text, latin: text)
-                    }()
-                    : BilingualText(english: "", latin: ""),
+                body: {
+                    let text = MysteryScripture.excerpt(for: mystery, translation: config.translation)
+                    return BilingualText(english: text, latin: text)
+                }(),
                 subtitle: mystery.fruit,
                 mystery: mystery,
                 decade: decade,
                 haptic: .heavy,
                 stage: stage,
                 bead: .decadeOurFather(decade),
-                scriptureReference: config.showScripture ? mystery.scriptureReference : nil
+                scriptureReference: mystery.scriptureReference
             )
             append(.ourFather, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeOurFather(decade))
             for bead in 1...10 {
