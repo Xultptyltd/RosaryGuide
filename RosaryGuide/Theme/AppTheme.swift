@@ -1176,6 +1176,14 @@ extension AppTheme {
         }
         /// Reference size for the shared prayer paragraph line-height calculation.
         static func prayerLineHeightReference(scale: CGFloat) -> CGFloat { 21 * scale }
+        #if canImport(UIKit)
+        static func prayerTextUIFont(scale: CGFloat) -> UIFont {
+            FontRegistrar.sansUI(max(16, 18 * scale), textStyle: .body)
+        }
+        static var captionUIFont: UIFont {
+            FontRegistrar.sansUI(12, weight: .regular, textStyle: .caption1)
+        }
+        #endif
 
         // Compatibility aliases. New code should use the simpler scale above.
         static var screenTitle: Font { title2 }

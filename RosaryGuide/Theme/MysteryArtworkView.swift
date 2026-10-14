@@ -380,6 +380,47 @@ struct GuideTextButtonLabel: View {
     }
 }
 
+/// Shared circle-to-pill action used by scrolling prayers and learning guides.
+struct GuideScrollActionButton: View {
+    var showScroll: Bool
+    var title: String
+    var scrollLabel: String
+    var primary: Bool = false
+    var onScroll: () -> Void
+    var onAdvance: () -> Void
+    @Environment(\.palette) private var palette
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack {
+            if showScroll { Spacer(minLength: 0) }
+            Button(action: showScroll ? onScroll : onAdvance) {
+                let side = AppTheme.Component.mysteryPlateActionCircle
+                ZStack {
+                    Capsule().fill(primary && !showScroll ? palette.primaryButtonFill : palette.secondaryButtonFill)
+                    if showScroll {
+                        Image(systemName: "chevron.down")
+                            .guideSymbol(size: 17, weight: .semibold)
+                            .foregroundStyle(palette.secondaryButtonText)
+                            .transition(.identity)
+                    } else {
+                        Text(title)
+                            .font(AppTheme.TypeRole.callout)
+                            .foregroundStyle(primary ? palette.primaryButtonText : palette.secondaryButtonText)
+                            .transition(.identity)
+                    }
+                }
+                .frame(maxWidth: showScroll ? side : .infinity)
+                .frame(width: showScroll ? side : nil, height: AppTheme.Component.pillHeight)
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(showScroll ? scrollLabel : title)
+        }
+        .animation(reduceMotion ? nil : MotionTokens.reveal, value: showScroll)
+    }
+}
+
 struct PillButton: View {
     var title: String
     var filled: Bool = true
@@ -434,5 +475,28 @@ struct MilestoneLineGlyph: Shape {
     let glyph: AppTheme.MilestoneIcon.Glyph
     func path(in rect: CGRect) -> Path {
         AppTheme.MilestoneIcon.path(for: glyph, in: rect)
+    }
+}
+
+/// Shared progress treatment for the Home mystery rail and teaching walkthrough.
+struct GuidePageDots: View {
+    var current: Int
+    var count: Int
+    var alignment: Alignment = .leading
+    @Environment(\.palette) private var palette
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: AppTheme.Space.sm) {
+            ForEach(0..<count, id: \.self) { index in
+                Capsule()
+                    .fill(index == current ? palette.accent : palette.accent.opacity(0.28))
+                    .frame(width: index == current ? 18 : 6, height: 6)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: alignment)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: current)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Screen \(current + 1) of \(count)")
     }
 }
