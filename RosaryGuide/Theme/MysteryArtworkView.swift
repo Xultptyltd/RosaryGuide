@@ -264,7 +264,9 @@ struct GuideSectionDivider: View {
         }
         .padding(.horizontal, inset)
         .frame(maxWidth: .infinity)
-        .frame(height: AppTheme.Component.sectionDividerEndpointHeight)
+        // Lay out at the band's height so spacing tokens measure to the visible band.
+        // The taller corner endpoints overflow above and below at the screen edges only.
+        .frame(height: AppTheme.Component.sectionDividerHeight)
         .accessibilityHidden(true)
     }
 
@@ -281,7 +283,7 @@ struct GuideSectionDivider: View {
     private var fill: Color { palette.surface }
 }
 
-/// Shared full-bleed section boundary with 16pt clear space on both sides.
+/// Shared full-bleed section boundary: Space.md between content and the band on both sides.
 struct GuideSectionBoundary: View {
     var gutter: CGFloat = AppTheme.gutter
     var body: some View {

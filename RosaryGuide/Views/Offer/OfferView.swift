@@ -151,6 +151,8 @@ struct OfferView: View {
                                 .padding(.horizontal, -AppTheme.gutter)
                             milestonesSection
                         }
+                        // Parent spacing is Space.lg; the divider standard is Space.md each side.
+                        .padding(.top, AppTheme.Space.md - AppTheme.Space.lg)
                     } else {
                         prayerJourneysSection
                             // sectionGap above (the stack already adds Space.lg).
