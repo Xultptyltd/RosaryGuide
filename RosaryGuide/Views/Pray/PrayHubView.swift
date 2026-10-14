@@ -126,7 +126,7 @@ struct PrayHubView: View {
         ]
 
         return VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-            GuideSectionLabel(text: "Prayers of the Rosary", prominence: .strong)
+            GuideSectionLabel(text: "Rosary prayers", prominence: .strong)
 
             VStack(spacing: 0) {
                 ForEach(Array(prayers.enumerated()), id: \.element.id) { index, prayer in
