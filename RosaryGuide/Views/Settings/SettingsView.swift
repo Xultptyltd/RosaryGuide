@@ -1070,29 +1070,44 @@ private struct SettingsNotificationsScreen: View {
 
 private struct SettingsToggleRow: View {
     @Environment(\.palette) private var palette
-    @Environment(\.showsRowDivider) private var showsRowDivider
     let title: String
     var icon: String?
     @Binding var isOn: Bool
 
     var body: some View {
-        Toggle(isOn: $isOn) {
-            HStack(spacing: AppTheme.Space.lg) {
-                if let icon {
-                    SettingsRowIcon(symbol: icon, tint: palette.ink)
+        // The ZStack makes the trim a child view, so it sees `showsRowDivider` (see below).
+        ZStack {
+            SettingsLastRowTrim {
+                Toggle(isOn: $isOn) {
+                    HStack(spacing: AppTheme.Space.lg) {
+                        if let icon {
+                            SettingsRowIcon(symbol: icon, tint: palette.ink)
+                        }
+                        Text(title)
+                            .font(AppTheme.TypeRole.settingsRow)
+                            .foregroundStyle(palette.ink)
+                    }
                 }
-                Text(title)
-                    .font(AppTheme.TypeRole.settingsRow)
-                    .foregroundStyle(palette.ink)
+                .tint(Color(uiColor: .systemGreen))
+                .frame(minHeight: AppTheme.Component.profileRowHeight)
             }
         }
-        .tint(Color(uiColor: .systemGreen))
-        .frame(minHeight: AppTheme.Component.profileRowHeight)
-        // Last row: lay out Space.lg shorter, content top-aligned in place, so a group ending
-        // in a toggle sits like one ending in a nav row. A negative bottom padding here did
-        // not shrink the Toggle's layout height (measured on device), so use an explicit frame.
-        .frame(height: showsRowDivider ? nil : AppTheme.Component.profileRowHeight - AppTheme.Space.lg, alignment: .top)
         .overlay(alignment: .bottom) { SettingsDivider() }
+    }
+}
+
+/// Last row of a group lays out Space.lg shorter (content stays put, top-aligned), so the gap
+/// to the next section divider matches a group ending in `SettingsRowChrome`.
+/// `DividedRows` sets `showsRowDivider` on each row's resolved subview, so the row struct and
+/// modifiers in its own body chain still read the default (true). It must be read by a child
+/// view inside a container (like `SettingsRowChrome` inside a NavigationLink label).
+/// Checked with sizeThatFits: row-struct env 112pt vs child-in-ZStack 96pt for two 56pt rows.
+private struct SettingsLastRowTrim<Content: View>: View {
+    @Environment(\.showsRowDivider) private var showsRowDivider
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content.frame(height: showsRowDivider ? nil : AppTheme.Component.profileRowHeight - AppTheme.Space.lg, alignment: .top)
     }
 }
 
