@@ -1071,6 +1071,8 @@ private struct SettingsToggleRow: View {
     @Environment(\.palette) private var palette
     let title: String
     var icon: String?
+    /// Optional second line under the title (e.g. where a prayer falls).
+    var caption: String? = nil
     @Binding var isOn: Bool
 
     var body: some View {
@@ -1079,9 +1081,17 @@ private struct SettingsToggleRow: View {
                 if let icon {
                     SettingsRowIcon(symbol: icon, tint: palette.ink)
                 }
-                Text(title)
-                    .font(AppTheme.TypeRole.settingsRow)
-                    .foregroundStyle(palette.ink)
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                    Text(title)
+                        .font(AppTheme.TypeRole.settingsRow)
+                        .foregroundStyle(palette.ink)
+                    if let caption {
+                        Text(caption)
+                            .font(AppTheme.TypeRole.settingsMeta)
+                            .foregroundStyle(palette.dim)
+                    }
+                }
+                .padding(.vertical, caption == nil ? 0 : AppTheme.Space.md)
             }
         }
         .tint(Color(uiColor: .systemGreen))
@@ -1138,7 +1148,7 @@ private struct SettingsRosaryScreen: View {
         @Bindable var settings = settings
         SettingsDetailScaffold(title: "Rosary settings") {
             VStack(alignment: .leading, spacing: 0) {
-                SettingsSection(title: "Scripture") {
+                DividedRows {
                     SettingsMenuRow(title: "Bible translation", icon: "book", value: settings.rosaryConfig.translation.title) {
                         Picker("Bible translation", selection: $settings.rosaryConfig.translation) {
                             ForEach(BibleTranslation.allCases) { translation in
@@ -1150,22 +1160,13 @@ private struct SettingsRosaryScreen: View {
 
                 GuideSectionBoundary()
 
-                SettingsSection(title: "Each decade") {
-                    SettingsToggleRow(title: "Fatima prayer", isOn: $settings.rosaryConfig.fatimaPrayer)
-                    SettingsToggleRow(title: "O Sacrament most holy", isOn: $settings.rosaryConfig.oSacrament)
-                }
-
-                GuideSectionBoundary()
-
-                SettingsSection(title: "Closing prayers") {
-                    SettingsToggleRow(title: "Hail, holy Queen and closing prayer", isOn: $settings.rosaryConfig.closingPrayers)
-                    SettingsToggleRow(title: "Memorare", isOn: $settings.rosaryConfig.memorare)
-                }
-
-                GuideSectionBoundary()
-
-                SettingsSection(title: "Intentions") {
-                    SettingsToggleRow(title: "Offer this Rosary step", isOn: $settings.rosaryConfig.intentionsStep)
+                // Prayer order through the Rosary.
+                SettingsSection(title: "Prayers in your Rosary") {
+                    SettingsToggleRow(title: "Offer this Rosary step", caption: "Before the Creed", isOn: $settings.rosaryConfig.intentionsStep)
+                    SettingsToggleRow(title: "Fatima prayer", caption: "End of each decade", isOn: $settings.rosaryConfig.fatimaPrayer)
+                    SettingsToggleRow(title: "O Sacrament most holy", caption: "After the Fatima prayer", isOn: $settings.rosaryConfig.oSacrament)
+                    SettingsToggleRow(title: "Hail, holy Queen and closing prayer", caption: "After the last decade", isOn: $settings.rosaryConfig.closingPrayers)
+                    SettingsToggleRow(title: "Memorare", caption: "End of the Rosary", isOn: $settings.rosaryConfig.memorare)
                 }
 
                 SettingsFootnote("Changes apply to your next Rosary")
