@@ -577,7 +577,7 @@ private struct SettingsNavigationRow: View {
     // Rows that push a page show only a trailing chevron, never a value.
     var body: some View {
         NavigationLink(value: destination) {
-            SettingsRowChrome(title: title, icon: icon, subtitle: subtitle, value: nil, accessory: .chevron)
+            SettingsRowChrome(title: title, icon: icon, subtitle: subtitle, value: nil, accessory: .navigation)
         }
         .buttonStyle(.plain)
     }
@@ -638,6 +638,8 @@ private enum SettingsRowAccessory {
     case none
     case chevron
     case externalLink
+    /// Row pushes another page: always draws a trailing chevron.
+    case navigation
 }
 
 /// Leading line icon in a fixed-width column so every row label lines up.
@@ -704,6 +706,12 @@ private struct SettingsRowChrome: View {
                 EmptyView()
             case .chevron, .externalLink:
                 EmptyView()
+            case .navigation:
+                // Same chevron as the Learn tab rows.
+                Image(systemName: "chevron.right")
+                    .guideSymbol(size: 12, weight: .regular)
+                    .foregroundStyle(palette.secondaryText)
+                    .accessibilityHidden(true)
             }
         }
         .frame(minHeight: AppTheme.Component.profileRowHeight)
