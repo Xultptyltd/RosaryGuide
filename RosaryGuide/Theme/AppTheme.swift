@@ -1174,6 +1174,8 @@ extension AppTheme {
         static func prayerText(scale: CGFloat) -> Font {
             AppTheme.sans(max(16, 18 * scale), relativeTo: .body)
         }
+        /// Reference size for the shared prayer paragraph line-height calculation.
+        static func prayerLineHeightReference(scale: CGFloat) -> CGFloat { 21 * scale }
 
         // Compatibility aliases. New code should use the simpler scale above.
         static var screenTitle: Font { title2 }
