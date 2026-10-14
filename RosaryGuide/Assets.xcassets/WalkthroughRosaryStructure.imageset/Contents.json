@@ -1,7 +1,12 @@
 {
-  "images" : [
-    { "filename" : "rosary-light-hero.jpg", "idiom" : "universal" },
-    { "appearances" : [ { "appearance" : "luminosity", "value" : "dark" } ], "filename" : "rosary-dark-hero.jpg", "idiom" : "universal" }
+  "images": [
+    {
+      "filename": "walk2.png",
+      "idiom": "universal"
+    }
   ],
-  "info" : { "author" : "xcode", "version" : 1 }
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
 }
