@@ -197,7 +197,7 @@ struct SettingsView: View {
                         SettingsActionRow(title: "Suggest a feature", icon: "lightbulb", accessory: .externalLink) {
                             open("https://xult.ltd/contact/")
                         }
-                        SettingsActionRow(title: "Leave a review", icon: "star") {
+                        SettingsActionRow(title: "Leave a review", icon: "star", accessory: .externalLink) {
                             requestReview()
                         }
                     }
@@ -206,7 +206,7 @@ struct SettingsView: View {
 
                     SettingsSection(title: "About") {
                         SettingsNavigationRow(title: "Widgets", icon: "square.grid.2x2", destination: .widgets)
-                        SettingsActionRow(title: "Replay welcome", icon: "sparkles") {
+                        SettingsActionRow(title: "Replay welcome", icon: "sparkles", accessory: .navigation) {
                             showOnboardingPreview = true
                         }
                         SettingsActionRow(title: "Terms of service", icon: "doc.text", accessory: .externalLink) {
@@ -738,43 +738,24 @@ private struct AppIconChoices: View {
 
     private let previewSize: CGFloat = 64
     private let tileSpacing = AppTheme.Space.md
-    /// Leading edge of the "App icon" label: icon column + icon/label spacing.
-    private let labelLeading = AppTheme.Space.xl + AppTheme.Space.lg
-    @State private var tileRowWidth: CGFloat = 0
-
-    /// Shifts the equal-width tile row right so the first tile's left edge meets
-    /// the label's leading edge, without changing tile size or spacing.
-    private var tileRowShift: CGFloat {
-        guard tileRowWidth > 0 else { return 0 }
-        let cellWidth = (tileRowWidth - tileSpacing * CGFloat(AppIconOption.allCases.count - 1))
-            / CGFloat(AppIconOption.allCases.count)
-        return max(0, labelLeading - (cellWidth - previewSize) / 2)
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-            HStack(spacing: AppTheme.Space.lg) {
-                SettingsRowIcon(symbol: "app", tint: palette.ink)
-                Text("App icon")
-                    .font(AppTheme.TypeRole.settingsRow)
-                    .foregroundStyle(palette.ink)
-                    .lineLimit(1)
-            }
-            .accessibilityAddTraits(.isHeader)
+            Text("App icon")
+                .font(AppTheme.TypeRole.settingsRow)
+                .foregroundStyle(palette.ink)
+                .lineLimit(1)
+                .accessibilityAddTraits(.isHeader)
 
+            // Icon choices sit in the standard flat card.
             HStack(spacing: tileSpacing) {
                 ForEach(AppIconOption.allCases) { option in
                     iconCell(option)
                 }
             }
             .frame(maxWidth: .infinity)
-            .onGeometryChange(for: CGFloat.self) { proxy in
-                proxy.size.width
-            } action: { width in
-                tileRowWidth = width
-            }
-            .padding(.leading, tileRowShift)
-            .padding(.trailing, -tileRowShift)
+            .padding(AppTheme.Space.lg)
+            .guideCard()
         }
         .padding(.vertical, AppTheme.Space.lg)
         .padding(.bottom, showsRowDivider ? 0 : -AppTheme.Space.lg)
