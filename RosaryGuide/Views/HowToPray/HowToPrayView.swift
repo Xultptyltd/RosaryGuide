@@ -221,7 +221,7 @@ struct RosaryWalkthroughView: View {
         let card = RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
         return ZStack(alignment: .bottom) {
             card
-                .fill(AppTheme.marianBlue)
+                .fill(palette.surface)
                 .frame(height: cardHeight)
             Image(mysteryImageName(set))
                 .resizable()
@@ -242,10 +242,10 @@ struct RosaryWalkthroughView: View {
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 Text("\(set.shortName) Mysteries")
                     .font(AppTheme.TypeRole.callout(weight: .semibold))
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(palette.textPrimary)
                 Text(mysterySummary(set))
                     .font(AppTheme.TypeRole.caption)
-                    .foregroundStyle(Color.white.opacity(0.8))
+                    .foregroundStyle(palette.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
