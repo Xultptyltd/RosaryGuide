@@ -121,7 +121,6 @@ struct PrayHubView: View {
             PrayerCatalog.ourFather,
             PrayerCatalog.hailMary,
             PrayerCatalog.gloryBe,
-            PrayerCatalog.fatima,
             PrayerCatalog.hailHolyQueen,
             PrayerCatalog.concluding
         ]
@@ -145,6 +144,7 @@ struct PrayHubView: View {
 
     private var optionalPrayersSection: some View {
         let prayers: [Prayer] = [
+            PrayerCatalog.fatima,
             PrayerCatalog.sacramentMostHoly,
             PrayerCatalog.memorare,
             PrayerCatalog.saintMichael
