@@ -205,14 +205,13 @@ struct RosaryWalkthroughView: View {
 
     /// Full-bleed statue tile with the set name and summary over a soft scrim.
     private func mysteryTile(_ set: MysterySetKind) -> some View {
-        let isDark = colorScheme == .dark
         let cardHeight = mysteryImageHeight + AppTheme.Space.xxl + AppTheme.Space.lg
         // How far the statue cutout rises above the card's top edge.
         let popOut = AppTheme.Space.xl
         let card = RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
         return ZStack(alignment: .bottom) {
             card
-                .fill(palette.surface)
+                .fill(AppTheme.marianBlue)
                 .frame(height: cardHeight)
             Image(mysteryImageName(set))
                 .resizable()
@@ -227,16 +226,16 @@ struct RosaryWalkthroughView: View {
                     }
                 }
             // Same fade as the other walkthrough art, ending in the tile surface.
-            LinearGradient(colors: [.clear, palette.surface], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [AppTheme.marianBlue.opacity(0), AppTheme.marianBlue], startPoint: .top, endPoint: .bottom)
                 .frame(height: min(GuideWalkthroughLayout.fadeHeight, cardHeight))
                 .clipShape(card)
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 Text("\(set.shortName) Mysteries")
                     .font(AppTheme.TypeRole.callout(weight: .semibold))
-                    .foregroundStyle(isDark ? Color.white : palette.textPrimary)
+                    .foregroundStyle(Color.white)
                 Text(mysterySummary(set))
                     .font(AppTheme.TypeRole.caption)
-                    .foregroundStyle(isDark ? Color.white.opacity(0.7) : palette.textSecondary)
+                    .foregroundStyle(Color.white.opacity(0.8))
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
