@@ -1088,9 +1088,10 @@ private struct SettingsToggleRow: View {
         }
         .tint(Color(uiColor: .systemGreen))
         .frame(minHeight: AppTheme.Component.profileRowHeight)
-        // Same last-row trim as SettingsRowChrome, so a group ending in a toggle
-        // sits the same distance above the section divider as one ending in a nav row.
-        .padding(.bottom, showsRowDivider ? 0 : -AppTheme.Space.lg)
+        // Last row: lay out Space.lg shorter, content top-aligned in place, so a group ending
+        // in a toggle sits like one ending in a nav row. A negative bottom padding here did
+        // not shrink the Toggle's layout height (measured on device), so use an explicit frame.
+        .frame(height: showsRowDivider ? nil : AppTheme.Component.profileRowHeight - AppTheme.Space.lg, alignment: .top)
         .overlay(alignment: .bottom) { SettingsDivider() }
     }
 }
