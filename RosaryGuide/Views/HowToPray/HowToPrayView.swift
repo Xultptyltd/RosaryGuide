@@ -206,7 +206,6 @@ struct RosaryWalkthroughView: View {
     /// Full-bleed statue tile with the set name and summary over a soft scrim.
     private func mysteryTile(_ set: MysterySetKind) -> some View {
         let isDark = colorScheme == .dark
-        let scrim = isDark ? Color.black : Color(hex: 0xEEECE8)
         return Image(mysteryImageName(set))
             .resizable()
             .scaledToFill()
@@ -214,8 +213,9 @@ struct RosaryWalkthroughView: View {
             .frame(height: mysteryImageHeight + AppTheme.Space.xxl + AppTheme.Space.lg)
             .clipped()
             .overlay(alignment: .bottom) {
-                LinearGradient(colors: [scrim.opacity(0), scrim.opacity(0.85)], startPoint: .top, endPoint: .bottom)
-                    .frame(height: (mysteryImageHeight + AppTheme.Space.xxl + AppTheme.Space.lg) / 2)
+                // Same artwork-to-page fade as the hero art on the other walkthrough screens.
+                LinearGradient(colors: [.clear, palette.prayBg], startPoint: .top, endPoint: .bottom)
+                    .frame(height: min(GuideWalkthroughLayout.fadeHeight, mysteryImageHeight + AppTheme.Space.xxl + AppTheme.Space.lg))
             }
             .overlay(alignment: .bottomLeading) {
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
