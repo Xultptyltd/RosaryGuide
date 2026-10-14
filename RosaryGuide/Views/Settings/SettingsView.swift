@@ -1070,6 +1070,7 @@ private struct SettingsNotificationsScreen: View {
 
 private struct SettingsToggleRow: View {
     @Environment(\.palette) private var palette
+    @Environment(\.showsRowDivider) private var showsRowDivider
     let title: String
     var icon: String?
     @Binding var isOn: Bool
@@ -1087,6 +1088,9 @@ private struct SettingsToggleRow: View {
         }
         .tint(Color(uiColor: .systemGreen))
         .frame(minHeight: AppTheme.Component.profileRowHeight)
+        // Same last-row trim as SettingsRowChrome, so a group ending in a toggle
+        // sits the same distance above the section divider as one ending in a nav row.
+        .padding(.bottom, showsRowDivider ? 0 : -AppTheme.Space.lg)
         .overlay(alignment: .bottom) { SettingsDivider() }
     }
 }
