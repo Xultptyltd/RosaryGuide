@@ -1158,14 +1158,14 @@ private struct SettingsRosaryScreen: View {
                 GuideSectionBoundary()
 
                 SettingsSection(title: "Closing prayers") {
-                    SettingsToggleRow(title: "Hail, holy Queen and closing prayer", isOn: $settings.rosaryConfig.closingPrayers)
+                    SettingsToggleRow(title: "Hail, holy Queen", isOn: $settings.rosaryConfig.closingPrayers)
                     SettingsToggleRow(title: "Memorare", isOn: $settings.rosaryConfig.memorare)
                 }
 
                 GuideSectionBoundary()
 
                 SettingsSection(title: "Intentions") {
-                    SettingsToggleRow(title: "Offer this Rosary step", isOn: $settings.rosaryConfig.intentionsStep)
+                    SettingsToggleRow(title: "Choose intentions", isOn: $settings.rosaryConfig.intentionsStep)
                 }
 
                 SettingsFootnote("Changes apply to your next Rosary")
