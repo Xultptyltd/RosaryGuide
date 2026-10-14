@@ -514,12 +514,10 @@ private struct LearnPrayerDetailView: View {
     var prayer: Prayer
     /// Page-local language; starts from the prayer language setting, never writes it.
     @State private var language: PrayerLanguage?
-    @State private var aboutOpen = false
 
     private var shown: PrayerLanguage { language ?? settings.language }
 
     var body: some View {
-        @Bindable var settings = settings
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
@@ -551,14 +549,18 @@ private struct LearnPrayerDetailView: View {
                     pointSize: AppTheme.TypeRole.prayerLineHeightReference(scale: settings.textSize.scale)
                 )
 
-                Hairline()
-
                 if prayer.id == "sign-of-the-cross" {
+                    GuideSectionBoundary()
+                    // Cancel the stack's Space.xl so the gap matches other section dividers.
+                    .padding(.vertical, -AppTheme.Space.xl)
                     gestureSection
-                    Hairline()
                 }
 
-                aboutRow
+                GuideSectionBoundary()
+                    // Cancel the stack's Space.xl so the gap matches other section dividers.
+                    .padding(.vertical, -AppTheme.Space.xl)
+
+                aboutBlock
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, AppTheme.Space.sm)
@@ -566,22 +568,6 @@ private struct LearnPrayerDetailView: View {
         }
         .background(palette.bg)
         .guideDetailChrome("")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Picker("Text size", selection: $settings.textSize) {
-                        ForEach(PrayerTextSize.allCases) { size in
-                            Text(size.rawValue.capitalized).tag(size)
-                        }
-                    }
-                } label: {
-                    Text("Aa")
-                        .font(AppTheme.TypeRole.callout(weight: .medium))
-                        .foregroundStyle(palette.accent)
-                }
-                .accessibilityLabel("Text size")
-            }
-        }
     }
 
     private static let gestureSteps: [(String, String)] = [
@@ -636,56 +622,37 @@ private struct LearnPrayerDetailView: View {
         }
     }
 
-    private var aboutRow: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            Button {
-                withAnimation(MotionTokens.accordion) { aboutOpen.toggle() }
-            } label: {
-                HStack(spacing: AppTheme.Space.md) {
-                    VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                        Text("About this prayer")
-                            .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
-                            .foregroundStyle(palette.ink)
-                        Text("Meaning and place in the Rosary")
-                            .font(AppTheme.TypeRole.label)
-                            .foregroundStyle(palette.dim)
-                    }
-                    Spacer(minLength: AppTheme.Space.sm)
-                    Image(systemName: "chevron.down")
-                        .guideSymbol(size: 12, weight: .regular)
-                        .foregroundStyle(palette.secondaryText)
-                        .rotationEffect(.degrees(aboutOpen ? 180 : 0))
-                        .accessibilityHidden(true)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityValue(aboutOpen ? "Expanded" : "Collapsed")
-
-            if aboutOpen {
-                Text(about)
-                    .font(AppTheme.TypeRole.themeSummary)
-                    .lineSpacing(5)
-                    .foregroundStyle(palette.dim)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+    private var aboutBlock: some View {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+            Text("About this prayer")
+                .font(AppTheme.TypeRole.headline)
+                .foregroundStyle(palette.ink)
+                .accessibilityAddTraits(.isHeader)
+            Text(about)
+                .font(AppTheme.TypeRole.themeSummary)
+                .lineSpacing(5)
+                .foregroundStyle(palette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(AppTheme.Space.lg)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .guideCard(fill: palette.surface)
         }
     }
 
     private var about: String {
         switch prayer.id {
-        case "sign-of-the-cross": "We begin and end the Rosary marked with the Cross, calling on the Holy Trinity and giving the whole prayer to God."
-        case "apostles-creed": "Said on the crucifix at the start, the Creed sums up the faith of the Church that the mysteries unfold."
-        case "our-father": "The prayer Jesus taught us. It opens each decade, turning our hearts to the Father before we meditate."
-        case "hail-mary": "Prayed ten times in each decade. Its words come from the Angel Gabriel and Saint Elizabeth, and ask Mary to pray for us."
-        case "glory-be": "Closes each decade by giving praise to the Holy Trinity."
-        case "fatima": "Taught by Our Lady at Fatima in 1917. Many pray it after each Glory be, asking mercy for all souls."
-        case "hail-holy-queen": "An ancient hymn to Mary, prayed after the last decade as we entrust ourselves to her care."
-        case "concluding": "Closes the Rosary, asking that by meditating on these mysteries we may imitate what they contain and obtain what they promise."
-        case "sacrament-most-holy": "A short prayer of praise to Jesus in the Eucharist, often said after the Fatima prayer."
-        case "memorare": "A prayer of trust in Mary's intercession, often said after the Rosary."
-        case "saint-michael": "Asks Saint Michael to defend us against evil. Many add it after the Rosary."
-        default: "A prayer of the Church, offered with the Rosary."
+        case "sign-of-the-cross": "Tracing the cross on oneself is among the oldest Christian practices. Around AD 200 Tertullian wrote that believers marked their foreheads with the sign throughout daily life. The larger gesture with its Trinitarian words grew from this, echoing Christ's command to baptise in the name of the Father, Son and Holy Spirit (Matthew 28:19). We begin and end the Rosary with it, placing the whole prayer under the Cross."
+        case "apostles-creed": "The Apostles' Creed grew from the early baptismal creed of the Church in Rome, often called the Old Roman Symbol, and reached its present form by about the eighth century. Tradition links its twelve articles to the Apostles, though they did not write it directly. Said on the crucifix at the start of the Rosary, it professes the faith whose mysteries the decades unfold."
+        case "our-father": "The Lord's Prayer was given by Jesus himself when his disciples asked him to teach them to pray (Matthew 6:9–13; Luke 11:2–4). The Church has prayed it daily since the first centuries. It opens each decade of the Rosary, so every set of Hail Marys begins as Christ taught, with praise of the Father and trust in his care."
+        case "hail-mary": "The first half comes from Scripture: the Angel Gabriel's greeting (Luke 1:28) and Elizabeth's blessing (Luke 1:42). The name of Jesus was added in the Middle Ages, and the closing petition, \"Holy Mary, Mother of God\", was settled by the 16th century, appearing in the Roman Breviary of 1568. Prayed ten times in each decade, it carries our meditation on each mystery."
+        case "glory-be": "The Glory be is a doxology, a short hymn of praise to the Holy Trinity, rooted in the prayer of the early Church. Its second half, \"as it was in the beginning\", was added in the West around the fourth century as a profession of faith in the eternal Trinity. It closes each decade, returning all our meditation to the praise of God."
+        case "fatima": "According to Sister Lúcia's account, Our Lady taught this prayer to the three shepherd children at Fatima on 13 July 1917, asking that it be said after each decade of the Rosary. The Church approved the Fatima apparitions in 1930, and the prayer spread widely in the decades that followed. It asks mercy for sinners and the salvation of all souls."
+        case "hail-holy-queen": "The Salve Regina is one of the Church's great Marian antiphons, traditionally attributed to Hermann of Reichenau, an 11th-century Benedictine monk. It was long sung at the close of the day in monasteries, especially by the Cistercians and Dominicans. Prayed after the last decade, it turns from meditation to heartfelt petition, entrusting ourselves to Mary as our advocate."
+        case "concluding": "This prayer is the collect from the Roman Missal's Mass of Our Lady of the Rosary, kept on 7 October. It gathers the whole Rosary into one petition: that by meditating on these mysteries we may imitate what they contain and obtain what they promise. It closes the Rosary through Christ our Lord, to whom every mystery points."
+        case "sacrament-most-holy": "This short act of praise to Jesus in the Eucharist has no certain author or date. It became widely known through Eucharistic devotion, and many people add it after the Fatima prayer at the end of each decade. Though not part of the traditional Rosary, it is a simple way to join our meditation to adoration of Christ truly present in the Blessed Sacrament."
+        case "memorare": "The Memorare is often linked to Saint Bernard of Clairvaux, whose writings share its trust in Mary, but the text itself dates from the 15th century. It was popularised in the 17th century by Fr Claude Bernard, a Paris priest known as the Poor Priest, who shared it with prisoners and the sick. Said after the Rosary, it is a confident plea for Mary's intercession."
+        case "saint-michael": "Pope Leo XIII composed this prayer in 1886 and directed that it be said after Low Mass throughout the Church, a practice kept until the 1960s. It draws on Scripture's picture of Michael as protector of God's people (Daniel 12:1; Revelation 12:7–9). Many add it after the Rosary, asking for strength and protection against evil."
+        default: ""
         }
     }
 }
