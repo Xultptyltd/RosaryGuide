@@ -361,6 +361,35 @@ struct FeastsView: View {
                     if index < section.items.count - 1 { Hairline().padding(.leading, 76) }
                 }
             }
+            if section.title == "Today" || section.title == "Next",
+               let primary = section.items.first,
+               calendar.isDateInToday(primary.date) {
+                feastActionRow(for: primary)
+                    .padding(.top, AppTheme.Space.sm)
+            }
+        }
+    }
+
+    /// Learn + Pray this Rosary under today's feast (restored from before the calendar redesign, f8aa293).
+    private func feastActionRow(for item: DatedFeast) -> some View {
+        HStack(spacing: AppTheme.Space.md) {
+            NavigationLink {
+                FeastDetailView(prayLaunch: $prayLaunch, item: item)
+            } label: {
+                Text("Learn")
+                    .font(AppTheme.TypeRole.callout)
+                    .foregroundStyle(palette.learnMoreButtonText)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: AppTheme.Component.pillHeight)
+                    .background(palette.learnMoreButtonFill, in: Capsule())
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .guidePressable()
+
+            PillButton(title: "Pray this Rosary") {
+                prayLaunch = .fresh(item.feast.suggestedMysterySet ?? MysteryCalendar.assignment(on: item.date).set)
+            }
         }
     }
 
