@@ -156,7 +156,13 @@ struct ThemePalette {
             : Color(hex: 0x090A0C)
     }
 
-    var textPrimary: Color { .primary }
+    /// Resolved from the palette's own scheme, not `.primary`. `.primary` follows the
+    /// hosting controller's trait, which can stay on the old scheme inside covers
+    /// after switching Light/Dark -> System, while every other token follows
+    /// `scheme`, leaving ink nearly the same colour as the background.
+    var textPrimary: Color {
+        scheme == .light ? Color(hex: 0x000000) : Color(hex: 0xFFFFFF)
+    }
     /// The app's single secondary grey. Use this for all supporting,
     /// disabled-looking, metadata, and explanatory copy.
     var textSecondary: Color {
@@ -330,6 +336,27 @@ struct ThemedRoot<Content: View>: View {
             .onChange(of: colorSchemeContrast) { _, newContrast in
                 GuideChrome.apply(ThemePalette(scheme: colorScheme, contrast: newContrast))
             }
+    }
+}
+
+/// Mirrors the Color theme onto every window's UIKit style. SwiftUI's
+/// preferredColorScheme(nil) does not always clear a previous explicit override
+/// (notably in presented covers), so System could keep the old scheme.
+enum AppearanceWindowStyle {
+    static func apply(_ appearance: AppearancePreference) {
+        #if canImport(UIKit)
+        let style: UIUserInterfaceStyle = switch appearance {
+        case .system: .unspecified
+        case .light: .light
+        case .dark: .dark
+        }
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for window in windowScene.windows {
+                window.overrideUserInterfaceStyle = style
+            }
+        }
+        #endif
     }
 }
 

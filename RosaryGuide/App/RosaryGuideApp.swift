@@ -64,6 +64,9 @@ struct RosaryGuideApp: App {
             .environment(appIcon)
             .environment(sync)
             .preferredColorScheme(settings.appearance.colorScheme)
+            .onChange(of: settings.appearance, initial: true) { _, appearance in
+                AppearanceWindowStyle.apply(appearance)
+            }
             .onOpenURL { url in
                 _ = auth.handleOpenURL(url)
             }
