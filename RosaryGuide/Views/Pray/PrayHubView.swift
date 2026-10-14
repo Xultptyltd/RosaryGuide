@@ -271,10 +271,8 @@ struct PrayHubView: View {
                         .font(AppTheme.TypeRole.bodySmall)
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(wherePrayerAppears(prayer))
-                        .font(AppTheme.TypeRole.label)
-                        .foregroundStyle(palette.dim)
-                        .fixedSize(horizontal: false, vertical: true)
+                    // Experiment: captions hidden. Restore by rendering wherePrayerAppears(prayer)
+                    // here (TypeRole.label, palette.dim); the caption data is kept below.
                 }
 
                 Spacer(minLength: AppTheme.Space.sm)
