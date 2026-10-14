@@ -1,18 +1,8 @@
 {
   "images": [
     {
-      "filename": "WalkthroughRosaryDecadeLight.png",
+      "filename": "walk3.png",
       "idiom": "universal"
-    },
-    {
-      "filename": "WalkthroughRosaryDecadeDark.png",
-      "idiom": "universal",
-      "appearances": [
-        {
-          "appearance": "luminosity",
-          "value": "dark"
-        }
-      ]
     }
   ],
   "info": {

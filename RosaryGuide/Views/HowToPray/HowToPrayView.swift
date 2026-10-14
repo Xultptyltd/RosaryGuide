@@ -22,13 +22,13 @@ struct RosaryWalkthroughView: View {
                 if page != 3 {
                     Group {
                         if page == 0 {
-                            introArtwork(height: activeHeroHeight + geometry.safeAreaInsets.top)
+                            heroCard("WalkthroughRosaryIntro", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top)
                         } else if page == 1 {
-                            structureArtwork(height: activeHeroHeight + geometry.safeAreaInsets.top)
+                            heroCard("WalkthroughRosaryStructure", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top)
                         } else if page == 2 {
-                            structureArtwork(height: activeHeroHeight + geometry.safeAreaInsets.top, imageName: "WalkthroughRosaryDecade")
+                            heroCard("WalkthroughRosaryDecade", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top, popsOut: false)
                         } else {
-                            maryArtwork(height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top)
+                            heroCard("WalkthroughMary", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top)
                         }
                     }
                     .offset(y: -geometry.safeAreaInsets.top)
@@ -114,41 +114,10 @@ struct RosaryWalkthroughView: View {
         else { withAnimation(reduceMotion ? nil : MotionTokens.soft) { page -= 1 } }
     }
 
-    private func introArtwork(height: CGFloat) -> some View {
-        GeometryReader { geometry in
-            Image("WalkthroughRosaryIntro")
-                .resizable()
-                .scaledToFill()
-                .frame(width: geometry.size.width, height: height)
-                .clipped()
-                .overlay(alignment: .bottom) {
-                    LinearGradient(colors: [.clear, palette.prayBg], startPoint: .top, endPoint: .bottom)
-                        .frame(height: min(GuideWalkthroughLayout.fadeHeight, height))
-                }
-        }
-        .frame(height: height)
-        .accessibilityHidden(true)
-    }
-
-    private func structureArtwork(height: CGFloat, imageName: String = "WalkthroughRosaryStructure") -> some View {
-        GeometryReader { geometry in
-            Image(imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(width: geometry.size.width, height: height)
-                .clipped()
-                .overlay(alignment: .bottom) {
-                    LinearGradient(colors: [.clear, palette.prayBg], startPoint: .top, endPoint: .bottom)
-                        .frame(height: min(GuideWalkthroughLayout.fadeHeight, height))
-                }
-        }
-        .frame(height: height)
-        .accessibilityHidden(true)
-    }
-
-    /// Final screen: Mary on a Marian blue card, her head rising above the top edge.
-    private func maryArtwork(height: CGFloat, topInset: CGFloat) -> some View {
-        let popOut = AppTheme.Space.xxl
+    /// Shared walkthrough hero: art cutout on a Marian blue card, optionally rising above
+    /// the card's top edge, with the page-colour front fade at the bottom.
+    private func heroCard(_ imageName: String, height: CGFloat, topInset: CGFloat, popsOut: Bool = true) -> some View {
+        let popOut = popsOut ? AppTheme.Space.xxl : 0
         let card = RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
         return GeometryReader { geometry in
             let cardHeight = max(0, geometry.size.height - popOut)
@@ -156,7 +125,7 @@ struct RosaryWalkthroughView: View {
                 card
                     .fill(AppTheme.marianBlue)
                     .frame(height: cardHeight)
-                Image("WalkthroughMary")
+                Image(imageName)
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -167,7 +136,6 @@ struct RosaryWalkthroughView: View {
                             card
                         }
                     }
-                // Same page-colour front fade as the mystery cards.
                 LinearGradient(colors: [palette.prayBg.opacity(0), palette.prayBg], startPoint: .top, endPoint: .bottom)
                     .frame(height: min(GuideWalkthroughLayout.fadeHeight, cardHeight))
                     .clipShape(card)

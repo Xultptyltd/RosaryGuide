@@ -1,18 +1,8 @@
 {
   "images": [
     {
-      "filename": "WalkthroughRosaryIntroLight.png",
+      "filename": "walk1.png",
       "idiom": "universal"
-    },
-    {
-      "filename": "WalkthroughRosaryIntro.png",
-      "idiom": "universal",
-      "appearances": [
-        {
-          "appearance": "luminosity",
-          "value": "dark"
-        }
-      ]
     }
   ],
   "info": {

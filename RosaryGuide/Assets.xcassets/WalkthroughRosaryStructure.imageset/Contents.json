@@ -1,18 +1,8 @@
 {
   "images": [
     {
-      "filename": "WalkthroughRosaryStructureLight.png",
+      "filename": "walk2.png",
       "idiom": "universal"
-    },
-    {
-      "filename": "WalkthroughRosaryStructureDark.png",
-      "idiom": "universal",
-      "appearances": [
-        {
-          "appearance": "luminosity",
-          "value": "dark"
-        }
-      ]
     }
   ],
   "info": {
