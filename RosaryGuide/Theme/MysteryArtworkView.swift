@@ -287,7 +287,7 @@ struct GuideSectionBoundary: View {
     var body: some View {
         GuideSectionDivider()
             .padding(.horizontal, -gutter)
-            .padding(.vertical, AppTheme.Space.lg)
+            .padding(.vertical, AppTheme.Space.md)
     }
 }
 
@@ -299,7 +299,7 @@ struct GuideDividerSectionHeader: View {
     var count: Int?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionDivider()
             GuideSectionLabel(text: label, prominence: .strong)
                 .frame(maxWidth: .infinity, alignment: .leading)

@@ -149,7 +149,7 @@ struct FeastsView: View {
                         .allowsHitTesting(false)
                         .padding(.horizontal, -AppTheme.gutter)
                         .padding(.top, AppTheme.Component.calendarHandleDividerGap)
-                        .padding(.bottom, AppTheme.Space.lg)
+                        .padding(.bottom, AppTheme.Space.md)
 
                     let sections = agenda.sections
                     if sections.isEmpty {
@@ -165,8 +165,6 @@ struct FeastsView: View {
                                calendar.isDate(primary.date, inSameDayAs: selectedDay) {
                                 feastActionRow(for: primary)
                                     .padding(.top, AppTheme.Space.lg)
-                                    // Boundary adds Space.lg above its divider; trim by Space.xs so the row sits Space.md (12) above it.
-                                    .padding(.bottom, sections.count > 1 ? -AppTheme.Space.xs : 0)
                             }
                         }
                     }

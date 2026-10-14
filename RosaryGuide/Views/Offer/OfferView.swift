@@ -146,7 +146,7 @@ struct OfferView: View {
                     }
 
                     if PremiumStatus.isPremium {
-                        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                             GuideSectionDivider()
                                 .padding(.horizontal, -AppTheme.gutter)
                             milestonesSection
