@@ -708,10 +708,6 @@ private struct NextRosaryIntentionCard: View {
     var body: some View {
         Button(action: onOpen) {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-                Text("Your next Rosary")
-                    .font(AppTheme.TypeRole.caption(weight: .medium))
-                    .foregroundStyle(palette.textSecondary)
-
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     IntentionIconView(
                         accent: intention.accent,
@@ -726,6 +722,11 @@ private struct NextRosaryIntentionCard: View {
                         .lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
+
+                    // Keep the title clear of the overlaid overflow menu now it shares the top row.
+                    Color.clear
+                        .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                        .accessibilityHidden(true)
 
                 }
 
