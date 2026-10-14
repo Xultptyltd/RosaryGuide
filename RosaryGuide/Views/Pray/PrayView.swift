@@ -114,6 +114,15 @@ struct PrayView: View {
     /// Dedicated "Offer this Rosary for" step shown between Sign of the Cross and the Creed.
     /// Not a `RosaryStep`, so saved `stepIndex` values keep their meaning.
     @State private var showingIntentionStep = false
+    /// Intention step scroll / circle-to-Continue state (mirrors the prayer scroll template).
+    @State private var intentionListHeight: CGFloat = 0
+    @State private var intentionContentHeight: CGFloat = 0
+    @State private var intentionViewportHeight: CGFloat = 0
+    @State private var intentionScrollY: CGFloat = 0
+    @State private var intentionActionLocked = false
+    @State private var intentionArrowArmed = false
+    @State private var intentionLastDrag = Date.distantPast
+    @State private var intentionScrollPosition = ScrollPosition(edge: .top)
     @State private var didRecordCarry = false
     /// Locked when entering finis so Offered for survives session.complete() / store churn.
     @State private var completionIntentionTitle: String?
@@ -882,38 +891,138 @@ struct PrayView: View {
                 SevenStageTrack(current: step.stage) { jump(to: $0) }
             }
 
-            ScrollView {
-                // Space.xxl: subtitle to the first intention.
-                VStack(alignment: .leading, spacing: AppTheme.Space.xxl) {
-                    VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                        Text("Offer this Rosary for")
-                            .font(AppTheme.TypeRole.modalTitle)
-                            .foregroundStyle(palette.ink)
-                            .tracking(-0.2)
-                        Text("Choose up to \(PrayerSession.maxIntentions), or continue without one")
-                            .font(AppTheme.TypeRole.bodySmall)
-                            .foregroundStyle(palette.dim)
-                            .fixedSize(horizontal: false, vertical: true)
+            GeometryReader { scrollGeo in
+                ScrollView {
+                    VStack(spacing: 0) {
+                        // Space.xxl: subtitle to the first intention.
+                        VStack(alignment: .leading, spacing: AppTheme.Space.xxl) {
+                            VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                                Text("Offer this Rosary for")
+                                    .font(AppTheme.TypeRole.modalTitle)
+                                    .foregroundStyle(palette.ink)
+                                    .tracking(-0.2)
+                                Text("Choose up to \(PrayerSession.maxIntentions), or continue without one")
+                                    .font(AppTheme.TypeRole.bodySmall)
+                                    .foregroundStyle(palette.dim)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+
+                            IntentionMultiSelectList(
+                                selectedIds: intentionSelection,
+                                mysterySet: intentionSheetMysterySet
+                            )
+                        }
+                        .padding(.horizontal, AppTheme.gutter)
+                        .padding(.top, prayerTitleTopPadding)
+                        .padding(.bottom, AppTheme.Space.lg)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                            if height > 1 { intentionListHeight = height }
+                        }
+
+                        // Room under the list so the last row clears the floating action.
+                        Color.clear.frame(height: intentionScrollTail)
                     }
-
-                    IntentionMultiSelectList(
-                        selectedIds: intentionSelection,
-                        mysterySet: intentionSheetMysterySet
-                    )
                 }
-                .padding(.horizontal, AppTheme.gutter)
-                .padding(.top, prayerTitleTopPadding)
-                .padding(.bottom, AppTheme.Space.lg)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .scrollIndicators(.hidden)
+                .scrollPosition($intentionScrollPosition)
+                .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
+                    PlateScrollMetrics(
+                        offsetY: geometry.contentOffset.y,
+                        contentHeight: geometry.contentSize.height,
+                        viewportHeight: geometry.containerSize.height
+                    )
+                } action: { _, newValue in
+                    if newValue.contentHeight > 1 { intentionContentHeight = newValue.contentHeight }
+                    if newValue.viewportHeight > 1 { intentionViewportHeight = newValue.viewportHeight }
+                    let y = max(0, newValue.offsetY)
+                    if abs(y - intentionScrollY) > 0.5 { intentionLastDrag = Date() }
+                    intentionScrollY = y
+                    let maxOffset = max(0, intentionContentHeight - intentionViewportHeight)
+                    // Same rule as prayer Next / Saint Michael Done.
+                    let next = ScrollMorph.resolve(
+                        locked: intentionActionLocked,
+                        armed: intentionArrowArmed,
+                        y: y,
+                        maxOffset: maxOffset
+                    )
+                    if next.locked != intentionActionLocked { intentionActionLocked = next.locked }
+                    if next.armed != intentionArrowArmed { intentionArrowArmed = next.armed }
+                }
+                .onScrollPhaseChange { _, phase in
+                    if phase == .interacting {
+                        intentionArrowArmed = false
+                        intentionLastDrag = Date()
+                    }
+                }
+                .onAppear {
+                    if scrollGeo.size.height > 1 { intentionViewportHeight = scrollGeo.size.height }
+                }
+                .overlay(alignment: .bottom) {
+                    // Solid circle while there is more list below; full Continue at the bottom
+                    // or when the list fits (shared `GuideScrollActionButton`).
+                    scrollActionChrome(
+                        showScroll: intentionCanScrollFurther,
+                        expandedTitle: "Continue",
+                        scrollLabel: "Scroll to see more intentions",
+                        onScroll: { scrollIntentionsToBottom() },
+                        onAdvance: { advance() }
+                    )
+                    .padding(.horizontal, AppTheme.gutter)
+                    .padding(.top, AppTheme.Space.md)
+                    .padding(.bottom, AppTheme.Space.lg)
+                }
             }
-            .scrollIndicators(.hidden)
-
-            PillButton(title: "Continue", filled: false, action: advance)
-                .padding(.horizontal, AppTheme.gutter)
-                .padding(.top, AppTheme.Space.md)
-                .padding(.bottom, AppTheme.Space.lg)
-                .background(palette.prayBg)
+            .onAppear { resetIntentionScrollState() }
         }
+    }
+
+    /// Footer room (button + its padding) the list must leave clear.
+    private var intentionFooterRoom: CGFloat {
+        AppTheme.Component.pillHeight + AppTheme.Space.md + AppTheme.Space.lg
+    }
+
+    private var intentionOverflows: Bool {
+        intentionViewportHeight > 1 && intentionListHeight > intentionViewportHeight - intentionFooterRoom
+    }
+
+    /// Prayer-style tail when the list scrolls (132pt plus enough for `ScrollMorph.minimumRange`);
+    /// otherwise just the footer room.
+    private var intentionScrollTail: CGFloat {
+        guard intentionOverflows else { return intentionFooterRoom }
+        let base: CGFloat = 132
+        let range = intentionListHeight + base - intentionViewportHeight
+        return base + max(0, ScrollMorph.minimumRange - range)
+    }
+
+    private var intentionCanScrollFurther: Bool {
+        intentionOverflows && !intentionActionLocked
+    }
+
+    private func resetIntentionScrollState() {
+        intentionActionLocked = false
+        intentionArrowArmed = false
+        intentionScrollY = 0
+        intentionLastDrag = .distantPast
+        intentionScrollPosition = ScrollPosition(edge: .top)
+    }
+
+    /// Same tap behaviour as `scrollPrayerToBottom`.
+    private func scrollIntentionsToBottom() {
+        guard Date().timeIntervalSince(intentionLastDrag) > 0.25 else { return }
+        HapticService.play(.light, enabled: settings.hapticsEnabled)
+        let maxOffset = max(0, intentionContentHeight - intentionViewportHeight)
+        let distanceFromBottom = maxOffset - intentionScrollY
+        intentionArrowArmed = distanceFromBottom > 8
+        withAnimation(reduceMotion ? nil : MotionTokens.reveal, completionCriteria: .logicallyComplete) {
+            intentionActionLocked = true
+            if distanceFromBottom > 8 {
+                intentionScrollPosition.scrollTo(y: maxOffset)
+            }
+        } completion: {
+            intentionArrowArmed = false
+        }
+        disarmLater { intentionArrowArmed = false }
     }
 
     private var intentionSelection: Binding<[UUID]> {
