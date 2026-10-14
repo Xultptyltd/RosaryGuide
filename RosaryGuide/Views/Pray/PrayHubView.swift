@@ -514,12 +514,27 @@ private struct LearnPrayerDetailView: View {
     var prayer: Prayer
     /// Page-local language; starts from the prayer language setting, never writes it.
     @State private var language: PrayerLanguage?
+    @State private var aboutOpen = false
 
     private var shown: PrayerLanguage { language ?? settings.language }
 
     var body: some View {
+        @Bindable var settings = settings
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                    Text(prayer.title.english)
+                        .font(AppTheme.TypeRole.screenTitle)
+                        .foregroundStyle(palette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                    if prayer.title.latin != prayer.title.english {
+                        Text(prayer.title.latin)
+                            .font(AppTheme.TypeRole.bodySmall())
+                            .foregroundStyle(palette.dim)
+                    }
+                }
+
                 Picker("Language", selection: Binding(get: { shown }, set: { language = $0 })) {
                     Text("English").tag(PrayerLanguage.english)
                     Text("Latin").tag(PrayerLanguage.latin)
@@ -529,30 +544,148 @@ private struct LearnPrayerDetailView: View {
                 .labelsHidden()
                 .accessibilityLabel("Prayer language")
 
-                BilingualStack(text: prayer.text, language: shown)
+                BilingualStack(
+                    text: prayer.text,
+                    language: shown,
+                    font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
+                    pointSize: AppTheme.TypeRole.prayerLineHeightReference(scale: settings.textSize.scale)
+                )
+
+                Hairline()
+
+                if prayer.id == "sign-of-the-cross" {
+                    gestureSection
+                    Hairline()
+                }
+
+                aboutRow
             }
             .padding(.horizontal, AppTheme.gutter)
-            .padding(.top, AppTheme.Space.lg)
+            .padding(.top, AppTheme.Space.sm)
             .padding(.bottom, AppTheme.Space.section)
         }
         .background(palette.bg)
-        .guideDetailChrome(prayer.title.english)
+        .guideDetailChrome("")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Picker("Text size", selection: $settings.textSize) {
+                        ForEach(PrayerTextSize.allCases) { size in
+                            Text(size.rawValue.capitalized).tag(size)
+                        }
+                    }
+                } label: {
+                    Text("Aa")
+                        .font(AppTheme.TypeRole.callout(weight: .medium))
+                        .foregroundStyle(palette.accent)
+                }
+                .accessibilityLabel("Text size")
+            }
+        }
     }
 
-    private var whereItAppears: String {
+    private static let gestureSteps: [(String, String)] = [
+        ("Touch your forehead", "In the name of the Father"),
+        ("Touch your chest", "and of the Son"),
+        ("Touch your left shoulder", "and of the Holy Spirit"),
+        ("Touch your right shoulder", "Amen")
+    ]
+
+    private var gestureSection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                Text("The gesture")
+                    .font(AppTheme.TypeRole.headline)
+                    .foregroundStyle(palette.ink)
+                    .accessibilityAddTraits(.isHeader)
+                Text("Using your right hand")
+                    .font(AppTheme.TypeRole.bodySmall())
+                    .foregroundStyle(palette.dim)
+            }
+
+            VStack(spacing: 0) {
+                ForEach(Array(Self.gestureSteps.enumerated()), id: \.offset) { index, step in
+                    HStack(spacing: AppTheme.Space.lg) {
+                        Text("\(index + 1)")
+                            .font(AppTheme.TypeRole.callout(weight: .semibold))
+                            .foregroundStyle(palette.accent)
+                            .frame(width: AppTheme.Space.xxl, height: AppTheme.Space.xxl)
+                            .background(palette.accent.opacity(0.15), in: Circle())
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                            Text(step.0)
+                                .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                                .foregroundStyle(palette.ink)
+                            Text(step.1)
+                                .font(AppTheme.TypeRole.label)
+                                .foregroundStyle(palette.dim)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.vertical, AppTheme.Space.md)
+                    .accessibilityElement(children: .combine)
+                    if index < Self.gestureSteps.count - 1 {
+                        Hairline().padding(.leading, AppTheme.Space.xxl + AppTheme.Space.lg)
+                    }
+                }
+            }
+
+            Text("The Latin Catholic tradition")
+                .font(AppTheme.TypeRole.label)
+                .foregroundStyle(palette.dim)
+        }
+    }
+
+    private var aboutRow: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+            Button {
+                withAnimation(MotionTokens.accordion) { aboutOpen.toggle() }
+            } label: {
+                HStack(spacing: AppTheme.Space.md) {
+                    VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                        Text("About this prayer")
+                            .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                            .foregroundStyle(palette.ink)
+                        Text("Meaning and place in the Rosary")
+                            .font(AppTheme.TypeRole.label)
+                            .foregroundStyle(palette.dim)
+                    }
+                    Spacer(minLength: AppTheme.Space.sm)
+                    Image(systemName: "chevron.down")
+                        .guideSymbol(size: 12, weight: .regular)
+                        .foregroundStyle(palette.secondaryText)
+                        .rotationEffect(.degrees(aboutOpen ? 180 : 0))
+                        .accessibilityHidden(true)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(aboutOpen ? "Expanded" : "Collapsed")
+
+            if aboutOpen {
+                Text(about)
+                    .font(AppTheme.TypeRole.themeSummary)
+                    .lineSpacing(5)
+                    .foregroundStyle(palette.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var about: String {
         switch prayer.id {
-        case "sign-of-the-cross": "Start and end"
-        case "apostles-creed": "On the crucifix, at the start"
-        case "our-father": "Start of each decade"
-        case "hail-mary": "Ten times each decade"
-        case "glory-be": "End of each decade"
-        case "fatima": "After each Glory be"
-        case "hail-holy-queen": "After the last decade"
-        case "concluding": "Closes the Rosary"
-        case "sacrament-most-holy": "After the Fatima prayer"
-        case "memorare": "After the Rosary"
-        case "saint-michael": "After the Rosary"
-        default: ""
+        case "sign-of-the-cross": "We begin and end the Rosary marked with the Cross, calling on the Holy Trinity and giving the whole prayer to God."
+        case "apostles-creed": "Said on the crucifix at the start, the Creed sums up the faith of the Church that the mysteries unfold."
+        case "our-father": "The prayer Jesus taught us. It opens each decade, turning our hearts to the Father before we meditate."
+        case "hail-mary": "Prayed ten times in each decade. Its words come from the Angel Gabriel and Saint Elizabeth, and ask Mary to pray for us."
+        case "glory-be": "Closes each decade by giving praise to the Holy Trinity."
+        case "fatima": "Taught by Our Lady at Fatima in 1917. Many pray it after each Glory be, asking mercy for all souls."
+        case "hail-holy-queen": "An ancient hymn to Mary, prayed after the last decade as we entrust ourselves to her care."
+        case "concluding": "Closes the Rosary, asking that by meditating on these mysteries we may imitate what they contain and obtain what they promise."
+        case "sacrament-most-holy": "A short prayer of praise to Jesus in the Eucharist, often said after the Fatima prayer."
+        case "memorare": "A prayer of trust in Mary's intercession, often said after the Rosary."
+        case "saint-michael": "Asks Saint Michael to defend us against evil. Many add it after the Rosary."
+        default: "A prayer of the Church, offered with the Rosary."
         }
     }
 }
