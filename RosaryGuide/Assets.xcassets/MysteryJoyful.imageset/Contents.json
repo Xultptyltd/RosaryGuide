@@ -1,17 +1,7 @@
 {
   "images": [
     {
-      "filename": "joyful-light.jpg",
-      "idiom": "universal"
-    },
-    {
-      "appearances": [
-        {
-          "appearance": "luminosity",
-          "value": "dark"
-        }
-      ],
-      "filename": "joyful-dark.jpg",
+      "filename": "joyful.png",
       "idiom": "universal"
     }
   ],

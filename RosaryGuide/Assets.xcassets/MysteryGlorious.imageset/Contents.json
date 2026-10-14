@@ -1,17 +1,7 @@
 {
   "images": [
     {
-      "filename": "glorious-light.jpg",
-      "idiom": "universal"
-    },
-    {
-      "appearances": [
-        {
-          "appearance": "luminosity",
-          "value": "dark"
-        }
-      ],
-      "filename": "glorious-dark.jpg",
+      "filename": "glorious.png",
       "idiom": "universal"
     }
   ],

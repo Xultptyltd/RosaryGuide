@@ -1,17 +1,7 @@
 {
   "images": [
     {
-      "filename": "sorrowful-light.jpg",
-      "idiom": "universal"
-    },
-    {
-      "appearances": [
-        {
-          "appearance": "luminosity",
-          "value": "dark"
-        }
-      ],
-      "filename": "sorrowful-dark.jpg",
+      "filename": "sorrowful.png",
       "idiom": "universal"
     }
   ],

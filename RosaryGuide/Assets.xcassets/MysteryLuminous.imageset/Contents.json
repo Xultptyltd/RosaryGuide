@@ -1,17 +1,7 @@
 {
   "images": [
     {
-      "filename": "luminous-light.jpg",
-      "idiom": "universal"
-    },
-    {
-      "appearances": [
-        {
-          "appearance": "luminosity",
-          "value": "dark"
-        }
-      ],
-      "filename": "luminous-dark.jpg",
+      "filename": "luminous.png",
       "idiom": "universal"
     }
   ],

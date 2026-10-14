@@ -206,35 +206,44 @@ struct RosaryWalkthroughView: View {
     /// Full-bleed statue tile with the set name and summary over a soft scrim.
     private func mysteryTile(_ set: MysterySetKind) -> some View {
         let isDark = colorScheme == .dark
-        return Image(mysteryImageName(set))
-            .resizable()
-            .scaledToFill()
-            .frame(maxWidth: .infinity)
-            .frame(height: mysteryImageHeight + AppTheme.Space.xxl + AppTheme.Space.lg)
-            .clipped()
-            // Blend the artwork's plain backdrop into the card surface so tiles read as cards.
-            .blendMode(isDark ? .screen : .multiply)
-            .background(palette.surface)
-            .compositingGroup()
-            .overlay(alignment: .bottom) {
-                // Same fade as the other walkthrough art, ending in the tile surface.
-                LinearGradient(colors: [.clear, palette.surface], startPoint: .top, endPoint: .bottom)
-                    .frame(height: min(GuideWalkthroughLayout.fadeHeight, mysteryImageHeight + AppTheme.Space.xxl + AppTheme.Space.lg))
-            }
-            .overlay(alignment: .bottomLeading) {
-                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    Text("\(set.shortName) Mysteries")
-                        .font(AppTheme.TypeRole.callout(weight: .semibold))
-                        .foregroundStyle(isDark ? Color.white : palette.textPrimary)
-                    Text(mysterySummary(set))
-                        .font(AppTheme.TypeRole.caption)
-                        .foregroundStyle(isDark ? Color.white.opacity(0.7) : palette.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+        let cardHeight = mysteryImageHeight + AppTheme.Space.xxl + AppTheme.Space.lg
+        // How far the statue cutout rises above the card's top edge.
+        let popOut = AppTheme.Space.xl
+        let card = RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+        return ZStack(alignment: .bottom) {
+            card
+                .fill(palette.surface)
+                .frame(height: cardHeight)
+            Image(mysteryImageName(set))
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity)
+                .frame(height: cardHeight + popOut, alignment: .top)
+                // Open above the card so the head pops out; clipped to the card below.
+                .mask {
+                    VStack(spacing: 0) {
+                        Rectangle()
+                        card.frame(height: cardHeight)
+                    }
                 }
-                .padding(AppTheme.Space.md)
+            // Same fade as the other walkthrough art, ending in the tile surface.
+            LinearGradient(colors: [.clear, palette.surface], startPoint: .top, endPoint: .bottom)
+                .frame(height: min(GuideWalkthroughLayout.fadeHeight, cardHeight))
+                .clipShape(card)
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                Text("\(set.shortName) Mysteries")
+                    .font(AppTheme.TypeRole.callout(weight: .semibold))
+                    .foregroundStyle(isDark ? Color.white : palette.textPrimary)
+                Text(mysterySummary(set))
+                    .font(AppTheme.TypeRole.caption)
+                    .foregroundStyle(isDark ? Color.white.opacity(0.7) : palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .clipShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-            .accessibilityElement(children: .combine)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(AppTheme.Space.md)
+        }
+        .frame(height: cardHeight + popOut, alignment: .bottom)
+        .accessibilityElement(children: .combine)
     }
 
     private func mysteryImageName(_ set: MysterySetKind) -> String {
