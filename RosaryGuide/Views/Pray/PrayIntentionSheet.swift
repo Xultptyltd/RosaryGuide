@@ -385,7 +385,7 @@ private struct IntentionRadioRow: View {
                             .font(AppTheme.TypeRole.callout(weight: .semibold))
                             .foregroundStyle(palette.ink)
                             .multilineTextAlignment(.leading)
-                        if item.isPinned {
+                        if item.isPinned, !multiSelect {
                             Image(systemName: "pin.fill")
                                 .font(.caption2)
                                 .foregroundStyle(palette.accent)
@@ -528,14 +528,18 @@ struct IntentionMultiSelectList: View {
                 selectedIds = []
             }
 
-            PillButton(title: "Add an intention", filled: false) {
+            Button {
                 // Free users at the intention limit go to Rosary Guide+ instead of the editor.
                 if offer.canAddIntention {
                     editorRoute = .create
                 } else {
                     showingPremium = true
                 }
+            } label: {
+                GuideTextButtonLabel(title: "Add an intention")
             }
+            .buttonStyle(.plain)
+            .guidePressable()
             .accessibilityLabel("Add an intention")
             .padding(.top, AppTheme.Space.xs)
         }

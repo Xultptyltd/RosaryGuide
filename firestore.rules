@@ -137,7 +137,9 @@ service cloud.firestore {
         'includeSaintMichael',
         'language',
         'intentionId',
-        'intentionTitle'
+        'intentionTitle',
+        'intentionIds',
+        'intentionTitles'
       ];
       let required = [
         'mysterySet',
@@ -160,7 +162,36 @@ service cloud.firestore {
         && session.includeSaintMichael is bool
         && prayerLanguage(session.language)
         && (!('intentionId' in session) || (session.intentionId is string && validIntentionId(session.intentionId)))
-        && (!('intentionTitle' in session) || validString(session.intentionTitle, 0, 160));
+        && (!('intentionTitle' in session) || validString(session.intentionTitle, 0, 160))
+        && (!('intentionIds' in session) || validIntentionIdList(session.intentionIds))
+        && (!('intentionTitles' in session) || validIntentionTitleList(session.intentionTitles));
+    }
+
+    // Up to 4 offered intentions per Rosary; entries match the single-field limits.
+    function validIntentionIdAt(ids, i) {
+      return ids.size() <= i || (ids[i] is string && validIntentionId(ids[i]));
+    }
+
+    function validIntentionIdList(ids) {
+      return ids is list
+        && ids.size() <= 4
+        && validIntentionIdAt(ids, 0)
+        && validIntentionIdAt(ids, 1)
+        && validIntentionIdAt(ids, 2)
+        && validIntentionIdAt(ids, 3);
+    }
+
+    function validIntentionTitleAt(titles, i) {
+      return titles.size() <= i || validString(titles[i], 0, 160);
+    }
+
+    function validIntentionTitleList(titles) {
+      return titles is list
+        && titles.size() <= 4
+        && validIntentionTitleAt(titles, 0)
+        && validIntentionTitleAt(titles, 1)
+        && validIntentionTitleAt(titles, 2)
+        && validIntentionTitleAt(titles, 3);
     }
 
     function validProgress() {

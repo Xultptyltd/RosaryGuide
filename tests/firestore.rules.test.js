@@ -165,6 +165,14 @@ async function main() {
     await assertFails(setDoc(progress, validProgress({ session: validSession({ mysterySet: "other" }) })));
     await assertFails(setDoc(progress, validProgress({ session: validSession({ intentionId: "nope" }) })));
     await assertFails(setDoc(progress, validProgress({ session: validSession({ intentionTitle: "x".repeat(161) }) })));
+    const ids = ["11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222", "33333333-3333-4333-8333-333333333333", "44444444-4444-4444-8444-444444444444"];
+    await assertSucceeds(setDoc(progress, validProgress({ session: validSession({ intentionIds: ids, intentionTitles: ["A", "B", "C", "D"] }) })));
+    await assertSucceeds(setDoc(progress, validProgress({ session: validSession({ intentionIds: [], intentionTitles: [] }) })));
+    await assertFails(setDoc(progress, validProgress({ session: validSession({ intentionIds: [...ids, ids[0]] }) })));
+    await assertFails(setDoc(progress, validProgress({ session: validSession({ intentionIds: ["nope"] }) })));
+    await assertFails(setDoc(progress, validProgress({ session: validSession({ intentionIds: "11111111-1111-4111-8111-111111111111" }) })));
+    await assertFails(setDoc(progress, validProgress({ session: validSession({ intentionTitles: ["x".repeat(161)] }) })));
+    await assertFails(setDoc(progress, validProgress({ session: validSession({ intentionTitles: ["A", 2] }) })));
     await assertFails(setDoc(progress, validProgress({ session: validSession({ extra: 1 }) })));
     await assertFails(setDoc(progress, validProgress({ updatedAt: farFuture })));
     await assertFails(setDoc(progress, withoutKey(validProgress(), "sessionChangedAt")));
