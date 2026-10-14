@@ -1142,7 +1142,7 @@ struct HomeView: View {
                 }
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                    Text(mystery.scriptureExcerpt.primary(for: settings.language))
+                    Text(MysteryScripture.display(for: mystery, translation: settings.rosaryConfig.translation, language: settings.language))
                         .font(AppTheme.TypeRole.body)
                         .lineSpacing(5)
                         .foregroundStyle(palette.ink)
@@ -1180,7 +1180,7 @@ struct HomeView: View {
 
     private func mysteryDetailSheetHeight(for mystery: Mystery) -> CGFloat {
         let title = mystery.title.primary(for: settings.language)
-        let excerpt = mystery.scriptureExcerpt.primary(for: settings.language)
+        let excerpt = MysteryScripture.display(for: mystery, translation: settings.rosaryConfig.translation, language: settings.language)
         let titleLines = title.count > 28 ? 2 : 1
         let excerptLines = CGFloat(max(3, Int(ceil(Double(excerpt.count) / 42.0))))
         let estimated = 240 + CGFloat(titleLines * 40) + excerptLines * 25 + AppTheme.Component.pillHeight

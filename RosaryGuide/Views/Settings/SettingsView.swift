@@ -1024,9 +1024,6 @@ private struct SettingsNotificationsScreen: View {
             guard phase == .active else { return }
             Task { status = await NotificationService.authorizationStatus() }
         }
-        .onChange(of: settings.notificationPlan) { _, plan in
-            Task { await NotificationService.reschedule(plan) }
-        }
     }
 
     /// Turning a toggle on asks for notification permission first; if it's refused,
@@ -1154,6 +1151,7 @@ private struct SettingsTimeRow: View {
 /// Changes also apply live to a Rosary in progress (see `RosarySequenceBuilder.remap`).
 private struct SettingsRosaryScreen: View {
     @Environment(SettingsStore.self) private var settings
+    @State private var confirmReset = false
 
     var body: some View {
         @Bindable var settings = settings
@@ -1183,7 +1181,20 @@ private struct SettingsRosaryScreen: View {
                     SettingsToggleRow(title: "Hail, holy Queen", isOn: $settings.rosaryConfig.closingPrayers)
                     SettingsToggleRow(title: "Memorare", isOn: $settings.rosaryConfig.memorare)
                 }
+
+                Button { confirmReset = true } label: {
+                    GuideTextButtonLabel(title: "Reset to default")
+                }
+                .buttonStyle(.plain)
+                .padding(.top, AppTheme.Space.xl)
             }
+        }
+        .alert("Reset to default?", isPresented: $confirmReset) {
+            Button("Reset", role: .destructive) {
+                // Same store as the toggles, so an open Rosary remaps live.
+                settings.rosaryConfig = .default
+            }
+            Button("Cancel", role: .cancel) {}
         }
     }
 

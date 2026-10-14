@@ -67,6 +67,11 @@ struct RosaryGuideApp: App {
             .onChange(of: settings.appearance, initial: true) { _, appearance in
                 AppearanceWindowStyle.apply(appearance)
             }
+            // Reschedule on any reminder/feast-alert change, from any screen or sync,
+            // not only while the Notifications page is open.
+            .onChange(of: settings.notificationPlan) { _, plan in
+                Task { await NotificationService.reschedule(plan) }
+            }
             .onOpenURL { url in
                 _ = auth.handleOpenURL(url)
             }

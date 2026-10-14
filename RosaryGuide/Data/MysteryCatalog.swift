@@ -137,6 +137,14 @@ enum MysteryScripture {
         }
     }
 
+    /// Excerpt for display outside the prayer flow (Home, Learn), following the
+    /// Bible translation setting live. RSV-2CE keeps the prayer-language choice.
+    static func display(for mystery: Mystery, translation: BibleTranslation, language: PrayerLanguage) -> String {
+        translation == .rsv2ce
+            ? mystery.scriptureExcerpt.primary(for: language)
+            : excerpt(for: mystery, translation: translation)
+    }
+
     static let douayRheims: [String: String] = [
         "joyful-1": "And in the sixth month, the angel Gabriel was sent from God into a city of Galilee, called Nazareth, to a virgin espoused to a man whose name was Joseph, of the house of David; and the virgin’s name was Mary.",
         "joyful-2": "And it came to pass, that when Elizabeth heard the salutation of Mary, the infant leaped in her womb. And Elizabeth was filled with the Holy Ghost: and she cried out with a loud voice, and said: Blessed art thou among women, and blessed is the fruit of thy womb.",

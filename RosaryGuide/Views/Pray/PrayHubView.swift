@@ -687,7 +687,7 @@ private struct LearnMysteryDetailView: View {
 
             if isExpanded {
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                    Text(mystery.scriptureExcerpt.primary(for: settings.language))
+                    Text(MysteryScripture.display(for: mystery, translation: settings.rosaryConfig.translation, language: settings.language))
                         .font(AppTheme.TypeRole.themeSummary)
                         .foregroundStyle(palette.dim)
                         .lineSpacing(5)
