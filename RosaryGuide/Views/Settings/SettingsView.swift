@@ -191,7 +191,7 @@ struct SettingsView: View {
 
                     SettingsSection(title: "Help & support") {
                         SettingsNavigationRow(title: "Frequently asked questions", icon: "questionmark.circle", destination: .faqs)
-                        SettingsActionRow(title: "Report a problem", icon: "exclamationmark.bubble") {
+                        SettingsActionRow(title: "Report a problem", icon: "exclamationmark.bubble", accessory: .externalLink) {
                             showReportChoice = true
                         }
                         SettingsActionRow(title: "Suggest a feature", icon: "lightbulb", accessory: .externalLink) {
@@ -704,8 +704,14 @@ private struct SettingsRowChrome: View {
             switch accessory {
             case .none:
                 EmptyView()
-            case .chevron, .externalLink:
+            case .chevron:
                 EmptyView()
+            case .externalLink:
+                // Row leaves the app: link-out arrow, styled like the navigation chevron.
+                Image(systemName: "arrow.up.right")
+                    .guideSymbol(size: 12, weight: .regular)
+                    .foregroundStyle(palette.secondaryText)
+                    .accessibilityHidden(true)
             case .navigation:
                 // Same chevron as the Learn tab rows.
                 Image(systemName: "chevron.right")
