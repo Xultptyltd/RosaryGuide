@@ -515,6 +515,8 @@ private struct LearnPrayerDetailView: View {
     /// Page-local language; starts from the prayer language setting, never writes it.
     @State private var language: PrayerLanguage?
 
+    @State private var openAbout: String?
+
     private var shown: PrayerLanguage { language ?? settings.language }
 
     var body: some View {
@@ -628,30 +630,85 @@ private struct LearnPrayerDetailView: View {
                 .font(AppTheme.TypeRole.headline)
                 .foregroundStyle(palette.ink)
                 .accessibilityAddTraits(.isHeader)
-            Text(about)
-                .font(AppTheme.TypeRole.themeSummary)
-                .lineSpacing(5)
-                .foregroundStyle(palette.ink)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(AppTheme.Space.lg)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .guideCard(fill: palette.surface)
+            // Same row group and accordion style as Common questions on Learn.
+            VStack(spacing: 0) {
+                aboutAccordion("History of the prayer", text: history)
+                Hairline()
+                aboutAccordion("Why we pray it", text: why)
+            }
+            .padding(.horizontal, AppTheme.Space.lg)
+            .guideRowGroup()
         }
     }
 
-    private var about: String {
+    private func aboutAccordion(_ title: String, text: String) -> some View {
+        let isOpen = openAbout == title
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                openAbout = isOpen ? nil : title
+            } label: {
+                HStack(alignment: .center, spacing: AppTheme.Space.md) {
+                    Text(title)
+                        .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                        .foregroundStyle(palette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: AppTheme.Space.sm)
+                    Image(systemName: "chevron.down")
+                        .font(AppTheme.TypeRole.caption(weight: .semibold))
+                        .foregroundStyle(palette.faint)
+                        .rotationEffect(.degrees(isOpen ? 180 : 0))
+                }
+                .padding(.vertical, AppTheme.Space.lg)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(title)
+            .accessibilityValue(isOpen ? "Expanded" : "Collapsed")
+
+            if isOpen {
+                Text(text)
+                    .font(AppTheme.TypeRole.callout)
+                    .lineSpacing(5)
+                    .foregroundStyle(palette.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.trailing, AppTheme.Space.sm)
+                    .padding(.bottom, AppTheme.Space.xl)
+                    .transition(MotionTokens.accordionTransition)
+            }
+        }
+        .guideAccordion(isExpanded: isOpen)
+    }
+
+    private var history: String {
         switch prayer.id {
-        case "sign-of-the-cross": "Tracing the cross on oneself is among the oldest Christian practices. Around AD 200 Tertullian wrote that believers marked their foreheads with the sign throughout daily life. The larger gesture with its Trinitarian words grew from this, echoing Christ's command to baptise in the name of the Father, Son and Holy Spirit (Matthew 28:19). We begin and end the Rosary with it, placing the whole prayer under the Cross."
-        case "apostles-creed": "The Apostles' Creed grew from the early baptismal creed of the Church in Rome, often called the Old Roman Symbol, and reached its present form by about the eighth century. Tradition links its twelve articles to the Apostles, though they did not write it directly. Said on the crucifix at the start of the Rosary, it professes the faith whose mysteries the decades unfold."
-        case "our-father": "The Lord's Prayer was given by Jesus himself when his disciples asked him to teach them to pray (Matthew 6:9–13; Luke 11:2–4). The Church has prayed it daily since the first centuries. It opens each decade of the Rosary, so every set of Hail Marys begins as Christ taught, with praise of the Father and trust in his care."
-        case "hail-mary": "The first half comes from Scripture: the Angel Gabriel's greeting (Luke 1:28) and Elizabeth's blessing (Luke 1:42). The name of Jesus was added in the Middle Ages, and the closing petition, \"Holy Mary, Mother of God\", was settled by the 16th century, appearing in the Roman Breviary of 1568. Prayed ten times in each decade, it carries our meditation on each mystery."
-        case "glory-be": "The Glory be is a doxology, a short hymn of praise to the Holy Trinity, rooted in the prayer of the early Church. Its second half, \"as it was in the beginning\", was added in the West around the fourth century as a profession of faith in the eternal Trinity. It closes each decade, returning all our meditation to the praise of God."
-        case "fatima": "According to Sister Lúcia's account, Our Lady taught this prayer to the three shepherd children at Fatima on 13 July 1917, asking that it be said after each decade of the Rosary. The Church approved the Fatima apparitions in 1930, and the prayer spread widely in the decades that followed. It asks mercy for sinners and the salvation of all souls."
-        case "hail-holy-queen": "The Salve Regina is one of the Church's great Marian antiphons, traditionally attributed to Hermann of Reichenau, an 11th-century Benedictine monk. It was long sung at the close of the day in monasteries, especially by the Cistercians and Dominicans. Prayed after the last decade, it turns from meditation to heartfelt petition, entrusting ourselves to Mary as our advocate."
-        case "concluding": "This prayer is the collect from the Roman Missal's Mass of Our Lady of the Rosary, kept on 7 October. It gathers the whole Rosary into one petition: that by meditating on these mysteries we may imitate what they contain and obtain what they promise. It closes the Rosary through Christ our Lord, to whom every mystery points."
-        case "sacrament-most-holy": "This short act of praise to Jesus in the Eucharist has no certain author or date. It became widely known through Eucharistic devotion, and many people add it after the Fatima prayer at the end of each decade. Though not part of the traditional Rosary, it is a simple way to join our meditation to adoration of Christ truly present in the Blessed Sacrament."
-        case "memorare": "The Memorare is often linked to Saint Bernard of Clairvaux, whose writings share its trust in Mary, but the text itself dates from the 15th century. It was popularised in the 17th century by Fr Claude Bernard, a Paris priest known as the Poor Priest, who shared it with prisoners and the sick. Said after the Rosary, it is a confident plea for Mary's intercession."
-        case "saint-michael": "Pope Leo XIII composed this prayer in 1886 and directed that it be said after Low Mass throughout the Church, a practice kept until the 1960s. It draws on Scripture's picture of Michael as protector of God's people (Daniel 12:1; Revelation 12:7–9). Many add it after the Rosary, asking for strength and protection against evil."
+        case "sign-of-the-cross": "Tracing the cross on oneself is among the oldest Christian practices. Around AD 200 Tertullian wrote that believers marked their foreheads with the sign throughout daily life. The larger gesture with its Trinitarian words grew from this, echoing Christ's command to baptise in the name of the Father, Son and Holy Spirit (Matthew 28:19)."
+        case "apostles-creed": "The Apostles' Creed grew from the early baptismal creed of the Church in Rome, often called the Old Roman Symbol, and reached its present form by about the eighth century. Tradition links its twelve articles to the Apostles, though they did not write it directly."
+        case "our-father": "The Lord's Prayer was given by Jesus himself when his disciples asked him to teach them to pray (Matthew 6:9–13; Luke 11:2–4). The Church has prayed it daily since the first centuries."
+        case "hail-mary": "The first half comes from Scripture: the Angel Gabriel's greeting (Luke 1:28) and Elizabeth's blessing (Luke 1:42). The name of Jesus was added in the Middle Ages, and the closing petition, \"Holy Mary, Mother of God\", was settled by the 16th century, appearing in the Roman Breviary of 1568."
+        case "glory-be": "The Glory be is a doxology, a short hymn of praise to the Holy Trinity, rooted in the prayer of the early Church. Its second half, \"as it was in the beginning\", was added in the West around the fourth century as a profession of faith in the eternal Trinity."
+        case "fatima": "According to Sister Lúcia's account, Our Lady taught this prayer to the three shepherd children at Fatima on 13 July 1917, asking that it be said after each decade of the Rosary. The Church approved the Fatima apparitions in 1930, and the prayer spread widely in the decades that followed."
+        case "hail-holy-queen": "The Salve Regina is one of the Church's great Marian antiphons, traditionally attributed to Hermann of Reichenau, an 11th-century Benedictine monk. It was long sung at the close of the day in monasteries, especially by the Cistercians and Dominicans."
+        case "concluding": "This prayer is the collect from the Roman Missal's Mass of Our Lady of the Rosary, kept on 7 October."
+        case "sacrament-most-holy": "This short act of praise to Jesus in the Eucharist has no certain author or date. It became widely known through Eucharistic devotion, and many people add it after the Fatima prayer at the end of each decade."
+        case "memorare": "The Memorare is often linked to Saint Bernard of Clairvaux, whose writings share its trust in Mary, but the text itself dates from the 15th century. It was popularised in the 17th century by Fr Claude Bernard, a Paris priest known as the Poor Priest, who shared it with prisoners and the sick."
+        case "saint-michael": "Pope Leo XIII composed this prayer in 1886 and directed that it be said after Low Mass throughout the Church, a practice kept until the 1960s. It draws on Scripture's picture of Michael as protector of God's people (Daniel 12:1; Revelation 12:7–9)."
+        default: ""
+        }
+    }
+
+    private var why: String {
+        switch prayer.id {
+        case "sign-of-the-cross": "We begin and end the Rosary with the Sign of the Cross, placing the whole prayer under the Cross of Christ. In one gesture we profess faith in the Holy Trinity and recall our baptism. It reminds us that every mystery we pray flows from Christ's saving love."
+        case "apostles-creed": "Said on the crucifix at the start of the Rosary, the Creed professes the faith whose mysteries the decades unfold. Before we meditate, we stand with the whole Church and declare what we believe. It grounds our prayer in the truth God has revealed."
+        case "our-father": "It opens each decade, so every set of Hail Marys begins as Christ taught, with praise of the Father and trust in his care. Praying it, we place ourselves as children before God. It reminds us that the Rosary is always prayer to God, with Mary at our side."
+        case "hail-mary": "Prayed ten times in each decade, it carries our meditation on each mystery. As the words repeat, our hearts can rest on Jesus at the centre of the prayer. We ask Mary, who knew her Son most closely, to pray for us now and at the hour of our death."
+        case "glory-be": "It closes each decade, returning all our meditation to the praise of God. Each mystery ends where all prayer is meant to end, in worship of the Father, Son and Holy Spirit. It keeps the Rosary centred on God's glory rather than on ourselves."
+        case "fatima": "Said after each Glory be, it asks mercy for sinners and the salvation of all souls. It widens our prayer beyond ourselves to the whole world. In praying it, we answer Our Lady's call to prayer and penance for those most in need of God's mercy."
+        case "hail-holy-queen": "Prayed after the last decade, it turns from meditation to heartfelt petition. We entrust ourselves to Mary as our advocate and mother in this valley of tears. It gathers our prayer and places it in her hands, asking that we be made worthy of the promises of Christ."
+        case "concluding": "It closes the Rosary, gathering the whole prayer into one petition: that by meditating on these mysteries we may imitate what they contain and obtain what they promise. It turns meditation into a resolve to live the Gospel. We ask this through Christ our Lord, to whom every mystery points."
+        case "sacrament-most-holy": "Though not part of the traditional Rosary, it is a simple way to join our meditation to adoration of Christ truly present in the Blessed Sacrament. It reminds us that the Jesus we contemplate in each mystery is with us still in the Eucharist."
+        case "memorare": "Said after the Rosary, it is a confident plea for Mary's intercession. It recalls that no one who has turned to her has ever been left unaided. We bring her our needs with the trust of children coming to their mother."
+        case "saint-michael": "Many add it after the Rosary, asking for strength and protection against evil. It reminds us that the spiritual life is a real struggle and that God sends us help. We ask Saint Michael to defend us so that we may persevere in faith."
         default: ""
         }
     }
