@@ -24,7 +24,7 @@ struct RosaryWalkthroughView: View {
                         if page == 0 {
                             heroCard("WalkthroughRosaryIntro", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top, popsOut: false, fillsCard: true)
                         } else if page == 1 {
-                            heroCard("WalkthroughRosaryStructure", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top)
+                            heroCard("WalkthroughRosaryStructure", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top, popsOut: false, fillsCard: true)
                         } else if page == 2 {
                             heroCard("WalkthroughRosaryDecade", height: activeHeroHeight + geometry.safeAreaInsets.top, topInset: geometry.safeAreaInsets.top, popsOut: false)
                         } else {
