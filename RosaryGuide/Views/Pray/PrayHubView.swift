@@ -317,7 +317,7 @@ struct PrayHubView: View {
         case "our-father": "Prayed on each large bead."
         case "hail-mary": "Prayed on the small beads."
         case "glory-be": "Prayed after each decade."
-        case "fatima": "After each Glory be"
+        case "fatima": "End of each decade"
         case "hail-holy-queen": "Prayed near the close."
         case "concluding": "The last prayer of the Rosary."
         case "sacrament-most-holy": "End of each decade"
