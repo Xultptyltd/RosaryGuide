@@ -161,8 +161,8 @@ struct FeastsView: View {
                             if index > 0 { GuideSectionBoundary() }
                             agendaSection(section)
                             // Selected-day block between the calendar divider and the next section boundary.
-                            if index == 0, calendar.isDateInToday(selectedDay),
-                               let primary = section.items.first, calendar.isDateInToday(primary.date) {
+                            if index == 0, let primary = section.items.first,
+                               calendar.isDate(primary.date, inSameDayAs: selectedDay) {
                                 feastActionRow(for: primary)
                                     .padding(.top, AppTheme.Space.lg)
                             }
