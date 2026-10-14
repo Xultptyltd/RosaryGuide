@@ -548,3 +548,25 @@ enum BeadLocus: Hashable, Codable {
     case decadeFatima(Int)
     case closing
 }
+
+/// Counts that open a sentence read as words: "Two Rosaries offered this week".
+enum CountWords {
+    private static let formatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en")
+        formatter.numberStyle = .spellOut
+        return formatter
+    }()
+
+    /// Capitalised English word for 0...20; digits above that.
+    static func sentenceStart(_ count: Int) -> String {
+        guard (0...20).contains(count),
+              let word = formatter.string(from: NSNumber(value: count)) else { return "\(count)" }
+        return word.prefix(1).uppercased() + word.dropFirst()
+    }
+
+    /// Prayer rhythm card second line.
+    static func rosariesOfferedThisWeek(_ count: Int) -> String {
+        "\(sentenceStart(count)) \(count == 1 ? "Rosary" : "Rosaries") offered this week"
+    }
+}

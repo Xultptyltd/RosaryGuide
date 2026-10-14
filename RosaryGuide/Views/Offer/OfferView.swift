@@ -617,8 +617,7 @@ private struct MyPrayerJourneySummaryCard: View {
     }
 
     private var rosaryCaption: String {
-        let noun = rosariesThisWeek == 1 ? "Rosary" : "Rosaries"
-        return "\(rosariesThisWeek) \(noun) offered this week"
+        CountWords.rosariesOfferedThisWeek(rosariesThisWeek)
     }
 
     var body: some View {

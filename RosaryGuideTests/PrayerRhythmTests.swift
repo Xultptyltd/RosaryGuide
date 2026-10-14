@@ -422,4 +422,15 @@ final class MilestonePersistenceTests: XCTestCase {
         XCTAssertEqual(OfferedIntentions.summary(["A", "B"]), "A and B")
         XCTAssertEqual(OfferedIntentions.summary(["A", "B", "C"]), "A, B and C")
     }
+
+    // MARK: - Rosary count caption
+
+    func testRosaryCaptionSpellsCountAtSentenceStart() {
+        XCTAssertEqual(CountWords.rosariesOfferedThisWeek(1), "One Rosary offered this week")
+        XCTAssertEqual(CountWords.rosariesOfferedThisWeek(2), "Two Rosaries offered this week")
+        XCTAssertEqual(CountWords.rosariesOfferedThisWeek(7), "Seven Rosaries offered this week")
+        XCTAssertEqual(CountWords.rosariesOfferedThisWeek(0), "Zero Rosaries offered this week")
+        XCTAssertEqual(CountWords.rosariesOfferedThisWeek(20), "Twenty Rosaries offered this week")
+        XCTAssertEqual(CountWords.rosariesOfferedThisWeek(21), "21 Rosaries offered this week")
+    }
 }
