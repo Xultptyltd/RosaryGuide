@@ -21,6 +21,8 @@ struct HomeView: View {
     @State private var selectedSet: MysterySetKind?
     @State private var showIntentionSheet = false
     @State private var chosenIntentionId: UUID?
+    /// Pinned intention filled in automatically on appear (not a user choice).
+    @State private var autoPinnedIntentionId: UUID?
     @State private var chosenIntentionTitle = ""
     @State private var chosenIntentionNote = ""
     @State private var intentionSelectionExplicit = false
@@ -47,6 +49,13 @@ struct HomeView: View {
     }
     private var currentSet: MysterySetKind { selectedSet ?? assignment.set }
     private var mysteries: [Mystery] { MysteryCatalog.mysteries(for: currentSet) }
+    /// Only an intention the user picked here pre-selects on the intention step.
+    /// The auto-shown pinned intention does not; a new Rosary starts with none.
+    private var explicitLaunchIntentionId: UUID? {
+        guard let chosenIntentionId, chosenIntentionId != autoPinnedIntentionId else { return nil }
+        return chosenIntentionId
+    }
+
     private var currentIntention: OfferIntention? {
         if let chosenIntentionId {
             return offer.intention(id: chosenIntentionId)
@@ -144,6 +153,10 @@ struct HomeView: View {
         }
         .onChange(of: chosenIntentionId) { _, _ in
             intentionSelectionExplicit = true
+        }
+        .onChange(of: showIntentionSheet) { _, showing in
+            // Any choice made in the sheet counts as the user's, even the pinned one.
+            if showing { autoPinnedIntentionId = nil }
         }
         .sheet(isPresented: $showIntentionSheet) {
             PrayIntentionSheet(
@@ -402,6 +415,7 @@ struct HomeView: View {
         guard chosenIntentionId == nil, chosenIntentionTitle.isEmpty else { return }
         guard let pinned = offer.sortedIntentions.first(where: \.isPinned) else { return }
         chosenIntentionId = pinned.id
+        autoPinnedIntentionId = pinned.id
         chosenIntentionTitle = pinned.title
         chosenIntentionNote = pinned.note ?? ""
         intentionSelectionExplicit = false
@@ -412,7 +426,7 @@ struct HomeView: View {
             if let resumable = matchingResumableSession {
                 prayLaunch = .resume(resumable)
             } else {
-                prayLaunch = .fresh(currentSet, intentionId: chosenIntentionId ?? currentIntention?.id)
+                prayLaunch = .fresh(currentSet, intentionId: explicitLaunchIntentionId)
             }
         }
     }
@@ -1153,7 +1167,7 @@ struct HomeView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             PillButton(title: "Pray this decade", filled: false) {
-                pendingMysteryPrayer = .fresh(mystery.set, intentionId: chosenIntentionId ?? currentIntention?.id,
+                pendingMysteryPrayer = .fresh(mystery.set, intentionId: explicitLaunchIntentionId,
                                              startingDecade: mystery.number)
                 selectedMysteryDetail = nil
             }

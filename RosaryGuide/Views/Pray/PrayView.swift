@@ -889,7 +889,7 @@ struct PrayView: View {
                             .font(AppTheme.TypeRole.modalTitle)
                             .foregroundStyle(palette.ink)
                             .tracking(-0.2)
-                        Text("Choose up to \(PrayerSession.maxIntentions)")
+                        Text("Choose up to \(PrayerSession.maxIntentions), or continue without one")
                             .font(AppTheme.TypeRole.bodySmall)
                             .foregroundStyle(palette.dim)
                             .fixedSize(horizontal: false, vertical: true)
