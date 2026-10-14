@@ -134,6 +134,8 @@ struct SettingsView: View {
                             }
                         }
 
+                        SettingsNavigationRow(title: "Customise your Rosary", icon: "circle.dotted", destination: .rosary)
+
                         SettingsMenuRow(title: "Color theme", icon: "circle.lefthalf.filled", value: settings.appearance.title) {
                             Picker("Color theme", selection: $settings.appearance) {
                                 ForEach(AppearancePreference.allCases) { option in
@@ -149,11 +151,6 @@ struct SettingsView: View {
                         }
                     }
 
-                    GuideSectionBoundary()
-
-                    SettingsSection(title: "Rosary") {
-                        SettingsNavigationRow(title: "Rosary settings", icon: "circle.dotted", destination: .rosary)
-                    }
 
                     GuideSectionBoundary()
 
@@ -1157,7 +1154,7 @@ private struct SettingsRosaryScreen: View {
 
     var body: some View {
         @Bindable var settings = settings
-        SettingsDetailScaffold(title: "Rosary settings") {
+        SettingsDetailScaffold(title: "Customise your Rosary") {
             VStack(alignment: .leading, spacing: 0) {
                 DividedRows {
                     SettingsToggleRow(title: "Choose intentions", isOn: $settings.rosaryConfig.intentionsStep)
