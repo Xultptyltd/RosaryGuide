@@ -212,9 +212,13 @@ struct RosaryWalkthroughView: View {
             .frame(maxWidth: .infinity)
             .frame(height: mysteryImageHeight + AppTheme.Space.xxl + AppTheme.Space.lg)
             .clipped()
+            // Blend the artwork's plain backdrop into the card surface so tiles read as cards.
+            .blendMode(isDark ? .screen : .multiply)
+            .background(palette.surface)
+            .compositingGroup()
             .overlay(alignment: .bottom) {
-                // Same artwork-to-page fade as the hero art on the other walkthrough screens.
-                LinearGradient(colors: [.clear, palette.prayBg], startPoint: .top, endPoint: .bottom)
+                // Same fade as the other walkthrough art, ending in the tile surface.
+                LinearGradient(colors: [.clear, palette.surface], startPoint: .top, endPoint: .bottom)
                     .frame(height: min(GuideWalkthroughLayout.fadeHeight, mysteryImageHeight + AppTheme.Space.xxl + AppTheme.Space.lg))
             }
             .overlay(alignment: .bottomLeading) {
