@@ -160,6 +160,12 @@ struct FeastsView: View {
                         ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
                             if index > 0 { GuideSectionBoundary() }
                             agendaSection(section)
+                            // Selected-day block between the calendar divider and the next section boundary.
+                            if index == 0, calendar.isDateInToday(selectedDay),
+                               let primary = section.items.first, calendar.isDateInToday(primary.date) {
+                                feastActionRow(for: primary)
+                                    .padding(.top, AppTheme.Space.lg)
+                            }
                         }
                     }
                 }
@@ -360,12 +366,6 @@ struct FeastsView: View {
                     .buttonStyle(.plain)
                     if index < section.items.count - 1 { Hairline().padding(.leading, 76) }
                 }
-            }
-            if section.title == "Today" || section.title == "Next",
-               let primary = section.items.first,
-               calendar.isDateInToday(primary.date) {
-                feastActionRow(for: primary)
-                    .padding(.top, AppTheme.Space.sm)
             }
         }
     }
