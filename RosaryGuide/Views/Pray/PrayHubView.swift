@@ -130,6 +130,7 @@ struct PrayHubView: View {
             VStack(spacing: 0) {
                 ForEach(Array(prayers.enumerated()), id: \.element.id) { index, prayer in
                     prayerNavRow(prayer: prayer)
+                        .learnLastRowTrim(index == prayers.count - 1)
 
                     if index < prayers.count - 1 {
                         Hairline()
@@ -155,6 +156,7 @@ struct PrayHubView: View {
             VStack(spacing: 0) {
                 ForEach(Array(prayers.enumerated()), id: \.element.id) { index, prayer in
                     prayerNavRow(prayer: prayer)
+                        .learnLastRowTrim(index == prayers.count - 1)
 
                     if index < prayers.count - 1 {
                         Hairline()
@@ -251,6 +253,7 @@ struct PrayHubView: View {
                         learnRow(row)
                     }
                     .buttonStyle(.plain)
+                    .learnLastRowTrim(index == rows.count - 1)
 
                     if index < rows.count - 1 {
                         Hairline().padding(.leading, 44 + AppTheme.Space.md)
@@ -386,6 +389,14 @@ struct PrayHubView: View {
         }
         .padding(.vertical, AppTheme.Space.lg)
         .contentShape(Rectangle())
+    }
+}
+
+private extension View {
+    /// Last row of a flat Learn list: trims its bottom padding so the row-to-divider gap
+    /// matches Settings' last nav row (~33pt text to divider band).
+    func learnLastRowTrim(_ isLast: Bool) -> some View {
+        padding(.bottom, isLast ? -AppTheme.Space.md : 0)
     }
 }
 
