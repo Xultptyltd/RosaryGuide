@@ -741,11 +741,14 @@ private struct AppIconChoices: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-            Text("App icon")
-                .font(AppTheme.TypeRole.settingsRow)
-                .foregroundStyle(palette.ink)
-                .lineLimit(1)
-                .accessibilityAddTraits(.isHeader)
+            HStack(spacing: AppTheme.Space.lg) {
+                SettingsRowIcon(symbol: "app", tint: palette.ink)
+                Text("App icon")
+                    .font(AppTheme.TypeRole.settingsRow)
+                    .foregroundStyle(palette.ink)
+                    .lineLimit(1)
+            }
+            .accessibilityAddTraits(.isHeader)
 
             // Icon choices sit in the standard flat card.
             HStack(spacing: tileSpacing) {
@@ -758,7 +761,11 @@ private struct AppIconChoices: View {
             .guideCard()
         }
         .padding(.vertical, AppTheme.Space.lg)
-        .padding(.bottom, showsRowDivider ? 0 : -AppTheme.Space.lg)
+        // As the last row, trim so the card sits Space.lg above the section band.
+        // Measured untrimmed card-to-band gap was ~52pt (row padding, boundary padding
+        // and the boundary's empty frame); lg + md + sm takes it to ~16. The trim lives
+        // in a child view so it reads `showsRowDivider` after DividedRows sets it.
+        .modifier(SettingsLastRowBottomTrim(amount: AppTheme.Space.lg + AppTheme.Space.md + AppTheme.Space.sm))
         .overlay(alignment: .bottom) { SettingsDivider() }
         .onAppear { appIcon.refreshFromSystem() }
         .accessibilityElement(children: .contain)
@@ -1081,6 +1088,20 @@ private struct SettingsToggleRow: View {
 /// modifiers in its own body chain still read the default (true). It must be read by a child
 /// view inside a container (like `SettingsRowChrome` inside a NavigationLink label).
 /// Checked with sizeThatFits: row-struct env 112pt vs child-in-ZStack 96pt for two 56pt rows.
+private struct SettingsLastRowBottomTrim: ViewModifier {
+    let amount: CGFloat
+    func body(content: Content) -> some View {
+        ZStack { SettingsLastRowBottomTrimBody(amount: amount) { content } }
+    }
+}
+
+private struct SettingsLastRowBottomTrimBody<Inner: View>: View {
+    @Environment(\.showsRowDivider) private var showsRowDivider
+    let amount: CGFloat
+    @ViewBuilder var inner: Inner
+    var body: some View { inner.padding(.bottom, showsRowDivider ? 0 : -amount) }
+}
+
 private struct SettingsLastRowTrim<Content: View>: View {
     @Environment(\.showsRowDivider) private var showsRowDivider
     @ViewBuilder var content: Content
