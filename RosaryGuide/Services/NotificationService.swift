@@ -76,8 +76,8 @@ enum NotificationService {
     // MARK: - Daily reminder
 
     /// One repeating trigger per weekday so reminders keep coming even if the app
-    /// isn't opened. Mon–Sat mysteries are fixed by weekday; Sunday depends on the
-    /// season, so its copy is refreshed whenever the app becomes active.
+    /// isn't opened. Mon–Sat mysteries are fixed by weekday. Sunday's depend on the
+    /// season, and a repeating trigger can't know it, so Sunday's copy names no set.
     private static func dailyRequests(minutes: Int, now: Date) -> [UNNotificationRequest] {
         let calendar = Calendar.current
         let hour = max(0, min(23, minutes / 60))
@@ -88,11 +88,9 @@ enum NotificationService {
             // Next date (today included) that falls on this weekday, for the mystery set.
             let offset = (weekday - calendar.component(.weekday, from: today) + 7) % 7
             guard let day = calendar.date(byAdding: .day, value: offset, to: today) else { return nil }
-            let set = MysteryCalendar.assignment(on: day).set
-
             let content = UNMutableNotificationContent()
             content.title = "Time to pray"
-            content.body = "Today: the \(set.shortName) Mysteries. Take a few quiet minutes for the Rosary."
+            content.body = dailyBody(weekday: weekday, day: day)
             content.sound = .default
             content.threadIdentifier = "rosary.daily"
 
@@ -103,6 +101,12 @@ enum NotificationService {
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
             return UNNotificationRequest(identifier: "\(dailyPrefix)\(weekday)", content: content, trigger: trigger)
         }
+    }
+
+    static func dailyBody(weekday: Int, day: Date) -> String {
+        guard weekday != 1 else { return "Take a few quiet minutes for the Rosary today." }
+        let set = MysteryCalendar.assignment(on: day).set
+        return "Today: the \(set.shortName) Mysteries. Take a few quiet minutes for the Rosary."
     }
 
     // MARK: - Feast days

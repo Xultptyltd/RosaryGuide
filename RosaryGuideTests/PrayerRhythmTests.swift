@@ -546,6 +546,18 @@ final class PapalIntentionTests: XCTestCase {
     }
 }
 
+/// A repeating Sunday reminder never names a seasonal mystery set.
+final class ReminderCopyTests: XCTestCase {
+    func testSundayCopyIsSeasonNeutral() {
+        let body = NotificationService.dailyBody(weekday: 1, day: Date())
+        for set in MysterySetKind.allCases {
+            XCTAssertFalse(body.contains(set.shortName))
+        }
+        let monday = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 19))!
+        XCTAssertTrue(NotificationService.dailyBody(weekday: 2, day: monday).contains("Joyful"))
+    }
+}
+
 /// Rosary settings follow the account with the other preferences.
 final class RosaryConfigSyncTests: XCTestCase {
     func testFirestoreRoundTrip() {

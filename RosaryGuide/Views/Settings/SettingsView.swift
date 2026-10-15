@@ -196,7 +196,7 @@ struct SettingsView: View {
                     GuideSectionBoundary()
 
                     SettingsSection(title: "About") {
-                        SettingsNavigationRow(title: "Widgets", icon: "square.grid.2x2", destination: .widgets)
+                        // Widgets row hidden until a widget extension ships.
                         SettingsActionRow(title: "Replay welcome", icon: "sparkles", accessory: .navigation) {
                             showOnboardingPreview = true
                         }
