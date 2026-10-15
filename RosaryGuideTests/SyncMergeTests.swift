@@ -100,3 +100,92 @@ final class IntentionMergeTests: XCTestCase {
         XCTAssertEqual(stamped[2].updatedAt, now)
     }
 }
+
+final class PreferencesMergeTests: XCTestCase {
+    private let t0 = Date(timeIntervalSince1970: 1_790_000_000)
+    private var now: Date { t0.addingTimeInterval(1_000) }
+
+    private func prefs(updatedAt offset: TimeInterval, fields: [SyncedPreferences.Field: TimeInterval] = [:],
+                       _ change: (inout SyncedPreferences) -> Void = { _ in }) -> SyncedPreferences {
+        var value = SyncedPreferences.defaults
+        value.updatedAt = t0.addingTimeInterval(offset)
+        value.fieldUpdatedAt = Dictionary(uniqueKeysWithValues: fields.map { ($0.key.rawValue, t0.addingTimeInterval($0.value)) })
+        if !fields.isEmpty {
+            // Current devices hold a time for every field; untouched ones are old.
+            for field in SyncedPreferences.Field.allCases where value.fieldUpdatedAt[field.rawValue] == nil {
+                value.fieldUpdatedAt[field.rawValue] = t0
+            }
+        }
+        change(&value)
+        return value
+    }
+
+    func testDifferentFieldsChangedOnTwoDevicesBothSurvive() {
+        let local = prefs(updatedAt: 20, fields: [.textSize: 20]) { $0.textSize = .large }
+        let remote = prefs(updatedAt: 30, fields: [.dailyReminderEnabled: 30]) { $0.dailyReminderEnabled = true }
+        let merged = SyncedPreferences.merge(local: local, remote: remote, now: now)
+        XCTAssertEqual(merged.textSize, .large)
+        XCTAssertTrue(merged.dailyReminderEnabled)
+        XCTAssertEqual(merged.updatedAt, t0.addingTimeInterval(30))
+        XCTAssertEqual(merged.changedAt(.textSize), t0.addingTimeInterval(20))
+    }
+
+    func testSameFieldNewerChangeWinsAndTiesGoToTheAccount() {
+        let local = prefs(updatedAt: 40, fields: [.appearance: 40]) { $0.appearance = .dark }
+        let remote = prefs(updatedAt: 30, fields: [.appearance: 30]) { $0.appearance = .light }
+        XCTAssertEqual(SyncedPreferences.merge(local: local, remote: remote, now: now).appearance, .dark)
+        let tie = prefs(updatedAt: 40, fields: [.appearance: 40]) { $0.appearance = .light }
+        XCTAssertEqual(SyncedPreferences.merge(local: local, remote: tie, now: now).appearance, .light)
+    }
+
+    func testDocumentsWithoutFieldTimesMergeAsBefore() {
+        let local = prefs(updatedAt: 10) { $0.textSize = .small; $0.appIcon = .white }
+        let remote = prefs(updatedAt: 20) { $0.textSize = .large }
+        let merged = SyncedPreferences.merge(local: local, remote: remote, now: now)
+        XCTAssertEqual(merged.textSize, .large)
+        XCTAssertEqual(merged.appIcon, .black, "The newer document wins every field it has no time for")
+        XCTAssertEqual(merged.changedAt(.appIcon), t0.addingTimeInterval(20))
+    }
+
+    func testOlderOfflineChangeLosesToNewerOneForThatFieldOnly() {
+        // Device A changed text size offline at 10; device B later changed it at 50 and the reminder at 50.
+        let local = prefs(updatedAt: 60, fields: [.textSize: 10, .appearance: 60]) { $0.textSize = .small; $0.appearance = .dark }
+        let remote = prefs(updatedAt: 50, fields: [.textSize: 50]) { $0.textSize = .large }
+        let merged = SyncedPreferences.merge(local: local, remote: remote, now: now)
+        XCTAssertEqual(merged.textSize, .large)
+        XCTAssertEqual(merged.appearance, .dark)
+    }
+
+    func testClockAheadCannotWinForEver() {
+        let local = prefs(updatedAt: 900, fields: [.textSize: 900]) { $0.textSize = .small }
+        let remote = prefs(updatedAt: 99_999, fields: [.textSize: 99_999]) { $0.textSize = .large }
+        // Both count as "now" or earlier; the local change at 900 is still older than now, so remote wins the tie-break only if not older.
+        XCTAssertEqual(SyncedPreferences.merge(local: local, remote: remote, now: now).textSize, .large)
+        let later = prefs(updatedAt: 1_000, fields: [.textSize: 1_000]) { $0.textSize = .small }
+        XCTAssertEqual(SyncedPreferences.merge(local: later, remote: remote, now: now).textSize, .large, "Ties at now go to the account")
+    }
+
+    func testMissingRosaryConfigKeepsTheOtherSide() {
+        var config = RosaryConfig.default
+        config.memorare.toggle()
+        let local = prefs(updatedAt: 10, fields: [.rosaryConfig: 10]) { $0.rosaryConfig = config }
+        let remote = prefs(updatedAt: 50)
+        XCTAssertEqual(SyncedPreferences.merge(local: local, remote: remote, now: now).rosaryConfig, config)
+    }
+
+    func testStoredShapeDropsWhatOldRulesReject() {
+        let value = prefs(updatedAt: 20, fields: [.textSize: 10]) { $0.rosaryConfig = .default }
+        XCTAssertFalse(value.stored(as: .full).fieldUpdatedAt.isEmpty)
+        XCTAssertTrue(value.stored(as: .withoutFieldTimes).fieldUpdatedAt.isEmpty)
+        XCTAssertNotNil(value.stored(as: .withoutFieldTimes).rosaryConfig)
+        XCTAssertNil(value.stored(as: .withoutRosaryConfig).rosaryConfig)
+    }
+
+    func testOldDeviceCopyDecodesWithoutFieldTimes() throws {
+        var old = try JSONSerialization.jsonObject(with: JSONEncoder().encode(prefs(updatedAt: 5))) as! [String: Any]
+        old["fieldUpdatedAt"] = nil
+        let decoded = try JSONDecoder().decode(SyncedPreferences.self, from: JSONSerialization.data(withJSONObject: old))
+        XCTAssertTrue(decoded.fieldUpdatedAt.isEmpty)
+        XCTAssertEqual(decoded.changedAt(.appIcon), t0.addingTimeInterval(5))
+    }
+}

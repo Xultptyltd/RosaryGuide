@@ -107,6 +107,42 @@ service cloud.firestore {
         && (!('openingIntentionLines' in config) || config.openingIntentionLines is bool);
     }
 
+    // Per-field change times for preferences. Optional, so documents and app versions from
+    // before it keep working; keys are the synced field names.
+    function optionalFieldTime(times, key) {
+      return !(key in times) || notFutureTimestamp(times[key]);
+    }
+
+    function validFieldTimes(times) {
+      return times is map
+        && times.keys().hasOnly([
+          'appearance',
+          'prayerLanguage',
+          'rosaryLanguage',
+          'textSize',
+          'includeSaintMichael',
+          'hideIntentionText',
+          'dailyReminderEnabled',
+          'dailyReminderMinutes',
+          'feastAlertsEnabled',
+          'feastAlertMinutes',
+          'appIcon',
+          'rosaryConfig'
+        ])
+        && optionalFieldTime(times, 'appearance')
+        && optionalFieldTime(times, 'prayerLanguage')
+        && optionalFieldTime(times, 'rosaryLanguage')
+        && optionalFieldTime(times, 'textSize')
+        && optionalFieldTime(times, 'includeSaintMichael')
+        && optionalFieldTime(times, 'hideIntentionText')
+        && optionalFieldTime(times, 'dailyReminderEnabled')
+        && optionalFieldTime(times, 'dailyReminderMinutes')
+        && optionalFieldTime(times, 'feastAlertsEnabled')
+        && optionalFieldTime(times, 'feastAlertMinutes')
+        && optionalFieldTime(times, 'appIcon')
+        && optionalFieldTime(times, 'rosaryConfig');
+    }
+
     function validPreferences() {
       let data = request.resource.data;
       let fields = [
@@ -125,9 +161,10 @@ service cloud.firestore {
         'updatedAt'
       ];
 
-      return data.keys().hasOnly(fields.concat(['rosaryConfig']))
+      return data.keys().hasOnly(fields.concat(['rosaryConfig', 'fieldUpdatedAt']))
         && data.keys().hasAll(fields)
         && (!('rosaryConfig' in data) || validRosaryConfig(data.rosaryConfig))
+        && (!('fieldUpdatedAt' in data) || validFieldTimes(data.fieldUpdatedAt))
         && data.schemaVersion == 1
         && data.appearance in ['system', 'light', 'dark']
         && prayerLanguage(data.prayerLanguage)

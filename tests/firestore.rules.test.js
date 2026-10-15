@@ -104,6 +104,9 @@ async function main() {
     await assertFails(getDoc(doc(anon, "users/alice/intentions", VALID_ID)));
     await assertSucceeds(setDoc(aliceDoc, validIntention()));
     await assertSucceeds(getDoc(aliceDoc));
+    // updatedAt may be the client's edit time (offline conflicts resolve by it).
+    await assertSucceeds(setDoc(aliceDoc, validIntention({ updatedAt: new Date("2026-10-01T00:00:00Z") })));
+    await assertFails(setDoc(aliceDoc, validIntention({ updatedAt: "yesterday" })));
     await assertSucceeds(getDocs(collection(alice, "users/alice/intentions")));
 
     await assertFails(getDoc(doc(bob, "users/alice/intentions", VALID_ID)));
@@ -146,6 +149,13 @@ async function main() {
     await assertFails(setDoc(prefs, validPreferences({ hideIntentionText: "yes" })));
     await assertFails(setDoc(prefs, validPreferences({ updatedAt: farFuture })));
     await assertFails(setDoc(prefs, validPreferences({ schemaVersion: 2 })));
+    // Per-field change times (optional)
+    await assertSucceeds(setDoc(prefs, validPreferences({ fieldUpdatedAt: { textSize: new Date(), rosaryConfig: new Date(0) } })));
+    await assertSucceeds(setDoc(prefs, validPreferences({ fieldUpdatedAt: {} })));
+    await assertFails(setDoc(prefs, validPreferences({ fieldUpdatedAt: { isAdmin: new Date() } })));
+    await assertFails(setDoc(prefs, validPreferences({ fieldUpdatedAt: { textSize: "today" } })));
+    await assertFails(setDoc(prefs, validPreferences({ fieldUpdatedAt: { textSize: farFuture } })));
+    await assertFails(setDoc(prefs, validPreferences({ fieldUpdatedAt: [new Date()] })));
     await assertFails(setDoc(doc(alice, "users/alice/meta/other"), validPreferences()));
     await assertFails(getDoc(doc(alice, "users/alice/meta/other")));
     await assertFails(getDocs(collection(alice, "users/alice/meta")));

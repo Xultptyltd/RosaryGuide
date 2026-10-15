@@ -38,6 +38,27 @@ struct SyncedPreferences: Codable, Equatable {
     /// Optional prayers and Bible translation. Nil in copies saved before this was synced,
     /// which then keep the device's own Rosary settings.
     var rosaryConfig: RosaryConfig? = nil
+    /// When each field was last changed, keyed by `Field` raw value. Current copies hold every
+    /// field; a field without an entry (copies saved before this existed) counts as changed at
+    /// `updatedAt`, so those merge as before.
+    var fieldUpdatedAt: [String: Date] = [:]
+
+    /// The fields merged one by one. Raw values match firestore.rules `validFieldTimes`.
+    enum Field: String, CaseIterable {
+        case appearance, prayerLanguage, rosaryLanguage, textSize, includeSaintMichael, hideIntentionText
+        case dailyReminderEnabled, dailyReminderMinutes, feastAlertsEnabled, feastAlertMinutes, appIcon
+        case rosaryConfig
+    }
+
+    /// How much of the document the deployed rules accept. Rules older than this build reject
+    /// unknown keys, so the app steps down after a permission error and keeps the rest syncing.
+    enum Schema: Int, Comparable {
+        case full = 0
+        case withoutFieldTimes = 1
+        case withoutRosaryConfig = 2
+
+        static func < (a: Schema, b: Schema) -> Bool { a.rawValue < b.rawValue }
+    }
 
     static let defaults = SyncedPreferences(
         appearance: .system,
@@ -59,7 +80,7 @@ struct SyncedPreferences: Codable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case appearance, prayerLanguage, rosaryLanguage, textSize, includeSaintMichael, hideIntentionText
         case dailyReminderEnabled, dailyReminderMinutes, feastAlertsEnabled, feastAlertMinutes, appIcon, updatedAt
-        case rosaryConfig
+        case rosaryConfig, fieldUpdatedAt
     }
 
     var normalized: SyncedPreferences {
@@ -67,12 +88,62 @@ struct SyncedPreferences: Codable, Equatable {
         copy.updatedAt = updatedAt.syncRounded
         copy.dailyReminderMinutes = max(0, min(24 * 60 - 1, dailyReminderMinutes))
         copy.feastAlertMinutes = max(0, min(24 * 60 - 1, feastAlertMinutes))
+        let known = Set(Field.allCases.map(\.rawValue))
+        copy.fieldUpdatedAt = fieldUpdatedAt
+            .filter { known.contains($0.key) }
+            .mapValues(\.syncRounded)
         return copy
     }
 
-    /// Last write wins for the whole set. Ties go to the account copy.
-    static func merge(local: SyncedPreferences, remote: SyncedPreferences) -> SyncedPreferences {
-        remote.updatedAt >= local.updatedAt ? remote : local
+    /// When `field` was last changed in this copy.
+    func changedAt(_ field: Field) -> Date {
+        fieldUpdatedAt[field.rawValue] ?? updatedAt
+    }
+
+    /// What the account keeps of this copy under `schema`, for "does it need uploading?".
+    func stored(as schema: Schema) -> SyncedPreferences {
+        var copy = normalized
+        if schema >= .withoutFieldTimes { copy.fieldUpdatedAt = [:] }
+        if schema >= .withoutRosaryConfig { copy.rosaryConfig = nil }
+        return copy
+    }
+
+    /// Last write wins per field, by each field's own change time, so changing the text size
+    /// on one device and the reminder on another keeps both. Ties go to the account copy.
+    /// Change times from a clock running ahead count as now, so they cannot win for ever.
+    static func merge(local: SyncedPreferences, remote: SyncedPreferences, now: Date = .now) -> SyncedPreferences {
+        let limit = now.syncRounded
+        var merged = local
+        merged.updatedAt = max(local.updatedAt, remote.updatedAt)
+        merged.fieldUpdatedAt = [:]
+
+        for field in Field.allCases {
+            let localTime = local.changedAt(field)
+            let remoteTime = remote.changedAt(field)
+            var useRemote = min(remoteTime, limit) >= min(localTime, limit)
+            // Copies from before Rosary settings synced carry none; keep the other side's.
+            if field == .rosaryConfig {
+                if remote.rosaryConfig == nil { useRemote = false }
+                else if local.rosaryConfig == nil { useRemote = true }
+            }
+            let source = useRemote ? remote : local
+            merged.fieldUpdatedAt[field.rawValue] = useRemote ? remoteTime : localTime
+            switch field {
+            case .appearance: merged.appearance = source.appearance
+            case .prayerLanguage: merged.prayerLanguage = source.prayerLanguage
+            case .rosaryLanguage: merged.rosaryLanguage = source.rosaryLanguage
+            case .textSize: merged.textSize = source.textSize
+            case .includeSaintMichael: merged.includeSaintMichael = source.includeSaintMichael
+            case .hideIntentionText: merged.hideIntentionText = source.hideIntentionText
+            case .dailyReminderEnabled: merged.dailyReminderEnabled = source.dailyReminderEnabled
+            case .dailyReminderMinutes: merged.dailyReminderMinutes = source.dailyReminderMinutes
+            case .feastAlertsEnabled: merged.feastAlertsEnabled = source.feastAlertsEnabled
+            case .feastAlertMinutes: merged.feastAlertMinutes = source.feastAlertMinutes
+            case .appIcon: merged.appIcon = source.appIcon
+            case .rosaryConfig: merged.rosaryConfig = source.rosaryConfig
+            }
+        }
+        return merged.normalized
     }
 }
 
@@ -93,7 +164,8 @@ extension SyncedPreferences {
             feastAlertMinutes: try c.decodeIfPresent(Int.self, forKey: .feastAlertMinutes) ?? Self.defaultFeastAlertMinutes,
             appIcon: try c.decode(AppIconOption.self, forKey: .appIcon),
             updatedAt: try c.decode(Date.self, forKey: .updatedAt),
-            rosaryConfig: try c.decodeIfPresent(RosaryConfig.self, forKey: .rosaryConfig)
+            rosaryConfig: try c.decodeIfPresent(RosaryConfig.self, forKey: .rosaryConfig),
+            fieldUpdatedAt: try c.decodeIfPresent([String: Date].self, forKey: .fieldUpdatedAt) ?? [:]
         )
     }
 }
@@ -206,12 +278,14 @@ private extension SyncedPreferences {
             feastAlertMinutes: data["feastAlertMinutes"] as? Int ?? Self.defaultFeastAlertMinutes,
             appIcon: appIcon,
             updatedAt: updatedAt,
-            rosaryConfig: (data["rosaryConfig"] as? [String: Any]).map(RosaryConfig.init(firestore:))
+            rosaryConfig: (data["rosaryConfig"] as? [String: Any]).map(RosaryConfig.init(firestore:)),
+            fieldUpdatedAt: (data["fieldUpdatedAt"] as? [String: Any] ?? [:])
+                .compactMapValues { ($0 as? Timestamp)?.dateValue() }
         )
         self = normalized
     }
 
-    func firestoreData() -> [String: Any] {
+    func firestoreData(schema: Schema = .full) -> [String: Any] {
         var data: [String: Any] = [
             "schemaVersion": 1,
             "appearance": appearance.rawValue,
@@ -227,8 +301,11 @@ private extension SyncedPreferences {
             "appIcon": appIcon.rawValue,
             "updatedAt": Timestamp(date: updatedAt)
         ]
-        if let rosaryConfig {
+        if let rosaryConfig, schema < .withoutRosaryConfig {
             data["rosaryConfig"] = rosaryConfig.firestoreData()
+        }
+        if !fieldUpdatedAt.isEmpty, schema < .withoutFieldTimes {
+            data["fieldUpdatedAt"] = fieldUpdatedAt.mapValues { Timestamp(date: $0) }
         }
         return data
     }
@@ -425,6 +502,8 @@ final class AccountSyncStore {
     /// A listener that failed (offline start, rules not published yet) is dead; it is restarted
     /// the next time the app comes to the foreground.
     private var listenerFailed = false
+    /// Steps down when the deployed rules reject newer fields (see `SyncedPreferences.Schema`).
+    private var preferencesSchema: SyncedPreferences.Schema = .full
     private(set) var syncErrorMessage: String?
 
     init(settings: SettingsStore, session: SessionStore, appIcon: AppIconService, defaults: UserDefaults = .standard) {
@@ -532,7 +611,7 @@ final class AccountSyncStore {
                 applyPreferences(merged)
                 saveLocalCopies(for: uid)
             }
-            if merged != remote {
+            if merged.stored(as: preferencesSchema) != remote.stored(as: preferencesSchema) {
                 schedulePreferencesUpload(after: .zero)
             }
         }
@@ -626,11 +705,32 @@ final class AccountSyncStore {
             settings.stampPreferences()
             savePreferencesCopy(for: uid)
         }
-        let data = settings.syncedPreferences.normalized.firestoreData()
+        let schema = preferencesSchema
+        let data = settings.syncedPreferences.normalized.firestoreData(schema: schema)
         repository.write(data, to: .preferences, uid: uid) { [weak self] error in
             guard let error else { return }
-            Task { @MainActor in self?.report(error, while: "saving preferences") }
+            Task { @MainActor in self?.preferencesWriteFailed(error, schema: schema, uid: uid) }
         }
+    }
+
+    /// Rules published before this build reject the newer fields; retry without them
+    /// rather than leave every preference unsynced.
+    private func preferencesWriteFailed(_ error: Error, schema: SyncedPreferences.Schema, uid: String) {
+        guard uid == userID else { return }
+        if Self.isPermissionDenied(error), let next = SyncedPreferences.Schema(rawValue: schema.rawValue + 1) {
+            if preferencesSchema <= schema {
+                log.info("Preferences rules reject schema \(schema.rawValue); retrying with \(next.rawValue)")
+                preferencesSchema = next
+                uploadPreferencesNow()
+            }
+            return
+        }
+        report(error, while: "saving preferences")
+    }
+
+    private static func isPermissionDenied(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        return nsError.domain == FirestoreErrorDomain && nsError.code == FirestoreErrorCode.permissionDenied.rawValue
     }
 
     private func uploadProgressNow() {

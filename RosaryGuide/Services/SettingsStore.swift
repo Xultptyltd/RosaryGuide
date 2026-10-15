@@ -19,6 +19,7 @@ final class SettingsStore {
         static let appIcon = "settings.appIcon"
         static let rosaryConfig = "settings.rosaryConfig"
         static let updatedAt = "settings.updatedAt"
+        static let fieldUpdatedAt = "settings.fieldUpdatedAt"
     }
 
     @ObservationIgnored private let defaults: UserDefaults
@@ -29,21 +30,21 @@ final class SettingsStore {
             if rosaryLanguage != language {
                 rosaryLanguage = language
             }
-            userChanged()
+            userChanged(.prayerLanguage)
         }
     }
 
     var rosaryLanguage: PrayerLanguage {
         didSet {
             defaults.set(rosaryLanguage.rawValue, forKey: Keys.rosaryLanguage)
-            userChanged()
+            userChanged(.rosaryLanguage)
         }
     }
 
     var appearance: AppearancePreference {
         didSet {
             defaults.set(appearance.rawValue, forKey: Keys.appearance)
-            userChanged()
+            userChanged(.appearance)
         }
     }
 
@@ -51,7 +52,7 @@ final class SettingsStore {
     var includeSaintMichael: Bool {
         didSet {
             defaults.set(includeSaintMichael, forKey: Keys.saintMichael)
-            userChanged()
+            userChanged(.includeSaintMichael)
         }
     }
 
@@ -64,7 +65,7 @@ final class SettingsStore {
             if let data = try? JSONEncoder().encode(rosaryConfig) {
                 defaults.set(data, forKey: Keys.rosaryConfig)
             }
-            if rosaryConfig != oldValue { userChanged() }
+            if rosaryConfig != oldValue { userChanged(.rosaryConfig) }
         }
     }
 
@@ -81,7 +82,7 @@ final class SettingsStore {
     var textSize: PrayerTextSize {
         didSet {
             defaults.set(textSize.rawValue, forKey: Keys.textSize)
-            userChanged()
+            userChanged(.textSize)
         }
     }
 
@@ -89,7 +90,7 @@ final class SettingsStore {
     var dailyReminderEnabled: Bool {
         didSet {
             defaults.set(dailyReminderEnabled, forKey: Keys.dailyReminder)
-            userChanged()
+            userChanged(.dailyReminderEnabled)
         }
     }
 
@@ -97,7 +98,7 @@ final class SettingsStore {
     var dailyReminderMinutes: Int {
         didSet {
             defaults.set(dailyReminderMinutes, forKey: Keys.dailyReminderMinutes)
-            userChanged()
+            userChanged(.dailyReminderMinutes)
         }
     }
 
@@ -105,7 +106,7 @@ final class SettingsStore {
     var feastAlertsEnabled: Bool {
         didSet {
             defaults.set(feastAlertsEnabled, forKey: Keys.feastAlerts)
-            userChanged()
+            userChanged(.feastAlertsEnabled)
         }
     }
 
@@ -113,7 +114,7 @@ final class SettingsStore {
     var feastAlertMinutes: Int {
         didSet {
             defaults.set(feastAlertMinutes, forKey: Keys.feastAlertMinutes)
-            userChanged()
+            userChanged(.feastAlertMinutes)
         }
     }
 
@@ -121,7 +122,7 @@ final class SettingsStore {
     var hideIntentionText: Bool {
         didSet {
             defaults.set(hideIntentionText, forKey: Keys.hideIntentionText)
-            userChanged()
+            userChanged(.hideIntentionText)
         }
     }
 
@@ -129,7 +130,7 @@ final class SettingsStore {
     var appIconChoice: AppIconOption {
         didSet {
             defaults.set(appIconChoice.rawValue, forKey: Keys.appIcon)
-            userChanged()
+            userChanged(.appIcon)
         }
     }
 
@@ -141,6 +142,14 @@ final class SettingsStore {
     /// that came from the account. `.syncNever` means never.
     private(set) var preferencesUpdatedAt: Date {
         didSet { defaults.set(preferencesUpdatedAt.timeIntervalSince1970, forKey: Keys.updatedAt) }
+    }
+
+    /// When each synced preference was last changed (`SyncedPreferences.Field` raw values),
+    /// so two devices changing different settings both keep their change.
+    private(set) var fieldUpdatedAt: [String: Date] {
+        didSet {
+            defaults.set(fieldUpdatedAt.mapValues(\.timeIntervalSince1970), forKey: Keys.fieldUpdatedAt)
+        }
     }
 
     /// Called after the user changes a synced preference (not when synced values are applied).
@@ -175,6 +184,20 @@ final class SettingsStore {
         hideIntentionText = defaults.bool(forKey: Keys.hideIntentionText)
         appIconChoice = AppIconOption(rawValue: defaults.string(forKey: Keys.appIcon) ?? "") ?? .black
         preferencesUpdatedAt = Date(timeIntervalSince1970: defaults.double(forKey: Keys.updatedAt))
+        fieldUpdatedAt = (defaults.dictionary(forKey: Keys.fieldUpdatedAt) as? [String: Double] ?? [:])
+            .mapValues { Date(timeIntervalSince1970: $0) }
+        fillMissingFieldTimes()
+    }
+
+    /// Settings from before per-field times: every field counts as changed when the set last
+    /// changed. Keeps their merge exactly as it was until a field is changed again.
+    private func fillMissingFieldTimes() {
+        guard preferencesUpdatedAt != .syncNever else { return }
+        var times = fieldUpdatedAt
+        for field in SyncedPreferences.Field.allCases where times[field.rawValue] == nil {
+            times[field.rawValue] = preferencesUpdatedAt
+        }
+        if times != fieldUpdatedAt { fieldUpdatedAt = times }
     }
 
     func toggleLightDark(systemIsDark: Bool) {
@@ -182,9 +205,11 @@ final class SettingsStore {
         appearance = current == .dark ? .light : .dark
     }
 
-    private func userChanged() {
+    private func userChanged(_ field: SyncedPreferences.Field) {
         guard !isApplyingSynced else { return }
-        preferencesUpdatedAt = Date().syncRounded
+        let now = Date().syncRounded
+        fieldUpdatedAt[field.rawValue] = now
+        preferencesUpdatedAt = now
         onUserChange?()
     }
 
@@ -204,7 +229,8 @@ final class SettingsStore {
             feastAlertMinutes: feastAlertMinutes,
             appIcon: appIconChoice,
             updatedAt: preferencesUpdatedAt,
-            rosaryConfig: rosaryConfig
+            rosaryConfig: rosaryConfig,
+            fieldUpdatedAt: fieldUpdatedAt
         )
     }
 
@@ -227,6 +253,7 @@ final class SettingsStore {
         if appIconChoice != value.appIcon { appIconChoice = value.appIcon }
         if let config = value.rosaryConfig, rosaryConfig != config { rosaryConfig = config }
         preferencesUpdatedAt = value.updatedAt
+        fieldUpdatedAt = value.fieldUpdatedAt
     }
 
     /// Records the icon already on the Home Screen as the choice, without counting it as a change.
@@ -239,6 +266,7 @@ final class SettingsStore {
     /// Gives never-changed preferences a real timestamp before their first upload.
     func stampPreferences() {
         preferencesUpdatedAt = Date().syncRounded
+        fillMissingFieldTimes()
     }
 
     /// Restores synced preferences to defaults while keeping the Home Screen icon
@@ -257,6 +285,9 @@ final class SettingsStore {
         feastAlertMinutes = SyncedPreferences.defaultFeastAlertMinutes
         hideIntentionText = false
         appIconChoice = icon
-        preferencesUpdatedAt = Date().syncRounded
+        // Every field counts as changed now, including ones that already had the default.
+        let now = Date().syncRounded
+        preferencesUpdatedAt = now
+        fieldUpdatedAt = Dictionary(uniqueKeysWithValues: SyncedPreferences.Field.allCases.map { ($0.rawValue, now) })
     }
 }
