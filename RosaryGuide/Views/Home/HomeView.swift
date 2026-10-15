@@ -581,8 +581,8 @@ struct HomeView: View {
                                 .font(AppTheme.TypeRole.caption(weight: .semibold))
                                 .tracking(0.6)
                                 .foregroundStyle(palette.todayPillText)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                                .padding(.horizontal, AppTheme.Space.sm)
+                                .padding(.vertical, AppTheme.Space.xs)
                                 .background(palette.todayPillFill, in: Capsule())
                         } else {
                             feastDateText(featured.date)
@@ -959,7 +959,7 @@ struct HomeView: View {
                     }
                     .scrollTargetLayout()
                     .padding(.horizontal, gutter)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, AppTheme.Space.xs)
                 }
                 .scrollTargetBehavior(.viewAligned)
                 .scrollPosition(id: $mysteryScrollID)
@@ -976,17 +976,8 @@ struct HomeView: View {
     }
 
     private var mysteryPageDots: some View {
-        HStack(spacing: AppTheme.Space.sm) {
-            ForEach(mysteries.indices, id: \.self) { index in
-                Capsule()
-                    .fill(index == currentMysteryIndex ? palette.accent : palette.accent.opacity(0.28))
-                    .frame(width: index == currentMysteryIndex ? 18 : 6, height: 6)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: currentMysteryIndex)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Mystery card \(currentMysteryIndex + 1) of \(mysteries.count)")
+        GuidePageDots(current: currentMysteryIndex, count: mysteries.count)
+            .accessibilityLabel("Mystery card \(currentMysteryIndex + 1) of \(mysteries.count)")
     }
 
     private var currentMysteryIndex: Int {
@@ -1138,7 +1129,7 @@ struct HomeView: View {
                         }
                     } label: {
                         VStack(alignment: .leading, spacing: 0) {
-                            HStack(alignment: .center, spacing: 16) {
+                            HStack(alignment: .center, spacing: AppTheme.Space.lg) {
                                 VStack(spacing: AppTheme.Space.xs) {
                                     Text(item.date.formatted(.dateTime.day()))
                                         .font(AppTheme.TypeRole.serifTitle)
@@ -1151,7 +1142,7 @@ struct HomeView: View {
                                 }
                                 .frame(width: 44)
 
-                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
                                     Text(item.feast.shortTitle)
                                         .font(AppTheme.TypeRole.serifBody)
                                         .foregroundStyle(palette.ink)
@@ -1164,7 +1155,7 @@ struct HomeView: View {
                                             .tracking(0.66)
                                             .textCase(.uppercase)
                                             .foregroundStyle(palette.todayPillText)
-                                            .padding(.horizontal, 8)
+                                            .padding(.horizontal, AppTheme.Space.sm)
                                             .padding(.vertical, 3)
                                             .background(palette.todayPillFill, in: Capsule())
                                     }
@@ -1213,8 +1204,8 @@ struct HomeView: View {
                     Button {
                         selectedSet = dayAssignment.set
                     } label: {
-                        HStack(alignment: .firstTextBaseline, spacing: 12) {
-                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
+                            HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.xs) {
                                 Text(day.formatted(.dateTime.weekday(.wide)))
                                     .font(AppTheme.TypeRole.serifBody)
                                     .foregroundStyle(palette.ink)
@@ -1224,7 +1215,7 @@ struct HomeView: View {
                                         .tracking(0.66)
                                         .textCase(.uppercase)
                                         .foregroundStyle(palette.todayPillText)
-                                        .padding(.horizontal, 8)
+                                        .padding(.horizontal, AppTheme.Space.sm)
                                         .padding(.vertical, 3)
                                         .background(palette.todayPillFill, in: Capsule())
                                 }

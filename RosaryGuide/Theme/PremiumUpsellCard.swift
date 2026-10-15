@@ -5,23 +5,20 @@ import SwiftUI
 /// Dark: dark surface with warm gold. Light: light surface with a deeper gold.
 struct PremiumUpsellCard: View {
     @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var colorScheme
 
     var title = "Rosary Guide+"
     var subtitle = "Guided novenas, prayer tracking, full history and more."
     var trialTitle = "7-day free trial"
     var action: () -> Void
 
-    private var isDark: Bool { colorScheme == .dark }
-
-    private var gold: Color { isDark ? Color(hex: 0xE2C489) : Color(hex: 0x8A6322) }
-    private var borderGold: Color { isDark ? Color(hex: 0xD9B56E) : Color(hex: 0xA97F35) }
+    private var gold: Color { palette.premiumGold }
+    private var borderGold: Color { palette.premiumBorderGold }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
             HStack(alignment: .center, spacing: AppTheme.Space.lg) {
                 Image(systemName: "crown")
-                    .font(.system(size: 26, weight: .light))
+                    .guideSymbol(size: 26, weight: .light)
                     .foregroundStyle(gold)
                     .frame(width: 36)
                     .accessibilityHidden(true)
@@ -31,7 +28,7 @@ struct PremiumUpsellCard: View {
                         .font(AppTheme.TypeRole.body(weight: .medium))
                         .foregroundStyle(gold)
                     Text(subtitle)
-                        .font(AppTheme.sans(15, relativeTo: .subheadline))
+                        .font(AppTheme.TypeRole.supportingLabel)
                         .foregroundStyle(palette.textSecondary)
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -55,7 +52,7 @@ struct PremiumUpsellCard: View {
         return shape
             .fill(palette.surface)
             .overlay {
-                shape.strokeBorder(borderGold.opacity(isDark ? 0.30 : 0.35), lineWidth: 1)
+                shape.strokeBorder(borderGold.opacity(palette.premiumBorderOpacity), lineWidth: 1)
             }
     }
 }

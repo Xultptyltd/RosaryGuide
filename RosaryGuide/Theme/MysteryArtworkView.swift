@@ -100,6 +100,8 @@ struct MysteryArtworkView: View {
 }
 
 struct PlateArtView: View {
+    var fitsArtwork: Bool = false
+    var fitAlignment: Alignment = .top
     var mystery: Mystery
     var wide: Bool = true
 
@@ -113,6 +115,8 @@ struct PlateArtView: View {
             wide: wide
         )
         FocusedRasterImage(
+            contentMode: fitsArtwork ? .fit : .fill,
+            fitAlignment: fitAlignment,
             directory: path.directory,
             name: path.name,
             focus: wide ? ArtCatalog.bandFocus(set: mystery.set, number: mystery.number) : ArtCatalog.focus(set: mystery.set, number: mystery.number)
@@ -144,7 +148,7 @@ struct SeasonBadge: View {
     @Environment(\.palette) private var palette
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: AppTheme.Space.sm) {
             Circle()
                 .fill(AppTheme.color(for: season))
                 .frame(width: 8, height: 8)
@@ -155,7 +159,7 @@ struct SeasonBadge: View {
                 .foregroundStyle(palette.dim)
         }
         .foregroundStyle(palette.ink)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, AppTheme.Space.md)
         .padding(.vertical, 7)
         .background(palette.surface, in: Capsule())
     }
@@ -206,7 +210,7 @@ struct BilingualStack: View {
     @ViewBuilder
     private func prayerColumn(_ raw: String, color: Color, italic: Bool) -> some View {
         let paras = raw.components(separatedBy: "\n\n").filter { !$0.isEmpty }
-        VStack(alignment: alignment == .center ? .center : .leading, spacing: 32) { // prayer paragraph gap
+        VStack(alignment: alignment == .center ? .center : .leading, spacing: AppTheme.Space.xxl) { // prayer paragraph gap
             ForEach(Array(paras.enumerated()), id: \.offset) { _, para in
                 Text(Self.joinedLines(para))
                     .font(font)

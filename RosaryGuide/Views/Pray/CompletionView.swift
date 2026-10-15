@@ -98,7 +98,7 @@ struct CompletionView: View {
                 .accessibilityHidden(true)
 
                 iconSlot
-                    .padding(.top, 4)
+                    .padding(.top, AppTheme.Space.xs)
                     .padding(.bottom, -10)
 
                 completionContent()
@@ -228,15 +228,15 @@ struct CompletionView: View {
 
             Color.clear.frame(height: hasIntention ? 12 : 40)
 
-            VStack(spacing: 8) {
+            VStack(spacing: AppTheme.Space.sm) {
                 Text(quote.text)
-                    .font(AppTheme.serif(18, italic: true, opticalSize: 18, relativeTo: .body))
+                    .font(AppTheme.TypeRole.completionQuote)
                     .foregroundStyle(palette.completionTitle.opacity(0.88))
                     .multilineTextAlignment(.center)
                     .lineSpacing(2)
                     .lineLimit(3)
                     .minimumScaleFactor(0.9)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, AppTheme.Space.sm)
 
                 Text(quote.attribution.uppercased())
                     .font(AppTheme.TypeRole.quoteAttribution)
@@ -245,7 +245,7 @@ struct CompletionView: View {
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Space.lg)
             .padding(.vertical, 14)
             .guideCard(fill: palette.surface)
             .accessibilityElement(children: .combine)
@@ -279,7 +279,7 @@ struct CompletionView: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.vertical, AppTheme.Space.sm)
         .frame(maxWidth: .infinity)
         .guideCard(radius: AppTheme.nestedRadius, fill: palette.surface)
         .accessibilityElement(children: .combine)
@@ -287,7 +287,7 @@ struct CompletionView: View {
     }
 
     private func actions() -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: AppTheme.Space.md) {
             ceremonyButton(
                 title: "Done",
                 fill: palette.primaryButtonFill,

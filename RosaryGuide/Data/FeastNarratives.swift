@@ -50,14 +50,10 @@ enum FeastNarratives {
     )
 
     private static let memorare = FeastRelatedPrayer(
-        id: "memorare",
-        title: "Memorare",
-        english: """
-        Remember, O most gracious Virgin Mary, that never was it known that anyone who fled to thy protection, implored thy help, or sought thy intercession, was left unaided. Inspired by this confidence, I fly unto thee, O Virgin of virgins, my Mother. To thee do I come, before thee I stand, sinful and sorrowful. O Mother of the Word Incarnate, despise not my petitions, but in thy mercy hear and answer me. Amen.
-        """,
-        latin: """
-        Memoráre, o piíssima Virgo María, non esse audítum a sǽculo, quemquam ad tua curréntem præsídia, tua implorántem auxília, tua peténtem suffrágia, esse derelíctum. Ego tali animátus confidéntia, ad te, Virgo Vírginum, Mater, curro, ad te vénio, coram te gemens peccátor assísto. Noli, Mater Verbi, verba mea despícere; sed audi propítia et exáudi. Amen.
-        """
+        id: PrayerCatalog.memorare.id,
+        title: PrayerCatalog.memorare.title.english,
+        english: PrayerCatalog.memorare.text.english,
+        latin: PrayerCatalog.memorare.text.latin
     )
 
     private static let angelus = FeastRelatedPrayer(

@@ -2,6 +2,7 @@ import SwiftUI
 import WebKit
 
 struct LaunchSplashView: View {
+    @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var onFinished: () -> Void
 
@@ -13,7 +14,7 @@ struct LaunchSplashView: View {
             if reduceMotion {
                 Text("R")
                     .font(AppTheme.TypeRole.serifDisplay)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(palette.onAccent)
                     .accessibilityHidden(true)
             } else {
                 LottieSplashPlayer(onFinished: onFinished)

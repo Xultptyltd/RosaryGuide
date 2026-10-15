@@ -1594,7 +1594,7 @@ private struct IntentionDetailView: View {
     }
 
     private func stat(_ value: String, _ label: String) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: AppTheme.Space.xs) {
             Text(value)
                 .font(AppTheme.TypeRole.body(weight: .semibold))
                 .foregroundStyle(palette.ink)
@@ -1662,7 +1662,7 @@ private struct IntentionDetailView: View {
                 .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         } else {
             Button(action: onEdit) {
-                HStack(alignment: .center, spacing: 12) {
+                HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     Text(displayNoteText)
                         .font(AppTheme.TypeRole.themeSummary)
                         .foregroundStyle(palette.dim)
@@ -1723,7 +1723,7 @@ private struct IntentionDetailView: View {
     }
 
     private func detailRow(_ title: String, value: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
+        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
             Text(title)
                 .font(AppTheme.TypeRole.themeSummary)
                 .foregroundStyle(palette.ink)
@@ -1788,7 +1788,7 @@ private struct PapalSuggestionCard: View {
             .foregroundStyle(palette.accent.opacity(0.9))
             .padding(.top, 2)
         }
-        .padding(.horizontal, 4)
+        .padding(.horizontal, AppTheme.Space.xs)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -1812,9 +1812,9 @@ private struct IntentionRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: hasDescription ? .top : .center, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+            HStack(alignment: hasDescription ? .top : .center, spacing: AppTheme.Space.md) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     HStack(spacing: AppTheme.Space.sm) {
                         Text(intention.title)
                             .font(AppTheme.TypeRole.body(weight: .semibold))
@@ -1885,7 +1885,7 @@ private struct IntentionRow: View {
                     .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
                     .foregroundStyle(palette.ink)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, AppTheme.Space.md)
             }
             .buttonStyle(.plain)
             .background(
@@ -1894,7 +1894,7 @@ private struct IntentionRow: View {
             )
             .accessibilityHint("Starts a Rosary with this intention")
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, AppTheme.Space.sm)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(rowAccessibilityLabel)
         .accessibilityAction(named: intention.isPinned ? "Unpin intention" : "Pin intention", onPin)
@@ -2375,7 +2375,7 @@ struct IntentionEditorSheet: View {
         }
         .animation(.spring(response: 0.42, dampingFraction: 0.84), value: showCompact)
         .padding(.horizontal, AppTheme.gutter)
-        .padding(.top, 8)
+        .padding(.top, AppTheme.Space.sm)
         .padding(.bottom, AppTheme.Space.lg)
         .background(palette.bg.opacity(showCompact ? 0 : 1))
     }
@@ -2421,7 +2421,7 @@ struct IntentionEditorSheet: View {
                     )
                 }
 
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                 Text("\"Carry one another's\nburdens, and in this\nway you will fulfil\nthe law of Christ.\"")
                     .font(AppTheme.TypeRole.bodySmall)
                     .foregroundStyle(palette.dim)
@@ -2438,7 +2438,7 @@ struct IntentionEditorSheet: View {
     }
 
     private var categoryPicker: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionLabel(text: "Type of intention", prominence: .strong)
 
             HStack(spacing: AppTheme.Space.md) {
@@ -2449,7 +2449,7 @@ struct IntentionEditorSheet: View {
                         accent = option.accent
                         emoji = option.emoji
                     } label: {
-                        VStack(spacing: 8) {
+                        VStack(spacing: AppTheme.Space.sm) {
                             IntentionLineGlyph(glyph: option.glyph)
                                 .stroke(style: AppTheme.LineIcon.strokeStyle)
                                 .frame(width: 24, height: 24)
@@ -2475,11 +2475,11 @@ struct IntentionEditorSheet: View {
     }
 
     private func fieldBlock<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
             GuideSectionLabel(text: label, prominence: .strong)
             content()
                 .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.vertical, AppTheme.Space.md)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                 .overlay(
@@ -2490,7 +2490,7 @@ struct IntentionEditorSheet: View {
     }
 
     private var retentionCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionLabel(text: "Keep intention", prominence: .strong)
             Picker("Duration", selection: $retention) {
                 ForEach(RetentionChoice.allCases) { option in
@@ -2517,7 +2517,7 @@ struct IntentionEditorSheet: View {
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionLabel(text: "Mystery", prominence: .strong)
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppTheme.Space.sm) {
                 ForEach(MysterySetKind.displayOrder) { set in
                     let selected = suggestOn.contains(set)
                     Button {
@@ -2684,7 +2684,7 @@ private struct IntentionIconPickerSheet: View {
                             .frame(width: 1, height: 1)
                             .opacity(0.01)
                     }
-                    .padding(.top, 8)
+                    .padding(.top, AppTheme.Space.sm)
                     .contentShape(Circle())
                     .onTapGesture { emojiFocusNonce += 1 }
 
@@ -2728,7 +2728,7 @@ private struct IntentionIconPickerSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, horizontalPad)
                 }
-                .padding(.bottom, 8)
+                .padding(.bottom, AppTheme.Space.sm)
             }
             .scrollDismissesKeyboard(.never)
             // Sits flush above the keyboard; no filled bar behind the capsule.

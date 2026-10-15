@@ -526,7 +526,7 @@ struct SevenStageTrack: View {
     @Environment(\.palette) private var palette
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: AppTheme.Space.xs) {
             ForEach(PrayTrackStage.allCases, id: \.rawValue) { stage in
                 Button {
                     jump(stage)
@@ -538,7 +538,7 @@ struct SevenStageTrack: View {
                         // 20pt from the visible close circle: 2pt hit-area inset,
                         // 4pt header padding, then 14pt above the bars.
                         .padding(.top, 14)
-                        .padding(.bottom, 8)
+                        .padding(.bottom, AppTheme.Space.sm)
                         .frame(minHeight: AppTheme.Accessibility.minHitTarget, alignment: .top)
                         .contentShape(Rectangle())
                 }

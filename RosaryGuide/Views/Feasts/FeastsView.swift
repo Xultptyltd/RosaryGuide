@@ -435,7 +435,7 @@ private struct FeastTimelineRow: View {
             }
             .frame(width: 56)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 Text(item.feast.shortTitle)
                     .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
                     .foregroundStyle(palette.ink)
@@ -482,14 +482,14 @@ struct FeastDetailView: View {
                     .foregroundStyle(palette.ink)
                     .lineLimit(3)
                     .minimumScaleFactor(0.78)
-                    .padding(.top, 8)
+                    .padding(.top, AppTheme.Space.sm)
 
                 Text(feast.summary)
                     .font(AppTheme.TypeRole.body)
                     .foregroundStyle(palette.dim)
                     .lineSpacing(7)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 12)
+                    .padding(.top, AppTheme.Space.md)
 
                 feastGuideSections
                     .padding(.top, 26)
@@ -689,7 +689,7 @@ struct FeastDetailView: View {
     }
 
     private var prayersForDaySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionLabel(text: "Prayers for this day", prominence: .strong)
                 .padding(.bottom, AppTheme.sectionTitleGap - 12)
             ForEach(prayersForDay) { prayer in
@@ -699,7 +699,7 @@ struct FeastDetailView: View {
     }
 
     private var scriptureRosarySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionLabel(text: "Scripture and Rosary", prominence: .strong)
                 .padding(.bottom, AppTheme.sectionTitleGap - 12)
             rosaryConnectionCard
@@ -845,7 +845,7 @@ struct FeastDetailView: View {
                 .frame(width: 56, height: 56)
                 .clipShape(Circle())
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 GuideSectionLabel(text: "Mystery set", prominence: .strong)
                 Text(set.name.english)
                     .font(AppTheme.TypeRole.body(weight: .semibold))
@@ -880,7 +880,7 @@ struct FeastDetailView: View {
             Button {
                 prayLaunch = .fresh(feast.suggestedMysterySet ?? feastDayAssignment.set)
             } label: {
-                VStack(spacing: 8) {
+                VStack(spacing: AppTheme.Space.sm) {
                     Image(systemName: "hands.sparkles.fill")
                         .guideSymbol(size: 20, weight: .medium)
                     Text("Pray")
@@ -901,7 +901,7 @@ struct FeastDetailView: View {
     }
 
     private func detailAction(_ title: String, icon: String) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: AppTheme.Space.sm) {
             Image(systemName: icon)
                 .guideSymbol(size: 20, weight: .medium)
                 .foregroundStyle(palette.accent)
@@ -919,7 +919,7 @@ struct FeastDetailView: View {
     }
 
     private func infoRow(_ title: String) -> some View {
-        HStack(spacing: 16) {
+        HStack(spacing: AppTheme.Space.lg) {
             Text(title)
                 .font(AppTheme.TypeRole.serifBody)
                 .foregroundStyle(palette.ink)
@@ -930,7 +930,7 @@ struct FeastDetailView: View {
     }
 
     private var prayersSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionLabel(text: "Prayers for this day", color: palette.dim)
 
             ForEach(feast.relatedPrayersForDay) { prayer in
@@ -946,7 +946,7 @@ struct FeastDetailView: View {
             Button {
                 expandedPrayerID = isExpanded ? nil : prayer.id
             } label: {
-                HStack(alignment: .center, spacing: 12) {
+                HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     Text(prayer.title)
                         .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
                         .foregroundStyle(palette.ink)
@@ -959,7 +959,7 @@ struct FeastDetailView: View {
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
                 .padding(.horizontal, 18)
-                .padding(.vertical, 16)
+                .padding(.vertical, AppTheme.Space.lg)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -1030,7 +1030,7 @@ struct FeastDetailView: View {
             PillButton(title: "Pray the \(set.shortName) Mysteries") {
                 prayLaunch = .fresh(set)
             }
-            .padding(.top, 4)
+            .padding(.top, AppTheme.Space.xs)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1105,7 +1105,7 @@ private struct FeastRelatedPrayersView: View {
             Button {
                 expandedPrayerID = isExpanded ? nil : prayer.id
             } label: {
-                HStack(alignment: .center, spacing: 12) {
+                HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     Text(prayer.title)
                         .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
                         .foregroundStyle(palette.ink)
@@ -1117,7 +1117,7 @@ private struct FeastRelatedPrayersView: View {
                         .foregroundStyle(palette.faint)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
-                .padding(.vertical, 16)
+                .padding(.vertical, AppTheme.Space.lg)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -1174,16 +1174,16 @@ private struct FeastPatronagesView: View {
 
     var body: some View {
         FeastSecondaryPage(title: "Patronages", feast: feast) {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                 Text("Traditions associated with this feast.")
                     .font(AppTheme.TypeRole.serifBody)
                     .foregroundStyle(palette.dim)
                     .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
 
-                DividedRows(alignment: .leading, spacing: 24) {
+                DividedRows(alignment: .leading, spacing: AppTheme.Space.xl) {
                     ForEach(patronages, id: \.self) { patronage in
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                             GuideSectionLabel(text: "Patronage", color: palette.faint)
                             Text(patronage)
                                 .font(AppTheme.TypeRole.serifTitle)
@@ -1234,14 +1234,14 @@ private struct FeastScriptureView: View {
 
     var body: some View {
         FeastSecondaryPage(title: "In Scripture", feast: feast) {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                 if passages.isEmpty {
                     FeastTextPanel(
                         title: "Scripture",
                         text: "\(feast.shortTitle) is held within the Church's living memory of Scripture, prayer, and worship."
                     )
                 } else {
-                    DividedRows(alignment: .leading, spacing: 24) {
+                    DividedRows(alignment: .leading, spacing: AppTheme.Space.xl) {
                         ForEach(passages) { passage in
                             VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                                 GuideSectionLabel(text: passage.reference, color: palette.faint)
@@ -1284,13 +1284,13 @@ private struct FeastSecondaryPage<Content: View>: View {
                     .font(AppTheme.TypeRole.serifDisplay)
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 8)
+                    .padding(.top, AppTheme.Space.sm)
 
                 Text(feast.shortTitle)
                     .font(AppTheme.TypeRole.serifBody)
                     .foregroundStyle(palette.dim)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 8)
+                    .padding(.top, AppTheme.Space.sm)
                     .padding(.bottom, 30)
 
                 content()

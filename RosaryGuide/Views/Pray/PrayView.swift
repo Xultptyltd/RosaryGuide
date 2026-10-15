@@ -139,6 +139,9 @@ struct PrayView: View {
     @State private var activePrayerStart: Date?
     @State private var pendingActivePrayerTime: TimeInterval = 0
     @State private var prayerAutosaveTask: Task<Void, Never>?
+    @State private var isClosingPrayerFlow = false
+    @State private var plateCanvasFrame: CGRect?
+    @State private var plateCanvasBottomInset: CGFloat = 0
 
     private var language: PrayerLanguage { settings.language }
     private var current: RosaryStep? {
@@ -237,16 +240,28 @@ struct PrayView: View {
             let showBeads = shouldShowBeads(step)
 
             if step.isPlate, let mystery = step.mystery {
-                // Mystery text starts at 3/7 of the full screen height (incl. safe areas);
-                // the painting ends there too.
-                let frame = geo.frame(in: .global)
-                let screenHeight = frame.maxY + geo.safeAreaInsets.bottom
+                // Anchor the artwork bottom below the physical screen midpoint.
+                // The reading block follows with a 24pt gap.
+                let liveFrame = geo.frame(in: .global)
+                let frame = plateCanvasFrame ?? liveFrame
+                let bottomInset = plateCanvasFrame == nil ? geo.safeAreaInsets.bottom : plateCanvasBottomInset
+                let screenHeight = frame.maxY + bottomInset
                 plateLayer(
                     step,
                     mystery: mystery,
-                    textTop: screenHeight * 3 / 7,
+                    imageBottom: screenHeight * AppTheme.rosaryMysteryArtworkBottomFraction,
+                    textTop: screenHeight * AppTheme.rosaryMysteryArtworkBottomFraction + AppTheme.Space.xl,
                     scrollTop: frame.minY
                 )
+                .onGeometryChange(for: CGRect.self) { geometry in
+                    geometry.frame(in: .global)
+                } action: { frame in
+                    // A cover's global origin moves during dismissal. Keep the
+                    // artwork canvas fixed instead of recropping it as it slides.
+                    guard !isClosingPrayerFlow else { return }
+                    plateCanvasFrame = frame
+                    plateCanvasBottomInset = geo.safeAreaInsets.bottom
+                }
             } else {
                 VStack(spacing: 0) {
                     VStack(spacing: 0) {
@@ -310,6 +325,7 @@ struct PrayView: View {
     private func plateLayer(
         _ step: RosaryStep,
         mystery: Mystery,
+        imageBottom: CGFloat,
         textTop: CGFloat,
         scrollTop: CGFloat
     ) -> some View {
@@ -317,15 +333,15 @@ struct PrayView: View {
         let chromeH = max(plateChromeHeight, 88)
         // The hero starts at the screen top and ends where the text starts, so the
         // painting is scaled to that band and fully dissolved by the first line.
-        let heroHeight = max(textTop, scrollTop + chromeH + 1)
-        // Spacer puts the mystery text's top edge at `textTop` (3/7 of the screen);
+        let heroHeight = max(imageBottom, scrollTop + chromeH + 1)
+        // Spacer puts the mystery text's top edge at `textTop` (below the artwork);
         // the scroll view starts at `scrollTop`; 4pt is the text block's top padding.
-        let textTopPadding: CGFloat = 4
+        let textTopPadding = AppTheme.Space.xs
         let heroSpacer = max(0, textTop - scrollTop - textTopPadding)
-        let readingBottomPad: CGFloat = 28
+        let readingBottomPad = AppTheme.RosaryFlow.readingBottomPadding
         // Floating action top sits pill height + its bottom padding above the scroll bottom.
         let plateActionClearance = AppTheme.Component.pillHeight + AppTheme.Space.lg
-        let plateTextToActionGap: CGFloat = 60
+        let plateTextToActionGap = AppTheme.RosaryFlow.textToActionGap
         let plateBottomAnchorHeight: CGFloat = 1
         let plateEndSpacer = max(
             0,
@@ -334,17 +350,23 @@ struct PrayView: View {
         )
 
         return ZStack(alignment: .top) {
-            // Continuous hero under status bar + Aa/title/close + progress track.
-            plateHeroImage(
-                mystery: mystery,
-                artHeight: heroHeight,
-                // Top of the visible canvas in hero coordinates (hero runs under the status bar).
-                visibleTop: scrollTop,
-                progress: progress
-            )
+            // A quiet top strip gives the artwork room below the Dynamic Island.
+            VStack(spacing: 0) {
+                palette.prayBg
+                    .frame(height: AppTheme.rosaryMysteryArtworkTopInset)
+                plateHeroImage(
+                    mystery: mystery,
+                    artHeight: max(1, heroHeight - AppTheme.rosaryMysteryArtworkTopInset),
+                    readingHeight: max(1, heroHeight - AppTheme.rosaryMysteryArtworkTopInset),
+                    visibleTop: max(0, scrollTop - AppTheme.rosaryMysteryArtworkTopInset),
+                    progress: progress
+                )
+            }
             .frame(height: heroHeight)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .ignoresSafeArea(edges: .top)
+            .frame(maxWidth: .infinity, alignment: .top)
+            // Geometry starts below the status bar. Position the fixed artwork
+            // canvas at the physical screen top without moving the controls.
+            .offset(y: -scrollTop)
             .allowsHitTesting(false)
 
             ScrollView {
@@ -474,8 +496,8 @@ struct PrayView: View {
         }
         .background(palette.prayBg)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // Clip to the screen canvas only — not at an internal header/progress boundary.
-        .clipped()
+        // The hero clips its own overscan; this container must allow artwork
+        // to extend above its safe-area bounds into the status-bar region.
         .id(mystery.id)
         .transition(
             reduceMotion
@@ -534,47 +556,38 @@ struct PrayView: View {
     private func plateHeroImage(
         mystery: Mystery,
         artHeight: CGFloat,
+        readingHeight: CGFloat,
         visibleTop: CGFloat,
         progress: CGFloat
     ) -> some View {
         let washOverlay = progress * 0.75
         let heroOpacity = 1.0 - progress * 0.50
-        let blurRadius: CGFloat = reduceMotion ? 0 : progress * 2.5
-        let scale: CGFloat = reduceMotion ? 1.0 : 1.0 + progress * 0.025
-        let yShift: CGFloat = reduceMotion ? 0 : -progress * 24
-        // Bottom dissolve over the lower ~45% of the visible painting (below the status
+        // Bottom dissolve over the lower portion of the visible painting (below the status
         // bar), eased, and fully page colour a few points above the hero's bottom edge,
-        // which is where the mystery text starts. Scrolling lifts the fade start.
+        // which is where the mystery text starts. Scrolling only changes the darkening.
         let height = max(artHeight, 1)
-        let top = min(max(0, visibleTop), height - 1)
-        let band = height - top
-        let fadeStart = top + band * max(0.20, 0.55 - progress * 0.35)
-        let fadeEnd = max(fadeStart + 1, height - 6)
+        let readingEnd = min(readingHeight, height)
+        let top = min(max(0, visibleTop), readingEnd - 1)
+        let band = readingEnd - top
+        let fadeStart = top + band * max(0.20, AppTheme.rosaryMysteryFadeStartFraction)
+        let fadeEnd = max(fadeStart + 1, readingEnd - 2)
         let easedStops: [Gradient.Stop] = stride(from: 0, through: 8, by: 1).map { i in
             let t = CGFloat(i) / 8
             let eased = t * t * (3 - 2 * t) // smoothstep
             let y = fadeStart + (fadeEnd - fadeStart) * t
             return .init(color: palette.prayBg.opacity(eased), location: y / height)
         }
-        // Extra vertical overscan so parallax/scale never flash empty edges;
-        // bias upward so motion can travel behind the top chrome.
-        let topOverscan: CGFloat = 40
-        let bottomOverscan: CGFloat = 24
-
-        // The canvas is a fixed-height base so the overlays (and the fade) span exactly
-        // the hero, not the taller overscanned art.
+        // The fixed canvas keeps the dissolve aligned with the artwork base.
         return Color.clear
             .frame(maxWidth: .infinity)
             .frame(height: artHeight)
             .overlay {
                 PlateArtView(mystery: mystery, wide: true)
-                    .scaleEffect(scale, anchor: .center)
-                    .blur(radius: blurRadius)
+                    // Top anchoring keeps the raised hand clear of the progress track.
+                    .scaleEffect(mystery.set == .glorious && mystery.number == 1 ? AppTheme.RosaryFlow.resurrectionArtworkScale : 1.0, anchor: .top)
                     .opacity(heroOpacity)
-                    .offset(y: yShift)
                     .frame(maxWidth: .infinity)
-                    .frame(height: artHeight + topOverscan + bottomOverscan)
-                    .offset(y: -(topOverscan - bottomOverscan) * 0.5)
+                    .frame(height: artHeight)
                     .clipped()
             }
             .overlay {
@@ -610,7 +623,7 @@ struct PrayView: View {
             onAdvance: { advance() }
         )
         .padding(.horizontal, AppTheme.gutter)
-        .padding(.top, 8)
+        .padding(.top, AppTheme.Space.sm)
         .padding(.bottom, AppTheme.Space.lg)
     }
 
@@ -628,7 +641,7 @@ struct PrayView: View {
                                 text: step.body,
                                 language: language,
                                 font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
-                                pointSize: 21 * settings.textSize.scale
+                                pointSize: AppTheme.TypeRole.prayerLineHeightReference(scale: settings.textSize.scale)
                             )
                         }
                         .padding(.horizontal, AppTheme.gutter)
@@ -783,7 +796,10 @@ struct PrayView: View {
     private func header(_ step: RosaryStep) -> some View {
         ZStack {
             HStack {
-                // Text size lives in Settings. Close stays trailing.
+                if index > 0 || showingIntentionStep {
+                    roundControl(system: "chevron.left") { retreat() }
+                        .accessibilityLabel("Previous prayer")
+                }
                 Spacer()
                 roundControl(system: "xmark") { closePrayerFlow() }
                     .accessibilityLabel("Close")
@@ -829,14 +845,14 @@ struct PrayView: View {
                     Text(OrdinalWord.roman(mystery.number))
                         .font(AppTheme.TypeRole.body(weight: .medium))
                         .foregroundStyle(palette.textSecondary)
-                    Text("\(OrdinalWord.english(mystery.number)) \(mystery.set.shortName)")
+                    Text(mystery.set.shortName)
                         .font(AppTheme.TypeRole.caption(weight: .medium))
-                        .tracking(2.0)
+                        .tracking(AppTheme.RosaryFlow.eyebrowTracking)
                         .textCase(.uppercase)
                         .foregroundStyle(palette.faint)
                 }
                 // Locus VStack spacing is 6; +4 → 10pt under the mystery eyebrow.
-                .padding(.bottom, 4)
+                .padding(.bottom, AppTheme.Space.xs)
             }
             // Web `.locus .k`: "1 of 10" above Hail Mary on decade beads.
             if step.kind == .hailMary,
@@ -846,7 +862,7 @@ struct PrayView: View {
                     .font(AppTheme.TypeRole.label(weight: .medium))
                     .foregroundStyle(palette.faint)
                     // VStack spacing is 6; +4 → 10pt under "1 of 10".
-                    .padding(.bottom, 4)
+                    .padding(.bottom, AppTheme.Space.xs)
             }
             Text(step.title.primary(for: language))
                 .font(AppTheme.TypeRole.modalTitle)
@@ -869,7 +885,7 @@ struct PrayView: View {
         // Website `.locus h2 { margin-top: .45rem }` after track — track already has bottom pad.
         .padding(.top, 2)
         // Sign of the Cross: Space.lg before the quiet For: row; other steps keep web spacing.
-        .padding(.bottom, step.kind == .signOfTheCross ? AppTheme.Space.lg : 22)
+        .padding(.bottom, step.isPlate || step.kind == .signOfTheCross ? AppTheme.Space.lg : AppTheme.RosaryFlow.prayerTitleBodyGap)
     }
 
 
@@ -1074,37 +1090,35 @@ struct PrayView: View {
     }
 
     private func announceBody(_ step: RosaryStep) -> some View {
-        let scriptureSize = (step.isPlate ? 20.0 : 21.0) * settings.textSize.scale
-        return VStack(alignment: .leading, spacing: step.isPlate ? 12 : 10) {
+        VStack(alignment: .leading, spacing: step.isPlate ? AppTheme.Space.sm : AppTheme.RosaryFlow.announcementSpacing) {
             // Scripture can be switched off in Rosary settings.
             if !step.body.english.isEmpty {
             BilingualStack(
                 text: step.body,
                 language: .english,
-                font: AppTheme.sans(scriptureSize),
-                pointSize: scriptureSize
+                font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
+                pointSize: AppTheme.TypeRole.prayerLineHeightReference(scale: settings.textSize.scale)
             )
             }
             if let ref = step.scriptureReference {
                 Text(ref)
-                    .font(AppTheme.sans(step.isPlate ? 11 : 12))
+                    .font(AppTheme.TypeRole.scriptureReference(isMystery: step.isPlate))
                     .foregroundStyle(palette.faint)
-                    .padding(.top, step.isPlate ? 2 : 0)
             }
             if let fruit = step.subtitle {
-                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                VStack(alignment: .leading, spacing: step.isPlate ? AppTheme.Space.sm : AppTheme.Space.md) {
                     Hairline()
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
                         Text("Fruit")
-                            .font(AppTheme.sans(step.isPlate ? 12 : 14, weight: .medium))
-                            .tracking(step.isPlate ? 0.8 : 0)
+                            .font(AppTheme.TypeRole.prayerFruitLabel(isMystery: step.isPlate))
+                            .tracking(step.isPlate ? AppTheme.RosaryFlow.fruitTracking : 0)
                             .foregroundStyle(palette.textSecondary)
                         Text(fruit.primary(for: .english))
                             .font(AppTheme.TypeRole.bodySmall(weight: .medium))
                             .foregroundStyle(palette.ink)
                     }
                 }
-                .padding(.top, AppTheme.Space.lg)
+                .padding(.top, step.isPlate ? AppTheme.Space.sm : AppTheme.Space.lg)
             }
         }
     }
@@ -1311,7 +1325,7 @@ struct PrayView: View {
                                         text: PrayerCatalog.saintMichael.text,
                                         language: language,
                                         font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
-                                        pointSize: 21 * settings.textSize.scale
+                                        pointSize: AppTheme.TypeRole.prayerLineHeightReference(scale: settings.textSize.scale)
                                     )
                                 }
                                 .padding(.horizontal, AppTheme.gutter)
@@ -1466,42 +1480,13 @@ struct PrayView: View {
         onScroll: @escaping () -> Void,
         onAdvance: @escaping () -> Void
     ) -> some View {
-        let animation = reduceMotion ? nil : MotionTokens.reveal
-        return HStack {
-            if showScroll {
-                Spacer(minLength: 0)
-            }
-            Button {
-                if showScroll {
-                    onScroll()
-                } else {
-                    onAdvance()
-                }
-            } label: {
-                let side = AppTheme.Component.mysteryPlateActionCircle
-                ZStack {
-                    Capsule()
-                        .fill(palette.secondaryButtonFill)
-                    if showScroll {
-                        Image(systemName: "chevron.down")
-                            .guideSymbol(size: 17, weight: .semibold)
-                            .foregroundStyle(palette.secondaryButtonText)
-                            .transition(.identity)
-                    } else {
-                        Text(expandedTitle)
-                            .font(AppTheme.TypeRole.callout(weight: .semibold))
-                            .foregroundStyle(palette.secondaryButtonText)
-                            .transition(.identity)
-                    }
-                }
-                .frame(maxWidth: showScroll ? side : .infinity)
-                .frame(width: showScroll ? side : nil, height: AppTheme.Component.pillHeight)
-                .contentShape(Capsule())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(showScroll ? scrollLabel : expandedTitle)
-        }
-        .animation(animation, value: showScroll)
+        GuideScrollActionButton(
+            showScroll: showScroll,
+            title: expandedTitle,
+            scrollLabel: scrollLabel,
+            onScroll: onScroll,
+            onAdvance: onAdvance
+        )
     }
 
     private var prayerCanScrollFurther: Bool {
@@ -1693,6 +1678,7 @@ struct PrayView: View {
     }
 
     private func closePrayerFlow() {
+        isClosingPrayerFlow = true
         stopPrayerAutosave()
         saveActivePrayerTime(continueTiming: false)
         dismiss()

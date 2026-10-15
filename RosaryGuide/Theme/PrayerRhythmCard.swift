@@ -350,7 +350,7 @@ struct PrayerRhythmCard: View {
             if rhythm.isMilestone {
                 // Accent flame for daily/week milestone captions.
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 22, weight: .semibold))
+                    .guideSymbol(size: 22, weight: .semibold)
                     .foregroundStyle(palette.accent)
                     .symbolRenderingMode(.hierarchical)
             } else {
@@ -367,36 +367,36 @@ struct PrayerRhythmCard: View {
         // No visible title: the streak leads (VoiceOver still says "Prayer rhythm").
         VStack(alignment: .leading, spacing: 0) {
             Text(rhythm.streakText)
-                .font(AppTheme.sans(32, relativeTo: .title))
+                .font(AppTheme.TypeRole.rhythmSummary)
                 .foregroundStyle(palette.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
             // One line like the mockup; step down a point before wrapping.
             ViewThatFits(in: .horizontal) {
-                caption(size: 14).lineLimit(1)
-                caption(size: 13).lineLimit(1)
-                caption(size: 13).fixedSize(horizontal: false, vertical: true)
+                caption(compact: false).lineLimit(1)
+                caption(compact: true).lineLimit(1)
+                caption(compact: true).fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.top, 4)
+            .padding(.top, AppTheme.Space.xs)
         }
     }
 
-    private func caption(size: CGFloat) -> some View {
+    private func caption(compact: Bool) -> some View {
         Text(rhythm.caption)
-            .font(AppTheme.sans(size, relativeTo: .subheadline))
+            .font(AppTheme.TypeRole.rhythmCaption(compact: compact))
             .foregroundStyle(palette.textSecondary)
     }
 
     // MARK: Right column
 
     private var monthHeader: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppTheme.Space.md) {
             CalendarFilledGlyph()
                 .foregroundStyle(palette.ink.opacity(isDark ? 0.86 : 0.78))
                 .frame(width: Metric.headerGlyph.width, height: Metric.headerGlyph.height)
             Text(rhythm.monthName)
-                .font(AppTheme.sans(15, relativeTo: .subheadline))
+                .font(AppTheme.TypeRole.supportingLabel)
                 .foregroundStyle(palette.textSecondary)
                 .lineLimit(1)
         }
@@ -418,7 +418,7 @@ struct PrayerRhythmCard: View {
         HStack(spacing: 6) {
             if isLocked {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 10, weight: .semibold))
+                    .guideSymbol(size: 10, weight: .semibold)
                 Text("Guide+")
                     .font(AppTheme.TypeRole.caption)
             }

@@ -7,6 +7,7 @@ struct PrayHubView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Binding var prayLaunch: PrayLaunch?
     @State private var titleScrollOffset: CGFloat = 0
+    @State private var showingWalkthrough = false
     @State private var expandedQuestion: LearnArticle?
     @State private var navigationPath = NavigationPath()
     @State private var pageGutter: CGFloat = AppTheme.gutter
@@ -72,6 +73,9 @@ struct PrayHubView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .collapsingTitleChrome("Learn", scrollOffset: $titleScrollOffset)
+            .fullScreenCover(isPresented: $showingWalkthrough) {
+                RosaryWalkthroughView(onClose: { showingWalkthrough = false })
+            }
         }
     }
 
@@ -79,7 +83,7 @@ struct PrayHubView: View {
         VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
             HStack(alignment: .top, spacing: AppTheme.Space.md) {
                 Text("Introduction to the Rosary")
-                    .font(AppTheme.sans(32, weight: .regular, relativeTo: .largeTitle))
+                    .font(AppTheme.TypeRole.headingPrimary)
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -97,8 +101,8 @@ struct PrayHubView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            NavigationLink {
-                HowToPrayView()
+            Button {
+                showingWalkthrough = true
             } label: {
                 HStack {
                     Text("Begin walkthrough")
@@ -177,8 +181,8 @@ struct PrayHubView: View {
         learnSection(title: "The mysteries", rows: MysterySetKind.displayOrder.map { set in
             LearnRow(
                 mysterySet: set,
-                title: set.displayTitle,
-                detail: set.learnSummary,
+                title: "\(set.shortName) Mysteries",
+                detail: set.weekdayNames,
                 destination: .mystery(set)
             )
         })
@@ -377,9 +381,9 @@ struct PrayHubView: View {
         HStack(alignment: .center, spacing: AppTheme.Space.md) {
             MysterySetIcon(set: row.mysterySet)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 Text(row.title)
-                    .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                    .font(AppTheme.TypeRole.bodySmall)
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(row.detail)
@@ -390,6 +394,10 @@ struct PrayHubView: View {
 
             Spacer(minLength: 8)
 
+            Image(systemName: "chevron.right")
+                .guideSymbol(size: 12, weight: .regular)
+                .foregroundStyle(palette.secondaryText)
+                .accessibilityHidden(true)
         }
         .padding(.vertical, AppTheme.Space.lg)
         .contentShape(Rectangle())
@@ -762,7 +770,7 @@ private struct LearnMysteryDetailView: View {
                         mysteryAccordionRow(index: index, mystery: mystery)
 
                         if index < MysteryCatalog.mysteries(for: set).count - 1 {
-                            Hairline().padding(.leading, 44)
+                            Hairline().padding(.leading, AppTheme.Space.section)
                         }
                     }
                 }
@@ -808,7 +816,7 @@ private struct LearnMysteryDetailView: View {
                         .frame(width: 28, height: 28)
                         .background(palette.surface, in: Circle())
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                         Text(mystery.title.primary(for: settings.language))
                             .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
                             .foregroundStyle(palette.ink)
@@ -840,7 +848,7 @@ private struct LearnMysteryDetailView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     GuideSectionLabel(text: mystery.scriptureReference, color: palette.secondaryText)
                 }
-                .padding(.leading, 44)
+                .padding(.leading, AppTheme.Space.section)
                 .padding(.trailing, AppTheme.Space.sm)
                 .padding(.bottom, AppTheme.Space.md)
                     .transition(MotionTokens.accordionTransition)

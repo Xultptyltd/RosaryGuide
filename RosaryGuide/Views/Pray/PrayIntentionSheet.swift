@@ -100,7 +100,7 @@ struct PrayIntentionSheet: View {
                     addIntentionCard
                 }
                 .padding(.horizontal, AppTheme.gutter)
-                .padding(.top, 8)
+                .padding(.top, AppTheme.Space.sm)
                 .padding(.bottom, 28)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
                     contentHeight = height
@@ -171,7 +171,7 @@ struct PrayIntentionSheet: View {
         return Button {
             adoptSuggestion(item)
         } label: {
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: AppTheme.Space.md) {
                 Image(systemName: selected ? "circle.inset.filled" : "circle")
                     .guideSymbol(size: 22, weight: .regular)
                     .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
@@ -224,7 +224,7 @@ struct PrayIntentionSheet: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: AppTheme.Space.md) {
                 Image(systemName: selected ? "circle.inset.filled" : "circle")
                     .guideSymbol(size: 22, weight: .regular)
                     .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
@@ -362,7 +362,7 @@ private struct IntentionRadioRow: View {
 
     var body: some View {
         Button(action: onChoose) {
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: AppTheme.Space.md) {
                 Image(systemName: selected ? (multiSelect ? "checkmark.circle.fill" : "circle.inset.filled") : "circle")
                     .guideSymbol(size: 22, weight: .regular)
                     .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
