@@ -9,7 +9,6 @@ private enum SettingsDestination: Hashable {
     case rosary
     case aboutPremium
     case faqs
-    case widgets
     case acknowledgements
     case license(String)
 }
@@ -196,7 +195,6 @@ struct SettingsView: View {
                     GuideSectionBoundary()
 
                     SettingsSection(title: "About") {
-                        // Widgets row hidden until a widget extension ships.
                         SettingsActionRow(title: "Replay welcome", icon: "sparkles", accessory: .navigation) {
                             showOnboardingPreview = true
                         }
@@ -386,8 +384,6 @@ struct SettingsView: View {
             SettingsPremiumScreen()
         case .faqs:
             SettingsFAQScreen()
-        case .widgets:
-            SettingsWidgetsScreen()
         case .notifications:
             SettingsNotificationsScreen()
         case .rosary:
@@ -919,21 +915,6 @@ private struct SettingsFAQScreen: View {
 
             SettingsFootnote(
                 "Signed-in intentions are privately synced to your account. Prayer progress and recent session state remain local to this device."
-            )
-        }
-    }
-}
-
-private struct SettingsWidgetsScreen: View {
-    var body: some View {
-        SettingsDetailScaffold(title: "Widgets") {
-            SettingsSection(title: "Widgets") {
-                SettingsValueOnlyRow(title: "Daily mysteries", icon: "sun.max", value: "Coming soon")
-                SettingsValueOnlyRow(title: "Feast days", icon: "calendar", value: "Coming soon")
-            }
-
-            SettingsFootnote(
-                "Widgets will help you see today’s mysteries and upcoming feast days from your Home Screen."
             )
         }
     }
