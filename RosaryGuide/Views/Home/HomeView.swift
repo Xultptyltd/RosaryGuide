@@ -8,32 +8,30 @@ private struct HomeCTABottomPreferenceKey: PreferenceKey {
     }
 }
 
-/// Bounds of Home's "Pray today's mysteries" button, so the feast glow can end at the divider below it.
-private struct HomeCTABoundsPreferenceKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>?
+/// Where Home's feast glow starts (top of the feast line or subtitle) and ends (the Pray button,
+/// whose divider sits just below it).
+private enum HomeGlowEdge: Hashable { case top, button }
 
-    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
-        value = nextValue() ?? value
+private struct HomeGlowAnchorsPreferenceKey: PreferenceKey {
+    static var defaultValue: [HomeGlowEdge: Anchor<CGRect>] = [:]
+
+    static func reduce(value: inout [HomeGlowEdge: Anchor<CGRect>], nextValue: () -> [HomeGlowEdge: Anchor<CGRect>]) {
+        value.merge(nextValue()) { $1 }
     }
 }
 
-/// Soft brand-blue glow for a feast day, clear at the top and strongest at the bottom edge.
-/// Same stops and accent opacities as the earlier featured feast card glow (1def6a8).
+/// Brand-blue glow for a feast day: clear at the top, easing in to its strongest at the bottom edge.
 struct FeastDayGlow: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        LinearGradient(
-            stops: [
-                .init(color: .clear, location: 0),
-                .init(color: .clear, location: 0.50),
-                .init(color: palette.accent.opacity(colorScheme == .dark ? 0.14 : 0.08), location: 0.78),
-                .init(color: palette.accent.opacity(colorScheme == .dark ? 0.30 : 0.18), location: 1)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+        let peak = colorScheme == .dark ? 0.5 : 0.3
+        // Ease-in curve (t²) so the blue builds gently and is strongest near the divider.
+        let stops = stride(from: 0.0, through: 1.0, by: 0.125).map { t in
+            Gradient.Stop(color: palette.accent.opacity(peak * t * t), location: t)
+        }
+        LinearGradient(stops: stops, startPoint: .top, endPoint: .bottom)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
@@ -396,11 +394,13 @@ struct HomeView: View {
             // On a feast with its own set, the feast paragraph takes the subtitle's place.
             if let feast = assignment.feast, showsFeastLine {
                 feastOffer(feast)
+                    .anchorPreference(key: HomeGlowAnchorsPreferenceKey.self, value: .bounds) { [.top: $0] }
                     .padding(.top, AppTheme.Space.md)
                     .guideReveal(delay: 0.08)
             } else {
                 Text(currentSet.themeSummary)
                     .guideThemeSummaryStyle()
+                    .anchorPreference(key: HomeGlowAnchorsPreferenceKey.self, value: .bounds) { [.top: $0] }
                     .padding(.top, AppTheme.Space.md)
                     .contentTransition(reduceMotion ? .identity : .opacity)
                     .animation(reduceMotion ? nil : MotionTokens.selection, value: currentSet)
@@ -421,7 +421,7 @@ struct HomeView: View {
                         )
                     }
                 }
-                .anchorPreference(key: HomeCTABoundsPreferenceKey.self, value: .bounds) { $0 }
+                .anchorPreference(key: HomeGlowAnchorsPreferenceKey.self, value: .bounds) { [.button: $0] }
                 .guideReveal(delay: 0.14)
 
             GuideSectionBoundary(gutter: gutter)
@@ -452,14 +452,16 @@ struct HomeView: View {
                 .padding(.top, AppTheme.sectionGap)
         }
         .padding(.horizontal, gutter)
-        .backgroundPreferenceValue(HomeCTABoundsPreferenceKey.self) { anchor in
-            // On the major feasts, a glow behind the top section rises from just above the
-            // divider under the Pray button (the divider sits Space.md below the button).
-            if showsFeastGlow, let anchor {
+        .backgroundPreferenceValue(HomeGlowAnchorsPreferenceKey.self) { anchors in
+            // On the major feasts, a glow from the top of the feast line (or subtitle), clear
+            // there, down to the top of the divider under the Pray button (Space.md below it).
+            if showsFeastGlow, let top = anchors[.top], let button = anchors[.button] {
                 GeometryReader { geometry in
-                    let bottom = geometry[anchor].maxY + AppTheme.Space.md
+                    let minY = geometry[top].minY
+                    let maxY = geometry[button].maxY + AppTheme.Space.md
                     FeastDayGlow()
-                        .frame(width: geometry.size.width, height: max(bottom, 0))
+                        .frame(width: geometry.size.width, height: max(maxY - minY, 0))
+                        .offset(y: minY)
                 }
             }
         }
