@@ -65,10 +65,24 @@ final class MysteryCalendarTests: XCTestCase {
         XCTAssertEqual(FeastLine.backToTodayTitle, "Back to today")
     }
 
-    func testEveryFeastWithASuggestedSetHasACelebrationLine() {
-        let ids = Set(FeastCatalog.all.filter { $0.suggestedMysterySet != nil }.map(\.id))
-        XCTAssertFalse(ids.isEmpty)
+    func testOnlyMajorFeastsRecommendASetOnHome() {
+        let ids: Set<String> = ["christmas", "annunciation", "immaculate-conception", "ash-wednesday", "good-friday",
+                                "holy-thursday", "baptism-movable", "corpus-christi", "easter", "assumption", "pentecost"]
+        XCTAssertEqual(Set(FeastCatalog.all.filter(\.recommendsOnHome).map(\.id)), ids)
         XCTAssertEqual(Set(FeastCatalog.celebrations.keys), ids)
+        // Assumption 2026 (Saturday) recommends Glorious; Guadalupe 2026 (Saturday, Joyful anyway)
+        // and Lourdes 2026 (Wednesday) follow the weekday.
+        XCTAssertEqual(setDefault(2026, 8, 15), .glorious)
+        XCTAssertEqual(setDefault(2026, 2, 11), .glorious)
+        XCTAssertNil(MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: 2026, month: 2, day: 11)!).feastLine)
+        // Our Lady of Sorrows 2026 is a Tuesday; Guardian Angels 2026 is a Friday: weekday set, no line.
+        XCTAssertEqual(setDefault(2026, 10, 2), .sorrowful)
+        XCTAssertNil(MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: 2026, month: 10, day: 2)!).feastLine)
+        // Good Friday 2026 is Sorrowful anyway; Pentecost is a Sunday. Corpus Christi 2026 (Thursday) agrees.
+        // Immaculate Conception 2026 is a Tuesday: Joyful instead of Sorrowful.
+        XCTAssertEqual(setDefault(2026, 12, 8), .joyful)
+        // The Feasts screen keeps every feast's own suggested set.
+        XCTAssertEqual(FeastCatalog.all.first { $0.id == "guadalupe" }?.suggestedMysterySet, .joyful)
         for id in ids {
             let line = FeastCatalog.celebrations[id]!
             XCTAssertTrue(line.today.hasPrefix("Today "), id)
@@ -109,6 +123,10 @@ final class MysteryCalendarTests: XCTestCase {
             XCTAssertEqual(items.count, 5)
             XCTAssertTrue(items.allSatisfy { !$0.artSlug.isEmpty })
         }
+    }
+
+    private func setDefault(_ y: Int, _ m: Int, _ d: Int) -> MysterySetKind {
+        MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: y, month: m, day: d)!).defaultSet(prefersWeekday: false)
     }
 
     private func setOn(_ y: Int, _ m: Int, _ d: Int) -> MysterySetKind {

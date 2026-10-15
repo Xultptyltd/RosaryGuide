@@ -47,7 +47,8 @@ struct MysteryAssignment: Equatable {
     var feast: DatedFeast?
 
     var feastSuggestion: MysterySetKind? {
-        guard let suggested = feast?.feast.suggestedMysterySet, suggested != set else { return nil }
+        guard let feast = feast?.feast, feast.recommendsOnHome,
+              let suggested = feast.suggestedMysterySet, suggested != set else { return nil }
         return suggested
     }
 

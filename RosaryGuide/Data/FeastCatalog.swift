@@ -313,7 +313,8 @@ enum FeastCatalog {
     }
 }
 
-/// A short line for Home on a feast: what today celebrates, then "Many pray the X Mysteries <occasion>"
+/// A short line for Home on a major feast: what today celebrates, then "Many pray the X Mysteries <occasion>".
+/// Only these feasts change Home's default set; other feasts follow the weekday there.
 struct FeastCelebration: Equatable, Sendable {
     /// First sentence, e.g. "Today we celebrate the birth of our Lord."
     var today: String
@@ -323,50 +324,22 @@ struct FeastCelebration: Equatable, Sendable {
 
 extension Feast {
     var celebration: FeastCelebration? { FeastCatalog.celebrations[id] }
+    /// Home and the Pray hub offer this feast's set instead of the weekday's.
+    var recommendsOnHome: Bool { suggestedMysterySet != nil && celebration != nil }
 }
 
 extension FeastCatalog {
     static let celebrations: [String: FeastCelebration] = [
-        "mary-mother-of-god": FeastCelebration(today: "Today we honor Mary as the Holy Mother of God.", occasion: "on the solemnity of Mary, Mother of God"),
-        "epiphany": FeastCelebration(today: "Today Christ is revealed to the nations as the Magi come to adore him.", occasion: "at Epiphany"),
-        "presentation": FeastCelebration(today: "Today the infant Jesus is presented in the Temple, and Simeon greets him as the light of the nations.", occasion: "on the Presentation of the Lord"),
-        "lourdes": FeastCelebration(today: "Today we remember Our Lady appearing to Saint Bernadette at Lourdes in 1858.", occasion: "on the memorial of Our Lady of Lourdes"),
-        "joseph": FeastCelebration(today: "Today we honor Saint Joseph, spouse of the Virgin Mary and guardian of the Redeemer.", occasion: "on the solemnity of Saint Joseph"),
         "annunciation": FeastCelebration(today: "Today the angel Gabriel announces to Mary that she will bear the Son of God.", occasion: "on the Annunciation"),
-        "fatima": FeastCelebration(today: "Today we remember Our Lady appearing to three shepherd children at Fatima in 1917.", occasion: "on the memorial of Our Lady of Fatima"),
-        "visitation": FeastCelebration(today: "Today Mary visits Elizabeth, and John the Baptist leaps for joy in the womb.", occasion: "on the feast of the Visitation"),
-        "peter-paul": FeastCelebration(today: "Today we honor the apostles Peter and Paul, who gave their lives for Christ in Rome.", occasion: "on the solemnity of Saints Peter and Paul"),
-        "carmel": FeastCelebration(today: "Today we honor Mary as Our Lady of Mount Carmel, patroness of the Carmelite family.", occasion: "on the memorial of Our Lady of Mount Carmel"),
         "assumption": FeastCelebration(today: "Today we celebrate Mary taken up body and soul into the glory of heaven.", occasion: "on the Assumption"),
-        "queenship": FeastCelebration(today: "Today we honor Mary, crowned as Queen of heaven and earth.", occasion: "on the memorial of the Queenship of Mary"),
-        "nativity-mary": FeastCelebration(today: "Today we celebrate the birth of the Blessed Virgin Mary.", occasion: "on the Nativity of Mary"),
-        "holy-name-mary": FeastCelebration(today: "Today we honor the holy name of Mary.", occasion: "on the memorial of the Holy Name of Mary"),
-        "sorrows": FeastCelebration(today: "Today we stand with Mary at the foot of the Cross and remember her sorrows.", occasion: "on the memorial of Our Lady of Sorrows"),
-        "michael": FeastCelebration(today: "Today we honor the archangels Michael, Gabriel and Raphael.", occasion: "on the feast of the Archangels"),
-        "guardian-angels": FeastCelebration(today: "Today we give thanks for the angels God sends to guard us.", occasion: "on the memorial of the Guardian Angels"),
-        "rosary": FeastCelebration(today: "Today we honor Our Lady of the Rosary and give thanks for this prayer.", occasion: "on the memorial of Our Lady of the Rosary"),
-        "all-saints": FeastCelebration(today: "Today we celebrate all the saints who now see God face to face.", occasion: "on All Saints"),
-        "all-souls": FeastCelebration(today: "Today we pray for all the faithful departed.", occasion: "on All Souls Day"),
-        "presentation-mary": FeastCelebration(today: "Today we remember the young Mary given wholly to God.", occasion: "on the memorial of the Presentation of Mary"),
         "immaculate-conception": FeastCelebration(today: "Today we celebrate Mary, conceived without original sin.", occasion: "on the Immaculate Conception"),
-        "guadalupe": FeastCelebration(today: "Today we remember Our Lady appearing to Saint Juan Diego at Tepeyac in 1531.", occasion: "on the feast of Our Lady of Guadalupe"),
         "christmas": FeastCelebration(today: "Today we celebrate the birth of our Lord.", occasion: "at Christmas"),
         "ash-wednesday": FeastCelebration(today: "Today we begin Lent with prayer, fasting and repentance.", occasion: "on Ash Wednesday"),
-        "palm-sunday": FeastCelebration(today: "Today the Lord enters Jerusalem as his Passion begins.", occasion: "on Palm Sunday"),
         "holy-thursday": FeastCelebration(today: "Today we remember the Last Supper and the gift of the Eucharist.", occasion: "on Holy Thursday"),
         "good-friday": FeastCelebration(today: "Today we remember the Passion and death of our Lord on the Cross.", occasion: "on Good Friday"),
-        "holy-saturday": FeastCelebration(today: "Today the Church waits at the tomb in silent hope.", occasion: "on Holy Saturday"),
         "easter": FeastCelebration(today: "Today we celebrate the Resurrection of our Lord.", occasion: "at Easter"),
-        "divine-mercy": FeastCelebration(today: "Today we give thanks for the mercy of the risen Lord.", occasion: "on Divine Mercy Sunday"),
-        "ascension": FeastCelebration(today: "Today we celebrate the Lord ascending into heaven.", occasion: "on the Ascension"),
         "pentecost": FeastCelebration(today: "Today the Holy Spirit comes down upon Mary and the apostles.", occasion: "at Pentecost"),
-        "mother-of-the-church": FeastCelebration(today: "Today we honor Mary as Mother of the Church.", occasion: "on the memorial of Mary, Mother of the Church"),
-        "trinity": FeastCelebration(today: "Today we worship one God in three Persons, Father, Son and Holy Spirit.", occasion: "on Trinity Sunday"),
         "corpus-christi": FeastCelebration(today: "Today we adore the Lord truly present in the Eucharist.", occasion: "on Corpus Christi"),
-        "sacred-heart": FeastCelebration(today: "Today we honor the Sacred Heart of Jesus, pierced for love of us.", occasion: "on the solemnity of the Sacred Heart"),
-        "immaculate-heart": FeastCelebration(today: "Today we honor the Immaculate Heart of Mary, who kept all these things in her heart.", occasion: "on the memorial of the Immaculate Heart of Mary"),
-        "christ-the-king": FeastCelebration(today: "Today we proclaim Christ as King of the universe.", occasion: "on Christ the King"),
-        "advent-1": FeastCelebration(today: "Today the Church begins Advent, waiting in hope for the Lord's coming.", occasion: "on the First Sunday of Advent"),
         "baptism-movable": FeastCelebration(today: "Today we celebrate the Lord's baptism in the Jordan.", occasion: "on the Baptism of the Lord"),
     ]
 }
