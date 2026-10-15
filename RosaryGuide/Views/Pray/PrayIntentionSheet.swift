@@ -55,7 +55,9 @@ struct PrayIntentionSheet: View {
     private var fittedDetent: PresentationDetent {
         guard contentHeight > 0 else { return .large }
         let total = contentHeight + sheetChromeHeight
-        let screen = UIScreen.main.bounds.height
+        let screen = UIApplication.shared.connectedScenes
+            .compactMap { ($0 as? UIWindowScene)?.screen.bounds.height }
+            .first ?? 800
         return total > screen * 0.9 ? .large : .height(ceil(total))
     }
 

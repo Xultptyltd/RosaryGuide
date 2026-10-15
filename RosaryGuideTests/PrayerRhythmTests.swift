@@ -558,6 +558,20 @@ final class ReminderCopyTests: XCTestCase {
     }
 }
 
+/// The Home week strip starts on the same weekday as the rhythm card.
+final class WeekStripTests: XCTestCase {
+    func testWeekFollowsFirstWeekday() {
+        let cal = LiturgicalCalendar.gregorian
+        let sunday = cal.date(from: DateComponents(year: 2026, month: 10, day: 18, hour: 9))!
+        let monday = MysteryCalendar.week(containing: sunday, firstWeekday: 2)
+        XCTAssertEqual(cal.component(.weekday, from: monday.first!.0), 2)
+        XCTAssertEqual(cal.component(.day, from: monday.first!.0), 12)
+        let sundayStart = MysteryCalendar.week(containing: sunday, firstWeekday: 1)
+        XCTAssertEqual(cal.component(.day, from: sundayStart.first!.0), 18)
+        XCTAssertEqual(sundayStart.count, 7)
+    }
+}
+
 /// Rosary settings follow the account with the other preferences.
 final class RosaryConfigSyncTests: XCTestCase {
     func testFirestoreRoundTrip() {

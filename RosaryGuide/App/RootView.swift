@@ -137,4 +137,5 @@ struct RootView: View {
     .environment(SessionStore())
     .environment(OfferStore())
     .environment(AuthStore())
+    .environment(DayClock())
 }

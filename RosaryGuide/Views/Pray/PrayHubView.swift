@@ -203,7 +203,6 @@ struct PrayHubView: View {
     private var prayTodayCard: some View {
         let resumable = session.resumableSession
         let cta = resumable?.continueCTATitle ?? "Pray today’s Rosary"
-        let set = resumable?.mysterySet ?? assignment.set
 
         return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             Text(resumable == nil ? assignment.set.displayTitle : "Resume your Rosary")

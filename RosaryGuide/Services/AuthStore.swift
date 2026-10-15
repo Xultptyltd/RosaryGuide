@@ -170,7 +170,7 @@ final class AuthStore: NSObject {
 
             if deletedProvider == .google, GIDSignIn.sharedInstance.currentUser != nil {
                 // Revokes this app's Google OAuth grant and clears Google Sign-In's keychain entry.
-                GIDSignIn.sharedInstance.disconnect { _ in }
+                Task { try? await GIDSignIn.sharedInstance.disconnect() }
             } else {
                 GIDSignIn.sharedInstance.signOut()
             }
@@ -510,7 +510,11 @@ extension AuthStore: ASAuthorizationControllerDelegate {
 extension AuthStore: ASAuthorizationControllerPresentationContextProviding {
     nonisolated func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
         MainActor.assumeIsolated {
-            let window = Self.rootViewController()?.view.window ?? UIWindow()
+            let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+            let window = Self.rootViewController()?.view.window
+                ?? scene?.windows.first { $0.isKeyWindow }
+                ?? scene.map { UIWindow(windowScene: $0) }
+                ?? ASPresentationAnchor(frame: .zero)
             presentationWindow = window
             return window
         }

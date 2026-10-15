@@ -160,7 +160,7 @@ final class SettingsStore {
         self.defaults = defaults
         let legacyLanguage = PrayerLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .english
         language = legacyLanguage
-        rosaryLanguage = legacyLanguage
+        rosaryLanguage = PrayerLanguage(rawValue: defaults.string(forKey: Keys.rosaryLanguage) ?? "") ?? legacyLanguage
         appearance = AppearancePreference(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
         includeSaintMichael = defaults.object(forKey: Keys.saintMichael) as? Bool ?? false
         rosaryConfig = defaults.data(forKey: Keys.rosaryConfig)

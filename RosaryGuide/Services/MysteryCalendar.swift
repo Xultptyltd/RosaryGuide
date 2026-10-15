@@ -84,10 +84,15 @@ enum MysteryCalendar {
         return MysteryAssignment(set: set, reason: set.themeSummary, season: season, feast: feast)
     }
 
-    /// Monday–Sunday week strip, matching the website home calendar.
-    static func week(containing date: Date, calendar: Calendar = LiturgicalCalendar.gregorian) -> [(Date, MysteryAssignment)] {
+    /// Week strip starting on the user's first weekday (Monday in Australia), the same
+    /// weeks the prayer rhythm card and the Feasts calendar use.
+    static func week(
+        containing date: Date,
+        calendar: Calendar = LiturgicalCalendar.gregorian,
+        firstWeekday: Int = Calendar.current.firstWeekday
+    ) -> [(Date, MysteryAssignment)] {
         let weekday = calendar.component(.weekday, from: date) // 1 = Sunday … 7 = Saturday
-        let startOffset = weekday == 1 ? -6 : (2 - weekday)
+        let startOffset = -((weekday - firstWeekday + 7) % 7)
         guard let start = calendar.date(byAdding: .day, value: startOffset, to: calendar.startOfDay(for: date)) else {
             return [(date, assignment(on: date, calendar: calendar))]
         }
