@@ -15,6 +15,9 @@ final class OfferStore {
         /// Intention ids the server has confirmed for an account. Lets a later server snapshot
         /// tell "deleted on another device" (was confirmed, now gone) from "never uploaded".
         static func syncedIDs(_ uid: String) -> String { "offer.syncedIDs." + uid }
+        /// Intentions deleted on this device and when, so an older copy from another device
+        /// or a late snapshot does not bring them back. Cleared once the server confirms the delete.
+        static func deletedIDs(_ uid: String) -> String { "offer.deletedIDs." + uid }
     }
 
     private let defaults: UserDefaults
@@ -25,11 +28,25 @@ final class OfferStore {
     /// True while swapping accounts, so the list is not written to the wrong account's copy.
     private var isSwitchingAccount = false
     private(set) var syncErrorMessage: String?
+    /// True while writing edit times back into `intentions` from its own observer.
+    private var isStampingEdits = false
+    /// The clock used for edit times. Tests replace it.
+    @ObservationIgnored var now: () -> Date = { Date() }
 
     var intentions: [OfferIntention] {
         didSet {
+            guard !isStampingEdits else { return }
+            let previous = oldValue
+            if !isApplyingRemoteSnapshot {
+                let stamped = IntentionMerge.stampingEdits(intentions, previous: previous, now: now())
+                if stamped != intentions {
+                    isStampingEdits = true
+                    intentions = stamped
+                    isStampingEdits = false
+                }
+            }
             persistIntentions()
-            syncLocalChangeIfNeeded(oldValue: oldValue)
+            syncLocalChangeIfNeeded(oldValue: previous)
         }
     }
 
@@ -110,6 +127,7 @@ final class OfferStore {
         if let deletedUID {
             defaults.removeObject(forKey: Keys.intentions(deletedUID))
             defaults.removeObject(forKey: Keys.syncedIDs(deletedUID))
+            defaults.removeObject(forKey: Keys.deletedIDs(deletedUID))
             defaults.removeObject(forKey: Keys.migrationPrefix + deletedUID)
         }
         syncErrorMessage = nil
@@ -230,18 +248,9 @@ final class OfferStore {
         intentions[idx] = next
     }
 
+    /// The account copy is deleted by `syncLocalChangeIfNeeded`, like every other removal.
     func delete(id: UUID) {
         intentions.removeAll { $0.id == id }
-        guard let userID else { return }
-        Task {
-            do {
-                try await repository.delete(id: id, uid: userID)
-            } catch {
-                await MainActor.run {
-                    self.syncErrorMessage = "This intention could not be deleted from your account."
-                }
-            }
-        }
     }
 
     /// Removes every saved intention (Settings wipe).
@@ -326,32 +335,43 @@ final class OfferStore {
         defaults.set(ids.map(\.uuidString).sorted(), forKey: Keys.syncedIDs(uid))
     }
 
-    /// Merges a listener event into the device copy.
-    ///
-    /// - Cloud documents always win for ids they contain.
-    /// - A device intention missing from the cloud is kept and uploaded unless the server had
-    ///   confirmed it before (then it was deleted on another device and is dropped).
-    /// - Cache-only events (offline, backend unreachable) never drop anything.
-    private func applySnapshot(_ snapshot: IntentionSnapshot, uid: String) {
-        let remoteIDs = Set(snapshot.intentions.map(\.id))
-        let previouslySynced = syncedIDs(uid: uid)
-        let localOnly = intentions.filter { !remoteIDs.contains($0.id) }
+    private func deletedIDs(uid: String) -> [UUID: Date] {
+        let raw = defaults.dictionary(forKey: Keys.deletedIDs(uid)) as? [String: Double] ?? [:]
+        var result: [UUID: Date] = [:]
+        for (key, value) in raw {
+            if let id = UUID(uuidString: key) { result[id] = Date(timeIntervalSince1970: value) }
+        }
+        return result
+    }
 
-        let kept: [OfferIntention]
-        var toUpload: [OfferIntention] = []
-        if snapshot.isFromCache {
-            kept = localOnly
+    private func setDeletedIDs(_ ids: [UUID: Date], uid: String) {
+        if ids.isEmpty {
+            defaults.removeObject(forKey: Keys.deletedIDs(uid))
         } else {
-            kept = localOnly.filter { !previouslySynced.contains($0.id) }
-            toUpload = kept.filter { !$0.isExpired }
+            let raw = Dictionary(uniqueKeysWithValues: ids.map { ($0.key.uuidString, $0.value.timeIntervalSince1970) })
+            defaults.set(raw, forKey: Keys.deletedIDs(uid))
+        }
+    }
+
+    /// Merges a listener event into the device copy (see `IntentionMerge.merge`).
+    private func applySnapshot(_ snapshot: IntentionSnapshot, uid: String) {
+        let result = IntentionMerge.merge(
+            local: intentions,
+            remote: snapshot.intentions,
+            deleted: deletedIDs(uid: uid),
+            previouslySynced: syncedIDs(uid: uid),
+            isFromCache: snapshot.isFromCache
+        )
+        if !snapshot.isFromCache {
             setSyncedIDs(snapshot.confirmedIDs, uid: uid)
         }
+        setDeletedIDs(result.deleted, uid: uid)
 
         isApplyingRemoteSnapshot = true
-        intentions = snapshot.intentions + kept
+        intentions = result.intentions
         isApplyingRemoteSnapshot = false
 
-        for intention in toUpload {
+        for intention in result.toUpload {
             Task {
                 do {
                     try await repository.upsert(intention, uid: uid)
@@ -360,6 +380,11 @@ final class OfferStore {
                         self.syncErrorMessage = "Some intentions have not synced to your account yet. They are still on this device."
                     }
                 }
+            }
+        }
+        for id in result.toDelete {
+            Task {
+                try? await repository.delete(id: id, uid: uid)
             }
         }
     }
@@ -387,6 +412,12 @@ final class OfferStore {
         let previous = Dictionary(uniqueKeysWithValues: oldValue.map { ($0.id, $0) })
         let current = Dictionary(uniqueKeysWithValues: intentions.map { ($0.id, $0) })
         let removed = Set(previous.keys).subtracting(current.keys)
+        if !removed.isEmpty {
+            var deleted = deletedIDs(uid: userID)
+            let deletedAt = now().syncRounded
+            for id in removed { deleted[id] = deletedAt }
+            setDeletedIDs(deleted, uid: userID)
+        }
 
         for intention in intentions where previous[intention.id] != intention {
             Task {
@@ -411,5 +442,84 @@ final class OfferStore {
                 }
             }
         }
+    }
+}
+
+/// Pure merge rules for intentions, kept apart from Firestore so they can be tested.
+enum IntentionMerge {
+    struct Result: Equatable {
+        var intentions: [OfferIntention]
+        /// Device copies that are newer than the account's, or not in it yet.
+        var toUpload: [OfferIntention]
+        /// Account documents this device deleted after their last edit.
+        var toDelete: [UUID]
+        /// Deletions still waiting for the server to confirm them.
+        var deleted: [UUID: Date]
+    }
+
+    /// Gives each added or edited intention a fresh edit time.
+    static func stampingEdits(_ values: [OfferIntention], previous: [OfferIntention], now: Date) -> [OfferIntention] {
+        let before = Dictionary(previous.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let stamp = now.syncRounded
+        return values.map { value in
+            var comparable = value
+            if let old = before[value.id] {
+                comparable.updatedAt = old.updatedAt
+                if comparable == old { return value }
+            }
+            var edited = value
+            edited.updatedAt = stamp
+            return edited
+        }
+    }
+
+    /// Merges the account copy into the device copy by edit time.
+    ///
+    /// - For an id in both, the newer edit wins; ties and device copies without an edit time
+    ///   go to the account. A newer device copy is uploaded again (server snapshots only).
+    /// - An account document deleted here at or after its last edit stays deleted and is
+    ///   deleted again. One edited elsewhere after the delete comes back.
+    /// - A device intention missing from the account is kept and uploaded unless the server had
+    ///   confirmed it before (then another device deleted it).
+    /// - Cache-only events (offline, backend unreachable) never drop anything and upload nothing.
+    static func merge(
+        local: [OfferIntention],
+        remote: [OfferIntention],
+        deleted: [UUID: Date],
+        previouslySynced: Set<UUID>,
+        isFromCache: Bool
+    ) -> Result {
+        let localByID = Dictionary(local.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let remoteIDs = Set(remote.map(\.id))
+        var deleted = deleted
+        var merged: [OfferIntention] = []
+        var toUpload: [OfferIntention] = []
+        var toDelete: [UUID] = []
+
+        for item in remote {
+            let remoteEdit = item.updatedAt ?? .distantPast
+            if let deletedAt = deleted[item.id] {
+                if remoteEdit <= deletedAt {
+                    toDelete.append(item.id)
+                    continue
+                }
+                deleted[item.id] = nil
+            }
+            if let mine = localByID[item.id], let localEdit = mine.updatedAt, localEdit > remoteEdit {
+                merged.append(mine)
+                if !isFromCache { toUpload.append(mine) }
+            } else {
+                merged.append(item)
+            }
+        }
+
+        var localOnly = local.filter { !remoteIDs.contains($0.id) && deleted[$0.id] == nil }
+        if !isFromCache {
+            localOnly = localOnly.filter { !previouslySynced.contains($0.id) }
+            toUpload += localOnly.filter { !$0.isExpired }
+            // The server no longer has these, so the deletes are done.
+            deleted = deleted.filter { remoteIDs.contains($0.key) }
+        }
+        return Result(intentions: merged + localOnly, toUpload: toUpload, toDelete: toDelete, deleted: deleted)
     }
 }

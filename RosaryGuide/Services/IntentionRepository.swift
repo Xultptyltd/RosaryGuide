@@ -141,6 +141,8 @@ private extension OfferIntention {
         let sourceId = data["sourceId"] as? String
         let emoji = data["emoji"] as? String
         let suggestOn = (data["suggestOn"] as? [String] ?? []).compactMap(MysterySetKind.init(rawValue:))
+        // Older documents hold the server's arrival time here; newer ones the edit time.
+        let updatedAt = (data["updatedAt"] as? Timestamp)?.dateValue().syncRounded
 
         self.init(
             id: id,
@@ -155,7 +157,8 @@ private extension OfferIntention {
             category: category,
             accent: accent,
             emoji: emoji?.isEmpty == false ? emoji : nil,
-            suggestOn: suggestOn
+            suggestOn: suggestOn,
+            updatedAt: updatedAt
         )
     }
 
@@ -169,7 +172,8 @@ private extension OfferIntention {
             "category": category.rawValue,
             "accent": accent.rawValue,
             "suggestOn": suggestOn.map(\.rawValue),
-            "updatedAt": FieldValue.serverTimestamp()
+            // The edit time, so an older offline edit cannot overwrite a newer one.
+            "updatedAt": updatedAt.map { Timestamp(date: $0) as Any } ?? FieldValue.serverTimestamp()
         ]
 
         if let note {
