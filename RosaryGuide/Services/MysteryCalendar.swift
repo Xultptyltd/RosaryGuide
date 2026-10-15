@@ -57,6 +57,9 @@ struct MysteryAssignment: Equatable {
         prefersWeekday ? set : (feastSuggestion ?? set)
     }
 
+    /// The set the Home picker's dot marks: always the weekday set, never a feast's.
+    var pickerDotSet: MysterySetKind { self.set }
+
     /// A set picked by hand always wins over the default.
     func shownSet(manual: MysterySetKind?, prefersWeekday: Bool) -> MysterySetKind {
         manual ?? defaultSet(prefersWeekday: prefersWeekday)

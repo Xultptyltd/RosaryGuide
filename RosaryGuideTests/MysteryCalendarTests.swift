@@ -55,6 +55,8 @@ final class MysteryCalendarTests: XCTestCase {
         XCTAssertEqual(christmas.defaultSet(prefersWeekday: false), .joyful)
         XCTAssertEqual(christmas.defaultSet(prefersWeekday: true), .sorrowful)
         XCTAssertEqual(christmas.shownSet(manual: nil, prefersWeekday: false), .joyful)
+        // The picker dot marks the weekday set whatever is showing.
+        XCTAssertEqual(christmas.pickerDotSet, .sorrowful)
         XCTAssertEqual(christmas.shownSet(manual: .luminous, prefersWeekday: false), .luminous)
         XCTAssertEqual(christmas.shownSet(manual: .luminous, prefersWeekday: true), .luminous)
         let line = try XCTUnwrap(christmas.feastLine)

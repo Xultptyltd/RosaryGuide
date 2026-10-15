@@ -975,9 +975,9 @@ struct HomeView: View {
                             .font(AppTheme.TypeRole.segmentedControl)
                             .foregroundStyle(currentSet == set ? palette.ink : palette.dim)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        if set == todaysSet {
+                        if set == assignment.pickerDotSet {
                             Circle()
-                                .fill(currentSet == todaysSet ? palette.ink : palette.faint)
+                                .fill(currentSet == set ? palette.ink : palette.faint)
                                 .frame(width: AppTheme.Space.xs, height: AppTheme.Space.xs)
                                 .padding(.top, AppTheme.Space.xs)
                                 .accessibilityHidden(true)
@@ -987,6 +987,7 @@ struct HomeView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("\(set.shortName) Mysteries")
+                .accessibilityValue(set == assignment.pickerDotSet ? "Today's weekday set" : "")
                 .accessibilityAddTraits(currentSet == set ? .isSelected : [])
             }
         }
