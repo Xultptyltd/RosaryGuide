@@ -872,58 +872,6 @@ private struct MyPrayerIntentionRowLabel: View {
     }
 }
 
-private struct MyPrayerPapalIntentionCard: View {
-    @Environment(\.palette) private var palette
-    let item: SuggestedIntention
-    let onOpen: () -> Void
-
-    var body: some View {
-        Button(action: onOpen) {
-            HStack(alignment: .center, spacing: AppTheme.Space.md) {
-                Image("PopeLeo")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 56, height: 56)
-                    .clipShape(Circle())
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    Text("POPE’S INTENTION · \(monthOnly.uppercased())")
-                        .font(AppTheme.TypeRole.sectionLabel)
-                        .foregroundStyle(palette.textSecondary)
-                        .lineLimit(1)
-
-                    Text(item.title)
-                        .font(AppTheme.TypeRole.body(weight: .regular))
-                        .foregroundStyle(palette.ink)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Image(systemName: "ellipsis")
-                    .guideSymbol(size: 18, weight: .medium)
-                    .foregroundStyle(palette.textSecondary)
-                    .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
-                    .accessibilityHidden(true)
-            }
-            .padding(AppTheme.Space.md)
-            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .guidePressable()
-        .accessibilityLabel("Pope’s intention, \(item.title)")
-    }
-
-    private var monthOnly: String {
-        guard let monthLabel = item.monthLabel?.split(separator: " ").first else {
-            return Date().formatted(.dateTime.month(.wide))
-        }
-        return String(monthLabel)
-    }
-}
-
 private struct CurrentIntentionHero: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
@@ -3090,7 +3038,6 @@ private struct PrayerJourneyView: View {
         let sessionDays = Set(completedSessions.map { calendar.startOfDay(for: $0.completedAt).timeIntervalSince1970 })
         return prayedDayStarts.filter { !sessionDays.contains($0) }
     }
-    private var totalRosaries: Int { completedSessions.count + legacyCompletedRosaryDays.count }
     private var monthRosaries: Int {
         let calendar = Calendar.current
         guard let interval = calendar.dateInterval(of: .month, for: visibleMonth) else { return monthSessions.count }
@@ -3108,25 +3055,12 @@ private struct PrayerJourneyView: View {
         // Finishing a Rosary removes its partial-decade records, so they count once here.
         monthRosaries * 5 + monthDecades.count
     }
-    private var totalDuration: TimeInterval {
-        prayerTimeByDay.values.reduce(0) { $0 + max(0, $1) }
-    }
     private var monthDuration: TimeInterval {
         let calendar = Calendar.current
         guard let interval = calendar.dateInterval(of: .month, for: visibleMonth) else { return 0 }
         return prayerTimeByDay.reduce(0) { total, entry in
             guard let date = SyncedProgress.date(forDayKey: entry.key), interval.contains(date) else { return total }
             return total + max(0, entry.value)
-        }
-    }
-    private var firstPrayerDate: Date? {
-        let sessionDate = completedSessions.map(\.completedAt).min()
-        let legacyDate = prayedDayStarts.min().map { Date(timeIntervalSince1970: $0) }
-        switch (sessionDate, legacyDate) {
-        case let (session?, legacy?): return min(session, legacy)
-        case let (session?, nil): return session
-        case let (nil, legacy?): return legacy
-        case (nil, nil): return nil
         }
     }
 
@@ -3369,12 +3303,6 @@ private struct PrayerJourneyView: View {
         return "\(parts.value) \(parts.unit)"
     }
 
-    private static let dayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.setLocalizedDateFormatFromTemplate("d MMMM yyyy")
-        return formatter
-    }()
-
     private static let footerFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.setLocalizedDateFormatFromTemplate("d MMMM yyyy")
@@ -3499,30 +3427,6 @@ private struct JourneyMonth {
     }
 }
 
-private struct JourneySummaryMetric: View {
-    @Environment(\.palette) private var palette
-    var value: String
-    var unit: String
-    var label: String
-
-    var body: some View {
-        VStack(spacing: AppTheme.Space.xs) {
-            Text(value)
-                .font(AppTheme.TypeRole.serifTitle)
-                .foregroundStyle(palette.ink)
-            Text(unit)
-                .font(AppTheme.TypeRole.caption(weight: .medium))
-                .foregroundStyle(palette.ink)
-            Text(label)
-                .font(AppTheme.TypeRole.caption())
-                .foregroundStyle(palette.dim)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
-    }
-}
-
 private struct JourneyMetricDivider: View {
     @Environment(\.palette) private var palette
     var height: CGFloat = 86
@@ -3623,39 +3527,6 @@ private struct JourneyInlineStat: View {
                 .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-    }
-}
-
-private struct JourneyStatTile: View {
-    @Environment(\.palette) private var palette
-    var symbol: String
-    var value: String
-    var label: String
-
-    var body: some View {
-        VStack(spacing: AppTheme.Space.sm) {
-            Image(systemName: symbol)
-                .guideSymbol(size: 18, weight: .medium)
-                .foregroundStyle(palette.ink)
-                .frame(height: 24)
-
-            Text(value)
-                .font(AppTheme.TypeRole.serifSmall)
-                .foregroundStyle(palette.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.65)
-
-            Text(label)
-                .font(AppTheme.TypeRole.caption())
-                .foregroundStyle(palette.dim)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-        }
-        .frame(maxWidth: .infinity, minHeight: 104)
-        .padding(.vertical, AppTheme.Space.md)
-        .padding(.horizontal, AppTheme.Space.xs)
-        .guideCard(fill: palette.surface)
         .accessibilityElement(children: .combine)
     }
 }

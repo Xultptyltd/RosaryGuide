@@ -531,13 +531,6 @@ struct PrayView: View {
         min(1, max(0, plateScrollY / 180))
     }
 
-    /// Overflow only — geometry-based, never character count. False until measured.
-    private var plateShowsScrollHint: Bool {
-        guard !plateHintDismissed else { return false }
-        guard plateViewportHeight > 1, plateContentHeight > 1 else { return false }
-        return plateContentHeight > plateViewportHeight + 6
-    }
-
     private func plateHeroImage(
         mystery: Mystery,
         artHeight: CGFloat,
@@ -2132,57 +2125,5 @@ private struct PlateViewportHeightKey: PreferenceKey {
     }
 }
 
-private struct PlateScrollHintBob: ViewModifier {
-    var animate: Bool
-    @State private var visible = false
-    @State private var drift: CGFloat = 0
-    @State private var runID = UUID()
-
-    func body(content: Content) -> some View {
-        content
-            .opacity(visible ? 1 : 0)
-            .offset(y: drift)
-            .onAppear {
-                let id = UUID()
-                runID = id
-                // Avoid flashing before the delayed reveal.
-                visible = false
-                drift = 0
-                Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 400_000_000)
-                    guard runID == id else { return }
-                    withAnimation(.easeOut(duration: 0.35)) {
-                        visible = true
-                    }
-                    guard animate else { return }
-                    // One or two soft drifts, then rest — never a loop.
-                    try? await Task.sleep(nanoseconds: 120_000_000)
-                    guard runID == id else { return }
-                    withAnimation(.easeInOut(duration: 0.7)) { drift = 5 }
-                    try? await Task.sleep(nanoseconds: 700_000_000)
-                    guard runID == id else { return }
-                    withAnimation(.easeInOut(duration: 0.7)) { drift = 0 }
-                    try? await Task.sleep(nanoseconds: 700_000_000)
-                    guard runID == id else { return }
-                    withAnimation(.easeInOut(duration: 0.7)) { drift = 5 }
-                    try? await Task.sleep(nanoseconds: 700_000_000)
-                    guard runID == id else { return }
-                    withAnimation(.easeInOut(duration: 0.7)) { drift = 0 }
-                }
-            }
-            .onDisappear {
-                runID = UUID()
-                visible = false
-                drift = 0
-            }
-    }
-}
-
 // MARK: - Mystery plate scroll tracking
 
-private struct PlateScrollOffsetKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}

@@ -156,22 +156,6 @@ struct RosaryWalkthroughView: View {
         .accessibilityHidden(true)
     }
 
-    private func imagePlaceholder(height: CGFloat, fadeHeight: CGFloat = GuideWalkthroughLayout.fadeHeight) -> some View {
-        Rectangle()
-            .fill(palette.accent)
-            .overlay {
-                Image(systemName: "photo")
-                    .guideSymbol(size: 32, weight: .regular)
-                    .foregroundStyle(palette.primaryButtonText)
-            }
-            .overlay(alignment: .bottom) {
-                LinearGradient(colors: [.clear, palette.prayBg], startPoint: .top, endPoint: .bottom)
-                    .frame(height: min(fadeHeight, height))
-            }
-            .frame(height: height)
-            .accessibilityHidden(true)
-    }
-
     @ViewBuilder
     private func pageContent(_ index: Int, topInset: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
@@ -478,35 +462,6 @@ private struct GuideWalkthroughPage<Content: View>: View {
 private struct GuideReadingMetrics: Equatable {
     var y: CGFloat
     var maxOffset: CGFloat
-}
-
-/// The prayer flow's slim segmented track, adapted to a variable page count.
-struct GuideFlowProgressTrack: View {
-    var current: Int
-    var count: Int
-    var onSelect: (Int) -> Void
-    @Environment(\.palette) private var palette
-
-    var body: some View {
-        HStack(spacing: AppTheme.Space.xs) {
-            ForEach(0..<count, id: \.self) { index in
-                Button { onSelect(index) } label: {
-                    Capsule()
-                        .fill(index == current ? palette.ink : palette.ink.opacity(index < current ? 0.20 : 0.08))
-                        .frame(height: 4)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 14)
-                        .padding(.bottom, AppTheme.Space.sm)
-                        .frame(minHeight: AppTheme.Accessibility.minHitTarget, alignment: .top)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Guide screen \(index + 1) of \(count)")
-                .accessibilityAddTraits(index == current ? .isSelected : [])
-            }
-        }
-        .padding(.bottom, 14)
-    }
 }
 
 struct HowToPrayView: View {

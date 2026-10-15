@@ -291,29 +291,6 @@ struct GuideSectionBoundary: View {
     }
 }
 
-/// Section label row used with `GuideSectionDivider` for count headings such as
-/// "Featured (4)" while staying on the app typography and colour token paths.
-struct GuideDividerSectionHeader: View {
-    @Environment(\.palette) private var palette
-    var title: String
-    var count: Int?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            GuideSectionDivider()
-            GuideSectionLabel(text: label, prominence: .strong)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isHeader)
-    }
-
-    private var label: String {
-        guard let count else { return title }
-        return "\(title) (\(count))"
-    }
-}
-
 // MARK: - Row dividers (no hairline under the last row)
 
 extension EnvironmentValues {

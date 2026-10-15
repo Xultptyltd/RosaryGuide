@@ -36,7 +36,6 @@ struct HomeView: View {
     @State private var selectedLiturgicalVerse: LiturgicalVerse?
     @State private var showSettingsDrawer = false
     @State private var navigationPath = NavigationPath()
-    @Namespace private var pickerNamespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // Archived pending a product decision: keep the Home Daily Scripture implementation
@@ -461,72 +460,6 @@ struct HomeView: View {
         return resumable
     }
 
-    private var todayIntentionSection: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            Button {
-                showIntentionSheet = true
-            } label: {
-                VStack(spacing: AppTheme.Space.md) {
-                    HStack(alignment: .center, spacing: AppTheme.Space.md) {
-                        ZStack {
-                            IntentionIconView(
-                                accent: currentIntention?.accent ?? .mintGreen,
-                                emoji: currentIntention?.displayEmoji ?? "❤️",
-                                size: 52,
-                                usesPopePortrait: currentIntention?.isPapal == true
-                            )
-                        }
-                        .frame(width: 52, height: 52)
-
-                        Text("Offer this Rosary for")
-                            .font(AppTheme.TypeRole.body(weight: .semibold))
-                            .foregroundStyle(palette.ink)
-                        Spacer(minLength: 8)
-                    }
-
-                    if let currentIntention {
-                        Text(IntentionPrivacy.displayTitle(currentIntention, hidden: hideIntentionText))
-                            .font(AppTheme.TypeRole.bodySmall)
-                            .foregroundStyle(palette.dim)
-                            .lineSpacing(4)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(AppTheme.Space.lg)
-                            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
-                        HStack {
-                            Text("Change intention")
-                                .font(AppTheme.TypeRole.buttonTertiary)
-                                .underline()
-                            Spacer()
-                            Image(systemName: "pencil")
-                                .guideSymbol(size: 13, weight: .medium)
-                        }
-                        .foregroundStyle(palette.textPrimary)
-                        .padding(.horizontal, AppTheme.Space.lg)
-                        .padding(.vertical, AppTheme.Component.textButtonVerticalPadding)
-                    } else {
-                        HStack {
-                            Text("Add an intention")
-                                .font(AppTheme.TypeRole.label(weight: .medium))
-                            Spacer()
-                            Image(systemName: "plus")
-                                .guideSymbol(size: 13, weight: .semibold)
-                        }
-                        .foregroundStyle(palette.ink)
-                        .padding(AppTheme.Space.lg)
-                        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
-                        Text("You can also pray without a specific intention.")
-                            .font(AppTheme.TypeRole.label)
-                            .foregroundStyle(palette.dim)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-                .padding(AppTheme.Space.lg)
-                .guideCard(fill: palette.surface)
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
     private var liturgicalVerseSection: some View {
         let verse = LiturgicalVerseCatalog.verse(for: today)
         return Button {
@@ -869,32 +802,6 @@ struct HomeView: View {
         }
     }
 
-    private var quoteCard: some View {
-        let quote = QuoteCatalog.quote(for: today)
-        return VStack(spacing: AppTheme.Space.md) {
-            Text("“")
-                .font(AppTheme.TypeRole.title)
-                .foregroundStyle(palette.accent.opacity(colorScheme == .light ? 0.26 : 0.42))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: 20)
-            Text("“\(quote.text)”")
-                .font(AppTheme.TypeRole.callout)
-                .foregroundStyle(palette.dim)
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-            Text(quote.attribution.uppercased())
-                .font(AppTheme.TypeRole.caption(weight: .medium))
-                .tracking(1.6)
-                .foregroundStyle(palette.faint)
-        }
-        .padding(AppTheme.Space.xl)
-        .guideCard()
-    }
-
-    private func weekDotColor(_ set: MysterySetKind) -> Color {
-        AppTheme.mysteryIndicatorColor(for: set)
-    }
-
     private static let feastSetURL = URL(string: "rosaryguide-home://feast-set")!
     private static let weekdaySetURL = URL(string: "rosaryguide-home://weekday-set")!
 
@@ -1015,12 +922,6 @@ struct HomeView: View {
         .accessibilityLabel("Mystery set")
     }
 
-    private func mysteryDotX(index: Int, width: CGFloat) -> CGFloat {
-        guard !MysterySetKind.displayOrder.isEmpty else { return 0 }
-        let segmentWidth = width / CGFloat(MysterySetKind.displayOrder.count)
-        return segmentWidth * (CGFloat(index) + 0.5)
-    }
-
     private var mysterySetSelection: Binding<MysterySetKind> {
         Binding(
             get: { currentSet },
@@ -1037,26 +938,6 @@ struct HomeView: View {
         "\(currentSet.shortName)\nMysteries"
     }
 
-
-    private var ctaStack: some View {
-        let resumable = session.resumableSession
-        let sameSet = resumable?.mysterySet == currentSet
-
-        return VStack(spacing: AppTheme.Space.md) {
-            PillButton(title: primaryCTATitle(resumable: resumable, sameSet: sameSet)) {
-                primaryCTAAction(resumable: resumable, sameSet: sameSet)
-            }
-
-            if resumable != nil {
-                PillButton(
-                    title: secondaryCTATitle(resumable: resumable!, sameSet: sameSet),
-                    filled: false
-                ) {
-                    secondaryCTAAction(resumable: resumable!, sameSet: sameSet)
-                }
-            }
-        }
-    }
 
     private func primaryCTATitle(resumable: PrayerSession?, sameSet: Bool) -> String {
         guard let resumable else {

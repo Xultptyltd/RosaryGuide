@@ -509,10 +509,6 @@ struct FeastDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private var featuredPrayer: FeastRelatedPrayer? {
-        feast.relatedPrayersForDay.first
-    }
-
     private var prayersForDay: [FeastRelatedPrayer] {
         if !feast.relatedPrayersForDay.isEmpty {
             return feast.relatedPrayersForDay
@@ -835,29 +831,6 @@ struct FeastDetailView: View {
         }
     }
 
-    private var devotionalMeditation: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-            GuideSectionLabel(text: "Reflection", prominence: .strong)
-            Text(devotionalCopy)
-                .font(AppTheme.TypeRole.body)
-                .foregroundStyle(palette.ink)
-                .lineSpacing(8)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Hairline()
-                .padding(.top, 2)
-
-            Text(reflectionPrompt)
-                .font(AppTheme.TypeRole.bodySmall)
-                .foregroundStyle(palette.dim)
-                .lineSpacing(8)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface)
-    }
-
     private var devotionalCopy: String {
         let source = feast.aboutText == feast.summary ? feast.summary : feast.aboutText
         let sentences = source
@@ -880,37 +853,6 @@ struct FeastDetailView: View {
             return "Let this solemnity draw your attention back to Christ, and begin from there."
         }
         return "Pause here for a moment. What grace do you want to ask for as you pray today?"
-    }
-
-    private var prayWithFeastButton: some View {
-        Button {
-            prayLaunch = .fresh(feast.suggestedMysterySet ?? feastDayAssignment.set)
-        } label: {
-            HStack(spacing: AppTheme.Space.lg) {
-                Image(systemName: "hands.sparkles.fill")
-                    .guideSymbol(size: 20, weight: .medium)
-                    .foregroundStyle(palette.primaryButtonText)
-                    .frame(width: 32)
-
-                VStack(alignment: .center, spacing: AppTheme.Space.xs) {
-                    Text("Pray with this feast")
-                        .font(AppTheme.TypeRole.callout(weight: .semibold))
-                        .foregroundStyle(palette.primaryButtonText)
-                    Text(prayWithFeastSubtitle)
-                        .font(AppTheme.TypeRole.label)
-                        .foregroundStyle(palette.primaryButtonText.opacity(0.72))
-                }
-                .frame(maxWidth: .infinity)
-                .multilineTextAlignment(.center)
-
-                Color.clear.frame(width: 32)
-
-            }
-            .padding(.horizontal, 18)
-            .frame(minHeight: 64)
-            .background(palette.primaryButtonFill, in: Capsule())
-        }
-        .buttonStyle(.plain)
     }
 
     private var prayWithFeastSubtitle: String {
@@ -938,47 +880,6 @@ struct FeastDetailView: View {
         }
         .padding(AppTheme.Space.lg)
         .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: false)
-    }
-
-    private func relatedPrayerPreview(_ prayer: FeastRelatedPrayer) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-            GuideSectionLabel(text: "Related prayer", prominence: .strong)
-            Text(prayer.title)
-                .font(AppTheme.TypeRole.titleSmall(weight: .semibold))
-                .foregroundStyle(palette.ink)
-
-            Text(prayerText(prayer))
-                .font(AppTheme.TypeRole.bodySmall)
-                .foregroundStyle(palette.dim)
-                .lineSpacing(8)
-                .lineLimit(5)
-                .fixedSize(horizontal: false, vertical: true)
-
-            NavigationLink {
-                FeastRelatedPrayersView(feast: feast)
-                    .environment(settings)
-            } label: {
-                HStack {
-                    Text("Pray this prayer")
-                        .font(AppTheme.TypeRole.label(weight: .medium))
-                    Spacer()
-                }
-                .foregroundStyle(palette.ink)
-                .padding(.top, 2)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface)
-    }
-
-    private var supportingLinks: some View {
-        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-            GuideSectionLabel(text: "More for this feast", prominence: .strong)
-            infoRows
-                .guideNavList(pageGutter: AppTheme.gutter)
-        }
     }
 
     private var detailHero: some View {
@@ -1083,29 +984,6 @@ struct FeastDetailView: View {
         }
         .padding(.vertical, 17)
         .contentShape(Rectangle())
-    }
-
-    private func feastChip(_ label: String) -> some View {
-        Text(label)
-            .font(AppTheme.TypeRole.caption(weight: .medium))
-            .foregroundStyle(palette.ink)
-            .padding(.horizontal, 11)
-            .padding(.vertical, 6)
-            .background(palette.surface, in: Capsule())
-            .overlay {
-                Capsule().strokeBorder(palette.hair, lineWidth: 1)
-            }
-    }
-
-    private func narrativeSection(title: String, body: String) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            GuideSectionLabel(text: title, color: palette.dim)
-            Text(body)
-                .font(AppTheme.TypeRole.serifBody)
-                .foregroundStyle(palette.ink)
-                .lineSpacing(13)
-                .fixedSize(horizontal: false, vertical: true)
-        }
     }
 
     private var prayersSection: some View {
