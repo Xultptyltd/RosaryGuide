@@ -1824,7 +1824,7 @@ struct PrayView: View {
             move(to: index + 1)
             return
         }
-        if current?.kind == .signOfTheCross, activeConfig.intentionsStep, index < steps.count - 1 {
+        if current?.kind == .signOfTheCross, current?.stage == .opening, activeConfig.intentionsStep, index < steps.count - 1 {
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
                 showingIntentionStep = true
             }
@@ -1933,7 +1933,8 @@ struct PrayView: View {
         let previous = index - 1
         move(to: previous)
         // Stepping back from the Creed lands on the intention step, not past it.
-        if activeConfig.intentionsStep, steps.indices.contains(previous), steps[previous].kind == .signOfTheCross {
+        if activeConfig.intentionsStep, steps.indices.contains(previous),
+           steps[previous].kind == .signOfTheCross, steps[previous].stage == .opening {
             showingIntentionStep = true
         }
     }

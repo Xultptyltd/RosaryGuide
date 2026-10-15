@@ -13,11 +13,31 @@ final class MysteryCalendarTests: XCTestCase {
         XCTAssertEqual(setOn(2026, 9, 20), .glorious)
     }
 
-    func testSeasonalSundays() {
-        XCTAssertEqual(setOn(2026, 11, 29), .joyful)
-        XCTAssertEqual(setOn(2026, 12, 27), .joyful)
-        XCTAssertEqual(setOn(2026, 3, 1), .sorrowful)
-        XCTAssertEqual(setOn(2026, 4, 12), .glorious)
+    func testSundaysAreAlwaysGlorious() {
+        XCTAssertEqual(setOn(2026, 11, 29), .glorious) // Advent
+        XCTAssertEqual(setOn(2026, 12, 27), .glorious) // Christmastide
+        XCTAssertEqual(setOn(2026, 3, 1), .glorious)   // Lent
+        XCTAssertEqual(setOn(2026, 3, 29), .glorious)  // Palm Sunday
+        XCTAssertEqual(setOn(2026, 4, 12), .glorious)  // Easter
+        XCTAssertEqual(MysterySetKind.glorious.days(in: .lent), "Wednesdays and Sundays")
+        XCTAssertEqual(MysterySetKind.joyful.days(in: .advent), "Mondays and Saturdays")
+    }
+
+    func testRosaryEndsWithTheSignOfTheCross() {
+        for config in [RosaryConfig.default, { var c = RosaryConfig(); c.closingPrayers = false; c.memorare = true; return c }()] {
+            let steps = RosarySequenceBuilder.build(set: .joyful, config: config)
+            let prayers = steps.filter { $0.kind != .completion }
+            XCTAssertEqual(prayers.first?.kind, .signOfTheCross)
+            XCTAssertEqual(prayers.last?.kind, .signOfTheCross)
+            XCTAssertEqual(prayers.last?.stage, .closing)
+            XCTAssertTrue(prayers.last?.isLastPrayer == true)
+            XCTAssertEqual(steps.filter(\.isLastPrayer).count, 1)
+            XCTAssertEqual(steps.last?.kind, .completion)
+            XCTAssertEqual(prayers.last?.body, PrayerCatalog.signOfTheCross.text)
+            XCTAssertTrue(prayers.last?.body.hasDistinctLatin == true)
+        }
+        // Default: 1 + 1 + 1 + 3 + 1 opening, 5 × 14 decades, 3 closing, final Sign of the Cross.
+        XCTAssertEqual(RosarySequenceBuilder.build(set: .joyful).filter { $0.kind != .completion }.count, 81)
     }
 
     func testFeastsDoNotOverrideWeekdaySet() {
@@ -188,15 +208,16 @@ final class RosaryConfigTests: XCTestCase {
     }
 
     func testStepCountsPerCombination() {
-        XCTAssertEqual(RosarySequenceBuilder.build(set: .joyful).count, 81)
-        XCTAssertEqual(count { _ in }, 81)
-        XCTAssertEqual(count { $0.fatimaPrayer = false }, 76)
-        XCTAssertEqual(count { $0.oSacrament = true }, 86)
-        XCTAssertEqual(count { $0.closingPrayers = false }, 78)
-        XCTAssertEqual(count { $0.memorare = true }, 82)
-        XCTAssertEqual(count { $0.saintMichael = true }, 82)
-        XCTAssertEqual(count { $0.memorare = true; $0.saintMichael = true; $0.oSacrament = true }, 88)
-        XCTAssertEqual(count { $0.fatimaPrayer = false; $0.closingPrayers = false }, 73)
+        // Includes the closing Sign of the Cross and the finis step.
+        XCTAssertEqual(RosarySequenceBuilder.build(set: .joyful).count, 82)
+        XCTAssertEqual(count { _ in }, 82)
+        XCTAssertEqual(count { $0.fatimaPrayer = false }, 77)
+        XCTAssertEqual(count { $0.oSacrament = true }, 87)
+        XCTAssertEqual(count { $0.closingPrayers = false }, 79)
+        XCTAssertEqual(count { $0.memorare = true }, 83)
+        XCTAssertEqual(count { $0.saintMichael = true }, 83)
+        XCTAssertEqual(count { $0.memorare = true; $0.saintMichael = true; $0.oSacrament = true }, 89)
+        XCTAssertEqual(count { $0.fatimaPrayer = false; $0.closingPrayers = false }, 74)
     }
 
     func testDecadeEndsAndLastPrayerFollowConfig() {
@@ -212,8 +233,8 @@ final class RosaryConfigTests: XCTestCase {
         var extras = RosaryConfig()
         extras.memorare = true
         extras.saintMichael = true
-        let closing = RosarySequenceBuilder.build(set: .glorious, config: extras).suffix(6).map(\.kind)
-        XCTAssertEqual(closing, [.hailHolyQueen, .versicle, .concludingPrayer, .memorare, .saintMichael, .completion])
+        let closing = RosarySequenceBuilder.build(set: .glorious, config: extras).suffix(7).map(\.kind)
+        XCTAssertEqual(closing, [.hailHolyQueen, .versicle, .concludingPrayer, .memorare, .saintMichael, .signOfTheCross, .completion])
     }
 
     func testScriptureTranslationAndOpeningLines() {
@@ -248,7 +269,7 @@ final class RosaryConfigTests: XCTestCase {
         let decoded = try JSONDecoder().decode(PrayerSession.self, from: JSONEncoder().encode(session))
         XCTAssertEqual(decoded.rosaryConfig, config)
         let steps = RosarySequenceBuilder.build(set: decoded.mysterySet, config: decoded.rosaryConfig)
-        XCTAssertEqual(steps.count, 79)
+        XCTAssertEqual(steps.count, 80)
         XCTAssertEqual(steps[decoded.stepIndex].kind, .memorare)
     }
 
@@ -259,7 +280,7 @@ final class RosaryConfigTests: XCTestCase {
         object.removeValue(forKey: "rosaryConfig")
         let decoded = try JSONDecoder().decode(PrayerSession.self, from: JSONSerialization.data(withJSONObject: object))
         XCTAssertEqual(decoded.rosaryConfig, .default)
-        XCTAssertEqual(RosarySequenceBuilder.build(set: .joyful, config: decoded.rosaryConfig).count, 81)
+        XCTAssertEqual(RosarySequenceBuilder.build(set: .joyful, config: decoded.rosaryConfig).count, 82)
         // Partial configs (future/older fields) fall back per field.
         let partial = try JSONDecoder().decode(RosaryConfig.self, from: Data(#"{"memorare":true}"#.utf8))
         XCTAssertTrue(partial.memorare)
@@ -292,8 +313,9 @@ final class RosaryRemapTests: XCTestCase {
         let mapped = RosarySequenceBuilder.remap(index: index, from: old, to: new)
         XCTAssertEqual(new[mapped].kind, .concludingPrayer)
         XCTAssertEqual(new[mapped + 1].kind, .memorare)
-        XCTAssertTrue(new[mapped + 1].isLastPrayer)
-        XCTAssertFalse(new[mapped].isLastPrayer)
+        XCTAssertEqual(new[mapped + 2].kind, .signOfTheCross)
+        XCTAssertTrue(new[mapped + 2].isLastPrayer)
+        XCTAssertFalse(new[mapped + 1].isLastPrayer)
     }
 
     func testRemovedCurrentStepMovesToNextSurvivor() {
@@ -311,9 +333,11 @@ final class RosaryRemapTests: XCTestCase {
         let versicle = before.firstIndex { $0.kind == .versicle }!
         XCTAssertEqual(after[RosarySequenceBuilder.remap(index: versicle, from: before, to: after)].kind, .memorare)
 
-        // Nothing left after it: lands on the finis step.
+        // No other closing prayer left: lands on the closing Sign of the Cross.
         let bare = RosarySequenceBuilder.build(set: .sorrowful, config: config { $0.closingPrayers = false })
-        XCTAssertEqual(bare[RosarySequenceBuilder.remap(index: old.firstIndex { $0.kind == .versicle }!, from: old, to: bare)].kind, .completion)
+        let landed = bare[RosarySequenceBuilder.remap(index: old.firstIndex { $0.kind == .versicle }!, from: old, to: bare)]
+        XCTAssertEqual(landed.kind, .signOfTheCross)
+        XCTAssertEqual(landed.stage, .closing)
     }
 
     func testTranslationChangeKeepsPositionAndSwapsScripture() {

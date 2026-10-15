@@ -76,8 +76,7 @@ enum NotificationService {
     // MARK: - Daily reminder
 
     /// One repeating trigger per weekday so reminders keep coming even if the app
-    /// isn't opened. Mon–Sat mysteries are fixed by weekday. Sunday's depend on the
-    /// season, and a repeating trigger can't know it, so Sunday's copy names no set.
+    /// isn't opened. Every weekday has a fixed set (Sundays are always Glorious).
     private static func dailyRequests(minutes: Int, now: Date) -> [UNNotificationRequest] {
         let calendar = Calendar.current
         let hour = max(0, min(23, minutes / 60))
@@ -104,7 +103,6 @@ enum NotificationService {
     }
 
     static func dailyBody(weekday: Int, day: Date) -> String {
-        guard weekday != 1 else { return "Take a few quiet minutes for the Rosary today." }
         let set = MysteryCalendar.assignment(on: day).set
         return "Today: the \(set.shortName) Mysteries. Take a few quiet minutes for the Rosary."
     }

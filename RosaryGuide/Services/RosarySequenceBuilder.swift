@@ -150,6 +150,8 @@ enum RosarySequenceBuilder {
         if config.saintMichael {
             append(.saintMichael, haptic: .medium, stage: .closing, bead: .closing)
         }
+        // The Rosary ends as it began, with the Sign of the Cross.
+        append(.signOfTheCross, haptic: .medium, stage: .closing, bead: .closing)
         steps[steps.count - 1].isLastPrayer = true
 
         // The finis screen picks its own quote. Do not call freshCompletionQuote

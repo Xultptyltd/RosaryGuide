@@ -546,13 +546,11 @@ final class PapalIntentionTests: XCTestCase {
     }
 }
 
-/// A repeating Sunday reminder never names a seasonal mystery set.
+/// Sundays are always Glorious, so the repeating Sunday reminder can name the set.
 final class ReminderCopyTests: XCTestCase {
-    func testSundayCopyIsSeasonNeutral() {
-        let body = NotificationService.dailyBody(weekday: 1, day: Date())
-        for set in MysterySetKind.allCases {
-            XCTAssertFalse(body.contains(set.shortName))
-        }
+    func testSundayCopyNamesGlorious() {
+        let adventSunday = Calendar.current.date(from: DateComponents(year: 2026, month: 11, day: 29, hour: 12))!
+        XCTAssertTrue(NotificationService.dailyBody(weekday: 1, day: adventSunday).contains("Glorious"))
         let monday = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 19))!
         XCTAssertTrue(NotificationService.dailyBody(weekday: 2, day: monday).contains("Joyful"))
     }

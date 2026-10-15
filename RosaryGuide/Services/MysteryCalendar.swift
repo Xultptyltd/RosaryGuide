@@ -59,14 +59,8 @@ enum MysteryCalendar {
         let set: MysterySetKind
         switch weekday {
         case 1:
-            switch season {
-            case .advent, .christmas:
-                set = .joyful
-            case .lent, .triduum:
-                set = .sorrowful
-            case .easter, .ordinary:
-                set = .glorious
-            }
+            // Sundays always take the Glorious Mysteries, in every season.
+            set = .glorious
         case 2:
             set = .joyful
         case 3:

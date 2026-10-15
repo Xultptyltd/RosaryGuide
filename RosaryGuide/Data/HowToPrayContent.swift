@@ -50,7 +50,7 @@ enum HowToPrayContent {
     ]
 
     static let weekdayGuide: [(String, String)] = [
-        ("Sunday", "Joyful in Advent and Christmas; Sorrowful in Lent; Glorious in Ordinary Time and Easter"),
+        ("Sunday", "Glorious Mysteries"),
         ("Monday", "Joyful Mysteries"),
         ("Tuesday", "Sorrowful Mysteries"),
         ("Wednesday", "Glorious Mysteries"),

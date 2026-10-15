@@ -273,7 +273,7 @@ enum FeastCatalog {
         Feast(
             id: "advent-1",
             name: BilingualText(english: "First Sunday of Advent", latin: "Dóminica I Advéntus"),
-            summary: "The liturgical year begins. Sundays of Advent take the Joyful Mysteries.",
+            summary: "The liturgical year begins",
             suggestedMysterySet: .joyful,
             isMarian: false,
             rank: .seasonal,

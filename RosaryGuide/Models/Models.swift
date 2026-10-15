@@ -185,27 +185,12 @@ enum MysterySetKind: String, CaseIterable, Codable, Identifiable {
     var weekdayNames: String { days(in: .ordinary) }
 
     func days(in season: LiturgicalSeason) -> String {
+        // The weekly pattern is the same in every season; Sundays are always Glorious.
         switch self {
-        case .joyful:
-            switch season {
-            case .advent: "Mondays, Saturdays and Sundays in Advent"
-            case .christmas: "Mondays, Saturdays and Sundays in Christmastide"
-            default: "Mondays and Saturdays"
-            }
-        case .luminous:
-            "Thursdays"
-        case .sorrowful:
-            switch season {
-            case .lent, .triduum: "Tuesdays, Fridays and Sundays in Lent"
-            default: "Tuesdays and Fridays"
-            }
-        case .glorious:
-            switch season {
-            case .advent: "Wednesdays, and Sundays outside Advent"
-            case .christmas: "Wednesdays, and Sundays outside Christmastide"
-            case .lent, .triduum: "Wednesdays, and Sundays outside Lent"
-            default: "Wednesdays and Sundays"
-            }
+        case .joyful: "Mondays and Saturdays"
+        case .luminous: "Thursdays"
+        case .sorrowful: "Tuesdays and Fridays"
+        case .glorious: "Wednesdays and Sundays"
         }
     }
 
