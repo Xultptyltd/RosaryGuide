@@ -15,6 +15,10 @@ struct PrayHubView: View {
     private var assignment: MysteryAssignment {
         MysteryCalendar.assignment(on: dayClock.today)
     }
+    /// Matches Home: a feast's recommended set unless the weekday set was chosen today.
+    private var todaysSet: MysterySetKind {
+        assignment.defaultSet(prefersWeekday: dayClock.prefersWeekdaySet)
+    }
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -205,7 +209,7 @@ struct PrayHubView: View {
         let cta = resumable?.continueCTATitle ?? "Pray today’s Rosary"
 
         return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            Text(resumable == nil ? assignment.set.displayTitle : "Resume your Rosary")
+            Text(resumable == nil ? todaysSet.displayTitle : "Resume your Rosary")
                 .font(AppTheme.TypeRole.cardTitle)
                 .foregroundStyle(palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
@@ -219,7 +223,7 @@ struct PrayHubView: View {
                 if let resumable {
                     prayLaunch = .resume(resumable)
                 } else {
-                    prayLaunch = .fresh(assignment.set)
+                    prayLaunch = .fresh(todaysSet)
                 }
             } label: {
                 HStack {

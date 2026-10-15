@@ -49,6 +49,46 @@ final class MysteryCalendarTests: XCTestCase {
         XCTAssertEqual(assumption.feastSuggestion, .glorious)
     }
 
+    func testHomeDefaultsToTheFeastSetAndCanSwitch() {
+        let christmas = MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: 2026, month: 12, day: 25)!)
+        XCTAssertEqual(christmas.set, .sorrowful) // the calendar keeps the weekday set
+        XCTAssertEqual(christmas.defaultSet(prefersWeekday: false), .joyful)
+        XCTAssertEqual(christmas.defaultSet(prefersWeekday: true), .sorrowful)
+        XCTAssertEqual(christmas.shownSet(manual: nil, prefersWeekday: false), .joyful)
+        XCTAssertEqual(christmas.shownSet(manual: .luminous, prefersWeekday: false), .luminous)
+        XCTAssertEqual(christmas.shownSet(manual: .luminous, prefersWeekday: true), .luminous)
+        XCTAssertEqual(christmas.feastRecommendationCaption, "The Nativity of the Lord recommends the Joyful Mysteries")
+        XCTAssertEqual(christmas.weekdaySetButtonTitle, "Pray today's Sorrowful Mysteries instead")
+        XCTAssertEqual(christmas.feastSetButtonTitle, "Pray the Joyful Mysteries for the Nativity of the Lord")
+        for text in [christmas.feastRecommendationCaption!, christmas.weekdaySetButtonTitle, christmas.feastSetButtonTitle!] {
+            XCTAssertFalse(text.hasSuffix("."))
+        }
+    }
+
+    func testHomeKeepsWeekdaySetWhenFeastAgreesOrNoFeast() {
+        // Assumption 2027 is a Sunday: Glorious either way, so no suggestion or caption.
+        let assumption = MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: 2027, month: 8, day: 15)!)
+        XCTAssertNotNil(assumption.feast)
+        XCTAssertNil(assumption.feastSuggestion)
+        XCTAssertNil(assumption.feastRecommendationCaption)
+        XCTAssertEqual(assumption.defaultSet(prefersWeekday: false), .glorious)
+        // An ordinary Thursday with no feast.
+        let plain = MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: 2026, month: 9, day: 17)!)
+        XCTAssertEqual(plain.defaultSet(prefersWeekday: false), .luminous)
+        XCTAssertNil(plain.feastSetButtonTitle)
+    }
+
+    @MainActor
+    func testWeekdayChoiceResetsAtDayRollover() {
+        let start = LiturgicalCalendar.date(year: 2026, month: 12, day: 25)!
+        let clock = DayClock(now: start.addingTimeInterval(12 * 3600))
+        clock.prefersWeekdaySet = true
+        clock.refresh(now: start.addingTimeInterval(20 * 3600))
+        XCTAssertTrue(clock.prefersWeekdaySet) // same day keeps the choice
+        clock.refresh(now: start.addingTimeInterval(36 * 3600))
+        XCTAssertFalse(clock.prefersWeekdaySet)
+    }
+
     func testCatalogHasTwentyMysteriesWithArtSlugs() {
         XCTAssertEqual(MysteryCatalog.all.count, 20)
         for set in MysterySetKind.allCases {

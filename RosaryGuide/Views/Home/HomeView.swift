@@ -49,7 +49,10 @@ struct HomeView: View {
     private var assignment: MysteryAssignment {
         MysteryCalendar.assignment(on: today)
     }
-    private var currentSet: MysterySetKind { selectedSet ?? assignment.set }
+    /// A hand-picked set wins; otherwise a feast's recommended set, or the weekday set.
+    private var currentSet: MysterySetKind {
+        assignment.shownSet(manual: selectedSet, prefersWeekday: dayClock.prefersWeekdaySet)
+    }
     private var mysteries: [Mystery] { MysteryCatalog.mysteries(for: currentSet) }
     /// Only an intention the user picked here pre-selects on the intention step.
     /// The auto-shown pinned intention does not; a new Rosary starts with none.
@@ -147,8 +150,11 @@ struct HomeView: View {
             }
         }
         .onAppear {
-            if selectedSet == nil { selectedSet = assignment.set }
             syncCurrentIntentionIfNeeded()
+        }
+        .onChange(of: dayClock.today) { _, _ in
+            // A new day starts on its own default set.
+            selectedSet = nil
         }
         .onChange(of: currentSet) { _, _ in
             mysteryScrollID = mysteries.first?.id
@@ -362,6 +368,12 @@ struct HomeView: View {
                 .contentTransition(reduceMotion ? .identity : .opacity)
                 .animation(reduceMotion ? nil : MotionTokens.selection, value: currentSet)
                 .guideReveal(delay: 0.08)
+
+            if let feast = assignment.feast, assignment.feastSuggestion != nil {
+                feastOffer(feast)
+                    .padding(.top, AppTheme.Space.md)
+                    .guideReveal(delay: 0.09)
+            }
 
             setPicker
                 .padding(.top, AppTheme.Space.xl)
@@ -882,21 +894,43 @@ struct HomeView: View {
         AppTheme.mysteryIndicatorColor(for: set)
     }
 
+    /// On a feast with its own recommended set: a caption and a switch to the weekday set,
+    /// or, once switched, a link back to the feast's set.
+    @ViewBuilder
     private func feastOffer(_ feast: DatedFeast) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-            GuideSectionLabel(text: "Today", color: palette.dim)
-            Text(feast.feast.name.primary(for: settings.language))
-                .font(AppTheme.TypeRole.body(weight: .semibold))
-                .foregroundStyle(palette.ink)
-                .fixedSize(horizontal: false, vertical: true)
-            if let suggested = feast.feast.suggestedMysterySet, suggested != assignment.set {
-                Text("The calendar keeps the \(assignment.set.shortName) Mysteries. You can pray the \(suggested.shortName) Mysteries for this feast instead.")
-                    .font(AppTheme.TypeRole.label)
-                    .foregroundStyle(palette.dim)
-                    .lineSpacing(4)
+        if let suggested = assignment.feastSuggestion {
+            if currentSet == suggested {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                    if let caption = assignment.feastRecommendationCaption {
+                        Text(caption)
+                            .font(AppTheme.TypeRole.label)
+                            .foregroundStyle(palette.dim)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Button {
+                        chooseFeastSet(false)
+                    } label: {
+                        GuideTextButtonLabel(title: assignment.weekdaySetButtonTitle)
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else if currentSet == assignment.set, let title = assignment.feastSetButtonTitle {
+                Button {
+                    chooseFeastSet(true)
+                } label: {
+                    GuideTextButtonLabel(title: title)
+                }
+                .buttonStyle(.plain)
             }
         }
-        .accessibilityElement(children: .combine)
+    }
+
+    private func chooseFeastSet(_ feastSet: Bool) {
+        HapticService.play(.light, enabled: settings.hapticsEnabled)
+        withAnimation(reduceMotion ? nil : MotionTokens.selection) {
+            selectedSet = nil
+            dayClock.prefersWeekdaySet = !feastSet
+        }
     }
 
     private var setPicker: some View {
@@ -910,9 +944,9 @@ struct HomeView: View {
                             .font(AppTheme.TypeRole.segmentedControl)
                             .foregroundStyle(currentSet == set ? palette.ink : palette.dim)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        if set == assignment.set {
+                        if set == todaysSet {
                             Circle()
-                                .fill(currentSet == assignment.set ? palette.ink : palette.faint)
+                                .fill(currentSet == todaysSet ? palette.ink : palette.faint)
                                 .frame(width: AppTheme.Space.xs, height: AppTheme.Space.xs)
                                 .padding(.top, AppTheme.Space.xs)
                                 .accessibilityHidden(true)
@@ -1084,8 +1118,13 @@ struct HomeView: View {
         isShowingTodayMysteries ? "Today's mysteries" : currentSet.name.primary(for: settings.language)
     }
 
+    /// Today's set as offered by default (the feast's set, or the weekday set if chosen).
+    private var todaysSet: MysterySetKind {
+        assignment.defaultSet(prefersWeekday: dayClock.prefersWeekdaySet)
+    }
+
     private var isShowingTodayMysteries: Bool {
-        currentSet == assignment.set
+        currentSet == todaysSet
     }
 
     private func mysteryCard(_ mystery: Mystery) -> some View {

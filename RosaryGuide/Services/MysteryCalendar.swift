@@ -8,6 +8,9 @@ import UIKit
 @Observable
 final class DayClock {
     private(set) var today: Date
+    /// On a feast with its own recommended set, the user chose the weekday set instead.
+    /// Shared by Home and the Pray hub, and reset when the day rolls over.
+    var prefersWeekdaySet = false
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
 
     init(now: Date = Date()) {
@@ -30,7 +33,10 @@ final class DayClock {
     /// Moves `today` forward (or back) when the calendar day has changed.
     func refresh(now: Date = Date()) {
         let day = Calendar.current.startOfDay(for: now)
-        if day != today { today = day }
+        if day != today {
+            today = day
+            prefersWeekdaySet = false
+        }
     }
 }
 
@@ -43,6 +49,39 @@ struct MysteryAssignment: Equatable {
     var feastSuggestion: MysterySetKind? {
         guard let suggested = feast?.feast.suggestedMysterySet, suggested != set else { return nil }
         return suggested
+    }
+
+    /// The set Home and the Pray hub offer by default: the feast's recommended set when it
+    /// differs from the weekday's, unless the user chose the weekday set for today.
+    func defaultSet(prefersWeekday: Bool) -> MysterySetKind {
+        prefersWeekday ? set : (feastSuggestion ?? set)
+    }
+
+    /// A set picked by hand always wins over the default.
+    func shownSet(manual: MysterySetKind?, prefersWeekday: Bool) -> MysterySetKind {
+        manual ?? defaultSet(prefersWeekday: prefersWeekday)
+    }
+
+    /// Caption shown while the feast's recommended set is on screen.
+    var feastRecommendationCaption: String? {
+        guard let feast, let suggested = feastSuggestion else { return nil }
+        return "\(feast.feast.name.english) recommends the \(suggested.shortName) Mysteries"
+    }
+
+    /// Text button that switches from the feast's set to the weekday set.
+    var weekdaySetButtonTitle: String { "Pray today's \(set.shortName) Mysteries instead" }
+
+    /// Text button that switches back to the feast's recommended set.
+    var feastSetButtonTitle: String? {
+        guard let feast, let suggested = feastSuggestion else { return nil }
+        return "Pray the \(suggested.shortName) Mysteries for \(feast.feast.name.english.lowercasedLeadingArticle)"
+    }
+}
+
+private extension String {
+    /// "The Nativity of the Lord" reads as "the Nativity of the Lord" mid-sentence.
+    var lowercasedLeadingArticle: String {
+        hasPrefix("The ") ? "the " + dropFirst(4) : self
     }
 }
 
