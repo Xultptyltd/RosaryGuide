@@ -534,6 +534,18 @@ final class LatinTextTests: XCTestCase {
     }
 }
 
+/// The UI and the free-tier cap agree on what the Pope's intention is.
+final class PapalIntentionTests: XCTestCase {
+    func testOneRuleForSuggestionsAndSavedIntentions() {
+        let papal = SuggestedIntention(id: "pope-2026-10", title: "For…", sourceLabel: "Holy Father’s Intention")
+        let labelOnly = SuggestedIntention(id: "feast-1", title: "For the Pope", sourceLabel: "Pope visit")
+        XCTAssertTrue(papal.isPapal)
+        XCTAssertFalse(labelOnly.isPapal)
+        XCTAssertTrue(PapalIntention.isPapal("pope-2026-10"))
+        XCTAssertFalse(PapalIntention.isPapal(nil))
+    }
+}
+
 /// Rosary settings follow the account with the other preferences.
 final class RosaryConfigSyncTests: XCTestCase {
     func testFirestoreRoundTrip() {

@@ -164,7 +164,7 @@ final class OfferStore {
 
     /// Papal (`pope-…`) intentions are always allowed; anything else needs `canAddIntention`.
     func canAdd(sourceId: String?) -> Bool {
-        sourceId?.hasPrefix("pope-") == true || canAddIntention
+        PapalIntention.isPapal(sourceId) || canAddIntention
     }
 
     /// Returns nil (and adds nothing) when a free user is at the intention limit.

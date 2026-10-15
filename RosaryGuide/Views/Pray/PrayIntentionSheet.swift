@@ -21,11 +21,7 @@ struct PrayIntentionSheet: View {
     private var suggestions: [SuggestedIntention] { IntentionSuggestions.forDay(popeStore: popeStore) }
 
     private var papalSuggestions: [SuggestedIntention] {
-        suggestions.filter {
-            $0.id.hasPrefix("pope-")
-                || $0.sourceLabel.lowercased().contains("pope")
-                || $0.sourceLabel.lowercased().contains("holy father")
-        }
+        suggestions.filter(\.isPapal)
     }
 
     /// Your intentions for this set, pinned/current first (via OfferStore sort), then suggested, then recent.
@@ -297,9 +293,7 @@ struct PrayIntentionSheet: View {
     }
 
     private func adoptSuggestion(_ item: SuggestedIntention) {
-        let papal = item.id.hasPrefix("pope-")
-            || item.sourceLabel.lowercased().contains("pope")
-            || item.sourceLabel.lowercased().contains("holy father")
+        let papal = item.isPapal
         if let existing = offer.sortedIntentions.first(where: {
             $0.title.compare(item.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
         }) {
@@ -466,11 +460,7 @@ struct IntentionMultiSelectList: View {
     private var atLimit: Bool { selectedIds.count >= limit }
 
     private var papalSuggestions: [SuggestedIntention] {
-        IntentionSuggestions.forDay(popeStore: popeStore).filter {
-            $0.id.hasPrefix("pope-")
-                || $0.sourceLabel.lowercased().contains("pope")
-                || $0.sourceLabel.lowercased().contains("holy father")
-        }
+        IntentionSuggestions.forDay(popeStore: popeStore).filter(\.isPapal)
     }
 
     private var unadoptedPapalSuggestions: [SuggestedIntention] {

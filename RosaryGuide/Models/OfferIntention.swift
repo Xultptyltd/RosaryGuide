@@ -88,7 +88,7 @@ enum IntentionCategory: String, Codable, CaseIterable, Identifiable, Hashable, S
     }
 
     static func inferred(sourceId: String?, accent: IntentionAccent, emoji: String?) -> IntentionCategory {
-        if sourceId?.hasPrefix("pope-") == true { return .world }
+        if PapalIntention.isPapal(sourceId) { return .world }
         if emoji == "👥" || accent == .skyBlue { return .someone }
         if emoji == "🌍" || accent == .purple { return .world }
         return .personal
@@ -143,7 +143,7 @@ struct OfferIntention: Identifiable, Hashable, Sendable {
     }
 
     var isPapal: Bool {
-        sourceId?.hasPrefix("pope-") == true
+        PapalIntention.isPapal(sourceId)
     }
 
     var categoryTitle: String {

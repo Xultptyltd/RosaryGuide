@@ -524,9 +524,7 @@ struct OfferView: View {
     }
 
     private func isPapalSuggestion(_ item: SuggestedIntention) -> Bool {
-        item.id.hasPrefix("pope-")
-            || item.sourceLabel.lowercased().contains("pope")
-            || item.sourceLabel.lowercased().contains("holy father")
+        item.isPapal
     }
 
     private func hasAdoptedSuggestion(_ item: SuggestedIntention) -> Bool {

@@ -500,7 +500,7 @@ final class SessionStore {
         for record in completedSessions {
             let key = record.mysterySet.rawValue
             mysteryDates[key] = min(mysteryDates[key] ?? record.completedAt, record.completedAt)
-            if record.intentionSourceId?.hasPrefix("pope-") == true {
+            if PapalIntention.isPapal(record.intentionSourceId) {
                 offeringDates["papal"] = min(offeringDates["papal"] ?? record.completedAt, record.completedAt)
             }
             if let category = record.intentionCategory {

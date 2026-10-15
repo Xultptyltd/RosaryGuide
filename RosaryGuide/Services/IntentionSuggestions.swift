@@ -6,6 +6,19 @@ struct SuggestedIntention: Identifiable, Hashable, Sendable {
     var note: String?
     var sourceLabel: String
     var monthLabel: String?
+
+    /// The Pope's monthly intention. Same rule as the free-tier cap (`OfferStore.canAdd`).
+    var isPapal: Bool { PapalIntention.isPapal(id) }
+}
+
+/// One rule for the Pope's monthly intention everywhere: its id (suggestions) or
+/// sourceId (saved intentions) starts with "pope-". It never counts toward the free cap.
+enum PapalIntention {
+    static let prefix = "pope-"
+
+    static func isPapal(_ id: String?) -> Bool {
+        id?.hasPrefix(prefix) == true
+    }
 }
 
 enum IntentionSuggestions {
