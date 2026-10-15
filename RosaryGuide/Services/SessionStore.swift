@@ -588,7 +588,8 @@ final class SessionStore {
             completedDays: completedDayKeys,
             session: session,
             sessionChangedAt: sessionChangedAt,
-            historyResetAt: historyResetAt
+            historyResetAt: historyResetAt,
+            rosaries: completedSessions
         )
     }
 
@@ -602,6 +603,15 @@ final class SessionStore {
             completedDecades.removeAll { $0.completedAt <= reset }
         }
         completedDayKeys = Self.pruned(progress.completedDays)
+        if let rosaries = progress.rosaries {
+            // Union by id; this device's record wins a duplicate. Nil (an older copy) adds nothing.
+            let known = Set(completedSessions.map(\.id))
+            completedSessions += rosaries.filter { !known.contains($0.id) }
+            if let reset = progress.historyResetAt {
+                completedSessions.removeAll { $0.completedAt <= reset }
+            }
+            completedSessions.sort { $0.completedAt > $1.completedAt }
+        }
         completedSessions = completedSessions.filter {
             completedDayKeys.contains(SyncedProgress.dayKey(for: $0.completedAt))
                 || completedDayKeys.contains(SyncedProgress.dayKey(for: $0.startedAt))

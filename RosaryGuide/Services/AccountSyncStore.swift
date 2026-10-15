@@ -179,6 +179,21 @@ struct SyncedProgress: Codable, Equatable {
     var sessionChangedAt: Date
     /// Set by "Delete local data"; days from before it are not merged back in.
     var historyResetAt: Date?
+    /// Every finished Rosary in the history window (the record behind totals and the Journey),
+    /// merged by id so none is counted twice. Nil when this copy does not carry them (account
+    /// documents and device copies from before they synced); nil never removes anything.
+    var rosaries: [CompletedPrayerSession]? = nil
+
+    /// Most finished Rosaries kept in the account document (well under its size limit).
+    static let maxRosaries = 1500
+
+    /// How much of the document the deployed rules accept (see `SyncedPreferences.Schema`).
+    enum Schema: Int, Comparable {
+        case full = 0
+        case withoutRosaries = 1
+
+        static func < (a: Schema, b: Schema) -> Bool { a.rawValue < b.rawValue }
+    }
 
     static let empty = SyncedProgress(completedDays: [], session: nil, sessionChangedAt: .syncNever, historyResetAt: nil)
 
@@ -215,6 +230,32 @@ struct SyncedProgress: Codable, Equatable {
         }
         let cutoff = Self.cutoffDayKey()
         copy.completedDays = completedDays.filter { Self.date(forDayKey: $0) != nil && $0 >= cutoff }
+        copy.rosaries = rosaries.map { Self.normalizedRosaries($0, cutoffDayKey: cutoff) }
+        return copy
+    }
+
+    /// One record per id (the first wins), newest first, inside the history window.
+    static func normalizedRosaries(_ records: [CompletedPrayerSession], cutoffDayKey cutoff: String) -> [CompletedPrayerSession] {
+        var seen = Set<UUID>()
+        var result: [CompletedPrayerSession] = []
+        for var record in records where seen.insert(record.id).inserted {
+            guard dayKey(for: record.completedAt) >= cutoff else { continue }
+            record.startedAt = record.startedAt.syncRounded
+            record.completedAt = record.completedAt.syncRounded
+            record.duration = max(0, (record.duration * 1000).rounded() / 1000)
+            record.intentionTitle = record.intentionTitle.map { String($0.prefix(160)) }
+            record.intentionIds = record.intentionIds.map { Array($0.prefix(PrayerSession.maxIntentions)) }
+            record.intentionTitles = record.intentionTitles.map { Array($0.prefix(PrayerSession.maxIntentions).map { String($0.prefix(160)) }) }
+            result.append(record)
+        }
+        result.sort { $0.completedAt != $1.completedAt ? $0.completedAt > $1.completedAt : $0.id.uuidString < $1.id.uuidString }
+        return Array(result.prefix(maxRosaries))
+    }
+
+    /// What the account keeps of this copy under `schema`, for "does it need uploading?".
+    func stored(as schema: Schema) -> SyncedProgress {
+        var copy = normalized
+        if schema >= .withoutRosaries { copy.rosaries = nil }
         return copy
     }
 
@@ -237,11 +278,24 @@ struct SyncedProgress: Codable, Equatable {
         if let current = session, !current.isResumable {
             session = nil
         }
+
+        // Finished Rosaries: union by id (the device's record wins a duplicate), minus any
+        // finished before the newest wipe.
+        var rosaries: [CompletedPrayerSession]?
+        if local.rosaries != nil || remote.rosaries != nil {
+            let all = (local.rosaries ?? []) + (remote.rosaries ?? [])
+            rosaries = all.filter { record in reset.map { record.completedAt > $0 } ?? true }
+        }
+        var days = contribution(local).union(contribution(remote))
+        for record in rosaries ?? [] {
+            days.insert(SessionStore.creditedDayKey(startedAt: record.startedAt, completedAt: record.completedAt))
+        }
         return SyncedProgress(
-            completedDays: contribution(local).union(contribution(remote)),
+            completedDays: days,
             session: session,
             sessionChangedAt: newer.sessionChangedAt,
-            historyResetAt: reset
+            historyResetAt: reset,
+            rosaries: rosaries
         ).normalized
     }
 }
@@ -373,12 +427,17 @@ private extension SyncedProgress {
             completedDays: Set(days),
             session: session,
             sessionChangedAt: sessionChangedAt,
-            historyResetAt: (data["historyResetAt"] as? Timestamp)?.dateValue()
+            historyResetAt: (data["historyResetAt"] as? Timestamp)?.dateValue(),
+            rosaries: (data["rosaries"] as? [String: Any]).map { map in
+                map.compactMap { key, value in
+                    (value as? [String: Any]).flatMap { CompletedPrayerSession(firestoreId: key, data: $0) }
+                }
+            }
         )
         self = normalized
     }
 
-    func firestoreData() -> [String: Any] {
+    func firestoreData(schema: Schema = .full) -> [String: Any] {
         let value = normalized
         var data: [String: Any] = [
             "schemaVersion": 1,
@@ -409,7 +468,53 @@ private extension SyncedProgress {
             // `intentionIds` / `intentionTitles`. Extra intentions stay on this device.
             data["session"] = map
         }
+        if let rosaries = value.rosaries, schema < .withoutRosaries {
+            data["rosaries"] = Dictionary(uniqueKeysWithValues: rosaries.map { ($0.id.uuidString, $0.firestoreData()) })
+        }
         return data
+    }
+}
+
+/// One finished Rosary in `progress.rosaries`, keyed by its id. Matches `validRosaries`.
+private extension CompletedPrayerSession {
+    init?(firestoreId: String, data: [String: Any]) {
+        guard
+            let id = UUID(uuidString: firestoreId),
+            let set = (data["mysterySet"] as? String).flatMap(MysterySetKind.init(rawValue:)),
+            let startedAt = (data["startedAt"] as? Timestamp)?.dateValue(),
+            let completedAt = (data["completedAt"] as? Timestamp)?.dateValue()
+        else { return nil }
+        self.init(
+            id: id,
+            sessionId: (data["sessionId"] as? String).flatMap(UUID.init(uuidString:)),
+            mysterySet: set,
+            startedAt: startedAt,
+            completedAt: completedAt,
+            duration: (data["duration"] as? NSNumber)?.doubleValue ?? 0,
+            intentionId: (data["intentionId"] as? String).flatMap(UUID.init(uuidString:)),
+            intentionTitle: data["intentionTitle"] as? String,
+            intentionCategory: (data["intentionCategory"] as? String).flatMap(IntentionCategory.init(rawValue:)),
+            intentionSourceId: data["intentionSourceId"] as? String,
+            intentionIds: (data["intentionIds"] as? [String])?.compactMap(UUID.init(uuidString:)),
+            intentionTitles: data["intentionTitles"] as? [String]
+        )
+    }
+
+    func firestoreData() -> [String: Any] {
+        var map: [String: Any] = [
+            "mysterySet": mysterySet.rawValue,
+            "startedAt": Timestamp(date: startedAt),
+            "completedAt": Timestamp(date: completedAt),
+            "duration": duration
+        ]
+        if let sessionId { map["sessionId"] = sessionId.uuidString }
+        if let intentionId { map["intentionId"] = intentionId.uuidString }
+        if let intentionTitle { map["intentionTitle"] = intentionTitle }
+        if let intentionCategory { map["intentionCategory"] = intentionCategory.rawValue }
+        if let intentionSourceId { map["intentionSourceId"] = intentionSourceId }
+        if let intentionIds { map["intentionIds"] = intentionIds.map(\.uuidString) }
+        if let intentionTitles { map["intentionTitles"] = intentionTitles }
+        return map
     }
 }
 
@@ -504,6 +609,7 @@ final class AccountSyncStore {
     private var listenerFailed = false
     /// Steps down when the deployed rules reject newer fields (see `SyncedPreferences.Schema`).
     private var preferencesSchema: SyncedPreferences.Schema = .full
+    private var progressSchema: SyncedProgress.Schema = .full
     private(set) var syncErrorMessage: String?
 
     init(settings: SettingsStore, session: SessionStore, appIcon: AppIconService, defaults: UserDefaults = .standard) {
@@ -635,7 +741,7 @@ final class AccountSyncStore {
                 session.applySynced(merged)
                 saveLocalCopies(for: uid)
             }
-            if merged != remote {
+            if merged.stored(as: progressSchema) != remote.stored(as: progressSchema) {
                 scheduleProgressUpload(after: .zero)
             }
         }
@@ -738,11 +844,26 @@ final class AccountSyncStore {
         progressUpload = nil
         progressNeedsUpload = false
         guard let uid = userID else { return }
-        let data = session.syncedProgress.firestoreData()
+        let schema = progressSchema
+        let data = session.syncedProgress.firestoreData(schema: schema)
         repository.write(data, to: .progress, uid: uid) { [weak self] error in
             guard let error else { return }
-            Task { @MainActor in self?.report(error, while: "saving progress") }
+            Task { @MainActor in self?.progressWriteFailed(error, schema: schema, uid: uid) }
         }
+    }
+
+    /// Rules published before this build reject `rosaries`; keep prayed days syncing without it.
+    private func progressWriteFailed(_ error: Error, schema: SyncedProgress.Schema, uid: String) {
+        guard uid == userID else { return }
+        if Self.isPermissionDenied(error), let next = SyncedProgress.Schema(rawValue: schema.rawValue + 1) {
+            if progressSchema <= schema {
+                log.info("Progress rules reject schema \(schema.rawValue); retrying with \(next.rawValue)")
+                progressSchema = next
+                uploadProgressNow()
+            }
+            return
+        }
+        report(error, while: "saving progress")
     }
 
     private func cancelPendingUploads() {

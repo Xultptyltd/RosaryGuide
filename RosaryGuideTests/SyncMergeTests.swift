@@ -189,3 +189,94 @@ final class PreferencesMergeTests: XCTestCase {
         XCTAssertEqual(decoded.changedAt(.appIcon), t0.addingTimeInterval(5))
     }
 }
+
+final class RosaryHistoryMergeTests: XCTestCase {
+    private let now = Date()
+
+    private func rosary(_ id: UUID = UUID(), daysAgo: Double, title: String? = nil) -> CompletedPrayerSession {
+        let completedAt = now.addingTimeInterval(-daysAgo * 86_400)
+        return CompletedPrayerSession(id: id, sessionId: nil, mysterySet: .joyful,
+                                      startedAt: completedAt.addingTimeInterval(-1_200), completedAt: completedAt,
+                                      duration: 1_200, intentionId: nil, intentionTitle: title)
+    }
+
+    private func progress(_ rosaries: [CompletedPrayerSession]?, reset: Date? = nil) -> SyncedProgress {
+        var value = SyncedProgress.empty
+        value.rosaries = rosaries
+        value.historyResetAt = reset
+        value.completedDays = Set((rosaries ?? []).map { SessionStore.creditedDayKey(startedAt: $0.startedAt, completedAt: $0.completedAt) })
+        return value
+    }
+
+    func testUnionByIdNeverCountsTwice() {
+        let shared = rosary(daysAgo: 3)
+        let mine = rosary(daysAgo: 2)
+        let theirs = rosary(daysAgo: 1)
+        let merged = SyncedProgress.merge(local: progress([shared, mine]), remote: progress([theirs, shared]))
+        XCTAssertEqual(merged.rosaries?.count, 3)
+        XCTAssertEqual(Set(merged.rosaries!.map(\.id)), [shared.id, mine.id, theirs.id])
+        // Merging again changes nothing.
+        XCTAssertEqual(SyncedProgress.merge(local: merged, remote: merged), merged)
+    }
+
+    func testFirstSyncUploadsExistingDeviceHistory() {
+        let history = [rosary(daysAgo: 10), rosary(daysAgo: 5)]
+        let accountFromOlderBuild = progress(nil)
+        let merged = SyncedProgress.merge(local: progress(history), remote: accountFromOlderBuild)
+        XCTAssertEqual(merged.rosaries?.count, 2)
+        XCTAssertNotEqual(merged.stored(as: .full), accountFromOlderBuild.stored(as: .full), "Needs an upload")
+    }
+
+    func testMissingHistoryNeverRemovesAny() {
+        let history = [rosary(daysAgo: 1)]
+        XCTAssertEqual(SyncedProgress.merge(local: progress(nil), remote: progress(history)).rosaries?.count, 1)
+        XCTAssertNil(SyncedProgress.merge(local: progress(nil), remote: progress(nil)).rosaries)
+    }
+
+    func testWipeRemovesOlderRosariesFromBothSides() {
+        let old = rosary(daysAgo: 4)
+        let after = rosary(daysAgo: 1)
+        let reset = now.addingTimeInterval(-2 * 86_400)
+        let merged = SyncedProgress.merge(local: progress([old]), remote: progress([after], reset: reset))
+        XCTAssertEqual(merged.rosaries?.map(\.id), [after.id])
+    }
+
+    func testOutsideTheWindowIsDropped() {
+        let ancient = rosary(daysAgo: Double(SessionStore.historyWindowDays + 5))
+        XCTAssertEqual(progress([ancient]).normalized.rosaries?.count, 0)
+    }
+
+    func testOldRulesShapeIgnoresHistoryWhenComparing() {
+        let local = progress([rosary(daysAgo: 1)])
+        var remote = local
+        remote.rosaries = nil
+        XCTAssertEqual(local.stored(as: .withoutRosaries), remote.stored(as: .withoutRosaries))
+    }
+
+    func testDeviceCopyFromOlderBuildDecodes() throws {
+        var json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(progress([]))) as! [String: Any]
+        json["rosaries"] = nil
+        let decoded = try JSONDecoder().decode(SyncedProgress.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertNil(decoded.rosaries)
+    }
+
+    func testSessionStoreAddsSyncedRosariesWithoutDuplicates() {
+        let defaults = UserDefaults(suiteName: "RosaryHistoryMergeTests.\(UUID())")!
+        let store = SessionStore(defaults: defaults)
+        let a = rosary(daysAgo: 2)
+        let b = rosary(daysAgo: 1)
+        store.applySynced(progress([a]))
+        store.applySynced(progress([a, b]))
+        XCTAssertEqual(store.completedSessions.map(\.id), [b.id, a.id])
+        store.applySynced(progress(nil).with(days: progress([a, b]).completedDays))
+        XCTAssertEqual(store.completedSessions.count, 2, "A copy without history removes nothing")
+    }
+}
+
+private extension SyncedProgress {
+    func with(days: Set<String>) -> SyncedProgress {
+        var copy = self
+        copy.completedDays = days
+        return copy
+    }
+}

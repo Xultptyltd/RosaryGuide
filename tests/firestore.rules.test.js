@@ -184,6 +184,11 @@ async function main() {
     await assertFails(setDoc(progress, validProgress({ session: validSession({ intentionTitles: ["x".repeat(161)] }) })));
     await assertFails(setDoc(progress, validProgress({ session: validSession({ intentionTitles: ["A", 2] }) })));
     await assertFails(setDoc(progress, validProgress({ session: validSession({ extra: 1 }) })));
+    const rosary = { mysterySet: "joyful", startedAt: new Date(), completedAt: new Date(), duration: 1200, intentionTitles: ["For Mum"] };
+    await assertSucceeds(setDoc(progress, validProgress({ rosaries: { [VALID_ID]: rosary } })));
+    await assertSucceeds(setDoc(progress, validProgress({ rosaries: {} })));
+    await assertFails(setDoc(progress, validProgress({ rosaries: [rosary] })));
+    await assertFails(setDoc(progress, validProgress({ rosaries: Object.fromEntries(Array.from({ length: 1501 }, (_, i) => [`r${i}`, 1])) })));
     await assertFails(setDoc(progress, validProgress({ updatedAt: farFuture })));
     await assertFails(setDoc(progress, withoutKey(validProgress(), "sessionChangedAt")));
 

@@ -259,6 +259,13 @@ service cloud.firestore {
         && validIntentionTitleAt(titles, 3);
     }
 
+    // Finished Rosaries keyed by their UUID, so a Rosary is never counted twice. Optional:
+    // documents and app versions from before it keep working. Entries are bounded by the
+    // map size and the 1 MiB document limit.
+    function validRosaries(rosaries) {
+      return rosaries is map && rosaries.size() <= 1500;
+    }
+
     function validProgress() {
       let data = request.resource.data;
       let allowed = [
@@ -267,7 +274,8 @@ service cloud.firestore {
         'historyResetAt',
         'session',
         'sessionChangedAt',
-        'updatedAt'
+        'updatedAt',
+        'rosaries'
       ];
       let required = [
         'schemaVersion',
@@ -283,7 +291,8 @@ service cloud.firestore {
         && (!('historyResetAt' in data) || notFutureTimestamp(data.historyResetAt))
         && (!('session' in data) || validSession(data.session))
         && notFutureTimestamp(data.sessionChangedAt)
-        && notFutureTimestamp(data.updatedAt);
+        && notFutureTimestamp(data.updatedAt)
+        && (!('rosaries' in data) || validRosaries(data.rosaries));
     }
 
     match /users/{uid}/intentions/{intentionId} {
