@@ -81,11 +81,6 @@ final class MysteryCalendarTests: XCTestCase {
         // Good Friday 2026 is Sorrowful anyway; Pentecost is a Sunday. Corpus Christi 2026 (Thursday) agrees.
         // Immaculate Conception 2026 is a Tuesday: Joyful instead of Sorrowful.
         XCTAssertEqual(setDefault(2026, 12, 8), .joyful)
-        // Home's feast glow follows recommendsOnHome, even when the feast agrees with the weekday.
-        let goodFriday = MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: 2026, month: 4, day: 3)!)
-        XCTAssertEqual(goodFriday.feast?.feast.id, "good-friday")
-        XCTAssertTrue(goodFriday.feast?.feast.recommendsOnHome == true)
-        XCTAssertNil(goodFriday.feastSuggestion)
         // The Feasts screen keeps every feast's own suggested set.
         XCTAssertEqual(FeastCatalog.all.first { $0.id == "guadalupe" }?.suggestedMysterySet, .joyful)
         for id in ids {

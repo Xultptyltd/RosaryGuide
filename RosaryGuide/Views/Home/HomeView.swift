@@ -8,37 +8,6 @@ private struct HomeCTABottomPreferenceKey: PreferenceKey {
     }
 }
 
-/// Bounds of Home's "Pray today's mysteries" button, so the feast glow can end at the divider below it.
-private struct HomeCTABoundsPreferenceKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>?
-
-    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
-        value = nextValue() ?? value
-    }
-}
-
-/// Soft brand-blue glow for a feast day, clear at the top and strongest at the bottom edge.
-/// Same stops and accent opacities as the earlier featured feast card glow (1def6a8).
-struct FeastDayGlow: View {
-    @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        LinearGradient(
-            stops: [
-                .init(color: .clear, location: 0),
-                .init(color: .clear, location: 0.50),
-                .init(color: palette.accent.opacity(colorScheme == .dark ? 0.14 : 0.08), location: 0.78),
-                .init(color: palette.accent.opacity(colorScheme == .dark ? 0.30 : 0.18), location: 1)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
-}
-
 struct HomeView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(AppIconService.self) private var appIcon
@@ -421,7 +390,6 @@ struct HomeView: View {
                         )
                     }
                 }
-                .anchorPreference(key: HomeCTABoundsPreferenceKey.self, value: .bounds) { $0 }
                 .guideReveal(delay: 0.14)
 
             GuideSectionBoundary(gutter: gutter)
@@ -452,17 +420,6 @@ struct HomeView: View {
                 .padding(.top, AppTheme.sectionGap)
         }
         .padding(.horizontal, gutter)
-        .backgroundPreferenceValue(HomeCTABoundsPreferenceKey.self) { anchor in
-            // On the major feasts, a glow behind the top section rises from just above the
-            // divider under the Pray button (the divider sits Space.md below the button).
-            if showsFeastGlow, let anchor {
-                GeometryReader { geometry in
-                    let bottom = geometry[anchor].maxY + AppTheme.Space.md
-                    FeastDayGlow()
-                        .frame(width: geometry.size.width, height: max(bottom, 0))
-                }
-            }
-        }
         .padding(.top, AppTheme.Space.sm)
         .padding(.bottom, AppTheme.Space.xxl)
         .frame(maxWidth: 576, alignment: .leading)
@@ -944,11 +901,6 @@ struct HomeView: View {
     /// On a feast with its own recommended set, one paragraph that wraps naturally. With the
     /// feast's set showing it ends in "Back to today"; with the weekday set showing, the set
     /// name links back to the feast's set.
-    /// The 11 major feasts get Home's blue glow, whichever set is showing.
-    private var showsFeastGlow: Bool {
-        assignment.feast?.feast.recommendsOnHome == true
-    }
-
     /// The feast line shows while the feast's set or the weekday set is on screen.
     private var showsFeastLine: Bool {
         guard assignment.feastLine != nil, let suggested = assignment.feastSuggestion else { return false }
