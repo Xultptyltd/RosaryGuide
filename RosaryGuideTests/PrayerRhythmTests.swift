@@ -500,5 +500,19 @@ final class PrayedDayKeyTests: XCTestCase {
         let twoDaysLater = perth.date(from: DateComponents(year: 2026, month: 10, day: 16, hour: 0, minute: 10))!
         XCTAssertFalse(session.isResumable(now: twoDaysLater, calendar: perth))
     }
+
+    @MainActor
+    func testDayClockRollsOverAtMidnight() {
+        let cal = Calendar.current
+        let evening = cal.date(from: DateComponents(year: 2026, month: 10, day: 18, hour: 23, minute: 59))!
+        let clock = DayClock(now: evening)
+        XCTAssertEqual(clock.today, cal.startOfDay(for: evening))
+        clock.refresh(now: evening.addingTimeInterval(30))
+        XCTAssertEqual(clock.today, cal.startOfDay(for: evening))
+        let monday = evening.addingTimeInterval(120)
+        clock.refresh(now: monday)
+        XCTAssertEqual(clock.today, cal.startOfDay(for: monday))
+        XCTAssertEqual(MysteryCalendar.assignment(on: clock.today).set, .joyful)
+    }
 }
 

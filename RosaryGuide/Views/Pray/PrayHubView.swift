@@ -10,9 +10,10 @@ struct PrayHubView: View {
     @State private var expandedQuestion: LearnArticle?
     @State private var navigationPath = NavigationPath()
     @State private var pageGutter: CGFloat = AppTheme.gutter
+    @Environment(DayClock.self) private var dayClock
 
     private var assignment: MysteryAssignment {
-        MysteryCalendar.assignment(on: Date())
+        MysteryCalendar.assignment(on: dayClock.today)
     }
 
     var body: some View {

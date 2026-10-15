@@ -83,7 +83,8 @@ struct FeastsView: View {
     @State private var navigationPath = NavigationPath()
 
     private var calendar: Calendar { .current }
-    private var today: Date { calendar.startOfDay(for: Date()) }
+    @Environment(DayClock.self) private var dayClock
+    private var today: Date { dayClock.today }
     private var feasts: [DatedFeast] {
         let year = calendar.component(.year, from: selectedDay)
         let all = (year...year + 1).flatMap { FeastCatalog.dated(in: $0, calendar: calendar) }
@@ -100,6 +101,10 @@ struct FeastsView: View {
                         ForEach(FeastScope.allCases) { Text($0.title).tag($0) }
                     }
                     .guideSegmentedControl()
+                    // Keep "today" selected when the day rolls over.
+                    .onChange(of: dayClock.today) { oldDay, newDay in
+                        if calendar.isDate(selectedDay, inSameDayAs: oldDay) { selectedDay = newDay }
+                    }
 
                     HStack {
                         Text(weekStart(weekOffset).formatted(.dateTime.month(.wide).year()))

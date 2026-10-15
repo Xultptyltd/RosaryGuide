@@ -43,7 +43,9 @@ struct HomeView: View {
     // and its detail sheet recoverable without showing the section in the current Home UI.
     private static let showDailyScriptureOnHome = false
 
-    private var today: Date { Date() }
+    @Environment(DayClock.self) private var dayClock
+    /// Reads the day clock so Home redraws when the day rolls over.
+    private var today: Date { _ = dayClock.today; return Date() }
     private var assignment: MysteryAssignment {
         MysteryCalendar.assignment(on: today)
     }

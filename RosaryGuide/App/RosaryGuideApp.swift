@@ -8,6 +8,7 @@ struct RosaryGuideApp: App {
     @State private var offer: OfferStore
     @State private var appIcon: AppIconService
     @State private var sync: AccountSyncStore
+    @State private var dayClock = DayClock()
     @State private var isShowingSplash = true
     @AppStorage("onboarding.completed") private var didCompleteOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
@@ -63,6 +64,7 @@ struct RosaryGuideApp: App {
             .environment(auth)
             .environment(appIcon)
             .environment(sync)
+            .environment(dayClock)
             .preferredColorScheme(settings.appearance.colorScheme)
             .onChange(of: settings.appearance, initial: true) { _, appearance in
                 AppearanceWindowStyle.apply(appearance)
@@ -70,6 +72,12 @@ struct RosaryGuideApp: App {
             // Reschedule on any reminder/feast-alert change, from any screen or sync,
             // not only while the Notifications page is open.
             .onChange(of: settings.notificationPlan) { _, plan in
+                Task { await NotificationService.reschedule(plan) }
+            }
+            // A new day: refresh reminder copy and the rolling feast-day window.
+            .onChange(of: dayClock.today) { _, _ in
+                let plan = settings.notificationPlan
+                guard !plan.isEmpty else { return }
                 Task { await NotificationService.reschedule(plan) }
             }
             .onOpenURL { url in
@@ -88,6 +96,7 @@ struct RosaryGuideApp: App {
                     sync.sceneWillLeaveForeground()
                 }
                 guard phase == .active else { return }
+                dayClock.refresh()
                 sync.sceneBecameActive()
                 // Refresh reminder copy and the rolling feast-day window.
                 let plan = settings.notificationPlan

@@ -1,4 +1,38 @@
 import Foundation
+import Observation
+import UIKit
+
+/// The current calendar day, refreshed at midnight, on time or time-zone changes and when
+/// the app becomes active. Views that read `today` redraw when the day rolls over.
+@MainActor
+@Observable
+final class DayClock {
+    private(set) var today: Date
+    @ObservationIgnored private var observers: [NSObjectProtocol] = []
+
+    init(now: Date = Date()) {
+        today = Calendar.current.startOfDay(for: now)
+        let names: [Notification.Name] = [
+            .NSCalendarDayChanged,
+            .NSSystemTimeZoneDidChange,
+            UIApplication.significantTimeChangeNotification
+        ]
+        observers = names.map { name in
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                MainActor.assumeIsolated {
+                    if note.name == .NSSystemTimeZoneDidChange { NSTimeZone.resetSystemTimeZone() }
+                    self?.refresh()
+                }
+            }
+        }
+    }
+
+    /// Moves `today` forward (or back) when the calendar day has changed.
+    func refresh(now: Date = Date()) {
+        let day = Calendar.current.startOfDay(for: now)
+        if day != today { today = day }
+    }
+}
 
 struct MysteryAssignment: Equatable {
     var set: MysterySetKind

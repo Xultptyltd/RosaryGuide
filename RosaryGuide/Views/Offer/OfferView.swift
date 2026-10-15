@@ -28,8 +28,9 @@ struct OfferView: View {
     private static let intentionRowBottomInset: CGFloat = 10
     /// Rows shown under the Add button; more than this shows "See all".
     private static let collapsedIntentionRowLimit = 3
+    @Environment(DayClock.self) private var dayClock
     private var todaySet: MysterySetKind {
-        MysteryCalendar.assignment(on: Date()).set
+        MysteryCalendar.assignment(on: dayClock.today).set
     }
 
     var body: some View {
