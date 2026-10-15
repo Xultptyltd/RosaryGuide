@@ -6,31 +6,31 @@ import UIKit
 import UIKit
 #endif
 
-/// Paths match WebsiteReference/art.js, rooted at `Art/` in the app bundle.
+/// Typed artwork filenames are rooted at `Art/` in the app bundle.
 /// Never ship a top-level `Resources/` folder — iOS codesign treats that as a macOS bundle.
 enum ArtCatalog {
 
     static func platePath(set: MysterySetKind, slug: String, scheme: ColorScheme, wide: Bool) -> (directory: String, name: String) {
         let theme = scheme == .dark ? "dark" : "light"
-        let file = wide ? "\(slug)-wide" : slug
+        let file = wide ? "mystery-\(slug)-wide" : "mystery-\(slug)"
         return ("Art/\(theme)/\(set.rawValue)", file)
     }
 
     static func heroPath(set: MysterySetKind, scheme: ColorScheme, tall: Bool) -> (directory: String, name: String) {
         let theme = scheme == .dark ? "dark" : "light"
         let shape = tall ? "tall" : "wide"
-        return ("Art/hero", "\(set.rawValue)-\(theme)-\(shape)")
+        return ("Art/hero", "hero-\(set.rawValue)-\(theme)-\(shape)")
     }
 
     /// Feast hero art: dedicated light/dark PNGs under `Art/feasts`, or a mapped mystery wide plate.
     static func feastHeroPath(feastId: String, scheme: ColorScheme) -> (directory: String, name: String, ext: String)? {
         if let plate = feastMysteryPlate(for: feastId) {
             let theme = scheme == .dark ? "dark" : "light"
-            return ("Art/\(theme)/\(plate.set.rawValue)", "\(plate.slug)-wide", "jpg")
+            return ("Art/\(theme)/\(plate.set.rawValue)", "mystery-\(plate.slug)-wide", "jpg")
         }
         if dedicatedFeastHeroIDs.contains(feastId) {
             let directory = scheme == .dark ? "Art/feasts/dark" : "Art/feasts"
-            return (directory, feastId, "png")
+            return (directory, "feast-\(feastId)", "png")
         }
         return nil
     }
@@ -114,6 +114,9 @@ enum ArtCatalog {
 }
 
 struct FocusedRasterImage: View {
+    @Environment(\.palette) private var palette
+    var contentMode: ContentMode = .fill
+    var fitAlignment: Alignment = .top
     var directory: String
     var name: String
     var ext: String = "jpg"
@@ -124,15 +127,15 @@ struct FocusedRasterImage: View {
     var body: some View {
         GeometryReader { geo in
             if let image = BundleRasterImage.load(directory: directory, name: name, ext: ext) {
-                let shift = ArtCatalog.offset(imageSize: image.size, frame: geo.size, focus: focus, cropTop: cropTop)
+                let shift = contentMode == .fit ? CGSize.zero : ArtCatalog.offset(imageSize: image.size, frame: geo.size, focus: focus, cropTop: cropTop)
                 Image(uiImage: image)
                     .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: geo.size.width, height: geo.size.height)
+                    .aspectRatio(contentMode: contentMode)
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: contentMode == .fit ? fitAlignment : .center)
                     .offset(x: shift.width, y: shift.height)
                     .clipped()
             } else {
-                Color(hex: 0x17181A)
+                palette.artworkFallbackBackground
             }
         }
         .clipped()
@@ -140,6 +143,7 @@ struct FocusedRasterImage: View {
 }
 
 struct BundleRasterImage: View {
+    @Environment(\.palette) private var palette
     var directory: String
     var name: String
     var ext: String = "jpg"
@@ -150,7 +154,7 @@ struct BundleRasterImage: View {
                 .resizable()
                 .interpolation(.high)
         } else {
-            Color(hex: 0x17181A)
+            palette.artworkFallbackBackground
         }
     }
 

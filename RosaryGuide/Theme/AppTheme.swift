@@ -71,6 +71,21 @@ enum AppTheme {
         min(max(320, viewport * 0.46), 464)
     }
 
+    /// Mystery artwork extends beyond the screen midpoint before scripture begins.
+    static let rosaryMysteryArtworkTopInset: CGFloat = 104
+    static let rosaryMysteryArtworkBottomFraction: CGFloat = 0.58
+    static let rosaryMysteryFadeStartFraction: CGFloat = 0.74
+
+    enum RosaryFlow {
+        static let readingBottomPadding: CGFloat = 28
+        static let textToActionGap: CGFloat = 32
+        static let prayerTitleBodyGap: CGFloat = 22
+        static let announcementSpacing: CGFloat = 10
+        static let eyebrowTracking: CGFloat = 2
+        static let fruitTracking: CGFloat = 0.8
+        static let resurrectionArtworkScale: CGFloat = 1.08
+    }
+
     static func grid(_ value: CGFloat, minimum: CGFloat = 4) -> CGFloat {
         max(minimum, (value / 4).rounded() * 4)
     }
@@ -197,6 +212,10 @@ struct ThemePalette {
     // MARK: Special domains
 
     var prayerBackground: Color { background }
+    var artworkFallbackBackground: Color { Color(hex: 0x17181A) }
+    var premiumBorderOpacity: Double { scheme == .dark ? 0.30 : 0.35 }
+    var premiumGold: Color { scheme == .dark ? Color(hex: 0xE2C489) : Color(hex: 0x8A6322) }
+    var premiumBorderGold: Color { scheme == .dark ? Color(hex: 0xD9B56E) : Color(hex: 0xA97F35) }
     var feastIndicator: Color { scheme == .light ? Color(hex: 0xC4922C) : Color(hex: 0xE2B75A) }
     var accentTint: Color {
         scheme == .dark
@@ -890,6 +909,8 @@ extension View {
 
 /// Spring and duration tokens — GPU-friendly transform/opacity only; always honor Reduce Motion.
 enum MotionTokens {
+    static let walkthroughFadeOut = Animation.easeInOut(duration: 0.30)
+    static let walkthroughFadeIn = Animation.easeInOut(duration: 0.50)
     static let accordion = Animation.easeInOut(duration: 0.18)
     static let accordionTransition = AnyTransition.identity
     static let calendarReturn = Animation.easeInOut(duration: 0.45)
@@ -1134,6 +1155,14 @@ extension AppTheme {
         static func callout(weight: Font.Weight = .regular) -> Font {
             AppTheme.sans(16, weight: regularized(weight), relativeTo: .callout)
         }
+        static var supportingLabel: Font { AppTheme.sans(15, relativeTo: .subheadline) }
+        static var rhythmSummary: Font { AppTheme.sans(32, relativeTo: .title) }
+        static func rhythmCaption(compact: Bool = false) -> Font {
+            AppTheme.sans(compact ? 13 : 14, relativeTo: .subheadline)
+        }
+        static var completionQuote: Font {
+            AppTheme.serif(18, italic: true, opticalSize: 18, relativeTo: .body)
+        }
         static var caption: Font { AppTheme.sans(12, weight: .regular, relativeTo: .caption) }
         static func caption(weight: Font.Weight = .regular) -> Font {
             AppTheme.sans(12, weight: regularized(weight), relativeTo: .caption)
@@ -1142,11 +1171,17 @@ extension AppTheme {
         static var serifItalicBody: Font { AppTheme.serif(16, italic: true, opticalSize: 16, relativeTo: .body) }
         static var serifTitle: Font { AppTheme.serif(24, opticalSize: 28, relativeTo: .title3) }
         static var serifDisplay: Font { AppTheme.serif(40, opticalSize: 44, relativeTo: .largeTitle) }
+        /// Reference size for the shared prayer paragraph line-height calculation.
+        static func prayerLineHeightReference(scale: CGFloat) -> CGFloat { 21 * scale }
+        static func scriptureReference(isMystery: Bool) -> Font {
+            AppTheme.sans(isMystery ? 11 : 12, relativeTo: .caption)
+        }
+        static func prayerFruitLabel(isMystery: Bool) -> Font {
+            AppTheme.sans(isMystery ? 12 : 14, weight: .medium, relativeTo: .caption)
+        }
         static func prayerText(scale: CGFloat) -> Font {
             AppTheme.sans(max(16, 18 * scale), relativeTo: .body)
         }
-        /// Reference size for the shared prayer paragraph line-height calculation.
-        static func prayerLineHeightReference(scale: CGFloat) -> CGFloat { 21 * scale }
         #if canImport(UIKit)
         static func prayerTextUIFont(scale: CGFloat) -> UIFont {
             FontRegistrar.sansUI(max(16, 18 * scale), textStyle: .body)
