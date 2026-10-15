@@ -957,13 +957,26 @@ final class AccountSyncStore {
         return try? JSONDecoder().decode(SyncedProgress.self, from: data)
     }
 
+    /// Shows a quiet notice for real failures only. Being offline is not one: Firestore keeps
+    /// the change and sends it later, so connectivity errors are logged and nothing is shown.
     private func report(_ error: Error, while action: String) {
         let nsError = error as NSError
+        if Self.isConnectivity(nsError) {
+            log.info("Account sync waiting for the network while \(action, privacy: .public)")
+            return
+        }
         log.error("Account sync failed while \(action, privacy: .public): \(nsError.domain, privacy: .public) \(nsError.code) \(nsError.localizedDescription, privacy: .public)")
         #if DEBUG
         print("[AccountSync] failed while \(action): \(nsError.domain) \(nsError.code) \(nsError.localizedDescription)")
         #endif
-        syncErrorMessage = "Your settings and prayer history could not sync. They are still on this device."
+        syncErrorMessage = "Settings and prayer history are saved on this device but could not sync"
+    }
+
+    private static func isConnectivity(_ error: NSError) -> Bool {
+        if error.domain == NSURLErrorDomain { return true }
+        guard error.domain == FirestoreErrorDomain else { return false }
+        let codes: [FirestoreErrorCode.Code] = [.unavailable, .deadlineExceeded, .cancelled]
+        return codes.map(\.rawValue).contains(error.code)
     }
 }
 

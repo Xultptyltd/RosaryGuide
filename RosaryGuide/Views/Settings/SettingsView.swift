@@ -177,6 +177,11 @@ struct SettingsView: View {
                             .padding(.top, AppTheme.Space.lg)
                     }
 
+                    if auth.isSignedIn, let message = sync.syncErrorMessage {
+                        SyncNotice(message)
+                            .padding(.top, AppTheme.Space.lg)
+                    }
+
                     GuideSectionBoundary()
 
                     SettingsSection(title: "Help & support") {

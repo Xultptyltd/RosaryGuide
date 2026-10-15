@@ -481,3 +481,36 @@ struct GuidePageDots: View {
         .accessibilityLabel("Screen \(current + 1) of \(count)")
     }
 }
+
+/// A quiet notice that something could not sync. Shown for real failures, never for being
+/// offline or for changes still waiting to upload.
+struct SyncNotice: View {
+    @Environment(\.palette) private var palette
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: AppTheme.Space.sm) {
+            Image(systemName: "exclamationmark.triangle")
+                .guideSymbol(size: 14, weight: .medium)
+                .foregroundStyle(palette.dim)
+
+            Text(message)
+                .font(AppTheme.TypeRole.caption())
+                .foregroundStyle(palette.dim)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(AppTheme.Space.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+#Preview("Sync notice") {
+    SyncNotice("Settings and prayer history are saved on this device but could not sync")
+        .padding(AppTheme.Space.lg)
+}

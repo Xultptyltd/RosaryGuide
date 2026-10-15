@@ -156,7 +156,7 @@ final class OfferStore {
                 self.startListening(uid: userID)
             } catch {
                 // The device copy stays; the next launch or sign-in uploads it again.
-                self.syncErrorMessage = "Some intentions could not be restored to your account yet. They are still on this device."
+                self.syncErrorMessage = "Some intentions are still only on this device and will be restored to your account later"
             }
         }
     }
@@ -377,7 +377,7 @@ final class OfferStore {
                     try await repository.upsert(intention, uid: uid)
                 } catch {
                     await MainActor.run {
-                        self.syncErrorMessage = "Some intentions have not synced to your account yet. They are still on this device."
+                        self.syncErrorMessage = "Some intentions are still only on this device and have not synced yet"
                     }
                 }
             }
@@ -400,7 +400,7 @@ final class OfferStore {
                     if !snapshot.isFromCache { self.syncErrorMessage = nil }
                     self.applySnapshot(snapshot, uid: uid)
                 case .failure:
-                    self.syncErrorMessage = "Intentions could not sync. Your local copy is still available."
+                    self.syncErrorMessage = "Intentions could not sync, your copy on this device is safe"
                 }
             }
         }
@@ -425,7 +425,7 @@ final class OfferStore {
                     try await repository.upsert(intention, uid: userID)
                 } catch {
                     await MainActor.run {
-                        self.syncErrorMessage = "This intention could not sync to your account."
+                        self.syncErrorMessage = "This intention could not sync to your account"
                     }
                 }
             }
@@ -437,7 +437,7 @@ final class OfferStore {
                     try await repository.delete(id: id, uid: userID)
                 } catch {
                     await MainActor.run {
-                        self.syncErrorMessage = "An intention could not be deleted from your account."
+                        self.syncErrorMessage = "An intention could not be deleted from your account"
                     }
                 }
             }

@@ -506,20 +506,7 @@ struct OfferView: View {
     @ViewBuilder
     private var syncWarning: some View {
         if let message = offer.syncErrorMessage {
-            HStack(alignment: .top, spacing: AppTheme.Space.sm) {
-                Image(systemName: "exclamationmark.triangle")
-                    .guideSymbol(size: 14, weight: .medium)
-                    .foregroundStyle(palette.dim)
-
-                Text(message)
-                    .font(AppTheme.TypeRole.caption())
-                    .foregroundStyle(palette.dim)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(AppTheme.Space.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
-            .accessibilityElement(children: .combine)
+            SyncNotice(message)
         }
     }
 
