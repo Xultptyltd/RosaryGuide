@@ -250,6 +250,9 @@ struct RosaryWalkthroughView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(AppTheme.Space.md)
+            // The tile has a fixed height; cap its text so the largest sizes don't clip.
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+            .minimumScaleFactor(0.8)
         }
         .frame(height: cardHeight + popOut, alignment: .bottom)
         .accessibilityElement(children: .combine)
