@@ -939,36 +939,6 @@ struct HomeView: View {
     }
 
 
-    private func primaryCTATitle(resumable: PrayerSession?, sameSet: Bool) -> String {
-        guard let resumable else {
-            return isShowingTodayMysteries ? "Pray today's mysteries" : "Pray the \(currentSet.shortName)"
-        }
-        if sameSet { return resumable.continueCTATitle }
-        return "Pray the \(currentSet.shortName)"
-    }
-
-    private func primaryCTAAction(resumable: PrayerSession?, sameSet: Bool) {
-        if let resumable, sameSet {
-            prayLaunch = .resume(resumable)
-        } else {
-            prayLaunch = .fresh(currentSet)
-        }
-    }
-
-    private func secondaryCTATitle(resumable: PrayerSession, sameSet: Bool) -> String {
-        if sameSet { return "Start from beginning" }
-        return "Continue the \(resumable.mysterySet.shortName)"
-    }
-
-    private func secondaryCTAAction(resumable: PrayerSession, sameSet: Bool) {
-        if sameSet {
-            session.discard()
-            prayLaunch = .fresh(currentSet)
-        } else {
-            prayLaunch = .resume(resumable)
-        }
-    }
-
     private func mysteryRail(gutter: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             GuideSectionLabel(text: mysteryRailTitle, prominence: .strong)

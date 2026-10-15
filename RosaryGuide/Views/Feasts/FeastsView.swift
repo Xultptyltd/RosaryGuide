@@ -831,30 +831,6 @@ struct FeastDetailView: View {
         }
     }
 
-    private var devotionalCopy: String {
-        let source = feast.aboutText == feast.summary ? feast.summary : feast.aboutText
-        let sentences = source
-            .split(separator: ".", omittingEmptySubsequences: true)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        let compact = sentences.prefix(2).map { "\($0)." }.joined(separator: " ")
-        return compact.isEmpty ? feast.summary : compact
-    }
-
-    private var reflectionPrompt: String {
-        if feast.isMarian {
-            return "Ask Mary to help you receive this mystery with a quiet and faithful heart."
-        }
-        if feast.id == "michael" || feast.id == "guardian-angels" {
-            return "Where do you need God’s guidance, protection, or healing today?"
-        }
-        if feast.rank == .solemnity {
-            return "Let this solemnity draw your attention back to Christ, and begin from there."
-        }
-        return "Pause here for a moment. What grace do you want to ask for as you pray today?"
-    }
-
     private var prayWithFeastSubtitle: String {
         if let set = feast.suggestedMysterySet {
             return "\(set.shortName) Mysteries"
@@ -939,39 +915,6 @@ struct FeastDetailView: View {
         .overlay {
             RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
                 .strokeBorder(palette.subtleStroke, lineWidth: AppTheme.Component.panelStrokeWidth)
-        }
-    }
-
-    private var infoRows: some View {
-        VStack(spacing: 0) {
-            NavigationLink {
-                FeastReadMoreView(feast: feast)
-            } label: {
-                infoRow("Read more")
-            }
-            .buttonStyle(.plain)
-            Hairline()
-            NavigationLink {
-                FeastRelatedPrayersView(feast: feast)
-                    .environment(settings)
-            } label: {
-                infoRow("Related prayers")
-            }
-            .buttonStyle(.plain)
-            Hairline()
-            NavigationLink {
-                FeastPatronagesView(feast: feast)
-            } label: {
-                infoRow("Patronages")
-            }
-            .buttonStyle(.plain)
-            Hairline()
-            NavigationLink {
-                FeastScriptureView(feast: feast)
-            } label: {
-                infoRow("In Scripture")
-            }
-            .buttonStyle(.plain)
         }
     }
 
@@ -1095,28 +1038,6 @@ struct FeastDetailView: View {
         .overlay {
             RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                 .strokeBorder(palette.hair, lineWidth: AppTheme.Component.panelStrokeWidth)
-        }
-    }
-}
-
-private struct FeastReadMoreView: View {
-    var feast: Feast
-    @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        FeastSecondaryPage(title: "Read more", feast: feast) {
-            VStack(alignment: .leading, spacing: 28) {
-                FeastTextPanel(title: "The feast", text: feast.aboutText)
-
-                if let history = feast.historyText {
-                    FeastTextPanel(title: "In the Church", text: history)
-                }
-
-                if let indulgence = feast.indulgenceNote {
-                    FeastTextPanel(title: "Indulgence", text: indulgence)
-                }
-            }
         }
     }
 }

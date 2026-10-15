@@ -467,10 +467,6 @@ final class SessionStore {
         defaults.dictionary(forKey: key) as? [String: TimeInterval] ?? [:]
     }
 
-    func discard() {
-        session = nil
-    }
-
     /// Clears the in-progress rosary and prayer history (Settings wipe). When signed in,
     /// the reset also reaches the account so other devices don't merge old days back.
     func clearHistoryAndData() {

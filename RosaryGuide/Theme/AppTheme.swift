@@ -99,14 +99,6 @@ enum AppTheme {
         }
     }
 
-    static func mysteryIndicatorColor(for set: MysterySetKind) -> Color {
-        switch set {
-        case .joyful: Color(hex: 0x1E1A15)
-        case .luminous: Color(hex: 0xEDC68D)
-        case .sorrowful: Color(hex: 0xDFA05D)
-        case .glorious: Color(hex: 0xD19A12)
-        }
-    }
 }
 
 extension Color {
@@ -1130,7 +1122,6 @@ extension AppTheme {
         static var headline: Font { headingSecondary }
         static var headingPrimary: Font { AppTheme.sans(32, weight: .regular, relativeTo: .largeTitle) }
         static var headingSecondary: Font { AppTheme.sans(22, weight: .regular, relativeTo: .title2) }
-        static var headingSecondaryBold: Font { headingSecondary }
         static func headline(weight: Font.Weight = .regular) -> Font {
             AppTheme.sans(22, weight: regularized(weight), relativeTo: .title2)
         }
@@ -1147,7 +1138,6 @@ extension AppTheme {
         static func caption(weight: Font.Weight = .regular) -> Font {
             AppTheme.sans(12, weight: regularized(weight), relativeTo: .caption)
         }
-        static var serifSmall: Font { AppTheme.serif(16, opticalSize: 16, relativeTo: .body) }
         static var serifBody: Font { AppTheme.serif(20, opticalSize: 20, relativeTo: .body) }
         static var serifItalicBody: Font { AppTheme.serif(16, italic: true, opticalSize: 16, relativeTo: .body) }
         static var serifTitle: Font { AppTheme.serif(24, opticalSize: 28, relativeTo: .title3) }
