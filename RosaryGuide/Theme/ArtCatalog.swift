@@ -9,7 +9,6 @@ import UIKit
 /// Paths match WebsiteReference/art.js, rooted at `Art/` in the app bundle.
 /// Never ship a top-level `Resources/` folder — iOS codesign treats that as a macOS bundle.
 enum ArtCatalog {
-    static func plateSlug(for mystery: Mystery) -> String { mystery.artSlug }
 
     static func platePath(set: MysterySetKind, slug: String, scheme: ColorScheme, wide: Bool) -> (directory: String, name: String) {
         let theme = scheme == .dark ? "dark" : "light"
@@ -91,20 +90,6 @@ enum ArtCatalog {
         }
         let y = values[max(0, min(number - 1, 4))]
         return UnitPoint(x: 0.5, y: y)
-    }
-
-    static func heroTop(set: MysterySetKind, scheme: ColorScheme) -> Color {
-        switch (set, scheme) {
-        case (.joyful, .light): Color(hex: 0xFFFCF7)
-        case (.joyful, .dark): Color(hex: 0x010101)
-        case (.luminous, .light): Color(hex: 0xFFFBF9)
-        case (.luminous, .dark): Color(hex: 0x000000)
-        case (.sorrowful, .light): Color(hex: 0xF5F5EC)
-        case (.sorrowful, .dark): Color(hex: 0x0A0907)
-        case (.glorious, .light): Color(hex: 0xF6F7F1)
-        case (.glorious, .dark): Color(hex: 0x050505)
-        default: scheme == .light ? Color(hex: 0xF6F7F1) : Color(hex: 0x050505)
-        }
     }
 
     static func offset(imageSize: CGSize, frame: CGSize, focus: UnitPoint, cropTop: CGFloat? = nil) -> CGSize {

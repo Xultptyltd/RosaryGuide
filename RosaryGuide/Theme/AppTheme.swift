@@ -30,8 +30,6 @@ enum AppTheme {
     static let intentionSkyBlueOn = Color(light: 0x005F78, dark: 0xC0EAF7)
     static let intentionPurpleOn = Color(light: 0x4B49A5, dark: 0xDADFFF)
     static let intentionPeachOn = Color(light: 0x933600, dark: 0xFEDBC9)
-    /// Legacy single ink used where a non-paired accent text is still needed.
-    static let intentionAccentText = Color(red: 0.10, green: 0.20, blue: 0.22)
 
     /// Canonical page-edge horizontal inset. Matches `Space.lg` (16pt).
     /// Prefer `AppTheme.gutter` over literals at screen edges.
@@ -44,17 +42,13 @@ enum AppTheme {
     static let heroMin: CGFloat = 384
     static let heroMax: CGFloat = 544
     static let titleLineHeight: CGFloat = 1.02
-    static let titleTrackingEm: CGFloat = -0.022
     static let sectionGap: CGFloat = 44
     /// Gap between a section title (GuideSectionLabel `.strong`) and the content directly below it.
     static let sectionTitleGap: CGFloat = 20
-    static let decadesGap: CGFloat = 32
     static let containerRadius: CGFloat = 20
     /// Site `--r-feature` — Home mystery rail cards.
     static let featureRadius: CGFloat = 24
     static let nestedRadius: CGFloat = 12
-    static let thumbnailRadius: CGFloat = 12
-    static let appIconRadius: CGFloat = 16
     static var capsule: Capsule { Capsule(style: .continuous) }
     static let controlSize: CGFloat = 40
     /// Reserved bottom clearance for content behind the liquid tab bar.
@@ -210,8 +204,6 @@ struct ThemePalette {
 
     // MARK: Special domains
 
-    /// Header + stage track on mystery plates only; body below keeps `prayerBackground`.
-    var plateChrome: Color { Color(uiColor: .secondarySystemBackground) }
     var prayerBackground: Color { background }
     var feastIndicator: Color { scheme == .light ? Color(hex: 0xC4922C) : Color(hex: 0xE2B75A) }
     var accentTint: Color {
@@ -219,8 +211,6 @@ struct ThemePalette {
             ? accent.opacity(0.20)
             : accent.opacity(0.12)
     }
-    var inverseIcon: Color { scheme == .dark ? Color.black : Color.white }
-    var onImage: Color { Color.white }
     /// Unselected segmented-control track. Keep this on the shared surface
     /// pathway so UIKit and custom segmented controls render the same surface.
     var segmentedControlTrack: Color { surface }
@@ -289,7 +279,6 @@ struct ThemePalette {
     var tertiaryButtonText: Color { buttonTertiaryText }
     var learnMoreButtonFill: Color { buttonSecondaryFill }
     var learnMoreButtonText: Color { buttonSecondaryText }
-    var onImageSecondary: Color { Color.white.opacity(0.72) }
     var fieldStroke: Color { strokeRegular }
     var selectionStroke: Color { strokeSubtle }
     var cardStroke: Color { strokeSubtle }
@@ -1133,10 +1122,6 @@ extension AppTheme {
 
     /// Type roles — product style guide scale, with Instrument Sans / Newsreader pairing.
     enum TypeRole {
-        static let headingPrimaryLineHeight: CGFloat = 40
-        static let headingSecondaryLineHeight: CGFloat = 28
-        static let bodyLineHeight: CGFloat = 24
-        static let captionLineHeight: CGFloat = 16
 
         static var display: Font { headingPrimary }
         static var title: Font { headingPrimary }
@@ -1153,7 +1138,6 @@ extension AppTheme {
         static func body(weight: Font.Weight = .regular) -> Font {
             AppTheme.sans(16, weight: regularized(weight), relativeTo: .body)
         }
-        static var bodyBold: Font { body }
         static var buttonTertiary: Font { body }
         static var callout: Font { body }
         static func callout(weight: Font.Weight = .regular) -> Font {
@@ -1168,9 +1152,6 @@ extension AppTheme {
         static var serifItalicBody: Font { AppTheme.serif(16, italic: true, opticalSize: 16, relativeTo: .body) }
         static var serifTitle: Font { AppTheme.serif(24, opticalSize: 28, relativeTo: .title3) }
         static var serifDisplay: Font { AppTheme.serif(40, opticalSize: 44, relativeTo: .largeTitle) }
-        static func avatarLetter(for size: CGFloat) -> Font {
-            AppTheme.sans(AppTheme.grid(size * 0.42, minimum: 12), weight: .semibold, relativeTo: .body)
-        }
         static func prayerText(scale: CGFloat) -> Font {
             AppTheme.sans(max(16, 18 * scale), relativeTo: .body)
         }
@@ -1179,9 +1160,6 @@ extension AppTheme {
         #if canImport(UIKit)
         static func prayerTextUIFont(scale: CGFloat) -> UIFont {
             FontRegistrar.sansUI(max(16, 18 * scale), textStyle: .body)
-        }
-        static var captionUIFont: UIFont {
-            FontRegistrar.sansUI(12, weight: .regular, textStyle: .caption1)
         }
         #endif
 
@@ -1203,8 +1181,6 @@ extension AppTheme {
 #endif
         static var sectionLabel: Font { caption }
         static var quoteAttribution: Font { caption }
-        static var settingsTitle: Font { headingPrimary }
-        static var settingsCardTitle: Font { headingSecondaryBold }
         static var settingsRow: Font { body }
         static func settingsRow(weight: Font.Weight = .regular) -> Font {
             body(weight: weight)
@@ -1236,24 +1212,12 @@ extension AppTheme {
         static let sectionDividerHeight: CGFloat = 8
         static let sectionDividerEndpointWidth: CGFloat = 16
         static let sectionDividerEndpointHeight: CGFloat = 40
-        static let chipPaddingV: CGFloat = Space.sm
-        static let chipPaddingH: CGFloat = Space.md
         static let panelStrokeWidth: CGFloat = 1
-        static let panelStrokeOpacity: Double = 0.11
-        /// Tracking for uppercase quote attributions.
-        static let quoteAttributionTracking: CGFloat = 1.3
         /// Shared height for segmented controls; matches Apple minimum touch target.
         static let segmentedControlHeight: CGFloat = Accessibility.minHitTarget
-        /// The system large segmented control draws its track past its frame on each
-        /// side (measured 49.3pt tall in a 44pt frame on iOS 26). Add this to a layout
-        /// gap when the visible gap to the track must be exact.
-        static let segmentedControlVisualOverflow: CGFloat = 8.0 / 3.0
         /// Home mystery selector keeps the larger, hero-control proportion.
         static let mysterySelectorHeight: CGFloat = 52
         static let segmentedControlInset: CGFloat = Space.xs
-        static var segmentedControlInnerHeight: CGFloat {
-            segmentedControlHeight - segmentedControlInset * 2
-        }
         static var mysterySelectorInnerHeight: CGFloat {
             mysterySelectorHeight - segmentedControlInset * 2
         }
@@ -1263,15 +1227,7 @@ extension AppTheme {
         static let beadPulseCycle: TimeInterval = 1.12
         static let beadPulseOpacity: Double = 0.72
         static let beadPulseFillOpacity: Double = 0.44
-        static let largeIconButton: CGFloat = 42
         static let profileRowHeight: CGFloat = 56
-        static let profileHeroSymbolSize: CGFloat = 84
-        static let profileHeroSymbolReserve: CGFloat = 92
-        static let profileChevronSize: CGFloat = 16
-        static let profileExternalLinkSymbol = "arrow.up.right"
-        static let profileExternalLinkSize: CGFloat = 16
-        static let profileSectionTracking: CGFloat = 3.6
-        static let profileBackgroundSymbolOpacity: Double = 0.12
         static let profileDividerOpacity: Double = 0.72
         static let profileTitleMinimumScale: CGFloat = 0.82
         static let profileValueMinimumScale: CGFloat = 0.78
