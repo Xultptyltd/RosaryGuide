@@ -62,27 +62,22 @@ struct MysteryAssignment: Equatable {
         manual ?? defaultSet(prefersWeekday: prefersWeekday)
     }
 
-    /// Caption shown while the feast's recommended set is on screen.
-    var feastRecommendationCaption: String? {
-        guard let feast, let suggested = feastSuggestion else { return nil }
-        return "\(feast.feast.name.english) recommends the \(suggested.shortName) Mysteries"
-    }
-
-    /// Text button that switches from the feast's set to the weekday set.
-    var weekdaySetButtonTitle: String { "Pray today's \(set.shortName) Mysteries instead" }
-
-    /// Text button that switches back to the feast's recommended set.
-    var feastSetButtonTitle: String? {
-        guard let feast, let suggested = feastSuggestion else { return nil }
-        return "Pray the \(suggested.shortName) Mysteries for \(feast.feast.name.english.lowercasedLeadingArticle)"
+    /// Home's feast line, split so the set name can be an inline link:
+    /// "<today> Many pray the <setName> <occasion>."
+    var feastLine: FeastLine? {
+        guard let suggested = feastSuggestion, let celebration = feast?.feast.celebration else { return nil }
+        return FeastLine(lead: "\(celebration.today) Many pray the ",
+                         setName: "\(suggested.shortName) Mysteries",
+                         tail: " \(celebration.occasion).")
     }
 }
 
-private extension String {
-    /// "The Nativity of the Lord" reads as "the Nativity of the Lord" mid-sentence.
-    var lowercasedLeadingArticle: String {
-        hasPrefix("The ") ? "the " + dropFirst(4) : self
-    }
+struct FeastLine: Equatable {
+    var lead: String
+    var setName: String
+    var tail: String
+    var text: String { lead + setName + tail }
+    static let backToTodayTitle = "Back to today"
 }
 
 enum MysteryCalendar {

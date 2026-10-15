@@ -362,17 +362,18 @@ struct HomeView: View {
             .contentTransition(reduceMotion ? .identity : .opacity)
             .animation(reduceMotion ? nil : MotionTokens.selection, value: currentSet)
 
-            Text(currentSet.themeSummary)
-                .guideThemeSummaryStyle()
-                .padding(.top, AppTheme.Space.md)
-                .contentTransition(reduceMotion ? .identity : .opacity)
-                .animation(reduceMotion ? nil : MotionTokens.selection, value: currentSet)
-                .guideReveal(delay: 0.08)
-
-            if let feast = assignment.feast, assignment.feastSuggestion != nil {
+            // On a feast with its own set, the feast paragraph takes the subtitle's place.
+            if let feast = assignment.feast, showsFeastLine {
                 feastOffer(feast)
                     .padding(.top, AppTheme.Space.md)
-                    .guideReveal(delay: 0.09)
+                    .guideReveal(delay: 0.08)
+            } else {
+                Text(currentSet.themeSummary)
+                    .guideThemeSummaryStyle()
+                    .padding(.top, AppTheme.Space.md)
+                    .contentTransition(reduceMotion ? .identity : .opacity)
+                    .animation(reduceMotion ? nil : MotionTokens.selection, value: currentSet)
+                    .guideReveal(delay: 0.08)
             }
 
             setPicker
@@ -894,35 +895,65 @@ struct HomeView: View {
         AppTheme.mysteryIndicatorColor(for: set)
     }
 
-    /// On a feast with its own recommended set: a caption and a switch to the weekday set,
-    /// or, once switched, a link back to the feast's set.
+    private static let feastSetURL = URL(string: "rosaryguide-home://feast-set")!
+    private static let weekdaySetURL = URL(string: "rosaryguide-home://weekday-set")!
+
+    /// On a feast with its own recommended set, one paragraph that wraps naturally. With the
+    /// feast's set showing it ends in "Back to today"; with the weekday set showing, the set
+    /// name links back to the feast's set.
+    /// The feast line shows while the feast's set or the weekday set is on screen.
+    private var showsFeastLine: Bool {
+        guard assignment.feastLine != nil, let suggested = assignment.feastSuggestion else { return false }
+        return currentSet == suggested || currentSet == assignment.set
+    }
+
     @ViewBuilder
     private func feastOffer(_ feast: DatedFeast) -> some View {
-        if let suggested = assignment.feastSuggestion {
-            if currentSet == suggested {
-                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    if let caption = assignment.feastRecommendationCaption {
-                        Text(caption)
-                            .font(AppTheme.TypeRole.label)
-                            .foregroundStyle(palette.dim)
-                            .fixedSize(horizontal: false, vertical: true)
+        if let line = assignment.feastLine, let suggested = assignment.feastSuggestion, showsFeastLine {
+            let showingFeastSet = currentSet == suggested
+            Text(feastLineText(line, showingFeastSet: showingFeastSet))
+                .font(AppTheme.TypeRole.themeSummary)
+                .foregroundStyle(palette.textSecondary)
+                .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .environment(\.openURL, OpenURLAction { url in
+                    switch url {
+                    case Self.feastSetURL: chooseFeastSet(true)
+                    case Self.weekdaySetURL: chooseFeastSet(false)
+                    default: return .systemAction
                     }
-                    Button {
-                        chooseFeastSet(false)
-                    } label: {
-                        GuideTextButtonLabel(title: assignment.weekdaySetButtonTitle)
-                    }
-                    .buttonStyle(.plain)
+                    return .handled
+                })
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(line.text)
+                .accessibilityAction(named: showingFeastSet
+                                     ? "Back to today's \(assignment.set.shortName) Mysteries"
+                                     : "Pray the \(line.setName)") {
+                    chooseFeastSet(!showingFeastSet)
                 }
-            } else if currentSet == assignment.set, let title = assignment.feastSetButtonTitle {
-                Button {
-                    chooseFeastSet(true)
-                } label: {
-                    GuideTextButtonLabel(title: title)
-                }
-                .buttonStyle(.plain)
-            }
         }
+    }
+
+    private func feastLineText(_ line: FeastLine, showingFeastSet: Bool) -> AttributedString {
+        var text = AttributedString(line.lead)
+        var setName = AttributedString(line.setName)
+        if !showingFeastSet {
+            setName.link = Self.feastSetURL
+            setName.foregroundColor = palette.textPrimary
+            setName.underlineStyle = .single
+        }
+        text += setName
+        text += AttributedString(line.tail)
+        if showingFeastSet {
+            var back = AttributedString(FeastLine.backToTodayTitle)
+            back.link = Self.weekdaySetURL
+            back.foregroundColor = palette.textPrimary
+            back.underlineStyle = .single
+            text += AttributedString(" ")
+            text += back
+        }
+        return text
     }
 
     private func chooseFeastSet(_ feastSet: Bool) {

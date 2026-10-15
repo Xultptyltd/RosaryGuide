@@ -49,7 +49,7 @@ final class MysteryCalendarTests: XCTestCase {
         XCTAssertEqual(assumption.feastSuggestion, .glorious)
     }
 
-    func testHomeDefaultsToTheFeastSetAndCanSwitch() {
+    func testHomeDefaultsToTheFeastSetAndCanSwitch() throws {
         let christmas = MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: 2026, month: 12, day: 25)!)
         XCTAssertEqual(christmas.set, .sorrowful) // the calendar keeps the weekday set
         XCTAssertEqual(christmas.defaultSet(prefersWeekday: false), .joyful)
@@ -57,11 +57,22 @@ final class MysteryCalendarTests: XCTestCase {
         XCTAssertEqual(christmas.shownSet(manual: nil, prefersWeekday: false), .joyful)
         XCTAssertEqual(christmas.shownSet(manual: .luminous, prefersWeekday: false), .luminous)
         XCTAssertEqual(christmas.shownSet(manual: .luminous, prefersWeekday: true), .luminous)
-        XCTAssertEqual(christmas.feastRecommendationCaption, "The Nativity of the Lord recommends the Joyful Mysteries")
-        XCTAssertEqual(christmas.weekdaySetButtonTitle, "Pray today's Sorrowful Mysteries instead")
-        XCTAssertEqual(christmas.feastSetButtonTitle, "Pray the Joyful Mysteries for the Nativity of the Lord")
-        for text in [christmas.feastRecommendationCaption!, christmas.weekdaySetButtonTitle, christmas.feastSetButtonTitle!] {
-            XCTAssertFalse(text.hasSuffix("."))
+        let line = try XCTUnwrap(christmas.feastLine)
+        XCTAssertEqual(line.text, "Today we celebrate the birth of our Lord. Many pray the Joyful Mysteries at Christmas.")
+        XCTAssertEqual(line.setName, "Joyful Mysteries")
+        XCTAssertEqual(FeastLine.backToTodayTitle, "Back to today")
+    }
+
+    func testEveryFeastWithASuggestedSetHasACelebrationLine() {
+        let ids = Set(FeastCatalog.all.filter { $0.suggestedMysterySet != nil }.map(\.id))
+        XCTAssertFalse(ids.isEmpty)
+        XCTAssertEqual(Set(FeastCatalog.celebrations.keys), ids)
+        for id in ids {
+            let line = FeastCatalog.celebrations[id]!
+            XCTAssertTrue(line.today.hasPrefix("Today "), id)
+            XCTAssertTrue(line.today.hasSuffix("."), id)
+            XCTAssertFalse(line.occasion.hasSuffix("."), id)
+            XCTAssertTrue(line.occasion.hasPrefix("on ") || line.occasion.hasPrefix("at "), id)
         }
     }
 
@@ -70,12 +81,12 @@ final class MysteryCalendarTests: XCTestCase {
         let assumption = MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: 2027, month: 8, day: 15)!)
         XCTAssertNotNil(assumption.feast)
         XCTAssertNil(assumption.feastSuggestion)
-        XCTAssertNil(assumption.feastRecommendationCaption)
+        XCTAssertNil(assumption.feastLine)
         XCTAssertEqual(assumption.defaultSet(prefersWeekday: false), .glorious)
         // An ordinary Thursday with no feast.
         let plain = MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: 2026, month: 9, day: 17)!)
         XCTAssertEqual(plain.defaultSet(prefersWeekday: false), .luminous)
-        XCTAssertNil(plain.feastSetButtonTitle)
+        XCTAssertNil(plain.feastLine)
     }
 
     @MainActor
