@@ -516,6 +516,24 @@ final class PrayedDayKeyTests: XCTestCase {
     }
 }
 
+/// Latin and Both never show English in the Latin slot.
+final class LatinTextTests: XCTestCase {
+    func testMissingLatinFallsBackOnce() {
+        let text = BilingualText(english: "Offer this Rosary", latin: "")
+        XCTAssertEqual(text.resolved(for: .latin), "Offer this Rosary")
+        XCTAssertEqual(text.resolved(for: .bilingual), "Offer this Rosary")
+        XCTAssertNil(text.secondary(for: .bilingual))
+    }
+
+    func testMysteryAnnouncementUsesTheVulgateForLatin() {
+        let steps = RosarySequenceBuilder.build(set: .joyful)
+        let announcement = steps.first { $0.kind == .mysteryAnnouncement }!
+        XCTAssertTrue(announcement.body.hasDistinctLatin)
+        XCTAssertTrue(announcement.body.latin.contains("Gabriel"))
+        XCTAssertNotEqual(announcement.body.latin, announcement.body.english)
+    }
+}
+
 /// Rosary settings follow the account with the other preferences.
 final class RosaryConfigSyncTests: XCTestCase {
     func testFirestoreRoundTrip() {

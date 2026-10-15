@@ -26,7 +26,8 @@ enum MysteryCatalog {
             title: BilingualText(english: en, latin: la),
             fruit: BilingualText(english: fruitEn, latin: fruitLa),
             scriptureReference: ref,
-            scriptureExcerpt: BilingualText(english: excerpt, latin: excerpt),
+            // Latin follows the Clementine Vulgate; without one, Latin mode shows the English.
+            scriptureExcerpt: BilingualText(english: excerpt, latin: MysteryScripture.vulgate[id] ?? ""),
             artSlug: slug
         )
     }

@@ -184,7 +184,7 @@ struct BilingualStack: View {
     }
 
     var body: some View {
-        if language == .bilingual {
+        if language == .bilingual && text.hasDistinctLatin {
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: alignment == .center ? .center : .leading, spacing: AppTheme.Space.xl) {
                     prayerColumn(text.english, color: palette.ink, italic: false)
@@ -197,7 +197,7 @@ struct BilingualStack: View {
                 }
             }
         } else if language == .latin {
-            prayerColumn(text.latin, color: palette.ink, italic: false)
+            prayerColumn(text.latinOrEnglish, color: palette.ink, italic: false)
         } else {
             prayerColumn(text.english, color: palette.ink, italic: false)
         }

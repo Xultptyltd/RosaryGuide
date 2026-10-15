@@ -92,20 +92,26 @@ struct BilingualText: Hashable, Codable, Sendable {
     var english: String
     var latin: String
 
+    /// The Latin text, or the English when there is no Latin version.
+    var latinOrEnglish: String { latin.isEmpty ? english : latin }
+
+    /// Whether a separate Latin text exists to show beside the English.
+    var hasDistinctLatin: Bool { !latin.isEmpty && latin != english }
+
     func resolved(for language: PrayerLanguage) -> String {
         switch language {
         case .english: english
-        case .latin: latin
-        case .bilingual: "\(english)\n\n\(latin)"
+        case .latin: latinOrEnglish
+        case .bilingual: hasDistinctLatin ? "\(english)\n\n\(latin)" : english
         }
     }
 
     func primary(for language: PrayerLanguage) -> String {
-        language == .latin ? latin : english
+        language == .latin ? latinOrEnglish : english
     }
 
     func secondary(for language: PrayerLanguage) -> String? {
-        language == .bilingual ? latin : nil
+        language == .bilingual && hasDistinctLatin ? latin : nil
     }
 }
 

@@ -77,10 +77,8 @@ enum RosarySequenceBuilder {
 
         append(
             .signOfTheCross,
-            intention: BilingualText(
-                english: "Offer this Rosary for your intention",
-                latin: "Offer this Rosary for your intention"
-            ),
+            // No Latin version: Latin and Both show the English once.
+            intention: BilingualText(english: "Offer this Rosary for your intention", latin: ""),
             haptic: .medium,
             stage: .opening,
             bead: .crucifix
@@ -106,10 +104,10 @@ enum RosarySequenceBuilder {
             append(
                 .mysteryAnnouncement,
                 title: mystery.title,
-                body: {
-                    let text = MysteryScripture.excerpt(for: mystery, translation: config.translation)
-                    return BilingualText(english: text, latin: text)
-                }(),
+                body: BilingualText(
+                    english: MysteryScripture.excerpt(for: mystery, translation: config.translation),
+                    latin: MysteryScripture.excerpt(for: mystery, translation: .vulgate)
+                ),
                 subtitle: mystery.fruit,
                 mystery: mystery,
                 decade: decade,
