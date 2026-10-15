@@ -35,6 +35,9 @@ struct SyncedPreferences: Codable, Equatable {
     /// When the user last changed any of these. `.syncNever` means never (defaults or values
     /// from before sync existed), so any copy in the account wins.
     var updatedAt: Date
+    /// Optional prayers and Bible translation. Nil in copies saved before this was synced,
+    /// which then keep the device's own Rosary settings.
+    var rosaryConfig: RosaryConfig? = nil
 
     static let defaults = SyncedPreferences(
         appearance: .system,
@@ -56,6 +59,7 @@ struct SyncedPreferences: Codable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case appearance, prayerLanguage, rosaryLanguage, textSize, includeSaintMichael, hideIntentionText
         case dailyReminderEnabled, dailyReminderMinutes, feastAlertsEnabled, feastAlertMinutes, appIcon, updatedAt
+        case rosaryConfig
     }
 
     var normalized: SyncedPreferences {
@@ -88,7 +92,8 @@ extension SyncedPreferences {
             feastAlertsEnabled: try c.decode(Bool.self, forKey: .feastAlertsEnabled),
             feastAlertMinutes: try c.decodeIfPresent(Int.self, forKey: .feastAlertMinutes) ?? Self.defaultFeastAlertMinutes,
             appIcon: try c.decode(AppIconOption.self, forKey: .appIcon),
-            updatedAt: try c.decode(Date.self, forKey: .updatedAt)
+            updatedAt: try c.decode(Date.self, forKey: .updatedAt),
+            rosaryConfig: try c.decodeIfPresent(RosaryConfig.self, forKey: .rosaryConfig)
         )
     }
 }
@@ -200,13 +205,14 @@ private extension SyncedPreferences {
             // Documents written before this field existed get the 8:00 am default.
             feastAlertMinutes: data["feastAlertMinutes"] as? Int ?? Self.defaultFeastAlertMinutes,
             appIcon: appIcon,
-            updatedAt: updatedAt
+            updatedAt: updatedAt,
+            rosaryConfig: (data["rosaryConfig"] as? [String: Any]).map(RosaryConfig.init(firestore:))
         )
         self = normalized
     }
 
     func firestoreData() -> [String: Any] {
-        [
+        var data: [String: Any] = [
             "schemaVersion": 1,
             "appearance": appearance.rawValue,
             "prayerLanguage": prayerLanguage.rawValue,
@@ -220,6 +226,38 @@ private extension SyncedPreferences {
             "feastAlertMinutes": max(0, min(24 * 60 - 1, feastAlertMinutes)),
             "appIcon": appIcon.rawValue,
             "updatedAt": Timestamp(date: updatedAt)
+        ]
+        if let rosaryConfig {
+            data["rosaryConfig"] = rosaryConfig.firestoreData()
+        }
+        return data
+    }
+}
+
+/// Matches `validRosaryConfig` in firestore.rules.
+extension RosaryConfig {
+    init(firestore map: [String: Any]) {
+        self.init()
+        if let raw = map["translation"] as? String, let value = BibleTranslation(rawValue: raw) {
+            translation = value
+        }
+        fatimaPrayer = map["fatimaPrayer"] as? Bool ?? fatimaPrayer
+        oSacrament = map["oSacrament"] as? Bool ?? oSacrament
+        closingPrayers = map["closingPrayers"] as? Bool ?? closingPrayers
+        memorare = map["memorare"] as? Bool ?? memorare
+        saintMichael = map["saintMichael"] as? Bool ?? saintMichael
+        intentionsStep = map["intentionsStep"] as? Bool ?? intentionsStep
+    }
+
+    func firestoreData() -> [String: Any] {
+        [
+            "translation": translation.rawValue,
+            "fatimaPrayer": fatimaPrayer,
+            "oSacrament": oSacrament,
+            "closingPrayers": closingPrayers,
+            "memorare": memorare,
+            "saintMichael": saintMichael,
+            "intentionsStep": intentionsStep
         ]
     }
 }

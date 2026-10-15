@@ -55,8 +55,8 @@ final class SettingsStore {
         }
     }
 
-    /// Rosary settings (scripture, optional prayers, intention step). Local only:
-    /// not synced until the Firestore rules that accept it are deployed.
+    /// Rosary settings (scripture, optional prayers, intention step). Synced with the
+    /// other preferences (`rosaryConfig` in firestore.rules).
     /// Saint Michael is not on the Rosary settings page; it stays the optional
     /// button on the finish screen, so the config keeps its default (off).
     var rosaryConfig: RosaryConfig {
@@ -64,6 +64,7 @@ final class SettingsStore {
             if let data = try? JSONEncoder().encode(rosaryConfig) {
                 defaults.set(data, forKey: Keys.rosaryConfig)
             }
+            if rosaryConfig != oldValue { userChanged() }
         }
     }
 
@@ -202,7 +203,8 @@ final class SettingsStore {
             feastAlertsEnabled: feastAlertsEnabled,
             feastAlertMinutes: feastAlertMinutes,
             appIcon: appIconChoice,
-            updatedAt: preferencesUpdatedAt
+            updatedAt: preferencesUpdatedAt,
+            rosaryConfig: rosaryConfig
         )
     }
 
@@ -223,6 +225,7 @@ final class SettingsStore {
         if feastAlertMinutes != value.feastAlertMinutes { feastAlertMinutes = value.feastAlertMinutes }
         if hideIntentionText != value.hideIntentionText { hideIntentionText = value.hideIntentionText }
         if appIconChoice != value.appIcon { appIconChoice = value.appIcon }
+        if let config = value.rosaryConfig, rosaryConfig != config { rosaryConfig = config }
         preferencesUpdatedAt = value.updatedAt
     }
 

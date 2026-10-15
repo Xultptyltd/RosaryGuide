@@ -516,3 +516,39 @@ final class PrayedDayKeyTests: XCTestCase {
     }
 }
 
+/// Rosary settings follow the account with the other preferences.
+final class RosaryConfigSyncTests: XCTestCase {
+    func testFirestoreRoundTrip() {
+        var config = RosaryConfig()
+        config.translation = .douayRheims
+        config.fatimaPrayer = false
+        config.memorare = true
+        XCTAssertEqual(RosaryConfig(firestore: config.firestoreData()), config)
+    }
+
+    func testOlderPreferencesWithoutRosaryConfigDecode() throws {
+        var prefs = SyncedPreferences.defaults
+        prefs.rosaryConfig = nil
+        let data = try JSONEncoder().encode(prefs)
+        let decoded = try JSONDecoder().decode(SyncedPreferences.self, from: data)
+        XCTAssertNil(decoded.rosaryConfig)
+    }
+
+    func testSettingsChangeReachesSyncedPreferences() {
+        let suite = "RosaryConfigSyncTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        var changed = false
+        settings.onUserChange = { changed = true }
+        settings.rosaryConfig.fatimaPrayer = false
+        XCTAssertTrue(changed)
+        XCTAssertEqual(settings.syncedPreferences.rosaryConfig?.fatimaPrayer, false)
+
+        var incoming = settings.syncedPreferences
+        incoming.rosaryConfig?.oSacrament = true
+        settings.applySynced(incoming)
+        XCTAssertTrue(settings.rosaryConfig.oSacrament)
+    }
+}
+
