@@ -113,14 +113,6 @@ enum LiturgicalCalendar {
         return .ordinary
     }
 
-    static func weekdayName(for date: Date, calendar: Calendar = gregorian) -> String {
-        let formatter = DateFormatter()
-        formatter.calendar = calendar
-        formatter.locale = Locale(identifier: "en_US")
-        formatter.dateFormat = "EEEE"
-        return formatter.string(from: date)
-    }
-
     /// US-style: solemnity observed on the Sunday on or after `date` (if not already Sunday).
     static func sundayOnOrAfter(_ date: Date, calendar: Calendar = gregorian) -> Date {
         let weekday = calendar.component(.weekday, from: date) // 1 = Sunday

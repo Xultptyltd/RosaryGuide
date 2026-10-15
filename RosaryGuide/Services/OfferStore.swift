@@ -143,15 +143,6 @@ final class OfferStore {
         }
     }
 
-    func reconnectSync() {
-        guard let userID else { return }
-        listener?.remove()
-        listener = nil
-        Task { [weak self] in
-            self?.startListening(uid: userID)
-        }
-    }
-
     /// Active intentions that count toward the free limit (papal ones don't).
     var limitedIntentionCount: Int {
         intentions.filter { !$0.isExpired && !$0.isPapal }.count
@@ -298,10 +289,6 @@ final class OfferStore {
                 if aDate != bDate { return aDate > bDate }
                 return a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
             }
-    }
-
-    func quickPicks(limit: Int = 8) -> [OfferIntention] {
-        Array(sortedIntentions.prefix(limit))
     }
 
     func pruneExpired() {

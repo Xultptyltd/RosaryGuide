@@ -26,9 +26,6 @@ enum PrayerLanguage: String, CaseIterable, Codable, Identifiable {
 
     var shortTitle: String { chip }
 
-    static var appCases: [PrayerLanguage] {
-        allCases
-    }
 }
 
 enum AppearancePreference: String, CaseIterable, Codable, Identifiable {
@@ -191,15 +188,6 @@ enum MysterySetKind: String, CaseIterable, Codable, Identifiable {
         case .luminous: "Thursdays"
         case .sorrowful: "Tuesdays and Fridays"
         case .glorious: "Wednesdays and Sundays"
-        }
-    }
-
-    var ordinalAdjective: BilingualText {
-        switch self {
-        case .joyful: BilingualText(english: "Joyful", latin: "Gaudiosum")
-        case .sorrowful: BilingualText(english: "Sorrowful", latin: "Dolorosum")
-        case .glorious: BilingualText(english: "Glorious", latin: "Gloriosum")
-        case .luminous: BilingualText(english: "Luminous", latin: "Luminosum")
         }
     }
 
@@ -469,10 +457,6 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
             return "Continue — \(steps[idx].stage.continuePhrase)"
         }
         return "Continue"
-    }
-
-    var isSameCalendarDay: Bool {
-        Calendar.current.isDateInToday(startedAt)
     }
 
     /// How long after its last bead a Rosary started yesterday can still be resumed.

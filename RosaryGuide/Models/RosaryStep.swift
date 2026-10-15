@@ -36,8 +36,6 @@ struct RosaryStep: Identifiable, Hashable {
     /// Last prayer before the finis screen; its button reads "Finish".
     var isLastPrayer = false
 
-    var isOpening: Bool { stage == .opening }
-    var isClosing: Bool { stage == .closing || kind == .completion }
     var isPlate: Bool { kind == .mysteryAnnouncement }
     var isFinis: Bool { kind == .completion }
 

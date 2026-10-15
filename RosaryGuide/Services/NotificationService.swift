@@ -66,13 +66,6 @@ enum NotificationService {
         }
     }
 
-    /// Removes every pending and delivered Rosary Guide notification.
-    static func cancelAll() {
-        let center = UNUserNotificationCenter.current()
-        center.removeAllPendingNotificationRequests()
-        center.removeAllDeliveredNotifications()
-    }
-
     // MARK: - Daily reminder
 
     /// One repeating trigger per weekday so reminders keep coming even if the app

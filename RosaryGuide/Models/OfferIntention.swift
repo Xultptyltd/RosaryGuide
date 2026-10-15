@@ -182,10 +182,6 @@ struct OfferIntention: Identifiable, Hashable, Sendable {
         return isPapal ? "✝️" : "❤️"
     }
 
-    var usesGenericGlyph: Bool {
-        false
-    }
-
 
     /// At most one linked mystery (first entry). Empty suggestOn = none.
     var associatedMystery: MysterySetKind? { suggestOn.first }
@@ -248,6 +244,3 @@ extension OfferIntention: Codable {
     }
 }
 
-enum IntentionEmojiPresets {
-    static let all: [String] = ["🙏", "✝️", "❤️", "🕊️", "🌹", "🕯️", "📿", "⭐", "💧", "👨‍👩‍👧", "😇", "💒", "📖", "🌸", "💫", "🤗", "💪", "🌍", "🏥", "👶"]
-}
