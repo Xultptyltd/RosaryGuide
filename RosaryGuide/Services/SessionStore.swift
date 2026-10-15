@@ -66,7 +66,10 @@ final class SessionStore {
     private var milestoneOwner: String?
 
     private let key = "session.prayer"
+    /// Legacy prayed days as local day-start timestamps (before calendar day keys).
     private let historyKey = "session.completedDays"
+    /// Prayed days as local calendar day keys ("yyyy-MM-dd"), safe across time zones.
+    private let historyDayKeysKey = "session.completedDayKeys"
     private let changedAtKey = "session.changedAt"
     private let historyResetKey = "session.historyResetAt"
     private let completedSetsKey = "session.completedSetsToday"
@@ -92,8 +95,14 @@ final class SessionStore {
         }
     }
 
-    /// Day-start timestamps (timeIntervalSince1970) of days a rosary was finished.
-    private(set) var completedDayStarts: Set<TimeInterval> = []
+    /// Calendar days ("yyyy-MM-dd") on which a rosary was finished. Stored as day keys so a
+    /// time-zone change never shifts a prayed day onto its neighbour.
+    private(set) var completedDayKeys: Set<String> = []
+
+    /// Day-start timestamps (timeIntervalSince1970) of prayed days in the current time zone.
+    var completedDayStarts: Set<TimeInterval> {
+        Set(completedDayKeys.compactMap { SyncedProgress.date(forDayKey: $0)?.timeIntervalSince1970 })
+    }
 
     /// Completed Rosary sessions with set and duration. This powers local Journey counters.
     /// Older app versions only stored `completedDayStarts`, so date-only history remains valid.
@@ -133,7 +142,7 @@ final class SessionStore {
     @ObservationIgnored private var isApplyingSynced = false
 
     var resumableSession: PrayerSession? {
-        guard let session, session.isSameCalendarDay else { return nil }
+        guard let session, session.isResumable else { return nil }
         guard session.stepIndex > 0 || session.activeDuration > 0 || !session.completedDecades.isEmpty else { return nil }
         return session
     }
@@ -150,11 +159,11 @@ final class SessionStore {
         historyResetAt = reset > 0 ? Date(timeIntervalSince1970: reset) : nil
         isApplyingSynced = true
         session = Self.load(key: key, defaults: defaults)
-        if let session, !session.isSameCalendarDay {
+        if let session, !session.isResumable {
             self.session = nil
         }
         isApplyingSynced = false
-        completedDayStarts = Self.loadHistory(key: historyKey, defaults: defaults)
+        completedDayKeys = Self.loadHistory(keysKey: historyDayKeysKey, legacyKey: historyKey, defaults: defaults)
         completedSessions = Self.loadCompletedSessions(key: completedSessionsKey, defaults: defaults)
         completedDecades = Self.loadCompletedDecades(key: completedDecadesKey, defaults: defaults)
         prayerTimeByDay = Self.loadPrayerTime(key: prayerTimeKey, defaults: defaults)
@@ -295,13 +304,13 @@ final class SessionStore {
 
     func complete() {
         let completedAt = Date()
-        let start = Calendar.current.startOfDay(for: completedAt).timeIntervalSince1970
+        let creditedDay = Self.creditedDayKey(startedAt: session?.startedAt, completedAt: completedAt)
         if let session {
             recordCompletedSet(session.mysterySet)
             removePartialDecades(for: session.id)
             recordCompletedSession(from: session, completedAt: completedAt)
         }
-        completedDayStarts.insert(start)
+        completedDayKeys.insert(creditedDay)
         preserveMilestones()
         persistHistory()
         session = nil
@@ -309,15 +318,26 @@ final class SessionStore {
     }
 
     func prayed(on day: Date) -> Bool {
-        let start = Calendar.current.startOfDay(for: day).timeIntervalSince1970
-        return completedDayStarts.contains(start)
+        completedDayKeys.contains(SyncedProgress.dayKey(for: day))
+    }
+
+    /// The day a finished Rosary counts for: the day it was started, so a Rosary prayed
+    /// across midnight credits the evening it began.
+    static func creditedDayKey(startedAt: Date?, completedAt: Date, calendar: Calendar = .current) -> String {
+        SyncedProgress.dayKey(for: startedAt ?? completedAt, calendar: calendar)
+    }
+
+    /// Converts legacy day-start timestamps to day keys. Midday of the stored day is used,
+    /// so a day saved in a time zone up to 12 hours away keeps its calendar date.
+    static func migratedDayKeys(fromLegacyDayStarts starts: [Double], calendar: Calendar = .current) -> Set<String> {
+        Set(starts.map { SyncedProgress.dayKey(for: Date(timeIntervalSince1970: $0 + 12 * 60 * 60), calendar: calendar) })
     }
 
     private func pruneHistory() {
         preserveMilestones()
-        let pruned = Self.pruned(completedDayStarts)
-        if pruned.count != completedDayStarts.count {
-            completedDayStarts = pruned
+        let pruned = Self.pruned(completedDayKeys)
+        if pruned.count != completedDayKeys.count {
+            completedDayKeys = pruned
             persistHistory()
         }
         let cutoff = Self.historyCutoff()
@@ -345,18 +365,26 @@ final class SessionStore {
         return cal.startOfDay(for: cutoffDate)
     }
 
-    private static func pruned(_ days: Set<TimeInterval>) -> Set<TimeInterval> {
-        let cutoff = historyCutoff().timeIntervalSince1970
-        return days.filter { $0 >= cutoff }
+    private static func pruned(_ days: Set<String>) -> Set<String> {
+        let cutoff = SyncedProgress.dayKey(for: historyCutoff())
+        return days.filter { SyncedProgress.date(forDayKey: $0) != nil && $0 >= cutoff }
     }
 
     private func persistHistory() {
-        defaults.set(Array(completedDayStarts), forKey: historyKey)
+        defaults.set(completedDayKeys.sorted(), forKey: historyDayKeysKey)
+        defaults.removeObject(forKey: historyKey)
     }
 
-    private static func loadHistory(key: String, defaults: UserDefaults) -> Set<TimeInterval> {
-        let values = defaults.array(forKey: key) as? [Double] ?? []
-        return Set(values)
+    /// Day keys, migrating the legacy timestamp list once.
+    private static func loadHistory(keysKey: String, legacyKey: String, defaults: UserDefaults) -> Set<String> {
+        if let keys = defaults.stringArray(forKey: keysKey) {
+            return Set(keys)
+        }
+        let legacy = defaults.array(forKey: legacyKey) as? [Double] ?? []
+        let migrated = migratedDayKeys(fromLegacyDayStarts: legacy)
+        defaults.set(migrated.sorted(), forKey: keysKey)
+        defaults.removeObject(forKey: legacyKey)
+        return migrated
     }
 
     private func recordCompletedSession(from session: PrayerSession, completedAt: Date) {
@@ -447,7 +475,7 @@ final class SessionStore {
     /// the reset also reaches the account so other devices don't merge old days back.
     func clearHistoryAndData() {
         clearMilestones()
-        completedDayStarts = []
+        completedDayKeys = []
         completedSessions = []
         completedDecades = []
         prayerTimeByDay = [:]
@@ -561,7 +589,7 @@ final class SessionStore {
     /// Progress as it is stored in the account.
     var syncedProgress: SyncedProgress {
         SyncedProgress(
-            completedDays: Set(completedDayStarts.map { SyncedProgress.dayKey(for: Date(timeIntervalSince1970: $0)) }),
+            completedDays: completedDayKeys,
             session: session,
             sessionChangedAt: sessionChangedAt,
             historyResetAt: historyResetAt
@@ -577,9 +605,11 @@ final class SessionStore {
             completedSessions.removeAll { $0.completedAt <= reset }
             completedDecades.removeAll { $0.completedAt <= reset }
         }
-        let days = Set(progress.completedDays.compactMap { SyncedProgress.date(forDayKey: $0)?.timeIntervalSince1970 })
-        completedDayStarts = Self.pruned(days)
-        completedSessions = completedSessions.filter { completedDayStarts.contains(Calendar.current.startOfDay(for: $0.completedAt).timeIntervalSince1970) }
+        completedDayKeys = Self.pruned(progress.completedDays)
+        completedSessions = completedSessions.filter {
+            completedDayKeys.contains(SyncedProgress.dayKey(for: $0.completedAt))
+                || completedDayKeys.contains(SyncedProgress.dayKey(for: $0.startedAt))
+        }
         persistHistory()
         persistCompletedSessions()
         persistCompletedDecades()
@@ -591,7 +621,7 @@ final class SessionStore {
         preserveMilestones()
         historyResetAt = progress.historyResetAt
         sessionChangedAt = progress.sessionChangedAt
-        if var incoming = progress.session, incoming.isSameCalendarDay {
+        if var incoming = progress.session, incoming.isResumable {
             // The deployed account schema has no intention-category field. Preserve the
             // local snapshot when the same in-progress session comes back from sync.
             if incoming.startedAt.syncRounded == session?.startedAt.syncRounded,
@@ -622,7 +652,7 @@ final class SessionStore {
         defaults.removeObject(forKey: milestoneOwnerKey)
         isApplyingSynced = true
         defer { isApplyingSynced = false }
-        completedDayStarts = []
+        completedDayKeys = []
         completedSessions = []
         completedDecades = []
         prayerTimeByDay = [:]

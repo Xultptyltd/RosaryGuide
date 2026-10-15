@@ -483,6 +483,20 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
     var isSameCalendarDay: Bool {
         Calendar.current.isDateInToday(startedAt)
     }
+
+    /// How long after its last bead a Rosary started yesterday can still be resumed.
+    static let overnightResumeWindow: TimeInterval = 6 * 60 * 60
+
+    /// A Rosary can be resumed on the day it was started, and after midnight while it is
+    /// still fresh, so praying across midnight keeps its place.
+    var isResumable: Bool { isResumable(now: Date()) }
+
+    func isResumable(now: Date, calendar: Calendar = .current) -> Bool {
+        if calendar.isDate(startedAt, inSameDayAs: now) { return true }
+        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
+              calendar.isDate(startedAt, inSameDayAs: yesterday) else { return false }
+        return now.timeIntervalSince(updatedAt) < Self.overnightResumeWindow
+    }
 }
 
 enum HapticKind: Equatable {

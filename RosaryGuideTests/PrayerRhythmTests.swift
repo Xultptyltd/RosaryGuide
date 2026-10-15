@@ -434,3 +434,71 @@ final class MilestonePersistenceTests: XCTestCase {
         XCTAssertEqual(CountWords.rosariesOfferedThisWeek(21), "21 Rosaries offered this week")
     }
 }
+
+/// Prayed days are calendar day keys, so they survive time-zone changes and midnight.
+final class PrayedDayKeyTests: XCTestCase {
+    private func calendar(_ zone: String) -> Calendar {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: zone)!
+        return cal
+    }
+
+    func testLegacyDayStartsMigrateToTheirCalendarDay() {
+        let perth = calendar("Australia/Perth")
+        let midnight = perth.date(from: DateComponents(year: 2026, month: 10, day: 14))!
+        // Read back in Perth, Tokyo or London (within 12 hours): always 14 October.
+        for zone in ["Australia/Perth", "Asia/Tokyo", "Europe/London"] {
+            let keys = SessionStore.migratedDayKeys(fromLegacyDayStarts: [midnight.timeIntervalSince1970], calendar: calendar(zone))
+            XCTAssertEqual(keys, ["2026-10-14"], zone)
+        }
+    }
+
+    func testDayKeyMapsToLocalMidnightAfterTimeZoneChange() {
+        let london = calendar("Europe/London")
+        let start = SyncedProgress.date(forDayKey: "2026-10-14", calendar: london)!
+        XCTAssertEqual(SyncedProgress.dayKey(for: start, calendar: london), "2026-10-14")
+        let rhythm = PrayerRhythm(
+            prayedDayStarts: [start.timeIntervalSince1970],
+            now: london.date(from: DateComponents(year: 2026, month: 10, day: 14, hour: 9))!,
+            calendar: london
+        )
+        XCTAssertTrue(rhythm.prayedToday)
+    }
+
+    func testStoreMigratesLegacyHistoryOnce() {
+        let suite = "PrayedDayKeyTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let today = Calendar.current.startOfDay(for: Date())
+        defaults.set([today.timeIntervalSince1970], forKey: "session.completedDays")
+        let store = SessionStore(defaults: defaults)
+        XCTAssertTrue(store.prayed(on: Date()))
+        XCTAssertNil(defaults.array(forKey: "session.completedDays"))
+        XCTAssertEqual(defaults.stringArray(forKey: "session.completedDayKeys"), [SyncedProgress.dayKey(for: today)])
+    }
+
+    func testRosaryAcrossMidnightCreditsTheDayItStarted() {
+        let perth = calendar("Australia/Perth")
+        let started = perth.date(from: DateComponents(year: 2026, month: 10, day: 14, hour: 23, minute: 50))!
+        let finished = perth.date(from: DateComponents(year: 2026, month: 10, day: 15, hour: 0, minute: 20))!
+        XCTAssertEqual(SessionStore.creditedDayKey(startedAt: started, completedAt: finished, calendar: perth), "2026-10-14")
+        XCTAssertEqual(SessionStore.creditedDayKey(startedAt: nil, completedAt: finished, calendar: perth), "2026-10-15")
+    }
+
+    func testRosaryStaysResumableJustAfterMidnight() {
+        let perth = calendar("Australia/Perth")
+        let started = perth.date(from: DateComponents(year: 2026, month: 10, day: 14, hour: 23, minute: 50))!
+        let lastBead = perth.date(from: DateComponents(year: 2026, month: 10, day: 14, hour: 23, minute: 58))!
+        let session = PrayerSession(
+            mysterySet: .joyful, stepIndex: 20, startedAt: started, updatedAt: lastBead,
+            includeSaintMichael: false, language: .english, intentionId: nil, intentionTitle: nil
+        )
+        let afterMidnight = perth.date(from: DateComponents(year: 2026, month: 10, day: 15, hour: 0, minute: 30))!
+        XCTAssertTrue(session.isResumable(now: afterMidnight, calendar: perth))
+        let nextMorning = perth.date(from: DateComponents(year: 2026, month: 10, day: 15, hour: 9))!
+        XCTAssertFalse(session.isResumable(now: nextMorning, calendar: perth))
+        let twoDaysLater = perth.date(from: DateComponents(year: 2026, month: 10, day: 16, hour: 0, minute: 10))!
+        XCTAssertFalse(session.isResumable(now: twoDaysLater, calendar: perth))
+    }
+}
+

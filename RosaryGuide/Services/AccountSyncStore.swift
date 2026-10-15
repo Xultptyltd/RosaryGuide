@@ -157,7 +157,7 @@ struct SyncedProgress: Codable, Equatable {
 
         let newer = remote.sessionChangedAt >= local.sessionChangedAt ? remote : local
         var session = newer.session
-        if let current = session, !current.isSameCalendarDay {
+        if let current = session, !current.isResumable {
             session = nil
         }
         return SyncedProgress(
