@@ -35,26 +35,22 @@ enum IntentionAccent: String, Codable, CaseIterable, Identifiable, Hashable, Sen
         }
     }
 
-    /// Avatar palette: Green (Personal), Marian Blue (Someone else), Purple (Church & world).
+    /// Avatar palette (case names are legacy, kept for saved data): blue scale shared with
+    /// the mystery icons. mintGreen = Personal, skyBlue = Someone else, purple = Church & world.
     static var pickerOrder: [IntentionAccent] {
         [.mintGreen, .skyBlue, .purple]
     }
 
     var color: Color {
         switch self {
-        case .skyBlue: AppTheme.intentionSkyBlue
-        case .mintGreen: AppTheme.intentionMintGreen
-        case .purple: AppTheme.intentionPurple
+        case .mintGreen: AppTheme.mysteryJoyful
+        case .skyBlue: AppTheme.mysteryLuminous
+        case .purple: AppTheme.mysterySorrowful
         }
     }
 
-    var onColor: Color {
-        switch self {
-        case .skyBlue: AppTheme.intentionSkyBlueOn
-        case .mintGreen: AppTheme.intentionMintGreenOn
-        case .purple: AppTheme.intentionPurpleOn
-        }
-    }
+    /// Same navy glyph as the mystery icons.
+    var onColor: Color { AppTheme.mysteryOn }
 
     /// Keep existing saved intentions colourful without allowing legacy hues
     /// to reappear in the avatar palette.
