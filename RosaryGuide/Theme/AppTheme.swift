@@ -372,6 +372,45 @@ enum AppearanceWindowStyle {
     }
 }
 
+/// iOS 26 SwiftUI navigation bars don't pick up `UINavigationBar.appearance()` title fonts
+/// (the large title rendered as `.SFUI-Bold`), so set the H1 font on the hosting bar itself.
+#if canImport(UIKit)
+private struct GuideH1NavigationFont: UIViewControllerRepresentable {
+    final class Probe: UIViewController {
+        override func viewWillAppear(_ animated: Bool) { super.viewWillAppear(animated); apply() }
+        override func didMove(toParent parent: UIViewController?) { super.didMove(toParent: parent); apply() }
+        func apply() {
+            guard let bar = navigationController?.navigationBar else { return }
+            let font = AppTheme.TypeRole.h1UIFont(AppTheme.TypeRole.h1NavigationSize)
+            func fix(_ a: UINavigationBarAppearance?) -> UINavigationBarAppearance? {
+                guard let a = a?.copy() else { return nil }
+                a.largeTitleTextAttributes[.font] = font
+                return a
+            }
+            bar.standardAppearance = fix(bar.standardAppearance) ?? bar.standardAppearance
+            bar.scrollEdgeAppearance = fix(bar.scrollEdgeAppearance)
+            for item in [parent?.navigationItem, navigationController?.topViewController?.navigationItem].compactMap({ $0 }) {
+                item.standardAppearance = fix(item.standardAppearance ?? bar.standardAppearance)
+                item.scrollEdgeAppearance = fix(item.scrollEdgeAppearance ?? bar.scrollEdgeAppearance ?? bar.standardAppearance)
+            }
+        }
+    }
+    func makeUIViewController(context: Context) -> Probe { Probe() }
+    func updateUIViewController(_ vc: Probe, context: Context) { vc.apply() }
+}
+#endif
+
+extension View {
+    /// Routes the UIKit large navigation title through the shared H1 token.
+    func guideH1NavigationTitleFont() -> some View {
+        #if canImport(UIKit)
+        background(GuideH1NavigationFont().frame(width: 0, height: 0).accessibilityHidden(true))
+        #else
+        self
+        #endif
+    }
+}
+
 enum GuideChrome {
     /// Run once at launch, before any navigation bar exists: appearance proxies only
     /// reach bars created afterwards, so tab roots would otherwise miss the title fonts.
