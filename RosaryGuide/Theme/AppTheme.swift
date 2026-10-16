@@ -709,7 +709,10 @@ struct CollapsingTitleChrome<ToolbarLeading: View, ToolbarTrailing: View, Toolba
     func body(content: Content) -> some View {
         content
             .onCollapsingTitleScrollOffset($scrollOffset)
-            .safeAreaInset(edge: .top, spacing: 0) {
+            // iOS 26: content scrolls under a see-through bar with the system's soft
+            // scroll edge effect instead of an opaque page-colour slab.
+            .scrollEdgeEffectStyle(.soft, for: .top)
+            .safeAreaBar(edge: .top, spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: 12) {
                         leading()
@@ -723,8 +726,26 @@ struct CollapsingTitleChrome<ToolbarLeading: View, ToolbarTrailing: View, Toolba
                     accessory()
                 }
                 .frame(maxWidth: .infinity)
-                .background(palette.bg)
+                .background(alignment: .top) {
+                    // Inside a NavigationStack with its bar hidden the system edge effect
+                    // may not draw, so a soft wash into the page colour keeps the title
+                    // legible over content (no hard edge, no opaque slab).
+                    LinearGradient(
+                        stops: [
+                            .init(color: palette.bg.opacity(0.92), location: 0),
+                            .init(color: palette.bg.opacity(0.7), location: 0.55),
+                            .init(color: palette.bg.opacity(0), location: 1)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .padding(.bottom, -AppTheme.Space.xl)
+                    .ignoresSafeArea(edges: .top)
+                    .opacity(progress)
+                    .allowsHitTesting(false)
+                }
             }
+            .scrollEdgeEffectHidden(false, for: .top)
             .overlay(alignment: .top) {
                 // Drawn in the page overlay (not inside the inset) so the large
                 // title is not clipped and cannot expand the inset.

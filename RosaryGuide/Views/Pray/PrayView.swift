@@ -264,11 +264,6 @@ struct PrayView: View {
                 }
             } else {
                 VStack(spacing: 0) {
-                    VStack(spacing: 0) {
-                        header(step)
-                        SevenStageTrack(current: step.stage) { jump(to: $0) }
-                    }
-
                     ZStack {
                         VStack(spacing: 0) {
                             standardPrayColumn(step, scrollHeight: geo.size.height)
@@ -300,6 +295,14 @@ struct PrayView: View {
 
                     footer(step)
                 }
+                // See-through top bar: long prayers scroll under it with the soft edge effect.
+                .safeAreaBar(edge: .top, spacing: 0) {
+                    VStack(spacing: 0) {
+                        header(step)
+                        SevenStageTrack(current: step.stage) { jump(to: $0) }
+                    }
+                }
+                .scrollEdgeEffectStyle(.soft, for: .top)
                 .overlay(alignment: .bottom) {
                     if prayerUsesScrollTemplate {
                         // The circle and language toggle float on the prayer, not on a
@@ -900,11 +903,6 @@ struct PrayView: View {
     /// Same header and stage track as a prayer; no bead map.
     private func intentionStepLayer(_ step: RosaryStep) -> some View {
         VStack(spacing: 0) {
-            VStack(spacing: 0) {
-                header(step)
-                SevenStageTrack(current: step.stage) { jump(to: $0) }
-            }
-
             GeometryReader { scrollGeo in
                 ScrollView {
                     VStack(spacing: 0) {
@@ -989,6 +987,13 @@ struct PrayView: View {
             }
             .onAppear { resetIntentionScrollState() }
         }
+        .safeAreaBar(edge: .top, spacing: 0) {
+            VStack(spacing: 0) {
+                header(step)
+                SevenStageTrack(current: step.stage) { jump(to: $0) }
+            }
+        }
+        .scrollEdgeEffectStyle(.soft, for: .top)
     }
 
     /// Footer room (button + its padding) the list must leave clear.
