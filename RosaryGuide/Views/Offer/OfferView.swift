@@ -297,14 +297,12 @@ struct OfferView: View {
     }
     /// Plain text action using the shared underlined label.
     private var seeAllIntentionsButton: some View {
-        Button {
+        GuideTextButton(
+            title: "View all \(offer.sortedIntentions.count) intentions",
+            accessibilityLabel: "See all intentions"
+        ) {
             showingAllIntentions = true
-        } label: {
-            GuideTextButtonLabel(title: "View all \(offer.sortedIntentions.count) intentions")
         }
-        .buttonStyle(.plain)
-        .guidePressable()
-        .accessibilityLabel("See all intentions")
     }
 
     /// "Prayer journeys" section: title, sectionTitleGap, then the Rosary Guide+ card.
@@ -383,13 +381,9 @@ struct OfferView: View {
                 }
             }
 
-            Button {
+            GuideTextButton(title: "View all milestones") {
                 showingMilestones = true
-            } label: {
-                GuideTextButtonLabel(title: "View all milestones")
             }
-            .buttonStyle(.plain)
-            .guidePressable()
             .padding(.top, -AppTheme.Space.md)
         }
     }

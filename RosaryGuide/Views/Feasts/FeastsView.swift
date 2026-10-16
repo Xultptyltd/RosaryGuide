@@ -112,7 +112,7 @@ struct FeastsView: View {
                             .foregroundStyle(palette.ink)
                         Spacer()
                         if weekOffset != 0 || !calendar.isDate(selectedDay, inSameDayAs: today) {
-                            Button {
+                            GuideTextButton(title: "Today", alignment: nil) {
                                 selectedDay = today
                                 withAnimation(reduceMotion ? nil : MotionTokens.calendarReturn) {
                                     if calendarExpanded {
@@ -123,10 +123,6 @@ struct FeastsView: View {
                                     }
                                 }
                             }
-                            label: {
-                                GuideTextButtonLabel(title: "Today", fillsWidth: false)
-                            }
-                            .buttonStyle(.plain)
                         }
                     }
                     .frame(minHeight: AppTheme.Accessibility.minHitTarget)

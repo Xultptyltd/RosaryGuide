@@ -344,9 +344,10 @@ extension View {
 }
 
 /// Shared label for plain text actions; the enclosing Button owns its action.
+/// Underlined text-button label. Sized to its text; it never stretches, so it
+/// can't widen a hit area. Use `GuideTextButton` for a tappable text button.
 struct GuideTextButtonLabel: View {
     let title: String
-    var fillsWidth = true
     @Environment(\.palette) private var palette
 
     var body: some View {
@@ -356,8 +357,38 @@ struct GuideTextButtonLabel: View {
             .foregroundStyle(palette.textPrimary)
             .multilineTextAlignment(.leading)
             .padding(.vertical, AppTheme.Component.textButtonVerticalPadding)
-            .frame(maxWidth: fillsWidth ? .infinity : nil, alignment: .leading)
-            .contentShape(Rectangle())
+    }
+}
+
+/// The one text / link button. Tap area is the label plus `hitSlop` (12pt) on
+/// every side; negative padding keeps the visual position unchanged. Alignment
+/// in the row is done outside the hit area (`alignment`), never by stretching it.
+struct GuideTextButton: View {
+    let title: String
+    var accessibilityLabel: String?
+    /// Leading / trailing placement in the row; nil = sized to content only.
+    var alignment: Alignment? = .leading
+    let action: () -> Void
+
+    static let hitSlop: CGFloat = AppTheme.Space.md
+
+    var body: some View {
+        let button = Button(action: action) {
+            GuideTextButtonLabel(title: title)
+                .padding(Self.hitSlop)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .guidePressable()
+        .accessibilityLabel(accessibilityLabel ?? title)
+        .padding(-Self.hitSlop)
+
+        if let alignment {
+            // The frame has no content shape, so the extra width isn't tappable.
+            button.frame(maxWidth: .infinity, alignment: alignment)
+        } else {
+            button
+        }
     }
 }
 
