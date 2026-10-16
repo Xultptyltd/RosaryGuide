@@ -3652,6 +3652,19 @@ private struct JourneyMilestonesView: View {
 
 }
 
+extension JourneyMilestones.Category {
+    /// Circle colour for every milestone in this category (completed or not).
+    var circleFill: Color {
+        switch self {
+        case .rosaries: AppTheme.milestoneRosaries
+        case .offerings: AppTheme.milestonePrayerForOthers
+        case .mysteries: AppTheme.milestoneMysterySets
+        case .days: AppTheme.milestoneDaysInPrayer
+        case .feasts: AppTheme.milestoneMarianFeasts
+        }
+    }
+}
+
 private struct JourneyMilestoneCard: View {
     @Environment(\.palette) private var palette
     let item: JourneyMilestones.Item
@@ -3661,11 +3674,11 @@ private struct JourneyMilestoneCard: View {
             // Completed rows centre the tick; in-progress rows keep the top line.
             HStack(alignment: item.completed ? .center : .top, spacing: AppTheme.Space.md) {
                 ZStack {
-                    Circle().fill(item.completed ? palette.accentTint : palette.bg)
+                    Circle().fill(item.category.circleFill)
                     MilestoneLineGlyph(glyph: AppTheme.MilestoneIcon.glyph(for: item.id))
                         .stroke(style: AppTheme.LineIcon.strokeStyle)
                         .frame(width: AppTheme.MysteryIcon.glyphSize, height: AppTheme.MysteryIcon.glyphSize)
-                        .foregroundStyle(item.completed ? palette.accent : palette.textSecondary)
+                        .foregroundStyle(AppTheme.milestoneOn)
                 }
                 .frame(width: AppTheme.MysteryIcon.circleSize, height: AppTheme.MysteryIcon.circleSize)
                 .accessibilityHidden(true)

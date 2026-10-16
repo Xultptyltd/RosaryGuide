@@ -115,6 +115,15 @@ final class ThemeTokenTests: XCTestCase {
             XCTAssertEqual(UIColor(set.letterOn), UIColor(AppTheme.mysteryOn))
         }
     }
+
+    func testMilestoneCategoryCircleColours() {
+        XCTAssertEqual(UIColor(JourneyMilestones.Category.rosaries.circleFill), UIColor(Color(hex: 0x1E83FF)))
+        XCTAssertEqual(UIColor(JourneyMilestones.Category.offerings.circleFill), UIColor(Color(hex: 0x48A6FF)))
+        XCTAssertEqual(UIColor(JourneyMilestones.Category.mysteries.circleFill), UIColor(Color(hex: 0x83C6FF)))
+        XCTAssertEqual(UIColor(JourneyMilestones.Category.days.circleFill), UIColor(Color(hex: 0xB5DBFF)))
+        XCTAssertEqual(UIColor(JourneyMilestones.Category.feasts.circleFill), UIColor(Color(hex: 0xD6EAFF)))
+        XCTAssertEqual(UIColor(AppTheme.milestoneOn), UIColor(Color(hex: 0x0A2540)))
+    }
 }
 
 /// Circle-to-button control on scrolling prayers.
