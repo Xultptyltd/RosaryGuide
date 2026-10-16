@@ -480,8 +480,9 @@ struct GuideChromeBar: ViewModifier {
 
     func body(content: Content) -> some View {
         content.background(alignment: .top) {
+            // Thin material: a little more of the content shows through than `.bar`.
             Rectangle()
-                .fill(.bar)
+                .fill(.thinMaterial)
                 .overlay(alignment: .bottom) {
                     Rectangle()
                         .fill(Color(uiColor: .separator))
