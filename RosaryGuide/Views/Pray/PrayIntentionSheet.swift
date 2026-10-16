@@ -528,11 +528,16 @@ struct IntentionMultiSelectList: View {
                     showingPremium = true
                 }
             } label: {
-                GuideTextButtonLabel(title: "Add an intention")
+                // Tap area: the text's bounds plus 12pt each side, not the full row.
+                GuideTextButtonLabel(title: "Add an intention", fillsWidth: false)
+                    .padding(AppTheme.Space.md)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .guidePressable()
             .accessibilityLabel("Add an intention")
+            .padding(-AppTheme.Space.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, AppTheme.Space.xs)
         }
         .sheet(item: $editorRoute) { route in

@@ -955,6 +955,18 @@ struct PrayView: View {
                 }
                 .scrollIndicators(.hidden)
                 .scrollPosition($intentionScrollPosition)
+                // Edge taps go back / forward like other prayer steps. Only the side
+                // gutters count, so taps on intention rows never also change step.
+                .simultaneousGesture(
+                    SpatialTapGesture().onEnded { tap in
+                        let width = scrollGeo.size.width
+                        if tap.location.x <= AppTheme.gutter {
+                            retreat()
+                        } else if tap.location.x >= width - AppTheme.gutter {
+                            advance()
+                        }
+                    }
+                )
                 .onScrollGeometryChange(for: Bool.self) { geometry in
                     geometry.contentOffset.y + geometry.contentInsets.top > 1
                 } action: { _, scrolled in
