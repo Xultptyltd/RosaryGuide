@@ -3679,11 +3679,15 @@ private struct JourneyMilestoneCard: View {
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                     // Title leading, count trailing on the same baseline. The title wraps; the count doesn't.
-                    HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                    // The title gets the width first; the count keeps only its own.
+                    // No Spacer: it added a second gap and pushed long titles to two lines.
+                    HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.xs) {
                         Text(item.title)
                             .font(AppTheme.TypeRole.callout(weight: .medium))
                             .foregroundStyle(palette.ink)
+                            .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .layoutPriority(1)
                         if item.earnedAt == nil {
                             Text(item.progressText)
                                 .font(AppTheme.TypeRole.caption())
