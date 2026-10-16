@@ -40,6 +40,14 @@ private struct PrayChromeButton: View {
     }
 }
 
+/// Where the prayer footer wants the language toggle drawn.
+private struct LanguageChipsAnchorKey: PreferenceKey {
+    static var defaultValue: Anchor<CGRect>?
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = value ?? nextValue()
+    }
+}
+
 struct PrayView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(SessionStore.self) private var sessionStore
@@ -315,6 +323,7 @@ struct PrayView: View {
                 }
             }
         }
+        .overlayPreferenceValue(LanguageChipsAnchorKey.self) { stableLanguageChips($0) }
         .onChange(of: index) { _, _ in
             plateScrollY = 0
             plateHintDismissed = false
@@ -1174,7 +1183,7 @@ struct PrayView: View {
             }
             // Web `canLang`: hide on mystery plates; English only there.
             if !step.isPlate {
-                languageChips
+                languageChipsSlot
             }
         }
         .padding(.horizontal, AppTheme.gutter)
@@ -1182,6 +1191,29 @@ struct PrayView: View {
         .padding(.top, AppTheme.Space.md)
         // Solid foot in document flow (web phone). No upward fade — that covered the rosary.
         .background(palette.prayBg)
+    }
+
+    /// Reserves the toggle's place in whichever footer is showing. The real
+    /// control is drawn once by `stableLanguageChips()`, so switching between
+    /// the short-prayer footer and the long-prayer floating chrome (e.g. when
+    /// Both makes the text long) does not recreate the segmented control and
+    /// kill its sliding animation.
+    private var languageChipsSlot: some View {
+        languageChips
+            .hidden()
+            .anchorPreference(key: LanguageChipsAnchorKey.self, value: .bounds) { $0 }
+    }
+
+    private func stableLanguageChips(_ anchor: Anchor<CGRect>?) -> some View {
+        GeometryReader { proxy in
+            let rect = anchor.map { proxy[$0] } ?? .zero
+            languageChips
+                .frame(width: rect.width, height: rect.height)
+                .offset(x: rect.minX, y: rect.minY)
+                .opacity(anchor == nil ? 0 : 1)
+                .allowsHitTesting(anchor != nil)
+                .accessibilityHidden(anchor == nil)
+        }
     }
 
     private var languageChips: some View {
@@ -1664,7 +1696,7 @@ struct PrayView: View {
                     onAdvance: { advance() }
                 )
             }
-            languageChips
+            languageChipsSlot
         }
         .padding(.horizontal, AppTheme.gutter)
         .padding(.bottom, AppTheme.Space.lg)
