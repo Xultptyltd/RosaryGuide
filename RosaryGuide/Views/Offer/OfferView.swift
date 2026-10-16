@@ -2045,6 +2045,52 @@ private enum RetentionChoice: String, CaseIterable, Identifiable {
     }
 }
 
+/// Segmented "who this intention is for" selector. The active option inverts (ink fill with
+/// page-colour text: white in dark mode, near-black in light) so the choice is obvious.
+private struct IntentionKindSelector: View {
+    @Environment(\.palette) private var palette
+    @Binding var selection: IntentionKindChoice
+
+    var body: some View {
+        HStack(spacing: AppTheme.Space.xs) {
+            ForEach(IntentionKindChoice.allCases) { option in
+                let selected = selection == option
+                Button {
+                    selection = option
+                } label: {
+                    Text(option.title)
+                        .font(AppTheme.TypeRole.segmentedControl)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .foregroundStyle(selected ? palette.bg : palette.ink)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background {
+                            if selected {
+                                Capsule(style: .continuous).fill(palette.ink)
+                            }
+                        }
+                        .contentShape(Capsule(style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .padding(AppTheme.Space.xs)
+        .frame(height: AppTheme.Component.segmentedControlHeight)
+        .background(palette.surface, in: Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).strokeBorder(palette.fieldStroke, lineWidth: 1))
+        .animation(.easeOut(duration: 0.18), value: selection)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Category")
+    }
+}
+
+#Preview("Intention kind selector") {
+    @Previewable @State var kind = IntentionKindChoice.someone
+    IntentionKindSelector(selection: $kind)
+        .padding(AppTheme.Space.lg)
+}
+
 private enum IntentionKindChoice: String, CaseIterable, Identifiable {
     case personal
     case someone
@@ -2156,12 +2202,7 @@ struct IntentionEditorSheet: View {
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                         GuideSectionLabel(text: "Category", color: palette.dim)
-                        Picker("Category", selection: $kind) {
-                            ForEach(IntentionKindChoice.allCases) { option in
-                                Text(option.title).tag(option)
-                            }
-                        }
-                        .guideSegmentedControl()
+                        IntentionKindSelector(selection: $kind)
                         .onChange(of: kind) { _, option in
                             accent = option.accent
                             emoji = option.emoji
