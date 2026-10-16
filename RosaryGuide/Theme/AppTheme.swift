@@ -31,6 +31,15 @@ enum AppTheme {
     static let intentionPurpleOn = Color(light: 0x4B49A5, dark: 0xDADFFF)
     static let intentionPeachOn = Color(light: 0x933600, dark: 0xFEDBC9)
 
+    /// Mystery-set colours (trial palette, same in light and dark). Separate from the
+    /// intention avatar colours so intentions are unaffected.
+    static let mysteryJoyful = Color(hex: 0x48A6FF)
+    static let mysteryLuminous = Color(hex: 0x83C6FF)
+    static let mysterySorrowful = Color(hex: 0xB5DBFF)
+    static let mysteryGlorious = Color(hex: 0xD6EAFF)
+    /// Glyph colour on every mystery fill: dark navy (6:1 on Joyful, higher on the rest).
+    static let mysteryOn = Color(hex: 0x0A2540)
+
     /// Canonical page-edge horizontal inset. Matches `Space.lg` (16pt).
     /// Prefer `AppTheme.gutter` over literals at screen edges.
     static let gutter: CGFloat = 16

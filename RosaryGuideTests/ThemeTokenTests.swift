@@ -106,15 +106,14 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(MysterySetKind.sorrowful.letter, "S")
         XCTAssertEqual(MysterySetKind.glorious.letter, "G")
 
-        // Documented mapping: Joyful→green, Luminous→blue, Sorrowful→purple, Glorious→peach.
-        XCTAssertEqual(UIColor(MysterySetKind.joyful.letterFill), UIColor(AppTheme.intentionMintGreen))
-        XCTAssertEqual(UIColor(MysterySetKind.luminous.letterFill), UIColor(AppTheme.intentionSkyBlue))
-        XCTAssertEqual(UIColor(MysterySetKind.sorrowful.letterFill), UIColor(AppTheme.intentionPurple))
-        XCTAssertEqual(UIColor(MysterySetKind.glorious.letterFill), UIColor(AppTheme.intentionPeach))
-        XCTAssertEqual(UIColor(MysterySetKind.joyful.letterOn), UIColor(AppTheme.intentionMintGreenOn))
-        XCTAssertEqual(UIColor(MysterySetKind.luminous.letterOn), UIColor(AppTheme.intentionSkyBlueOn))
-        XCTAssertEqual(UIColor(MysterySetKind.sorrowful.letterOn), UIColor(AppTheme.intentionPurpleOn))
-        XCTAssertEqual(UIColor(MysterySetKind.glorious.letterOn), UIColor(AppTheme.intentionPeachOn))
+        // Mystery blues, strongest to palest; one navy glyph colour.
+        XCTAssertEqual(UIColor(MysterySetKind.joyful.letterFill), UIColor(AppTheme.mysteryJoyful))
+        XCTAssertEqual(UIColor(MysterySetKind.luminous.letterFill), UIColor(AppTheme.mysteryLuminous))
+        XCTAssertEqual(UIColor(MysterySetKind.sorrowful.letterFill), UIColor(AppTheme.mysterySorrowful))
+        XCTAssertEqual(UIColor(MysterySetKind.glorious.letterFill), UIColor(AppTheme.mysteryGlorious))
+        for set in MysterySetKind.allCases {
+            XCTAssertEqual(UIColor(set.letterOn), UIColor(AppTheme.mysteryOn))
+        }
     }
 }
 
