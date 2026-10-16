@@ -17,19 +17,12 @@ enum AppTheme {
     static let brandAccentDark = marianBlueDark
     static let brandAccentDarkHighContrast = marianBlueDarkHighContrast
     static let destructiveMenuRed = Color(hex: 0xFF3B30)
-    /// Soft avatar fills — light/dark pairs from the product colour table.
-    /// Shared by intention avatars and mystery-set icons.
-    /// Green → Personal / Joyful; Marian Blue → Someone else / Luminous;
-    /// Purple → Church & world / Sorrowful; Peach → Glorious (fourth).
-    static let intentionMintGreen = Color(light: 0xC3EDE6, dark: 0x0C615A)
-    static let intentionSkyBlue = Color(light: 0xC0EAF7, dark: 0x005F78)
-    static let intentionPurple = Color(light: 0xDADFFF, dark: 0x4B49A5)
-    static let intentionPeach = Color(light: 0xFEDBC9, dark: 0x933600)
-    /// Glyph colour on the avatar fill (opposite variant of the fill pair).
-    static let intentionMintGreenOn = Color(light: 0x0C615A, dark: 0xC3EDE6)
-    static let intentionSkyBlueOn = Color(light: 0x005F78, dark: 0xC0EAF7)
-    static let intentionPurpleOn = Color(light: 0x4B49A5, dark: 0xDADFFF)
-    static let intentionPeachOn = Color(light: 0x933600, dark: 0xFEDBC9)
+    /// Intention category avatar fills (same in light and dark).
+    static let intentionPersonal = Color(hex: 0xC6FFB5)
+    static let intentionSomeoneElse = Color(hex: 0xCEB5FF)
+    static let intentionChurch = Color(hex: 0xFFB5B6)
+    /// Navy glyph on every intention avatar, as on mystery and milestone icons.
+    static let intentionOn = Color(hex: 0x0A2540)
 
     /// Mystery-set colours (trial palette, same in light and dark). Separate from the
     /// intention avatar colours so intentions are unaffected.

@@ -116,6 +116,15 @@ final class ThemeTokenTests: XCTestCase {
         }
     }
 
+    func testIntentionCategoryAvatarColours() {
+        XCTAssertEqual(UIColor(IntentionAccent.mintGreen.color), UIColor(Color(hex: 0xC6FFB5)))
+        XCTAssertEqual(UIColor(IntentionAccent.skyBlue.color), UIColor(Color(hex: 0xCEB5FF)))
+        XCTAssertEqual(UIColor(IntentionAccent.purple.color), UIColor(Color(hex: 0xFFB5B6)))
+        for accent in IntentionAccent.allCases {
+            XCTAssertEqual(UIColor(accent.onColor), UIColor(Color(hex: 0x0A2540)))
+        }
+    }
+
     func testMilestoneCategoryCircleColours() {
         XCTAssertEqual(UIColor(JourneyMilestones.Category.rosaries.circleFill), UIColor(Color(hex: 0x1E83FF)))
         XCTAssertEqual(UIColor(JourneyMilestones.Category.offerings.circleFill), UIColor(Color(hex: 0x48A6FF)))
