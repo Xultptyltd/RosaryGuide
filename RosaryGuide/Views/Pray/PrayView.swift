@@ -780,12 +780,15 @@ struct PrayView: View {
     }
 
     /// Outer ~15% of the pray column steps back / forward (was 25%; narrowed so body stays tappable).
-    private var edgeTapZones: some View {
+    private var edgeTapZones: some View { edgeTapZones(width: nil) }
+
+    /// `width` nil = 15% of the screen per side (standard prayers).
+    private func edgeTapZones(width: CGFloat?) -> some View {
         GeometryReader { geo in
             HStack(spacing: 0) {
                 Color.clear
                     .contentShape(Rectangle())
-                    .frame(width: geo.size.width * 0.15)
+                    .frame(width: width ?? geo.size.width * 0.15)
                     .onTapGesture { retreat() }
                     .accessibilityLabel("Previous prayer")
                     .accessibilityAddTraits(.isButton)
@@ -794,7 +797,7 @@ struct PrayView: View {
 
                 Color.clear
                     .contentShape(Rectangle())
-                    .frame(width: geo.size.width * 0.15)
+                    .frame(width: width ?? geo.size.width * 0.15)
                     .onTapGesture { advance() }
                     .accessibilityLabel("Next prayer")
                     .accessibilityAddTraits(.isButton)
@@ -955,18 +958,8 @@ struct PrayView: View {
                 }
                 .scrollIndicators(.hidden)
                 .scrollPosition($intentionScrollPosition)
-                // Edge taps go back / forward like other prayer steps. Only the side
-                // gutters count, so taps on intention rows never also change step.
-                .simultaneousGesture(
-                    SpatialTapGesture().onEnded { tap in
-                        let width = scrollGeo.size.width
-                        if tap.location.x <= AppTheme.gutter {
-                            retreat()
-                        } else if tap.location.x >= width - AppTheme.gutter {
-                            advance()
-                        }
-                    }
-                )
+                // Same edge zones as prayer steps, narrowed to the side gutters so
+                // they never cover the intention rows.
                 .onScrollGeometryChange(for: Bool.self) { geometry in
                     geometry.contentOffset.y + geometry.contentInsets.top > 1
                 } action: { _, scrolled in
@@ -1001,6 +994,7 @@ struct PrayView: View {
                         intentionLastDrag = Date()
                     }
                 }
+                .overlay { edgeTapZones(width: AppTheme.gutter) }
                 .onAppear {
                     if scrollGeo.size.height > 1 { intentionViewportHeight = scrollGeo.size.height }
                 }
@@ -1970,6 +1964,8 @@ struct PrayView: View {
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
                 showingIntentionStep = false
             }
+            // Same haptic as every other step change.
+            playHaptic()
             return
         }
         guard index > 0 else { return }
