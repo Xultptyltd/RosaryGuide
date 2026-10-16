@@ -1403,8 +1403,10 @@ struct PrayView: View {
                         .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
                         PlateScrollMetrics(geometry)
                     } action: { _, newValue in
+                        // The scroll view's own content size is authoritative and may
+                        // shrink (shorter language, smaller text).
                         if newValue.contentHeight > 1 {
-                            michaelContentHeight = max(michaelContentHeight, newValue.contentHeight)
+                            michaelContentHeight = newValue.contentHeight
                         }
                         if newValue.viewportHeight > 1 {
                             michaelViewportHeight = newValue.viewportHeight
@@ -1437,11 +1439,8 @@ struct PrayView: View {
                                 michaelLastDrag = Date()
                             }
                         }
-                        .onChange(of: settings.language) {
-                            michaelActionLocked = false
-                            michaelArrowArmed = false
-                            michaelContentHeight = 0
-                        }
+                        .onChange(of: settings.language) { resetMichaelScrollState() }
+                        .onChange(of: settings.textSize) { resetMichaelScrollState() }
                     }
                     .onPreferenceChange(MichaelContentHeightKey.self) { height in
                         // Only grow. A layout pass while scrolled can report the
@@ -1488,14 +1487,19 @@ struct PrayView: View {
                 }
         }
         .background(palette.prayBg.ignoresSafeArea())
-        .onAppear {
-            // Opening Saint Michael again starts as a circle at the top.
-            michaelActionLocked = false
-            michaelArrowArmed = false
-            michaelScrollY = 0
-            michaelLastDrag = .distantPast
-            michaelScrollPosition = ScrollPosition(edge: .top)
-        }
+        // Opening Saint Michael again starts as a circle at the top.
+        .onAppear { resetMichaelScrollState() }
+    }
+
+    /// New content (appear, language, text size): re-measure from scratch so the
+    /// height can shrink, and start again at the top as a circle.
+    private func resetMichaelScrollState() {
+        michaelActionLocked = false
+        michaelArrowArmed = false
+        michaelScrollY = 0
+        michaelContentHeight = 0
+        michaelLastDrag = .distantPast
+        michaelScrollPosition = ScrollPosition(edge: .top)
     }
 
     /// Mystery-plate circle, in the prayer footer. It becomes Done at the end of the scroll.
