@@ -871,55 +871,36 @@ struct HomeView: View {
         }
     }
 
+    /// The same system segmented control as the English/Latin/Both toggle (height, Liquid
+    /// Glass, sliding thumb). UIKit segments are equal width, so the weekday dot is overlaid on
+    /// its segment: bright while that set is showing, faint otherwise.
     private var setPicker: some View {
-        HStack(spacing: 0) {
+        Picker("Mystery set", selection: mysterySetSelection) {
             ForEach(MysterySetKind.displayOrder) { set in
-                Button {
-                    mysterySetSelection.wrappedValue = set
-                } label: {
-                    ZStack(alignment: .top) {
-                        Text(set.shortName)
-                            .font(AppTheme.TypeRole.segmentedControl)
-                            .foregroundStyle(currentSet == set ? palette.ink : palette.dim)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                Text(set.shortName).tag(set)
+            }
+        }
+        .guideSegmentedControl()
+        .overlay {
+            HStack(spacing: 0) {
+                ForEach(MysterySetKind.displayOrder) { set in
+                    VStack {
                         if set == assignment.pickerDotSet {
                             Circle()
                                 .fill(currentSet == set ? palette.ink : palette.faint)
                                 .frame(width: AppTheme.Space.xs, height: AppTheme.Space.xs)
-                                .padding(.top, AppTheme.Space.xs)
-                                .accessibilityHidden(true)
+                                .padding(.top, AppTheme.Space.sm)
                         }
+                        Spacer(minLength: 0)
                     }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(set.shortName) Mysteries")
-                .accessibilityValue(set == assignment.pickerDotSet ? "Today's weekday set" : "")
-                .accessibilityAddTraits(currentSet == set ? .isSelected : [])
-            }
-        }
-        .padding(AppTheme.Component.segmentedControlInset)
-        .frame(height: AppTheme.Component.mysterySelectorHeight)
-        .background(alignment: .leading) {
-            GeometryReader { geometry in
-                let width = max(geometry.size.width - AppTheme.Component.segmentedControlInset * 2, 0)
-                let segmentWidth = width / CGFloat(max(MysterySetKind.displayOrder.count, 1))
-                if let index = MysterySetKind.displayOrder.firstIndex(of: currentSet) {
-                    AppTheme.capsule
-                        .fill(palette.selectedControlFill)
-                        .frame(width: segmentWidth, height: AppTheme.Component.mysterySelectorInnerHeight)
-                        .offset(
-                            x: AppTheme.Component.segmentedControlInset + CGFloat(index) * segmentWidth,
-                            y: AppTheme.Component.segmentedControlInset
-                        )
-                        .allowsHitTesting(false)
+                    .frame(maxWidth: .infinity)
                 }
             }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
         }
-        .background(palette.segmentedControlTrack, in: AppTheme.capsule)
-        .compositingGroup()
-        .accessibilityElement(children: .contain)
         .accessibilityLabel("Mystery set")
+        .accessibilityHint("Today's weekday set is the \(assignment.pickerDotSet.shortName) Mysteries")
     }
 
     private var mysterySetSelection: Binding<MysterySetKind> {
