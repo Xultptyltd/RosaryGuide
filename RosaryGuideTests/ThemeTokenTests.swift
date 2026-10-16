@@ -115,15 +115,6 @@ final class ThemeTokenTests: XCTestCase {
             XCTAssertEqual(UIColor(set.letterOn), UIColor(AppTheme.mysteryOn))
         }
     }
-
-    func testIntentionCategoryAvatarsShareTheMysteryBlues() {
-        XCTAssertEqual(UIColor(IntentionAccent.mintGreen.color), UIColor(AppTheme.mysteryJoyful))
-        XCTAssertEqual(UIColor(IntentionAccent.skyBlue.color), UIColor(AppTheme.mysteryLuminous))
-        XCTAssertEqual(UIColor(IntentionAccent.purple.color), UIColor(AppTheme.mysterySorrowful))
-        for accent in IntentionAccent.allCases {
-            XCTAssertEqual(UIColor(accent.onColor), UIColor(AppTheme.mysteryOn))
-        }
-    }
 }
 
 /// Circle-to-button control on scrolling prayers.

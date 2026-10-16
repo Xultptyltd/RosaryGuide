@@ -17,15 +17,27 @@ enum AppTheme {
     static let brandAccentDark = marianBlueDark
     static let brandAccentDarkHighContrast = marianBlueDarkHighContrast
     static let destructiveMenuRed = Color(hex: 0xFF3B30)
+    /// Soft avatar fills — light/dark pairs from the product colour table.
+    /// Shared by intention avatars and mystery-set icons.
+    /// Green → Personal / Joyful; Marian Blue → Someone else / Luminous;
+    /// Purple → Church & world / Sorrowful; Peach → Glorious (fourth).
+    static let intentionMintGreen = Color(light: 0xC3EDE6, dark: 0x0C615A)
+    static let intentionSkyBlue = Color(light: 0xC0EAF7, dark: 0x005F78)
+    static let intentionPurple = Color(light: 0xDADFFF, dark: 0x4B49A5)
+    static let intentionPeach = Color(light: 0xFEDBC9, dark: 0x933600)
+    /// Glyph colour on the avatar fill (opposite variant of the fill pair).
+    static let intentionMintGreenOn = Color(light: 0x0C615A, dark: 0xC3EDE6)
+    static let intentionSkyBlueOn = Color(light: 0x005F78, dark: 0xC0EAF7)
+    static let intentionPurpleOn = Color(light: 0x4B49A5, dark: 0xDADFFF)
+    static let intentionPeachOn = Color(light: 0x933600, dark: 0xFEDBC9)
 
-    /// Blue avatar scale (same in light and dark), shared by mystery-set icons and
-    /// intention category avatars: Joyful / Personal, Luminous / Someone else,
-    /// Sorrowful / Church & world, Glorious (mysteries only).
+    /// Mystery-set colours (trial palette, same in light and dark). Separate from the
+    /// intention avatar colours so intentions are unaffected.
     static let mysteryJoyful = Color(hex: 0x48A6FF)
     static let mysteryLuminous = Color(hex: 0x83C6FF)
     static let mysterySorrowful = Color(hex: 0xB5DBFF)
     static let mysteryGlorious = Color(hex: 0xD6EAFF)
-    /// Glyph colour on every mystery and intention avatar fill: dark navy (6:1 on Joyful, higher on the rest).
+    /// Glyph colour on every mystery fill: dark navy (6:1 on Joyful, higher on the rest).
     static let mysteryOn = Color(hex: 0x0A2540)
 
     /// Canonical page-edge horizontal inset. Matches `Space.lg` (16pt).
