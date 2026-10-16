@@ -3635,10 +3635,8 @@ private struct JourneyMilestonesView: View {
 
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+            // Count first, label under it. VoiceOver reads both as one line.
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                Text("Milestones completed")
-                    .font(AppTheme.TypeRole.caption(weight: .medium))
-                    .foregroundStyle(palette.textSecondary)
                 HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
                     Text("\(milestones.earnedCount)")
                         .font(AppTheme.TypeRole.headingPrimary)
@@ -3647,9 +3645,12 @@ private struct JourneyMilestonesView: View {
                         .font(AppTheme.TypeRole.callout)
                         .foregroundStyle(palette.textSecondary)
                 }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(milestones.earnedCount) of \(milestones.items.count) milestones completed")
+                Text("Milestones completed")
+                    .font(AppTheme.TypeRole.caption(weight: .medium))
+                    .foregroundStyle(palette.textSecondary)
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(milestones.earnedCount) of \(milestones.items.count) milestones completed")
 
             ProgressView(value: Double(milestones.earnedCount), total: Double(max(1, milestones.items.count)))
                 .tint(palette.accent)
