@@ -15,6 +15,7 @@ struct RosaryGuideApp: App {
 
     init() {
         FontRegistrar.register()
+        GuideChrome.applyAtLaunch()
         // AuthStore configures Firebase, so it is created before anything that syncs.
         let auth = AuthStore()
         let settings = SettingsStore()

@@ -373,6 +373,15 @@ enum AppearanceWindowStyle {
 }
 
 enum GuideChrome {
+    /// Run once at launch, before any navigation bar exists: appearance proxies only
+    /// reach bars created afterwards, so tab roots would otherwise miss the title fonts.
+    static func applyAtLaunch() {
+        #if canImport(UIKit)
+        let dark = UITraitCollection.current.userInterfaceStyle == .dark
+        apply(ThemePalette(scheme: dark ? .dark : .light, contrast: .standard))
+        #endif
+    }
+
     static func apply(_ palette: ThemePalette) {
         #if canImport(UIKit)
         let ink = UIColor(palette.ink)
@@ -636,7 +645,7 @@ struct MorphingNavTitle: View {
             let x = CollapsingTitleMetrics.lerp(xLeading, xCenter, t)
 
             Text(title)
-                .font(AppTheme.sans(size, weight: .regular, relativeTo: .largeTitle))
+                .font(AppTheme.TypeRole.h1(size))
                 .foregroundStyle(palette.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
@@ -886,7 +895,7 @@ struct GuideDisplayTitle: View {
         uiKitTitle
         #else
         Text(text)
-            .font(AppTheme.sans(size, weight: .regular, relativeTo: .largeTitle))
+            .font(AppTheme.TypeRole.h1(size))
             .foregroundStyle(color)
             .accessibilityAddTraits(.isHeader)
         #endif
@@ -894,7 +903,7 @@ struct GuideDisplayTitle: View {
 
     #if canImport(UIKit)
     private var uiKitTitle: some View {
-        let ui = FontRegistrar.sansUI(size, weight: .regular, textStyle: .largeTitle)
+        let ui = AppTheme.TypeRole.h1UIFont(size)
         let extra = (size * AppTheme.titleLineHeight) - ui.lineHeight
         return Text(text)
             .font(Font(ui))
@@ -1209,6 +1218,18 @@ extension AppTheme {
     enum TypeRole {
 
         static var display: Font { headingPrimary }
+        /// H1: Home's mystery title face (Instrument Sans regular, scales with Large Title).
+        /// Every large page title uses this; the size is chosen per place.
+        static func h1(_ size: CGFloat) -> Font {
+            AppTheme.sans(size, weight: .regular, relativeTo: .largeTitle)
+        }
+        #if canImport(UIKit)
+        static func h1UIFont(_ size: CGFloat) -> UIFont {
+            FontRegistrar.sansUI(size, weight: .regular, textStyle: .largeTitle)
+        }
+        /// Size for UIKit large navigation titles (system large-title size).
+        static let h1NavigationSize: CGFloat = 34
+        #endif
         static var title: Font { headingPrimary }
         static var title2: Font { headingPrimary }
         static var title3: Font { headingSecondary }
