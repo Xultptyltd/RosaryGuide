@@ -444,7 +444,8 @@ private struct GuideWalkthroughPage<Content: View>: View {
         .onScrollGeometryChange(for: GuideReadingMetrics.self) { geometry in
             GuideReadingMetrics(
                 y: max(0, geometry.contentOffset.y + geometry.contentInsets.top),
-                maxOffset: max(0, geometry.contentSize.height + geometry.contentInsets.top + geometry.contentInsets.bottom - geometry.containerSize.height)
+                // containerSize already excludes the insets.
+                maxOffset: max(0, geometry.contentSize.height - geometry.containerSize.height)
             )
         } action: { _, metrics in
             if abs(metrics.y - scrollY) > 0.5 { lastDrag = Date() }

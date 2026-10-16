@@ -692,7 +692,9 @@ struct PrayView: View {
                 }
                 .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
                     PlateScrollMetrics(
-                        offsetY: geometry.contentOffset.y,
+                        // The header bar is a top inset: offsets start at -inset, and
+                        // containerSize excludes insets. Measure from the content top.
+                        offsetY: geometry.contentOffset.y + geometry.contentInsets.top,
                         contentHeight: geometry.contentSize.height,
                         viewportHeight: geometry.containerSize.height
                     )
@@ -967,7 +969,8 @@ struct PrayView: View {
                 }
                 .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
                     PlateScrollMetrics(
-                        offsetY: geometry.contentOffset.y,
+                        // Offsets start at -inset under the header bar (see prayer column).
+                        offsetY: geometry.contentOffset.y + geometry.contentInsets.top,
                         contentHeight: geometry.contentSize.height,
                         viewportHeight: geometry.containerSize.height
                     )
