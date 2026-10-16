@@ -3619,10 +3619,6 @@ private struct JourneyMilestonesView: View {
                         }
                     }
                 }
-                Text("Completed milestones stay saved on this device when older history expires. Deleting prayer data clears them.")
-                    .font(AppTheme.TypeRole.caption())
-                    .foregroundStyle(palette.dim)
-                    .padding(.top, AppTheme.Space.xl)
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideDetailChrome.contentTop)
@@ -3700,11 +3696,6 @@ private struct JourneyMilestoneCard: View {
                             .font(AppTheme.TypeRole.caption())
                             .foregroundStyle(palette.textSecondary)
                     } else {
-                        if item.count == 0 {
-                            Text("When you’re ready")
-                                .font(AppTheme.TypeRole.caption())
-                                .foregroundStyle(palette.textSecondary)
-                        }
                         ProgressView(value: item.progress)
                             .tint(palette.accent)
                             .accessibilityLabel(item.title)
