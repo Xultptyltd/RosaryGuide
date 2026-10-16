@@ -2045,43 +2045,91 @@ private enum RetentionChoice: String, CaseIterable, Identifiable {
     }
 }
 
-/// Segmented "who this intention is for" selector. The active option inverts (ink fill with
-/// page-colour text: white in dark mode, near-black in light) so the choice is obvious.
+/// Category selector. The same SwiftUI segmented `Picker` + `guideSegmentedControl()` as the
+/// language toggle, so height, Liquid Glass and the sliding thumb match exactly. SwiftUI can
+/// only tint segmented pickers app-wide, so `SegmentedSelectedColors` finds this picker's own
+/// UISegmentedControl and inverts only its selected state: ink thumb (white in dark mode,
+/// near-black in light) with page-colour text.
 private struct IntentionKindSelector: View {
     @Environment(\.palette) private var palette
     @Binding var selection: IntentionKindChoice
 
     var body: some View {
-        HStack(spacing: AppTheme.Space.xs) {
+        Picker("Category", selection: $selection) {
             ForEach(IntentionKindChoice.allCases) { option in
-                let selected = selection == option
-                Button {
-                    selection = option
-                } label: {
-                    Text(option.title)
-                        .font(AppTheme.TypeRole.segmentedControl)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                        .foregroundStyle(selected ? palette.bg : palette.ink)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background {
-                            if selected {
-                                Capsule(style: .continuous).fill(palette.ink)
-                            }
-                        }
-                        .contentShape(Capsule(style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
+                Text(option.title).tag(option)
             }
         }
-        .padding(AppTheme.Space.xs)
-        .frame(height: AppTheme.Component.segmentedControlHeight)
-        .background(palette.surface, in: Capsule(style: .continuous))
-        .overlay(Capsule(style: .continuous).strokeBorder(palette.fieldStroke, lineWidth: 1))
-        .animation(.easeOut(duration: 0.18), value: selection)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Category")
+        .guideSegmentedControl()
+        .background(SegmentedSelectedColors(thumb: UIColor(palette.ink), title: UIColor(palette.bg)))
+    }
+}
+
+/// Sets the selected thumb and title colours on the segmented control it sits behind.
+private struct SegmentedSelectedColors: UIViewRepresentable {
+    let thumb: UIColor
+    let title: UIColor
+
+    func makeUIView(context: Context) -> Finder { Finder() }
+
+    func updateUIView(_ view: Finder, context: Context) {
+        view.thumb = thumb
+        view.title = title
+        view.apply()
+    }
+
+    final class Finder: UIView {
+        var thumb: UIColor = .white
+        var title: UIColor = .black
+
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            isUserInteractionEnabled = false
+            backgroundColor = .clear
+        }
+
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            apply()
+        }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            apply()
+        }
+
+        func apply() {
+            guard let control = nearestSegmentedControl() else { return }
+            if control.selectedSegmentTintColor != thumb { control.selectedSegmentTintColor = thumb }
+            var attributes = control.titleTextAttributes(for: .selected) ?? [:]
+            if attributes[.foregroundColor] as? UIColor != title {
+                attributes[.foregroundColor] = title
+                attributes[.font] = AppTheme.TypeRole.segmentedControlUIFont
+                control.setTitleTextAttributes(attributes, for: .selected)
+            }
+        }
+
+        /// The closest segmented control: searches each ancestor's subtree, nearest first.
+        private func nearestSegmentedControl() -> UISegmentedControl? {
+            var ancestor = superview
+            var depth = 0
+            while let current = ancestor, depth < 6 {
+                if let found = Self.firstSegmentedControl(in: current) { return found }
+                ancestor = current.superview
+                depth += 1
+            }
+            return nil
+        }
+
+        private static func firstSegmentedControl(in view: UIView) -> UISegmentedControl? {
+            if let control = view as? UISegmentedControl { return control }
+            for subview in view.subviews {
+                if let found = firstSegmentedControl(in: subview) { return found }
+            }
+            return nil
+        }
     }
 }
 
