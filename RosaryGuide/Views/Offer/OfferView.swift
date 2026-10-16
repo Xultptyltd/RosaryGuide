@@ -817,17 +817,10 @@ private struct MyPrayerIntentionRowLabel: View {
                 usesPopePortrait: intention.isPapal
             )
 
-            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                Text(displayTitle)
-                    .font(AppTheme.TypeRole.bodySmall(weight: .regular))
-                    .foregroundStyle(titleColor)
-                    .lineLimit(1)
-
-                Text(metaLabel)
-                    .font(AppTheme.TypeRole.caption)
-                    .foregroundStyle(palette.dim)
-                    .lineLimit(1)
-            }
+            Text(displayTitle)
+                .font(AppTheme.TypeRole.bodySmall(weight: .regular))
+                .foregroundStyle(titleColor)
+                .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Color.clear
@@ -836,20 +829,7 @@ private struct MyPrayerIntentionRowLabel: View {
         }
         .padding(.vertical, AppTheme.Space.sm)
         .contentShape(Rectangle())
-        .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Hidden, \(metaLabel)" : "\(intention.title), \(metaLabel)")
-    }
-
-    private var metaLabel: String {
-        guard let date = intention.lastCarriedAt else {
-            return intention.createdAt.formatted(.dateTime.month(.wide).year())
-        }
-        let calendar = Calendar.current
-        if calendar.isDateInToday(date) { return "Last prayed today" }
-        if calendar.isDateInYesterday(date) { return "Last prayed yesterday" }
-        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date),
-                                            to: calendar.startOfDay(for: Date())).day ?? 0
-        if (2...6).contains(days) { return "Last prayed \(days) days ago" }
-        return "Last prayed \(date.formatted(.dateTime.day().month(.abbreviated).year()))"
+        .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Hidden intention" : intention.title)
     }
 }
 
@@ -1410,22 +1390,16 @@ private struct IntentionListRow: View {
                 usesPopePortrait: intention.isPapal
             )
 
-            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                HStack(spacing: AppTheme.Space.sm) {
-                    Text(displayTitle)
-                        .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
-                        .foregroundStyle(titleColor)
-                        .lineLimit(1)
-                    if intention.isPinned {
-                        Image(systemName: "pin.fill")
-                            .guideSymbol(size: 12, weight: .semibold)
-                            .foregroundStyle(palette.accent)
-                    }
-                }
-                Text(metaLabel)
-                    .font(AppTheme.TypeRole.caption)
-                    .foregroundStyle(palette.dim)
+            HStack(spacing: AppTheme.Space.sm) {
+                Text(displayTitle)
+                    .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                    .foregroundStyle(titleColor)
                     .lineLimit(1)
+                if intention.isPinned {
+                    Image(systemName: "pin.fill")
+                        .guideSymbol(size: 12, weight: .semibold)
+                        .foregroundStyle(palette.accent)
+                }
             }
 
             Spacer(minLength: 8)
@@ -1437,11 +1411,7 @@ private struct IntentionListRow: View {
         }
         .padding(.vertical, 10)
         .contentShape(Rectangle())
-        .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Hidden intention, \(metaLabel)" : "\(intention.title), \(metaLabel)")
-    }
-
-    private var metaLabel: String {
-        intention.createdAt.formatted(.dateTime.month(.wide).year())
+        .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Hidden intention" : intention.title)
     }
 }
 
