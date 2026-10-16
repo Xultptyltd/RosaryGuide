@@ -79,6 +79,8 @@ struct PrayView: View {
     @State private var prayerActionLocked = false
     @State private var prayerArrowArmed = false
     @State private var prayerScrollY: CGFloat = 0
+    /// True while content has scrolled under the top bar (shows the frosted bar).
+    @State private var topBarScrolled = false
     @State private var prayerScrollPosition = ScrollPosition(edge: .top)
     @State private var prayerLastDrag = Date.distantPast
     /// Two-button steps only (decade Hail Marys 1–9). Next shows as a pill.
@@ -295,14 +297,15 @@ struct PrayView: View {
 
                     footer(step)
                 }
-                // See-through top bar: long prayers scroll under it with the soft edge effect.
+                // Long prayers scroll under the bar, which turns frosted once scrolled.
                 .safeAreaBar(edge: .top, spacing: 0) {
                     VStack(spacing: 0) {
                         header(step)
                         SevenStageTrack(current: step.stage) { jump(to: $0) }
                     }
+                    .guideChromeBar(visible: topBarScrolled && prayerUsesScrollTemplate)
                 }
-                .scrollEdgeEffectStyle(.soft, for: .top)
+                .scrollEdgeEffectHidden(true, for: .top)
                 .overlay(alignment: .bottom) {
                     if prayerUsesScrollTemplate {
                         // The circle and language toggle float on the prayer, not on a
@@ -673,6 +676,11 @@ struct PrayView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .scrollPosition($prayerScrollPosition)
+                .onScrollGeometryChange(for: Bool.self) { geometry in
+                    geometry.contentOffset.y + geometry.contentInsets.top > 1
+                } action: { _, scrolled in
+                    topBarScrolled = scrolled
+                }
                 .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
                     PlateScrollMetrics(
                         offsetY: geometry.contentOffset.y,
@@ -938,6 +946,11 @@ struct PrayView: View {
                 }
                 .scrollIndicators(.hidden)
                 .scrollPosition($intentionScrollPosition)
+                .onScrollGeometryChange(for: Bool.self) { geometry in
+                    geometry.contentOffset.y + geometry.contentInsets.top > 1
+                } action: { _, scrolled in
+                    topBarScrolled = scrolled
+                }
                 .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
                     PlateScrollMetrics(
                         offsetY: geometry.contentOffset.y,
@@ -992,8 +1005,9 @@ struct PrayView: View {
                 header(step)
                 SevenStageTrack(current: step.stage) { jump(to: $0) }
             }
+            .guideChromeBar(visible: topBarScrolled)
         }
-        .scrollEdgeEffectStyle(.soft, for: .top)
+        .scrollEdgeEffectHidden(true, for: .top)
     }
 
     /// Footer room (button + its padding) the list must leave clear.
@@ -1525,6 +1539,7 @@ struct PrayView: View {
     /// zero here left the template off (a full-width button) when the height
     /// came back unchanged.
     private func resetPrayerScrollState() {
+        topBarScrolled = false
         prayerActionLocked = false
         prayerArrowArmed = false
         prayerContentHeight = 0

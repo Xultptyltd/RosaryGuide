@@ -470,6 +470,42 @@ extension View {
     }
 }
 
+/// Standard iOS navigation bar look for custom sticky headers: transparent with no line at
+/// rest, then the system bar material (frosted blur of the content beneath) with a hairline
+/// separator along the bottom once content scrolls under it. Covers the status bar too.
+struct GuideChromeBar: ViewModifier {
+    @Environment(\.displayScale) private var displayScale
+    /// 0 at rest, 1 when scrolled.
+    var progress: CGFloat
+
+    func body(content: Content) -> some View {
+        content.background(alignment: .top) {
+            Rectangle()
+                .fill(.bar)
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(Color(uiColor: .separator))
+                        .frame(height: 1 / max(displayScale, 1))
+                }
+                .ignoresSafeArea(edges: .top)
+                .opacity(min(1, max(0, progress)))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+extension View {
+    func guideChromeBar(progress: CGFloat) -> some View {
+        modifier(GuideChromeBar(progress: progress))
+    }
+
+    func guideChromeBar(visible: Bool) -> some View {
+        guideChromeBar(progress: visible ? 1 : 0)
+            .animation(.easeOut(duration: 0.18), value: visible)
+    }
+}
+
 /// Display serif with website `h1.title` tracking and 1.02 line-height.
 
 // MARK: - Collapsing large title (tab H1 → inline nav title)
@@ -709,9 +745,8 @@ struct CollapsingTitleChrome<ToolbarLeading: View, ToolbarTrailing: View, Toolba
     func body(content: Content) -> some View {
         content
             .onCollapsingTitleScrollOffset($scrollOffset)
-            // iOS 26: content scrolls under a see-through bar with the system's soft
-            // scroll edge effect instead of an opaque page-colour slab.
-            .scrollEdgeEffectStyle(.soft, for: .top)
+            // Content scrolls under the bar; once scrolled the bar is the standard
+            // frosted navigation bar material with a hairline (see `guideChromeBar`).
             .safeAreaBar(edge: .top, spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: 12) {
@@ -726,26 +761,10 @@ struct CollapsingTitleChrome<ToolbarLeading: View, ToolbarTrailing: View, Toolba
                     accessory()
                 }
                 .frame(maxWidth: .infinity)
-                .background(alignment: .top) {
-                    // Inside a NavigationStack with its bar hidden the system edge effect
-                    // may not draw, so a soft wash into the page colour keeps the title
-                    // legible over content (no hard edge, no opaque slab).
-                    LinearGradient(
-                        stops: [
-                            .init(color: palette.bg.opacity(0.92), location: 0),
-                            .init(color: palette.bg.opacity(0.7), location: 0.55),
-                            .init(color: palette.bg.opacity(0), location: 1)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .padding(.bottom, -AppTheme.Space.xl)
-                    .ignoresSafeArea(edges: .top)
-                    .opacity(progress)
-                    .allowsHitTesting(false)
-                }
+                .guideChromeBar(progress: progress)
             }
-            .scrollEdgeEffectHidden(false, for: .top)
+            // The frosted bar replaces the system edge effect (no double blur).
+            .scrollEdgeEffectHidden(true, for: .top)
             .overlay(alignment: .top) {
                 // Drawn in the page overlay (not inside the inset) so the large
                 // title is not clipped and cannot expand the inset.
