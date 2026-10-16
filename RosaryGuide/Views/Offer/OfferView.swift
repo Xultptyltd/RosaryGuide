@@ -817,11 +817,19 @@ private struct MyPrayerIntentionRowLabel: View {
                 usesPopePortrait: intention.isPapal
             )
 
-            Text(displayTitle)
-                .font(AppTheme.TypeRole.bodySmall(weight: .regular))
-                .foregroundStyle(titleColor)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                Text(displayTitle)
+                    .font(AppTheme.TypeRole.bodySmall(weight: .regular))
+                    .foregroundStyle(titleColor)
+                    .lineLimit(1)
+                if let month = intention.papalMonthLabel {
+                    Text(month)
+                        .font(AppTheme.TypeRole.caption)
+                        .foregroundStyle(palette.dim)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Color.clear
                 .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
@@ -829,7 +837,14 @@ private struct MyPrayerIntentionRowLabel: View {
         }
         .padding(.vertical, AppTheme.Space.sm)
         .contentShape(Rectangle())
-        .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Hidden intention" : intention.title)
+        .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Hidden intention" : [intention.title, intention.papalMonthLabel].compactMap { $0 }.joined(separator: ", "))
+    }
+}
+
+extension OfferIntention {
+    /// Only the Pope's intention carries its month ("October 2026"); other rows show no meta.
+    var papalMonthLabel: String? {
+        isPapal ? createdAt.formatted(.dateTime.month(.wide).year()) : nil
     }
 }
 
@@ -1390,15 +1405,23 @@ private struct IntentionListRow: View {
                 usesPopePortrait: intention.isPapal
             )
 
-            HStack(spacing: AppTheme.Space.sm) {
-                Text(displayTitle)
-                    .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
-                    .foregroundStyle(titleColor)
-                    .lineLimit(1)
-                if intention.isPinned {
-                    Image(systemName: "pin.fill")
-                        .guideSymbol(size: 12, weight: .semibold)
-                        .foregroundStyle(palette.accent)
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                HStack(spacing: AppTheme.Space.sm) {
+                    Text(displayTitle)
+                        .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                        .foregroundStyle(titleColor)
+                        .lineLimit(1)
+                    if intention.isPinned {
+                        Image(systemName: "pin.fill")
+                            .guideSymbol(size: 12, weight: .semibold)
+                            .foregroundStyle(palette.accent)
+                    }
+                }
+                if let month = intention.papalMonthLabel {
+                    Text(month)
+                        .font(AppTheme.TypeRole.caption)
+                        .foregroundStyle(palette.dim)
+                        .lineLimit(1)
                 }
             }
 
@@ -1411,7 +1434,7 @@ private struct IntentionListRow: View {
         }
         .padding(.vertical, 10)
         .contentShape(Rectangle())
-        .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Hidden intention" : intention.title)
+        .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Hidden intention" : [intention.title, intention.papalMonthLabel].compactMap { $0 }.joined(separator: ", "))
     }
 }
 
