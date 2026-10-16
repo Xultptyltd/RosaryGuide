@@ -3654,11 +3654,6 @@ private struct JourneyMilestonesView: View {
             ProgressView(value: Double(milestones.earnedCount), total: Double(max(1, milestones.items.count)))
                 .tint(palette.accent)
                 .accessibilityHidden(true)
-
-            Text("Small moments of faithfulness.")
-                .font(AppTheme.TypeRole.callout)
-                .foregroundStyle(palette.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppTheme.Space.xl)
