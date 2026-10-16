@@ -303,7 +303,7 @@ struct PrayView: View {
                         header(step)
                         SevenStageTrack(current: step.stage) { jump(to: $0) }
                     }
-                    .guideChromeBar(visible: topBarScrolled && prayerUsesScrollTemplate)
+                    .guideChromeBar(visible: topBarScrolled && prayerUsesScrollTemplate, prayerBackground: true)
                 }
                 .scrollEdgeEffectHidden(true, for: .top)
                 .overlay(alignment: .bottom) {
@@ -1005,7 +1005,7 @@ struct PrayView: View {
                 header(step)
                 SevenStageTrack(current: step.stage) { jump(to: $0) }
             }
-            .guideChromeBar(visible: topBarScrolled)
+            .guideChromeBar(visible: topBarScrolled, prayerBackground: true)
         }
         .scrollEdgeEffectHidden(true, for: .top)
     }

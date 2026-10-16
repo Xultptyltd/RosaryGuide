@@ -475,14 +475,24 @@ extension View {
 /// separator along the bottom once content scrolls under it. Covers the status bar too.
 struct GuideChromeBar: ViewModifier {
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.palette) private var palette
     /// 0 at rest, 1 when scrolled.
     var progress: CGFloat
+    /// Tint with `prayBg` instead of `bg` (prayer screens).
+    var prayerBackground = false
+
+    /// Page colour over the blur. High enough to match the page, low enough
+    /// that blurred content still shows faintly through.
+    static let tintOpacity: Double = 0.78
 
     func body(content: Content) -> some View {
         content.background(alignment: .top) {
-            // Thin material: a little more of the content shows through than `.bar`.
-            Rectangle()
-                .fill(.thinMaterial)
+            // Health-style: strong blur, tinted with the page colour (not grey).
+            GuideBlurView()
+                .overlay {
+                    (prayerBackground ? palette.prayBg : palette.bg)
+                        .opacity(Self.tintOpacity)
+                }
                 .overlay(alignment: .bottom) {
                     Rectangle()
                         .fill(Color(uiColor: .separator))
@@ -497,14 +507,23 @@ struct GuideChromeBar: ViewModifier {
 }
 
 extension View {
-    func guideChromeBar(progress: CGFloat) -> some View {
-        modifier(GuideChromeBar(progress: progress))
+    func guideChromeBar(progress: CGFloat, prayerBackground: Bool = false) -> some View {
+        modifier(GuideChromeBar(progress: progress, prayerBackground: prayerBackground))
     }
 
-    func guideChromeBar(visible: Bool) -> some View {
-        guideChromeBar(progress: visible ? 1 : 0)
+    func guideChromeBar(visible: Bool, prayerBackground: Bool = false) -> some View {
+        guideChromeBar(progress: visible ? 1 : 0, prayerBackground: prayerBackground)
             .animation(.easeOut(duration: 0.18), value: visible)
     }
+}
+
+/// Large-radius system blur under the sticky header tint.
+private struct GuideBlurView: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+    }
+
+    func updateUIView(_ view: UIVisualEffectView, context: Context) {}
 }
 
 /// Display serif with website `h1.title` tracking and 1.02 line-height.
