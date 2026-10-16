@@ -3669,7 +3669,8 @@ private struct JourneyMilestoneCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            HStack(alignment: .top, spacing: AppTheme.Space.md) {
+            // Completed rows centre the tick; in-progress rows keep the top line.
+            HStack(alignment: item.completed ? .center : .top, spacing: AppTheme.Space.md) {
                 ZStack {
                     Circle().fill(item.completed ? palette.accentTint : palette.bg)
                     MilestoneLineGlyph(glyph: AppTheme.MilestoneIcon.glyph(for: item.id))
@@ -3681,17 +3682,29 @@ private struct JourneyMilestoneCard: View {
                 .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                    Text(item.title)
-                        .font(AppTheme.TypeRole.callout(weight: .medium))
-                        .foregroundStyle(palette.ink)
+                    // Title leading, count trailing on the same baseline. The title wraps; the count doesn't.
+                    HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                        Text(item.title)
+                            .font(AppTheme.TypeRole.callout(weight: .medium))
+                            .foregroundStyle(palette.ink)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if item.earnedAt == nil {
+                            Text(item.progressText)
+                                .font(AppTheme.TypeRole.caption())
+                                .foregroundStyle(palette.textSecondary)
+                                .fixedSize()
+                        }
+                    }
                     if let date = item.earnedAt {
                         Text("Completed \(date.formatted(date: .abbreviated, time: .omitted))")
                             .font(AppTheme.TypeRole.caption())
                             .foregroundStyle(palette.textSecondary)
                     } else {
-                        Text(item.count == 0 ? "When you’re ready · \(item.progressText)" : item.progressText)
-                            .font(AppTheme.TypeRole.caption())
-                            .foregroundStyle(palette.textSecondary)
+                        if item.count == 0 {
+                            Text("When you’re ready")
+                                .font(AppTheme.TypeRole.caption())
+                                .foregroundStyle(palette.textSecondary)
+                        }
                         ProgressView(value: item.progress)
                             .tint(palette.accent)
                             .accessibilityLabel(item.title)
@@ -3701,11 +3714,10 @@ private struct JourneyMilestoneCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 if item.completed {
-                    Image(systemName: "checkmark")
-                        .guideSymbol(size: 12, weight: .medium)
+                    Image(systemName: "checkmark.circle.fill")
+                        .guideSymbol(size: 22, weight: .regular)
                         .foregroundStyle(palette.accent)
                         .accessibilityLabel("Completed")
-                        .padding(.top, AppTheme.Space.xs)
                 }
             }
 
