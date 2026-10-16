@@ -120,6 +120,50 @@ final class ThemeTokenTests: XCTestCase {
 
 /// Circle-to-button control on scrolling prayers.
 final class ScrollMorphTests: XCTestCase {
+    /// Measured on the simulator: Creed under the 172pt header bar.
+    func testPositionUnderHeaderBarReachesTheBottom() {
+        let top = ScrollMorph.position(offsetY: -172, insetTop: 172, contentHeight: 1349.7, containerHeight: 668)
+        XCTAssertEqual(top.y, 0, accuracy: 0.01)
+        XCTAssertEqual(top.maxOffset, 681.7, accuracy: 0.01)
+        let bottom = ScrollMorph.position(offsetY: 509.7, insetTop: 172, contentHeight: 1349.7, containerHeight: 668)
+        XCTAssertEqual(bottom.y, bottom.maxOffset, accuracy: 0.01)
+        XCTAssertTrue(ScrollMorph.resolve(locked: false, armed: false, y: bottom.y, maxOffset: bottom.maxOffset).locked)
+    }
+
+    /// Walkthrough page that fits: a top inset must not invent a scroll range.
+    func testShortContentHasNoRange() {
+        let fits = ScrollMorph.position(offsetY: -62, insetTop: 62, contentHeight: 812, containerHeight: 812)
+        XCTAssertEqual(fits.maxOffset, 0)
+        XCTAssertEqual(fits.y, 0)
+        // No range: state is left alone (callers show the full button).
+        XCTAssertFalse(ScrollMorph.resolve(locked: false, armed: false, y: 0, maxOffset: 0).locked)
+    }
+
+    func testRubberBandIsClamped() {
+        let overBottom = ScrollMorph.position(offsetY: 700, insetTop: 0, contentHeight: 1000, containerHeight: 600)
+        XCTAssertEqual(overBottom.y, 400)
+        let overTop = ScrollMorph.position(offsetY: -90, insetTop: 0, contentHeight: 1000, containerHeight: 600)
+        XCTAssertEqual(overTop.y, 0)
+    }
+
+    func testThresholdAndHysteresis() {
+        let maxOffset: CGFloat = 400
+        let expandAt = maxOffset - ScrollMorph.expandGap(maxOffset)
+        XCTAssertTrue(ScrollMorph.resolve(locked: false, armed: false, y: expandAt, maxOffset: maxOffset).locked)
+        XCTAssertFalse(ScrollMorph.resolve(locked: false, armed: false, y: expandAt - 1, maxOffset: maxOffset).locked)
+        // Between the lines nothing changes either way: no oscillation.
+        let between = expandAt - 20
+        XCTAssertTrue(ScrollMorph.resolve(locked: true, armed: false, y: between, maxOffset: maxOffset).locked)
+        XCTAssertFalse(ScrollMorph.resolve(locked: false, armed: false, y: between, maxOffset: maxOffset).locked)
+        // Collapses once well back up.
+        let collapseAt = maxOffset - ScrollMorph.collapseGap(maxOffset)
+        XCTAssertFalse(ScrollMorph.resolve(locked: true, armed: false, y: collapseAt - 1, maxOffset: maxOffset).locked)
+    }
+
+    func testTinyRangeIsIgnored() {
+        XCTAssertFalse(ScrollMorph.resolve(locked: false, armed: false, y: 6, maxOffset: ScrollMorph.minimumOffset).locked)
+    }
+
     func testShortOverflowCollapsesWhenScrolledBackUp() {
         // A 60pt scroll range could never collapse with a fixed 112pt gap.
         let atBottom = ScrollMorph.resolve(locked: false, armed: false, y: 60, maxOffset: 60)

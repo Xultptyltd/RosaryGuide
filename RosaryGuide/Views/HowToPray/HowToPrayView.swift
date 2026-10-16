@@ -442,11 +442,8 @@ private struct GuideWalkthroughPage<Content: View>: View {
         .scrollClipDisabled(isMysteryGrid)
         .scrollBounceBehavior(.basedOnSize)
         .onScrollGeometryChange(for: GuideReadingMetrics.self) { geometry in
-            GuideReadingMetrics(
-                y: max(0, geometry.contentOffset.y + geometry.contentInsets.top),
-                // containerSize already excludes the insets.
-                maxOffset: max(0, geometry.contentSize.height - geometry.containerSize.height)
-            )
+            let position = ScrollMorph.position(geometry)
+            return GuideReadingMetrics(y: position.y, maxOffset: position.maxOffset)
         } action: { _, metrics in
             if abs(metrics.y - scrollY) > 0.5 { lastDrag = Date() }
             scrollY = metrics.y

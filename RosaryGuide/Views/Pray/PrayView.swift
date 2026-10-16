@@ -89,6 +89,7 @@ struct PrayView: View {
     @State private var prayerScrollY: CGFloat = 0
     /// True while content has scrolled under the top bar (shows the frosted bar).
     @State private var topBarScrolled = false
+    @State private var lastAdvanceAt = Date.distantPast
     @State private var prayerScrollPosition = ScrollPosition(edge: .top)
     @State private var prayerLastDrag = Date.distantPast
     /// Two-button steps only (decade Hail Marys 1–9). Next shows as a pill.
@@ -434,11 +435,7 @@ struct PrayView: View {
                     // The plate scroll view runs under the status bar and home indicator,
                     // so its offset rests at -contentInsets.top. Measure from that rest
                     // position so 0 is the top and maxOffset is the real bottom.
-                    PlateScrollMetrics(
-                        offsetY: geometry.contentOffset.y + geometry.contentInsets.top,
-                        contentHeight: geometry.contentSize.height,
-                        viewportHeight: geometry.containerSize.height
-                    )
+                    PlateScrollMetrics(geometry)
                 } action: { _, newValue in
                     if newValue.contentHeight > 1 {
                         plateContentHeight = newValue.contentHeight
@@ -691,13 +688,7 @@ struct PrayView: View {
                     topBarScrolled = scrolled
                 }
                 .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
-                    PlateScrollMetrics(
-                        // The header bar is a top inset: offsets start at -inset, and
-                        // containerSize excludes insets. Measure from the content top.
-                        offsetY: geometry.contentOffset.y + geometry.contentInsets.top,
-                        contentHeight: geometry.contentSize.height,
-                        viewportHeight: geometry.containerSize.height
-                    )
+                    PlateScrollMetrics(geometry)
                 } action: { _, newValue in
                     if newValue.contentHeight > 1 {
                         prayerContentHeight = newValue.contentHeight
@@ -968,12 +959,7 @@ struct PrayView: View {
                     topBarScrolled = scrolled
                 }
                 .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
-                    PlateScrollMetrics(
-                        // Offsets start at -inset under the header bar (see prayer column).
-                        offsetY: geometry.contentOffset.y + geometry.contentInsets.top,
-                        contentHeight: geometry.contentSize.height,
-                        viewportHeight: geometry.containerSize.height
-                    )
+                    PlateScrollMetrics(geometry)
                 } action: { _, newValue in
                     if newValue.contentHeight > 1 { intentionContentHeight = newValue.contentHeight }
                     if newValue.viewportHeight > 1 { intentionViewportHeight = newValue.viewportHeight }
@@ -1415,11 +1401,7 @@ struct PrayView: View {
                         }
                         .scrollPosition($michaelScrollPosition)
                         .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
-                        PlateScrollMetrics(
-                            offsetY: geometry.contentOffset.y,
-                            contentHeight: geometry.contentSize.height,
-                            viewportHeight: geometry.containerSize.height
-                        )
+                        PlateScrollMetrics(geometry)
                     } action: { _, newValue in
                         if newValue.contentHeight > 1 {
                             michaelContentHeight = max(michaelContentHeight, newValue.contentHeight)
@@ -1859,6 +1841,11 @@ struct PrayView: View {
     }
 
     private func advance() {
+        // A double tap on Next / Continue (or a tap during the expand animation)
+        // moves one step, not two.
+        let now = Date()
+        guard now.timeIntervalSince(lastAdvanceAt) > 0.3 else { return }
+        lastAdvanceAt = now
         if showingIntentionStep {
             // Intention is optional: Continue always moves on to the next prayer.
             move(to: index + 1)
@@ -2041,6 +2028,15 @@ private struct PlateScrollMetrics: Equatable {
     var offsetY: CGFloat
     var contentHeight: CGFloat
     var viewportHeight: CGFloat
+
+    /// One reading for every scroll-aware CTA: offset from the content top, clamped
+    /// to the real scroll range (see `ScrollMorph.position`).
+    init(_ geometry: ScrollGeometry) {
+        let position = ScrollMorph.position(geometry)
+        offsetY = position.y
+        contentHeight = geometry.contentSize.height
+        viewportHeight = geometry.containerSize.height
+    }
 }
 
 private enum PlateScrollAnchor {
@@ -2113,6 +2109,26 @@ enum ScrollMorph {
 
     /// New (locked, armed) after a scroll position update.
     /// `armed` is a tap's own scroll on its way down. It clears on arrival.
+    /// Scroll position measured from the top of the content.
+    /// `contentOffset` rests at `-insetTop` under a top bar, and `containerSize`
+    /// already excludes the insets, so the range is `content - container`.
+    /// `y` is clamped to that range: rubber-band overscroll at either end reads
+    /// as the end itself, so it can't flicker the CTA.
+    static func position(offsetY: CGFloat, insetTop: CGFloat, contentHeight: CGFloat, containerHeight: CGFloat) -> (y: CGFloat, maxOffset: CGFloat) {
+        let maxOffset = max(0, contentHeight - containerHeight)
+        let y = min(maxOffset, max(0, offsetY + insetTop))
+        return (y, maxOffset)
+    }
+
+    static func position(_ geometry: ScrollGeometry) -> (y: CGFloat, maxOffset: CGFloat) {
+        position(
+            offsetY: geometry.contentOffset.y,
+            insetTop: geometry.contentInsets.top,
+            contentHeight: geometry.contentSize.height,
+            containerHeight: geometry.containerSize.height
+        )
+    }
+
     static func resolve(locked: Bool, armed: Bool, y: CGFloat, maxOffset: CGFloat) -> (locked: Bool, armed: Bool) {
         guard maxOffset > minimumOffset else { return (locked, false) }
         if y >= maxOffset - expandGap(maxOffset) {
