@@ -1289,7 +1289,7 @@ extension AppTheme {
             FontRegistrar.sansUI(size, weight: .regular, textStyle: .largeTitle)
         }
         /// Size for UIKit large navigation titles (system large-title size).
-        static let h1NavigationSize: CGFloat = 34
+        static let h1NavigationSize: CGFloat = 40
         #endif
         static var title: Font { headingPrimary }
         static var title2: Font { headingPrimary }
