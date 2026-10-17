@@ -411,6 +411,28 @@ extension View {
     }
 }
 
+/// Tab-root H1: the same view and token as Home's mystery title (Instrument Sans regular),
+/// placed in the system large-title slot so UIKit keeps the collapse and compact title.
+struct GuidePageTitle: View {
+    @Environment(\.palette) private var palette
+    let text: String
+
+    var body: some View {
+        GuideDisplayTitle(text: text, size: AppTheme.TypeRole.h1NavigationSize, color: palette.ink)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+extension View {
+    /// Replaces the system bold large title with `GuidePageTitle`; the nav title stays
+    /// set so the compact bar title still appears on scroll.
+    func guidePageTitle(_ text: String) -> some View {
+        toolbar {
+            ToolbarItem(placement: .largeTitle) { GuidePageTitle(text: text) }
+        }
+    }
+}
+
 enum GuideChrome {
     /// Run once at launch, before any navigation bar exists: appearance proxies only
     /// reach bars created afterwards, so tab roots would otherwise miss the title fonts.
