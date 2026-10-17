@@ -86,7 +86,6 @@ enum AppTheme {
     /// Mystery artwork extends beyond the screen midpoint before scripture begins.
     static let rosaryMysteryArtworkTopInset: CGFloat = 104
     static let rosaryMysteryArtworkBottomFraction: CGFloat = 0.58
-    static let rosaryMysteryFadeStartFraction: CGFloat = 0.74
 
     enum RosaryFlow {
         static let readingBottomPadding: CGFloat = 28

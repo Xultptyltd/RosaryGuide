@@ -574,22 +574,8 @@ struct PrayView: View {
     ) -> some View {
         let washOverlay = progress * 0.75
         let heroOpacity = 1.0 - progress * 0.50
-        // Bottom dissolve over the lower portion of the visible painting (below the status
-        // bar), eased, and fully page colour a few points above the hero's bottom edge,
-        // which is where the mystery text starts. Scrolling only changes the darkening.
-        let height = max(artHeight, 1)
-        let readingEnd = min(readingHeight, height)
-        let top = min(max(0, visibleTop), readingEnd - 1)
-        let band = readingEnd - top
-        let fadeStart = top + band * max(0.20, AppTheme.rosaryMysteryFadeStartFraction)
-        let fadeEnd = max(fadeStart + 1, readingEnd - 2)
-        let easedStops: [Gradient.Stop] = stride(from: 0, through: 8, by: 1).map { i in
-            let t = CGFloat(i) / 8
-            let eased = t * t * (3 - 2 * t) // smoothstep
-            let y = fadeStart + (fadeEnd - fadeStart) * t
-            return .init(color: palette.prayBg.opacity(eased), location: y / height)
-        }
-        // The fixed canvas keeps the dissolve aligned with the artwork base.
+        // No bottom fade: the artwork meets the mystery text with its own edge.
+        // Scrolling only changes the darkening.
         return Color.clear
             .frame(maxWidth: .infinity)
             .frame(height: artHeight)
@@ -603,18 +589,9 @@ struct PrayView: View {
                     .clipped()
             }
             .overlay {
-                // Scrim under the bottom fade. Light washes to white; dark uses black.
+                // Scroll darkening. Light washes to white; dark uses black.
                 palette.selectedControlFill
                     .opacity(washOverlay)
-            }
-            .overlay {
-                LinearGradient(
-                    stops: [.init(color: .clear, location: 0)]
-                        + easedStops
-                        + [.init(color: palette.prayBg, location: 1)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
             }
             // Contain aspect-fill overscan to the hero canvas — not to the chrome boundary.
             .clipped()
