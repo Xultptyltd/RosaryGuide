@@ -137,19 +137,36 @@ final class ThemeTokenTests: XCTestCase {
 
 final class QuoteCatalogTests: XCTestCase {
     func testEveryCompletionQuoteIsShown() {
-        XCTAssertEqual(QuoteCatalog.all.count, 15)
+        XCTAssertEqual(QuoteCatalog.all.count, 14)
         XCTAssertEqual(QuoteCatalog.shortQuotes.count, QuoteCatalog.all.count)
         XCTAssertEqual(QuoteCatalog.maxCompletionCharacters, QuoteCatalog.all.map(\.text.count).max())
         XCTAssertEqual(Set(QuoteCatalog.all.map(\.id)).count, QuoteCatalog.all.count)
     }
 
-    func testSelectionAvoidsPreviousQuote() {
+    func testCompletionQuotesCycleThroughAllBeforeRepeating() {
         let defaults = UserDefaults(suiteName: "QuoteCatalogTests")!
         defaults.removePersistentDomain(forName: "QuoteCatalogTests")
-        let first = QuoteCatalog.freshCompletionQuote(defaults: defaults)
-        for _ in 0..<30 {
-            XCTAssertNotEqual(QuoteCatalog.selectCompletionQuote(defaults: defaults).id, first.id)
-        }
+        let count = QuoteCatalog.all.count
+        let firstRound = (0..<count).map { _ in QuoteCatalog.freshCompletionQuote(defaults: defaults).id }
+        XCTAssertEqual(Set(firstRound).count, count)
+        let secondRound = (0..<count).map { _ in QuoteCatalog.freshCompletionQuote(defaults: defaults).id }
+        XCTAssertEqual(secondRound, firstRound)
+    }
+
+    func testSelectingWithoutRememberingDoesNotAdvance() {
+        let defaults = UserDefaults(suiteName: "QuoteCatalogTests.select")!
+        defaults.removePersistentDomain(forName: "QuoteCatalogTests.select")
+        let a = QuoteCatalog.selectCompletionQuote(defaults: defaults)
+        XCTAssertEqual(QuoteCatalog.selectCompletionQuote(defaults: defaults).id, a.id)
+    }
+
+    func testMigratesFromLastShownQuote() {
+        let defaults = UserDefaults(suiteName: "QuoteCatalogTests.migrate")!
+        defaults.removePersistentDomain(forName: "QuoteCatalogTests.migrate")
+        defaults.set(QuoteCatalog.all[3].id, forKey: "rosary.completion.lastQuoteId")
+        XCTAssertEqual(QuoteCatalog.selectCompletionQuote(defaults: defaults).id, QuoteCatalog.all[4].id)
+        defaults.set("removed-quote", forKey: "rosary.completion.lastQuoteId")
+        XCTAssertEqual(QuoteCatalog.selectCompletionQuote(defaults: defaults).id, QuoteCatalog.all[0].id)
     }
 }
 

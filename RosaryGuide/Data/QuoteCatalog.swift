@@ -1,7 +1,9 @@
 import Foundation
 
 enum QuoteCatalog {
+    /// Legacy key from the random picker; read once to continue after that quote, then removed.
     private static let lastCompletionQuoteKey = "rosary.completion.lastQuoteId"
+    private static let nextCompletionQuoteKey = "rosary.completion.nextQuoteIndex"
 
     /// Verified Rosary quotes; exact wording and sources in the Rosary quote fact-check.
     static let all: [CompletionQuote] = [
@@ -16,14 +18,13 @@ enum QuoteCatalog {
         CompletionQuote(id: "francis-school", text: "The Rosary is a school of prayer, the Rosary is a school of faith!", attribution: "Pope Francis"),
         CompletionQuote(id: "longo-chain", text: "O Blessed Rosary of Mary, sweet chain which unites us to God… we will never abandon you.", attribution: "Bl. Bartolo Longo"),
         CompletionQuote(id: "longo-spreads", text: "Whoever spreads the Rosary is saved!", attribution: "Bl. Bartolo Longo"),
-        CompletionQuote(id: "montfort-astray", text: "For never will anyone who says his Rosary every day become a formal heretic or be led astray by the devil.", attribution: "St Louis de Montfort"),
         CompletionQuote(id: "jp2-favourite", text: "The Rosary is my favourite prayer. A marvellous prayer! Marvellous in its simplicity and its depth.", attribution: "St John Paul II"),
         CompletionQuote(id: "jp2-rhythm", text: "The simple prayer of the Rosary marks the rhythm of human life.", attribution: "St John Paul II"),
         CompletionQuote(id: "jp2-contemplate", text: "To recite the Rosary is nothing other than to contemplate with Mary the face of Christ.", attribution: "St John Paul II")
     ]
 
     /// Short enough to show fully on the completion screen without truncation.
-    static let maxCompletionCharacters = 106
+    static let maxCompletionCharacters = 99
 
     static var shortQuotes: [CompletionQuote] {
         all.filter { $0.text.count <= maxCompletionCharacters }
@@ -36,20 +37,37 @@ enum QuoteCatalog {
         return pool[day % pool.count]
     }
 
-    /// Pick a short quote without writing `UserDefaults`. Writing during a view
+    /// Index of the quote the next completed Rosary will show. Cycles through every quote
+    /// in catalog order, so none repeats until all have been seen.
+    static func nextCompletionIndex(defaults: UserDefaults = .standard) -> Int {
+        let pool = shortQuotes.isEmpty ? all : shortQuotes
+        if defaults.object(forKey: nextCompletionQuoteKey) != nil {
+            return max(0, defaults.integer(forKey: nextCompletionQuoteKey)) % pool.count
+        }
+        // Migrate from the old random picker: continue after the last quote shown.
+        if let lastId = defaults.string(forKey: lastCompletionQuoteKey),
+           let last = pool.firstIndex(where: { $0.id == lastId }) {
+            return (last + 1) % pool.count
+        }
+        return 0
+    }
+
+    /// The quote for this completion, without writing `UserDefaults`. Writing during a view
     /// update posts a defaults notification and the scene update never returns.
     static func selectCompletionQuote(defaults: UserDefaults = .standard) -> CompletionQuote {
         let pool = shortQuotes.isEmpty ? all : shortQuotes
-        let lastQuoteId = defaults.string(forKey: lastCompletionQuoteKey)
-        let candidates = pool.count > 1 ? pool.filter { $0.id != lastQuoteId } : pool
-        return candidates.randomElement() ?? pool[0]
+        return pool[nextCompletionIndex(defaults: defaults)]
     }
 
+    /// Advance the cycle past `quote`. Call once per completed Rosary.
     static func rememberCompletionQuote(_ quote: CompletionQuote, defaults: UserDefaults = .standard) {
-        defaults.set(quote.id, forKey: lastCompletionQuoteKey)
+        let pool = shortQuotes.isEmpty ? all : shortQuotes
+        let shown = pool.firstIndex(where: { $0.id == quote.id }) ?? nextCompletionIndex(defaults: defaults)
+        defaults.set((shown + 1) % pool.count, forKey: nextCompletionQuoteKey)
+        defaults.removeObject(forKey: lastCompletionQuoteKey)
     }
 
-    /// Pick a fresh short quote for the completion screen, avoiding the previous completion quote.
+    /// Pick this completion's quote and advance the cycle.
     static func freshCompletionQuote(defaults: UserDefaults = .standard) -> CompletionQuote {
         let selected = selectCompletionQuote(defaults: defaults)
         rememberCompletionQuote(selected, defaults: defaults)
