@@ -138,6 +138,7 @@ final class ThemeTokenTests: XCTestCase {
 final class QuoteCatalogTests: XCTestCase {
     func testEveryCompletionQuoteIsShown() {
         XCTAssertEqual(QuoteCatalog.all.count, 14)
+        XCTAssertEqual(QuoteCatalog.all.first?.id, "montfort-treasure")
         XCTAssertEqual(QuoteCatalog.shortQuotes.count, QuoteCatalog.all.count)
         XCTAssertEqual(QuoteCatalog.maxCompletionCharacters, QuoteCatalog.all.map(\.text.count).max())
         XCTAssertEqual(Set(QuoteCatalog.all.map(\.id)).count, QuoteCatalog.all.count)
