@@ -135,6 +135,24 @@ final class ThemeTokenTests: XCTestCase {
     }
 }
 
+final class QuoteCatalogTests: XCTestCase {
+    func testEveryCompletionQuoteIsShown() {
+        XCTAssertEqual(QuoteCatalog.all.count, 15)
+        XCTAssertEqual(QuoteCatalog.shortQuotes.count, QuoteCatalog.all.count)
+        XCTAssertEqual(QuoteCatalog.maxCompletionCharacters, QuoteCatalog.all.map(\.text.count).max())
+        XCTAssertEqual(Set(QuoteCatalog.all.map(\.id)).count, QuoteCatalog.all.count)
+    }
+
+    func testSelectionAvoidsPreviousQuote() {
+        let defaults = UserDefaults(suiteName: "QuoteCatalogTests")!
+        defaults.removePersistentDomain(forName: "QuoteCatalogTests")
+        let first = QuoteCatalog.freshCompletionQuote(defaults: defaults)
+        for _ in 0..<30 {
+            XCTAssertNotEqual(QuoteCatalog.selectCompletionQuote(defaults: defaults).id, first.id)
+        }
+    }
+}
+
 /// Circle-to-button control on scrolling prayers.
 final class ScrollMorphTests: XCTestCase {
     /// Measured on the simulator: Creed under the 172pt header bar.

@@ -234,7 +234,8 @@ struct CompletionView: View {
                     .foregroundStyle(palette.completionTitle.opacity(0.88))
                     .multilineTextAlignment(.center)
                     .lineSpacing(2)
-                    .lineLimit(3)
+                    // Longest quote (106 chars) needs 4 lines on narrow phones.
+                    .lineLimit(4)
                     .minimumScaleFactor(0.9)
                     .padding(.horizontal, AppTheme.Space.sm)
 
