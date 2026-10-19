@@ -442,10 +442,28 @@ enum GuideChrome {
         #endif
     }
 
+    #if canImport(UIKit)
+    /// A trait-resolving UIColor for a palette token. Appearance proxies only style a control
+    /// when it is created, so a colour resolved for one scheme stays on screen after a
+    /// Light/Dark (or Increase Contrast) switch. Dynamic colours re-resolve on every trait change.
+    static func dynamic(_ token: @escaping (ThemePalette) -> Color) -> UIColor {
+        UIColor { traits in
+            let palette = ThemePalette(
+                scheme: traits.userInterfaceStyle == .dark ? .dark : .light,
+                contrast: traits.accessibilityContrast == .high ? .increased : .standard
+            )
+            return UIColor(token(palette)).resolvedColor(with: traits)
+        }
+    }
+    #endif
+
+    /// Styles UIKit chrome with dynamic colours, so the palette argument only matters for
+    /// callers; every bar and segmented control follows the current traits by itself.
     static func apply(_ palette: ThemePalette) {
         #if canImport(UIKit)
-        let ink = UIColor(palette.ink)
-        let dim = UIColor(palette.dim)
+        let ink = dynamic(\.ink)
+        let dim = dynamic(\.dim)
+        let accent = dynamic(\.accent)
 
         // Use the system nav bar material (liquid glass on iOS 26) so scrolled
         // content can show through. An opaque backgroundColor cancels that.
@@ -471,23 +489,23 @@ enum GuideChrome {
         let tabAppearance = UITabBarAppearance()
         tabAppearance.configureWithDefaultBackground()
         tabAppearance.shadowColor = .clear
-        tabAppearance.stackedLayoutAppearance.selected.iconColor = UIColor(palette.accent)
-        tabAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(palette.accent)]
-        tabAppearance.stackedLayoutAppearance.normal.iconColor = UIColor(palette.dim)
-        tabAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor(palette.dim)]
+        tabAppearance.stackedLayoutAppearance.selected.iconColor = accent
+        tabAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: accent]
+        tabAppearance.stackedLayoutAppearance.normal.iconColor = dim
+        tabAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: dim]
 
         let tabBar = UITabBar.appearance()
         tabBar.standardAppearance = tabAppearance
         tabBar.scrollEdgeAppearance = tabAppearance
-        tabBar.tintColor = UIColor(palette.accent)
+        tabBar.tintColor = accent
         tabBar.unselectedItemTintColor = dim
 
         // SwiftUI's segmented picker is backed by UISegmentedControl. Keep
         // its unselected track on the same surface token as the rest of the
         // app instead of UIKit's default system fill.
         let segmentedControl = UISegmentedControl.appearance()
-        segmentedControl.backgroundColor = UIColor(palette.segmentedControlTrack)
-        segmentedControl.selectedSegmentTintColor = UIColor(palette.selectedControlFill)
+        segmentedControl.backgroundColor = dynamic(\.segmentedControlTrack)
+        segmentedControl.selectedSegmentTintColor = dynamic(\.selectedControlFill)
         segmentedControl.setTitleTextAttributes(
             [
                 .foregroundColor: dim,
@@ -1205,6 +1223,8 @@ struct GuideRowGroupChrome: ViewModifier {
 
 /// Shared segmented-picker chrome used by the prayer language selector and Feasts scope filter.
 struct GuideSegmentedControl: ViewModifier {
+    @Environment(\.palette) private var palette
+
     func body(content: Content) -> some View {
         content
             .pickerStyle(.segmented)
@@ -1212,8 +1232,78 @@ struct GuideSegmentedControl: ViewModifier {
             .font(AppTheme.TypeRole.segmentedControl)
             .frame(height: AppTheme.Component.segmentedControlHeight)
             .labelsHidden()
+            #if canImport(UIKit)
+            .background(SegmentedControlSchemeSync(dark: palette.scheme == .dark))
+            #endif
     }
 }
+
+#if canImport(UIKit)
+/// Pins the backing UISegmentedControl's interface style to the app palette. Its colours are
+/// dynamic (`GuideChrome.dynamic`), but they resolve against the control's own traits, and a
+/// hosting controller (notably a sheet) can keep the previous Light/Dark style after the app
+/// switches, leaving a light track and wrong label colours on a dark page.
+private struct SegmentedControlSchemeSync: UIViewRepresentable {
+    let dark: Bool
+
+    func makeUIView(context: Context) -> Probe { Probe() }
+
+    func updateUIView(_ view: Probe, context: Context) {
+        view.dark = dark
+        view.sync()
+    }
+
+    final class Probe: UIView {
+        var dark = false
+
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            isUserInteractionEnabled = false
+            backgroundColor = .clear
+        }
+
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            sync()
+        }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            sync()
+        }
+
+        func sync() {
+            guard let control = overlappingSegmentedControl() else { return }
+            let style: UIUserInterfaceStyle = dark ? .dark : .light
+            if control.overrideUserInterfaceStyle != style { control.overrideUserInterfaceStyle = style }
+        }
+
+        /// The segmented control drawn over this probe (same frame), so a screen with
+        /// several pickers never restyles the wrong one.
+        private func overlappingSegmentedControl() -> UISegmentedControl? {
+            guard window != nil else { return nil }
+            let mine = convert(bounds, to: nil)
+            var ancestor = superview
+            var depth = 0
+            while let current = ancestor, depth < 6 {
+                var stack: [UIView] = [current]
+                while let view = stack.popLast() {
+                    if let control = view as? UISegmentedControl,
+                       control.convert(control.bounds, to: nil).intersects(mine) {
+                        return control
+                    }
+                    stack.append(contentsOf: view.subviews)
+                }
+                ancestor = current.superview
+                depth += 1
+            }
+            return nil
+        }
+    }
+}
+#endif
 
 extension View {
     func guideSegmentedControl() -> some View {
