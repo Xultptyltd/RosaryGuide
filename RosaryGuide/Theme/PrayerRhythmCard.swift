@@ -344,7 +344,7 @@ struct PrayerRhythmCard: View {
                 // Accent flame for daily/week milestone captions.
                 Image(systemName: "flame.fill")
                     .guideSymbol(size: 22, weight: .semibold)
-                    .foregroundStyle(palette.accent)
+                    .foregroundStyle(palette.accentText)
                     .symbolRenderingMode(.hierarchical)
             } else {
                 CalendarCheckGlyph(showsCheck: rhythm.hasPrayed)

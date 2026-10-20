@@ -135,6 +135,71 @@ final class ThemeTokenTests: XCTestCase {
     }
 }
 
+/// WCAG 2.x contrast for the colour tokens: text 4.5:1, icons 3:1.
+final class ContrastTokenTests: XCTestCase {
+    private func rgba(_ color: Color, over background: Color? = nil) -> (Double, Double, Double) {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a)
+        guard a < 1, let background else { return (Double(r), Double(g), Double(b)) }
+        let under = rgba(background)
+        return (Double(r * a) + under.0 * Double(1 - a), Double(g * a) + under.1 * Double(1 - a), Double(b * a) + under.2 * Double(1 - a))
+    }
+
+    private func luminance(_ c: (Double, Double, Double)) -> Double {
+        func lin(_ v: Double) -> Double { v <= 0.04045 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
+        return 0.2126 * lin(c.0) + 0.7152 * lin(c.1) + 0.0722 * lin(c.2)
+    }
+
+    private func ratio(_ fg: Color, _ bg: Color, under: Color? = nil) -> Double {
+        let back = rgba(bg, over: under)
+        let front = rgba(fg, over: nil)
+        let la = luminance(front), lb = luminance(back)
+        return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+    }
+
+    private let palettes: [ThemePalette] = [
+        ThemePalette(scheme: .light), ThemePalette(scheme: .dark),
+        ThemePalette(scheme: .light, contrast: .increased), ThemePalette(scheme: .dark, contrast: .increased)
+    ]
+
+    func testTextTokensReachFourAndAHalf() {
+        for p in palettes {
+            for bg in [p.bg, p.surface] {
+                let where_ = "\(p.scheme) \(p.contrast)"
+                XCTAssertGreaterThanOrEqual(ratio(p.ink, bg), 4.5, where_)
+                XCTAssertGreaterThanOrEqual(ratio(p.textSecondary, bg), 4.5, "secondary \(where_)")
+                XCTAssertGreaterThanOrEqual(ratio(p.accentText, bg), 4.5, "accent text \(where_)")
+                XCTAssertGreaterThanOrEqual(ratio(p.destructive, bg), 4.5, "destructive \(where_)")
+            }
+            XCTAssertGreaterThanOrEqual(ratio(p.onAccent, p.accent), 4.5, "button text")
+            XCTAssertGreaterThanOrEqual(ratio(p.stepNumberText, p.stepNumberFill, under: p.bg), 4.5, "step number")
+            XCTAssertGreaterThanOrEqual(ratio(p.completionMeta, p.completionBackground), 4.5, "completion meta")
+        }
+    }
+
+    func testIconTokensReachThree() {
+        for p in palettes {
+            for bg in [p.bg, p.surface] {
+                XCTAssertGreaterThanOrEqual(ratio(p.feastIndicator, bg), 3, "crown \(p.scheme)")
+                XCTAssertGreaterThanOrEqual(ratio(p.accentText, p.accentTint, under: bg), 3, "glyph on tint \(p.scheme)")
+            }
+        }
+    }
+
+    func testDarkSelectedTabLabelOnGlassPill() {
+        // #3D3E3F: the selected glass pill measured from a dark-mode screenshot.
+        XCTAssertGreaterThanOrEqual(ratio(ThemePalette(scheme: .dark).tabSelected, Color(hex: 0x3D3E3F)), 4.5)
+    }
+
+    func testFillsKeepMarianBlue() {
+        XCTAssertEqual(UIColor(ThemePalette(scheme: .dark).accent), UIColor(Color(hex: 0x0054FF)))
+        XCTAssertEqual(UIColor(ThemePalette(scheme: .dark).accentText), UIColor(Color(hex: 0x3D7DFF)))
+        XCTAssertEqual(UIColor(ThemePalette(scheme: .light).accentText), UIColor(Color(hex: 0x0054FF)))
+        XCTAssertEqual(UIColor(ThemePalette(scheme: .light).textSecondary), UIColor(Color(hex: 0x6E6E6E)))
+        XCTAssertEqual(UIColor(ThemePalette(scheme: .light).destructive), UIColor(Color(hex: 0xCF3027)))
+    }
+}
+
 final class QuoteCatalogTests: XCTestCase {
     func testEveryCompletionQuoteIsShown() {
         XCTAssertEqual(QuoteCatalog.all.count, 14)

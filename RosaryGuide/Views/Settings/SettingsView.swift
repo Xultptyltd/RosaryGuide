@@ -1169,7 +1169,8 @@ private struct SettingsTimeRow: View {
             Spacer(minLength: AppTheme.Space.md)
             DatePicker(title, selection: dateBinding, displayedComponents: .hourAndMinute)
                 .labelsHidden()
-                .tint(palette.accent)
+                // The compact picker draws its time in the tint, so it is text.
+                .tint(palette.accentText)
         }
         .frame(minHeight: AppTheme.Component.profileRowHeight)
         .overlay(alignment: .bottom) { SettingsDivider() }

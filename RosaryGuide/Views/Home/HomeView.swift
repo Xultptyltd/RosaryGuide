@@ -694,7 +694,7 @@ struct HomeView: View {
             if prayed {
                 Image(systemName: "checkmark.circle.fill")
                     .guideSymbol(size: 16, weight: .regular)
-                    .foregroundStyle(palette.accent)
+                    .foregroundStyle(palette.accentText)
                     .frame(width: 20, height: 20)
                     .accessibilityHidden(true)
             }

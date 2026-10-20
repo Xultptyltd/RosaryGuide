@@ -17,6 +17,19 @@ enum AppTheme {
     static let brandAccentDark = marianBlueDark
     static let brandAccentDarkHighContrast = marianBlueDarkHighContrast
     static let destructiveMenuRed = Color(hex: 0xFF3B30)
+    /// Marian blue as text or a glyph (WCAG 4.5:1 text, 3:1 icons). #0054FF stays the fill
+    /// and button colour; on dark backgrounds it is too dark to read as text (3.0:1).
+    static let marianBlueDarkText = Color(hex: 0x3D7DFF)
+    /// Increase Contrast text blues: ≥ 6:1 on the background and surface in each scheme.
+    static let marianBlueTextHighContrast = Color(hex: 0x0040C8)
+    static let marianBlueDarkTextHighContrast = Color(hex: 0x7DA8FF)
+    /// Selected tab label on the dark glass tab bar: 4.5:1 on the selected pill (#3D3E3F).
+    static let tabSelectedDark = Color(hex: 0x7DA8FF)
+    /// Destructive text: 4.5:1 on background and surface (system red is 3.1:1 in light).
+    static let destructiveLight = Color(hex: 0xCF3027)
+    static let destructiveLightHighContrast = Color(hex: 0xD70015)
+    static let destructiveDark = Color(hex: 0xFF453A)
+    static let destructiveDarkHighContrast = Color(hex: 0xFF6961)
     /// Intention category avatar fills (same in light and dark).
     static let intentionPersonal = Color(hex: 0xA8DCCB)
     static let intentionSomeoneElse = Color(hex: 0xC9B6EF)
@@ -179,7 +192,8 @@ struct ThemePalette {
     /// The app's single secondary grey. Use this for all supporting,
     /// disabled-looking, metadata, and explanatory copy.
     var textSecondary: Color {
-        scheme == .light ? Color(hex: 0x757575) : Color(hex: 0xAEAEAE)
+        // #6E6E6E: 4.5:1 on the light surface (#757575 was 4.1:1).
+        scheme == .light ? Color(hex: 0x6E6E6E) : Color(hex: 0xAEAEAE)
     }
 
     /// The app's single grouped/elevated surface color.
@@ -202,7 +216,40 @@ struct ThemePalette {
         }
     }
     var onAccent: Color { Color.white }
-    var destructive: Color { Color(uiColor: .systemRed) }
+    /// Marian blue for text and glyphs. Fills, buttons and progress bars keep `accent`.
+    var accentText: Color {
+        switch (scheme, contrast) {
+        case (.light, .increased): AppTheme.marianBlueTextHighContrast
+        case (.dark, .increased): AppTheme.marianBlueDarkTextHighContrast
+        case (.dark, _): AppTheme.marianBlueDarkText
+        default: AppTheme.marianBlue
+        }
+    }
+    /// Numbered step badges: text on a soft accent circle.
+    var stepNumberText: Color {
+        switch (scheme, contrast) {
+        case (_, .increased): accentText
+        case (.dark, _): Color(hex: 0x4A86FF)
+        default: AppTheme.marianBlue
+        }
+    }
+    var stepNumberFill: Color { accent.opacity(scheme == .dark ? 0.15 : 0.12) }
+    /// Selected tab bar item (icon and label).
+    var tabSelected: Color {
+        switch (scheme, contrast) {
+        case (.dark, _): AppTheme.tabSelectedDark
+        case (.light, .increased): AppTheme.marianBlueTextHighContrast
+        default: accent
+        }
+    }
+    var destructive: Color {
+        switch (scheme, contrast) {
+        case (.light, .increased): AppTheme.destructiveLightHighContrast
+        case (.dark, .increased): AppTheme.destructiveDarkHighContrast
+        case (.dark, _): AppTheme.destructiveDark
+        default: AppTheme.destructiveLight
+        }
+    }
 
     var buttonPrimaryFill: Color { accent }
     var buttonPrimaryText: Color { onAccent }
@@ -225,7 +272,8 @@ struct ThemePalette {
 
     var prayerBackground: Color { background }
     var artworkFallbackBackground: Color { Color(hex: 0x17181A) }
-    var feastIndicator: Color { scheme == .light ? Color(hex: 0xC4922C) : Color(hex: 0xE2B75A) }
+    /// Feast crown glyph: 3:1 on background and surface in both schemes.
+    var feastIndicator: Color { scheme == .light ? Color(hex: 0xB08328) : Color(hex: 0xE2B75A) }
     var accentTint: Color {
         scheme == .dark
             ? accent.opacity(0.20)
@@ -240,7 +288,8 @@ struct ThemePalette {
     var ceremonyBackground: Color { Color(hex: 0x000000) }
     var ceremonyTextPrimary: Color { Color.white.opacity(0.96) }
     var ceremonyTextSecondary: Color { Color.white.opacity(0.48) }
-    var ceremonyTextTertiary: Color { Color.white.opacity(0.42) }
+    /// 46 %: 4.5:1 on the black ceremony background.
+    var ceremonyTextTertiary: Color { Color.white.opacity(0.46) }
 
     var beadHighlight: Color { Color.white }
     var beadPulseFill: Color {
@@ -461,7 +510,7 @@ enum GuideChrome {
         #if canImport(UIKit)
         let ink = dynamic(\.ink)
         let dim = dynamic(\.dim)
-        let accent = dynamic(\.accent)
+        let tabSelected = dynamic(\.tabSelected)
 
         // Use the system nav bar material (liquid glass on iOS 26) so scrolled
         // content can show through. An opaque backgroundColor cancels that.
@@ -491,15 +540,15 @@ enum GuideChrome {
         let tabAppearance = UITabBarAppearance()
         tabAppearance.configureWithDefaultBackground()
         tabAppearance.shadowColor = .clear
-        tabAppearance.stackedLayoutAppearance.selected.iconColor = accent
-        tabAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: accent]
+        tabAppearance.stackedLayoutAppearance.selected.iconColor = tabSelected
+        tabAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: tabSelected]
         tabAppearance.stackedLayoutAppearance.normal.iconColor = dim
         tabAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: dim]
 
         let tabBar = UITabBar.appearance()
         tabBar.standardAppearance = tabAppearance
         tabBar.scrollEdgeAppearance = tabAppearance
-        tabBar.tintColor = accent
+        tabBar.tintColor = tabSelected
         tabBar.unselectedItemTintColor = dim
 
         // SwiftUI's segmented picker is backed by UISegmentedControl. Keep

@@ -232,7 +232,7 @@ struct PrayHubView: View {
             if showsIcon {
                 Image(systemName: symbol)
                 .guideSymbol(size: 24, weight: .regular)
-                .foregroundStyle(palette.accent)
+                .foregroundStyle(palette.accentText)
                 .frame(width: 52, height: 52)
                 .background(palette.accentTint, in: Circle())
             }
@@ -261,7 +261,7 @@ struct PrayHubView: View {
                 if !dynamicTypeSize.isAccessibilitySize {
                     Image(systemName: "book.closed")
                         .guideSymbol(size: 30, weight: .medium)
-                        .foregroundStyle(palette.accent)
+                        .foregroundStyle(palette.accentText)
                         .frame(width: 56, height: 56)
                         .background(palette.accentTint, in: Circle())
                         .accessibilityHidden(true)
@@ -879,9 +879,9 @@ private struct LearnPrayerDetailView: View {
                     HStack(spacing: AppTheme.Space.lg) {
                         Text("\(index + 1)")
                             .font(AppTheme.TypeRole.callout(weight: .semibold))
-                            .foregroundStyle(palette.accent)
+                            .foregroundStyle(palette.stepNumberText)
                             .frame(width: AppTheme.Space.xxl, height: AppTheme.Space.xxl)
-                            .background(palette.accent.opacity(0.15), in: Circle())
+                            .background(palette.stepNumberFill, in: Circle())
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                             Text(step.0)

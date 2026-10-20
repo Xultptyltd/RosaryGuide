@@ -162,7 +162,7 @@ struct PrayIntentionSheet: View {
             HStack(alignment: .center, spacing: AppTheme.Space.md) {
                 Image(systemName: selected ? "circle.inset.filled" : "circle")
                     .guideSymbol(size: 22, weight: .regular)
-                    .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
+                    .foregroundStyle(selected ? palette.accentText : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
 
                 IntentionIconView(
@@ -215,7 +215,7 @@ struct PrayIntentionSheet: View {
             HStack(alignment: .center, spacing: AppTheme.Space.md) {
                 Image(systemName: selected ? "circle.inset.filled" : "circle")
                     .guideSymbol(size: 22, weight: .regular)
-                    .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
+                    .foregroundStyle(selected ? palette.accentText : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
@@ -349,7 +349,7 @@ private struct IntentionRadioRow: View {
             HStack(alignment: .center, spacing: AppTheme.Space.md) {
                 Image(systemName: selected ? (multiSelect ? "checkmark.circle.fill" : "circle.inset.filled") : "circle")
                     .guideSymbol(size: 22, weight: .regular)
-                    .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
+                    .foregroundStyle(selected ? palette.accentText : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
 
                 IntentionIconView(
@@ -368,7 +368,7 @@ private struct IntentionRadioRow: View {
                         if item.isPinned, !multiSelect {
                             Image(systemName: "pin.fill")
                                 .font(.caption2)
-                                .foregroundStyle(palette.accent)
+                                .foregroundStyle(palette.accentText)
                         }
                     }
                     if let subtitle, !subtitle.isEmpty {
@@ -571,7 +571,7 @@ struct IntentionMultiSelectList: View {
             HStack(alignment: .center, spacing: AppTheme.Space.md) {
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                     .guideSymbol(size: 22, weight: .regular)
-                    .foregroundStyle(selected ? palette.accent : palette.ink.opacity(0.45))
+                    .foregroundStyle(selected ? palette.accentText : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
 
                 if showsPope {

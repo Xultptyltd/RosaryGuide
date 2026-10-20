@@ -899,7 +899,7 @@ struct FeastDetailView: View {
         VStack(spacing: AppTheme.Space.sm) {
             Image(systemName: icon)
                 .guideSymbol(size: 20, weight: .medium)
-                .foregroundStyle(palette.accent)
+                .foregroundStyle(palette.accentText)
             Text(title)
                 .font(AppTheme.TypeRole.caption(weight: .medium))
                 .foregroundStyle(palette.ink)

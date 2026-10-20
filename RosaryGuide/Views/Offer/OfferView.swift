@@ -257,7 +257,7 @@ struct OfferView: View {
     private func profileRow(title: String, detail: String, symbol: String, eyebrow: String? = nil) -> some View {
         HStack(spacing: AppTheme.Space.md) {
             Image(systemName: symbol).guideSymbol(size: 25, weight: .regular)
-                .foregroundStyle(palette.accent)
+                .foregroundStyle(palette.accentText)
                 .frame(width: 56, height: 56).background(palette.accentTint, in: Circle())
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 if let eyebrow { Text(eyebrow).font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim) }
@@ -1523,7 +1523,7 @@ private struct IntentionListRow: View {
                     if intention.isPinned {
                         Image(systemName: "pin.fill")
                             .guideSymbol(size: 12, weight: .semibold)
-                            .foregroundStyle(palette.accent)
+                            .foregroundStyle(palette.accentText)
                     }
                 }
                 if let month = intention.papalMonthLabel {
@@ -1630,7 +1630,7 @@ private struct IntentionDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Edit", action: onEdit)
                         .font(AppTheme.TypeRole.bodySmall(weight: .medium))
-                        .foregroundStyle(palette.accent)
+                        .foregroundStyle(palette.accentText)
                 }
             }
         }
@@ -1753,7 +1753,7 @@ private struct IntentionDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Image(systemName: "plus")
                         .guideSymbol(size: 14, weight: .semibold)
-                        .foregroundStyle(palette.accent)
+                        .foregroundStyle(palette.accentText)
                 }
                 .padding(20)
                 .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
@@ -1842,7 +1842,7 @@ private struct PapalSuggestionCard: View {
                 VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                     Text(item.sourceLabel)
                         .font(AppTheme.TypeRole.caption(weight: .medium))
-                        .foregroundStyle(palette.accent)
+                        .foregroundStyle(palette.accentText)
                         .textCase(.uppercase)
                         .tracking(1.1)
                         .fixedSize(horizontal: false, vertical: true)
@@ -1869,7 +1869,7 @@ private struct PapalSuggestionCard: View {
                 Text("Tap to add")
                     .font(AppTheme.TypeRole.caption(weight: .medium))
             }
-            .foregroundStyle(palette.accent.opacity(0.9))
+            .foregroundStyle(palette.accentText)
             .padding(.top, 2)
         }
         .padding(.horizontal, AppTheme.Space.xs)
@@ -1907,7 +1907,7 @@ private struct IntentionRow: View {
                         if intention.isPinned {
                             Image(systemName: "pin.fill")
                                 .guideSymbol(size: 12, weight: .semibold)
-                                .foregroundStyle(palette.accent)
+                                .foregroundStyle(palette.accentText)
                                 .accessibilityLabel("Pinned")
                         }
                     }
@@ -2440,7 +2440,8 @@ struct IntentionEditorSheet: View {
             .navigationTitle(routeTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(palette.scheme, for: .navigationBar)
-            .tint(palette.accent)
+            // Toolbar Cancel/Save are text in the tint.
+            .tint(palette.accentText)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -3247,7 +3248,7 @@ private struct PrayerJourneyView: View {
         HStack(alignment: .center, spacing: AppTheme.Space.md) {
             Image(systemName: "chart.bar.fill")
                 .guideSymbol(size: 28, weight: .semibold)
-                .foregroundStyle(palette.accent)
+                .foregroundStyle(palette.accentText)
                 .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
 
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
@@ -3699,7 +3700,7 @@ private struct JourneyMilestonesView: View {
             HStack(alignment: .center, spacing: AppTheme.Space.md) {
                 Image(systemName: "leaf")
                     .guideSymbol(size: 25, weight: .regular)
-                    .foregroundStyle(palette.accent)
+                    .foregroundStyle(palette.accentText)
                     .frame(width: 56, height: 56)
                     .background(palette.accentTint, in: Circle())
                     .accessibilityHidden(true)
@@ -3795,7 +3796,7 @@ private struct JourneyMilestoneCard: View {
                 if item.completed {
                     Image(systemName: "checkmark.circle.fill")
                         .guideSymbol(size: 22, weight: .regular)
-                        .foregroundStyle(palette.accent)
+                        .foregroundStyle(palette.accentText)
                         .accessibilityLabel("Completed")
                 }
             }
