@@ -18,6 +18,10 @@ xcuserdata/
 # Node / Firebase emulator tests
 node_modules/
 firestore-debug.log
+firebase-debug.log
+ui-debug.log
+database-debug.log
+pubsub-debug.log
 
 # Local screenshots and scratch renders
 .screenshots/
@@ -33,7 +37,15 @@ tmp-rosary-launch.png
 *.xcworkspace/xcuserdata/
 .idea/
 
-# Local secrets
+# Local secrets and Firebase config (keep on disk; the build copies it into the app)
+GoogleService-Info.plist
+*.p8
 *.p12
 *.mobileprovision
 Secrets.xcconfig
+.env
+.env.*
+# App Check debug tokens
+*AppCheckDebugToken*
+*appcheck-debug-token*
+*.debug-token
