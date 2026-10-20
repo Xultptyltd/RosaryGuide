@@ -18,7 +18,7 @@ Unit tests for Easter, seasons, mystery assignment, rosary sequence, and Home ty
 
 ## What you can do
 
-- **Home** — tall set hero, glass Light/Dark, today’s weekday mystery set, a soft feast offer when the day’s feast suggests a different set, a horizontal mystery rail (painting, RSV reading, fruit), and a week strip that selects a set.
+- **Home** — tall set hero, glass Light/Dark, today’s weekday mystery set, a soft feast offer when the day’s feast suggests a different set, a horizontal mystery rail (painting, Scripture reading, fruit), and a week strip that selects a set.
 - **Pray** — full-screen rosary. Seven-stage paper track (Opening → I–V → Close). Mystery announcements are plate art. Hail Marys are the prayer text plus a rosary bead map. Footer has Next, Eng / Lat / Both, and Aa. Finis shows the day’s quote; Saint Michael is optional after Amen, never inserted mid-sequence.
 - **How to Pray** — accordion steps, weekday schedule, and a bead map.
 - **Feasts** — fixed Marian and liturgical days plus movable dates from Easter. Feasts suggest a set; they do not replace the weekday default.
@@ -43,7 +43,7 @@ A rosary already underway can be resumed only on the **same calendar day**.
 ## Texts and type
 
 - Traditional prayer texts in English and Latin (Sign of the Cross, Apostles’ Creed, Our Father, Hail Mary, Glory Be, Fatima prayer, Hail Holy Queen, concluding collect, Prayer to Saint Michael).
-- All **20 mysteries** use **RSV-2CE** excerpts, titles, and fruits from `docs/WebsiteReference/mysteries.js`.
+- All **20 mysteries** use titles and fruits from `docs/WebsiteReference/mysteries.js`. Scripture is the **World English Bible, Catholic Edition** (eBible.org, public domain), with Douay-Rheims and the Clementine Vulgate as alternatives in Settings.
 - Completion quotes from saints and Our Lady of Fatima.
 - **Instrument Sans** and **Newsreader** live in `RosaryGuide/Fonts/` (original `.woff2` plus iOS `.ttf`). They are registered at launch and listed in `UIAppFonts`. Home type size, tracking, and line-height follow `docs/WebsiteReference/app.css` (`h1.title` clamp, `--gut`, 1.02 display leading).
 

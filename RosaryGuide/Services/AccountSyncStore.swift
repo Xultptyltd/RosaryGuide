@@ -400,7 +400,7 @@ private extension SyncedPreferences {
 extension RosaryConfig {
     init(firestore map: [String: Any]) {
         self.init()
-        if let raw = map["translation"] as? String, let value = BibleTranslation(rawValue: raw) {
+        if let raw = map["translation"] as? String, let value = BibleTranslation(storedValue: raw) {
             translation = value
         }
         fatimaPrayer = map["fatimaPrayer"] as? Bool ?? fatimaPrayer
@@ -413,7 +413,7 @@ extension RosaryConfig {
 
     func firestoreData() -> [String: Any] {
         [
-            "translation": translation.rawValue,
+            "translation": translation.firestoreValue,
             "fatimaPrayer": fatimaPrayer,
             "oSacrament": oSacrament,
             "closingPrayers": closingPrayers,

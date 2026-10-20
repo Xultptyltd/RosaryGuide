@@ -356,7 +356,7 @@ final class RosaryConfigTests: XCTestCase {
         let partial = try JSONDecoder().decode(RosaryConfig.self, from: Data(#"{"memorare":true}"#.utf8))
         XCTAssertTrue(partial.memorare)
         XCTAssertTrue(partial.fatimaPrayer)
-        XCTAssertEqual(partial.translation, .rsv2ce)
+        XCTAssertEqual(partial.translation, .webCatholic)
     }
 }
 
@@ -418,5 +418,80 @@ final class RosaryRemapTests: XCTestCase {
         let mapped = RosarySequenceBuilder.remap(index: plate, from: old, to: new)
         XCTAssertEqual(mapped, plate)
         XCTAssertTrue(new[mapped].body.english.hasPrefix("And in the sixth month, the angel Gabriel"))
+    }
+}
+
+/// The modern translation is the World English Bible, Catholic Edition (public domain).
+final class WebCatholicScriptureTests: XCTestCase {
+    /// Phrases only the previous translation used, never the WEB Catholic text.
+    private let previousTranslationPhrases = [
+        "handmaid of the Lord", "Hail, full of grace", "swaddling cloths",
+        "close of the age", "Truly, I say to you", "Fear not",
+    ]
+
+    private func allScripture() -> [String] {
+        var texts = MysteryCatalog.all.map(\.scriptureExcerpt.english)
+        for id in FeastScriptures.coveredIds {
+            texts += FeastScriptures.passages(for: id).map(\.excerpt)
+        }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let start = calendar.date(from: DateComponents(year: 2026, month: 1, day: 1))!
+        for offset in 0..<(366 * 2) {
+            let day = calendar.date(byAdding: .day, value: offset, to: start)!
+            let verse = LiturgicalVerseCatalog.verse(for: day, calendar: calendar)
+            texts += [verse.homeExcerpt, verse.fullText]
+        }
+        return texts
+    }
+
+    func testNoPreviousTranslationWording() {
+        for text in allScripture() {
+            for phrase in previousTranslationPhrases {
+                XCTAssertFalse(text.localizedCaseInsensitiveContains(phrase), "\(phrase): \(text)")
+            }
+        }
+    }
+
+    func testScriptureIsWebCatholic() {
+        let joyful = MysteryCatalog.all.first { $0.id == "joyful-1" }!
+        XCTAssertTrue(joyful.scriptureExcerpt.english.hasPrefix("Now in the sixth month, the angel Gabriel was sent from God"))
+        XCTAssertEqual(RosaryConfig().translation, .webCatholic)
+        let plate = RosarySequenceBuilder.build(set: .joyful, config: .default).first { $0.isPlate }
+        XCTAssertTrue(plate?.body.english.hasPrefix("Now in the sixth month") == true)
+        let resurrection = MysteryCatalog.all.first { $0.id == "glorious-1" }!
+        XCTAssertEqual(resurrection.scriptureReference, "Luke 24:5-6")
+        XCTAssertEqual(resurrection.scriptureExcerpt.english, "Why do you seek the living among the dead? He isn’t here, but is risen.")
+        let annunciation = FeastScriptures.passages(for: "annunciation").map(\.excerpt).joined()
+        XCTAssertTrue(annunciation.contains("Behold, the servant of the Lord; let it be done to me according to your word."), annunciation)
+        for text in allScripture() {
+            XCTAssertFalse(text.isEmpty)
+            XCTAssertEqual(text.filter { $0 == "“" }.count, text.filter { $0 == "”" }.count, text)
+        }
+    }
+
+    func testOldTranslationSettingBecomesWebCatholic() throws {
+        let stored = try JSONDecoder().decode(RosaryConfig.self, from: Data(#"{"translation":"rsv2ce","memorare":true}"#.utf8))
+        XCTAssertEqual(stored.translation, .webCatholic)
+        XCTAssertTrue(stored.memorare)
+        let encoded = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(stored)) as? [String: Any])
+        XCTAssertEqual(encoded["translation"] as? String, "webc")
+        XCTAssertEqual(try JSONDecoder().decode(RosaryConfig.self, from: JSONEncoder().encode(stored)), stored)
+        let unknown = try JSONDecoder().decode(RosaryConfig.self, from: Data(#"{"translation":"kjv"}"#.utf8))
+        XCTAssertEqual(unknown.translation, .webCatholic)
+    }
+
+    func testFirestoreKeepsTokenTheDeployedRulesAllow() {
+        XCTAssertEqual(RosaryConfig(firestore: ["translation": "rsv2ce"]).translation, .webCatholic)
+        XCTAssertEqual(RosaryConfig(firestore: ["translation": "webc"]).translation, .webCatholic)
+        XCTAssertEqual(RosaryConfig(firestore: ["translation": "vulgate"]).translation, .vulgate)
+        let allowed: Set<String> = ["rsv2ce", "douayRheims", "vulgate"]
+        for translation in BibleTranslation.allCases {
+            var config = RosaryConfig()
+            config.translation = translation
+            let token = config.firestoreData()["translation"] as? String
+            XCTAssertTrue(token.map(allowed.contains) == true, "\(translation)")
+            XCTAssertEqual(RosaryConfig(firestore: config.firestoreData()).translation, translation)
+        }
     }
 }

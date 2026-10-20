@@ -1283,7 +1283,7 @@ private struct SettingsAcknowledgementsScreen: View {
             }
 
             SettingsSection(title: "Scripture") {
-                SettingsValueOnlyRow(title: "RSV-2CE", value: "Ignatius Press")
+                SettingsValueOnlyRow(title: "World English Bible, Catholic Edition", value: "Public domain")
                 SettingsValueOnlyRow(title: "Douay-Rheims (Challoner, 1899)", value: "Public domain")
                 SettingsValueOnlyRow(title: "Clementine Vulgate", value: "Public domain")
             }

@@ -35,92 +35,92 @@ enum MysteryCatalog {
     static let joyful: [Mystery] = [
         item("joyful-1", .joyful, 1, "The Annunciation", "Annuntiatio",
              "Humility", "Humilitas",
-             "In the sixth month the angel Gabriel was sent from God to a city of Galilee named Nazareth, to a virgin betrothed to a man whose name was Joseph, of the house of David; and the virgin’s name was Mary.",
+             "Now in the sixth month, the angel Gabriel was sent from God to a city of Galilee named Nazareth, to a virgin pledged to be married to a man whose name was Joseph, of David’s house. The virgin’s name was Mary.",
              "Luke 1:26-27", "01-annunciation"),
         item("joyful-2", .joyful, 2, "The Visitation", "Visitatio",
              "Love of Neighbor", "Caritas erga proximum",
-             "And when Elizabeth heard the greeting of Mary, the baby leaped in her womb; and Elizabeth was filled with the Holy Spirit and she exclaimed with a loud cry, “Blessed are you among women, and blessed is the fruit of your womb!”",
+             "When Elizabeth heard Mary’s greeting, the baby leaped in her womb; and Elizabeth was filled with the Holy Spirit. She called out with a loud voice and said, “Blessed are you among women, and blessed is the fruit of your womb!”",
              "Luke 1:41-42", "02-visitation"),
         item("joyful-3", .joyful, 3, "The Nativity", "Nativitas",
              "Poverty", "Paupertas",
-             "And she gave birth to her first-born son and wrapped him in swaddling cloths, and laid him in a manger, because there was no place for them in the inn.",
+             "She gave birth to her firstborn son. She wrapped him in bands of cloth and laid him in a feeding trough, because there was no room for them in the inn.",
              "Luke 2:7", "03-birth-of-jesus"),
         item("joyful-4", .joyful, 4, "The Presentation in the Temple", "Praesentatio",
              "Purity of Heart and Body", "Puritas cordis et corporis",
-             "And when the time came for their purification according to the law of Moses, they brought him up to Jerusalem to present him to the Lord.",
+             "When the days of their purification according to the law of Moses were fulfilled, they brought him up to Jerusalem to present him to the Lord…",
              "Luke 2:22", "04-presentation-of-the-baby-jesus"),
         item("joyful-5", .joyful, 5, "The Finding in the Temple", "Inventio in Templo",
              "Devotion to Jesus", "Devotio erga Iesum",
-             "After three days they found him in the temple, sitting among the teachers, listening to them and asking them questions.",
+             "After three days they found him in the temple, sitting in the middle of the teachers, both listening to them and asking them questions.",
              "Luke 2:46", "05-finding-of-the-child-jesus-in-the-temple")
     ]
 
     static let luminous: [Mystery] = [
         item("luminous-1", .luminous, 1, "The Baptism in the Jordan", "Baptisma in Iordane",
              "Openness to the Holy Spirit", "Docilitas Spiritui Sancto",
-             "And when Jesus was baptized, he went up immediately from the water, and behold, the heavens were opened and he saw the Spirit of God descending like a dove, and alighting on him; and behold, a voice from heaven, saying, “This is my beloved Son, with whom I am well pleased.”",
+             "Jesus, when he was baptized, went up directly from the water: and behold, the heavens were opened to him. He saw the Spirit of God descending as a dove, and coming on him. Behold, a voice out of the heavens said, “This is my beloved Son, with whom I am well pleased.”",
              "Matthew 3:16-17", "01-baptism-of-jesus-in-the-jordan"),
         item("luminous-2", .luminous, 2, "The Wedding at Cana", "Nuptiae in Cana",
              "To Jesus through Mary", "Ad Iesum per Mariam",
-             "When the wine failed, the mother of Jesus said to him, “They have no wine.” His mother said to the servants, “Do whatever he tells you.”",
+             "When the wine ran out, Jesus’ mother said to him, “They have no wine.” … His mother said to the servants, “Whatever he says to you, do it.”",
              "John 2:3, 5", "02-miracle-at-the-wedding-at-cana"),
         item("luminous-3", .luminous, 3, "The Proclamation of the Kingdom", "Proclamatio Regni",
              "Conversion", "Conversio",
-             "The time is fulfilled, and the kingdom of God is at hand; repent, and believe in the gospel.",
+             "and saying, “The time is fulfilled, and God’s Kingdom is at hand! Repent, and believe in the Good News.”",
              "Mark 1:15", "03-proclamation-of-the-kingdom-of-god"),
         item("luminous-4", .luminous, 4, "The Transfiguration", "Transfiguratio",
              "Desire for holiness", "Desiderium sanctitatis",
-             "And after six days Jesus took with him Peter and James and John his brother, and led them up a high mountain apart. And he was transfigured before them, and his face shone like the sun, and his garments became white as light.",
+             "After six days, Jesus took with him Peter, James, and John his brother, and brought them up into a high mountain by themselves. He was changed before them. His face shone like the sun, and his garments became as white as the light.",
              "Matthew 17:1-2", "04-transfiguration"),
         item("luminous-5", .luminous, 5, "The Institution of the Eucharist", "Institutio Eucharistiae",
              "Adoration", "Adoratio",
-             "Now as they were eating, Jesus took bread, and blessed, and broke it, and gave it to the disciples and said, “Take, eat; this is my body.”",
+             "As they were eating, Jesus took bread, gave thanks for it, and broke it. He gave to the disciples and said, “Take, eat; this is my body.”",
              "Matthew 26:26", "05-institution-of-the-holy-eucharist")
     ]
 
     static let sorrowful: [Mystery] = [
         item("sorrowful-1", .sorrowful, 1, "The Agony in the Garden", "Agonia in Horto",
              "Obedience to God’s Will", "Oboedientia voluntati Dei",
-             "Then he said to them, “My soul is very sorrowful, even to death; remain here, and watch with me.” And going a little farther he fell on his face and prayed, “My Father, if it be possible, let this chalice pass from me; nevertheless, not as I will, but as you will.”",
+             "Then Jesus said to them, “My soul is exceedingly sorrowful, even to death. Stay here and watch with me.” He went forward a little, fell on his face, and prayed, saying, “My Father, if it is possible, let this cup pass away from me; nevertheless, not what I desire, but what you desire.”",
              "Matthew 26:38-39", "01-agony-in-the-garden"),
         item("sorrowful-2", .sorrowful, 2, "The Scourging at the Pillar", "Flagellatio",
              "Mortification", "Mortificatio",
-             "Then he released for them Barabbas, and having scourged Jesus, delivered him to be crucified.",
+             "Then he released Barabbas to them, but Jesus he flogged and delivered to be crucified.",
              "Matthew 27:26", "02-scourging-at-the-pillar"),
         item("sorrowful-3", .sorrowful, 3, "The Crowning with Thorns", "Coronatio Spinis",
              "Courage", "Fortitudo",
-             "And plaiting a crown of thorns they put it on his head, and put a reed in his right hand. And kneeling before him they mocked him, saying, “Hail, King of the Jews!”",
+             "They braided a crown of thorns and put it on his head, and a reed in his right hand; and they kneeled down before him and mocked him, saying, “Hail, King of the Jews!”",
              "Matthew 27:29", "03-crowning-with-thorns"),
         item("sorrowful-4", .sorrowful, 4, "The Carrying of the Cross", "Baiulatio Crucis",
              "Patience", "Patientia",
-             "And they compelled a passer-by, Simon of Cyrene, who was coming in from the country, the father of Alexander and Rufus, to carry his cross. And they brought him to the place called Golgotha (which means the place of a skull).",
+             "They compelled one passing by, coming from the country, Simon of Cyrene, the father of Alexander and Rufus, to go with them that he might bear his cross. They brought him to the place called Golgotha, which is, being interpreted, “The place of a skull.”",
              "Mark 15:21-22", "04-carrying-of-the-cross"),
         item("sorrowful-5", .sorrowful, 5, "The Crucifixion", "Crucifixio",
              "Sorrow for our Sins", "Dolor peccatorum",
-             "And when they came to the place which is called The Skull, there they crucified him, and the criminals, one on the right and one on the left. Then Jesus, crying with a loud voice, said, “Father, into your hands I commit my spirit!” And having said this he breathed his last.",
+             "When they came to the place that is called “The Skull”, they crucified him there with the criminals, one on the right and the other on the left. … Jesus, crying with a loud voice, said, “Father, into your hands I commit my spirit!” Having said this, he breathed his last.",
              "Luke 23:33, 46", "05-crucifixion")
     ]
 
     static let glorious: [Mystery] = [
         item("glorious-1", .glorious, 1, "The Resurrection", "Resurrectio",
              "Faith", "Fides",
-             "Why do you seek the living among the dead? He is not here, but has risen.",
-             "Luke 24:5", "01-resurrection"),
+             "Why do you seek the living among the dead? He isn’t here, but is risen.",
+             "Luke 24:5-6", "01-resurrection"),
         item("glorious-2", .glorious, 2, "The Ascension", "Ascensio",
              "Hope", "Spes",
-             "So then the Lord Jesus, after he had spoken to them, was taken up into heaven, and sat down at the right hand of God.",
+             "So then the Lord, after he had spoken to them, was received up into heaven and sat down at the right hand of God.",
              "Mark 16:19", "02-ascension"),
         item("glorious-3", .glorious, 3, "The Descent of the Holy Spirit", "Descensus Spiritus Sancti",
              "Wisdom", "Sapientia",
-             "And there appeared to them tongues as of fire, distributed and resting on each one of them. And they were all filled with the Holy Spirit and began to speak in other tongues, as the Spirit gave them utterance.",
+             "Tongues like fire appeared and were distributed to them, and one sat on each of them. They were all filled with the Holy Spirit and began to speak with other languages, as the Spirit gave them the ability to speak.",
              "Acts 2:3-4", "03-descent-of-the-holy-spirit"),
         item("glorious-4", .glorious, 4, "The Assumption", "Assumptio",
              "Devotion to Mary", "Devotio erga Mariam",
-             "For behold, henceforth all generations will call me blessed; for he who is mighty has done great things for me, and holy is his name.",
+             "For behold, from now on, all generations will call me blessed. For he who is mighty has done great things for me. Holy is his name.",
              "Luke 1:48-49", "04-assumption"),
         item("glorious-5", .glorious, 5, "The Coronation of Mary", "Coronatio Beatae Mariae Virginis",
              "Grace of a happy death", "Gratia bonae mortis",
-             "And a great portent appeared in heaven, a woman clothed with the sun, with the moon under her feet, and on her head a crown of twelve stars.",
+             "A great sign was seen in heaven: a woman clothed with the sun, and the moon under her feet, and on her head a crown of twelve stars.",
              "Revelation 12:1", "05-coronation")
     ]
 }
@@ -128,20 +128,21 @@ enum MysteryCatalog {
 /// Mystery scripture by translation, for the same verse windows as `Mystery.scriptureReference`.
 /// Douay-Rheims: Challoner revision, 1899 American edition (public domain).
 /// Latin Vulgate: Clementine Vulgate (public domain). Both checked against bible-api.com's
-/// public-domain `dra` and `clementine` texts. RSV-2CE is the catalog's original excerpt.
+/// public-domain `dra` and `clementine` texts. The catalog's own excerpt is the World English
+/// Bible, Catholic Edition (eBible.org, public domain).
 enum MysteryScripture {
     static func excerpt(for mystery: Mystery, translation: BibleTranslation) -> String {
         switch translation {
-        case .rsv2ce: mystery.scriptureExcerpt.english
+        case .webCatholic: mystery.scriptureExcerpt.english
         case .douayRheims: douayRheims[mystery.id] ?? mystery.scriptureExcerpt.english
         case .vulgate: vulgate[mystery.id] ?? mystery.scriptureExcerpt.english
         }
     }
 
     /// Excerpt for display outside the prayer flow (Home, Learn), following the
-    /// Bible translation setting live. RSV-2CE keeps the prayer-language choice.
+    /// Bible translation setting live. WEB Catholic keeps the prayer-language choice.
     static func display(for mystery: Mystery, translation: BibleTranslation, language: PrayerLanguage) -> String {
-        translation == .rsv2ce
+        translation == .webCatholic
             ? mystery.scriptureExcerpt.primary(for: language)
             : excerpt(for: mystery, translation: translation)
     }

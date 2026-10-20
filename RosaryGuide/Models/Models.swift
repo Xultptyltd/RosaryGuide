@@ -538,10 +538,10 @@ enum BeadLocus: Hashable, Codable {
 }
 
 /// Bible translation for the mystery scripture on each decade's announcement.
-/// Catholic editions only. RSV-2CE is the app's original text (licensed);
-/// Douay-Rheims (Challoner, 1899 American ed.) and the Clementine Vulgate are public domain.
+/// Catholic editions only, all public domain: the World English Bible, Catholic Edition
+/// (eBible.org), Douay-Rheims (Challoner, 1899 American ed.) and the Clementine Vulgate.
 enum BibleTranslation: String, CaseIterable, Codable, Identifiable, Sendable {
-    case rsv2ce
+    case webCatholic = "webc"
     case douayRheims
     case vulgate
 
@@ -549,10 +549,42 @@ enum BibleTranslation: String, CaseIterable, Codable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .rsv2ce: "RSV-2CE"
+        case .webCatholic: "World English Bible (Catholic)"
         case .douayRheims: "Douay-Rheims"
         case .vulgate: "Latin Vulgate"
         }
+    }
+
+    /// Value saved by builds up to 1.589 (5) for the app's original modern translation,
+    /// which the World English Bible (Catholic) replaced. Still read from device storage
+    /// and Firestore, and still written to Firestore (see `firestoreValue`).
+    static let legacyModernRawValue = "rsv2ce"
+
+    /// Reads current and legacy raw values; the old modern translation becomes WEB Catholic.
+    init?(storedValue raw: String) {
+        if raw == Self.legacyModernRawValue {
+            self = .webCatholic
+        } else {
+            self.init(rawValue: raw)
+        }
+    }
+
+    /// Token for `rosaryConfig.translation` in Firestore. The deployed rules only allow
+    /// 'rsv2ce', 'douayRheims' and 'vulgate', so the default modern translation keeps the
+    /// legacy token there; every build reads it back as the app's modern translation.
+    var firestoreValue: String {
+        self == .webCatholic ? Self.legacyModernRawValue : rawValue
+    }
+
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        guard let value = BibleTranslation(storedValue: raw) else {
+            throw DecodingError.dataCorrupted(.init(
+                codingPath: decoder.codingPath,
+                debugDescription: "Unknown Bible translation \(raw)"
+            ))
+        }
+        self = value
     }
 }
 
@@ -560,7 +592,7 @@ enum BibleTranslation: String, CaseIterable, Codable, Identifiable, Sendable {
 /// Rosary rebuilds the same steps (and `stepIndex` keeps its meaning) even if
 /// Settings changed meanwhile. Syncs with the in-progress Rosary (`session.rosaryConfig`).
 struct RosaryConfig: Codable, Equatable, Hashable, Sendable {
-    var translation: BibleTranslation = .rsv2ce
+    var translation: BibleTranslation = .webCatholic
     var fatimaPrayer = true
     /// O Sacrament most holy, after the Fatima prayer in each decade.
     var oSacrament = false
