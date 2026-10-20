@@ -523,3 +523,88 @@ final class WordSafeTextTests: XCTestCase {
         XCTAssertEqual(scales, scales.sorted(by: >))
     }
 }
+
+final class DiagnosticsStoreTests: XCTestCase {
+    private var directory: URL!
+
+    override func setUp() {
+        super.setUp()
+        directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DiagnosticsStoreTests-\(UUID().uuidString)", isDirectory: true)
+    }
+
+    override func tearDown() {
+        try? FileManager.default.removeItem(at: directory)
+        super.tearDown()
+    }
+
+    private func payload(_ index: Int, bytes: Int = 64) -> Data {
+        let filler = String(repeating: "x", count: max(0, bytes - 40))
+        return Data("{\"index\":\(index),\"pad\":\"\(filler)\"}".utf8)
+    }
+
+    private func indices(_ store: DiagnosticsStore) -> [Int] {
+        store.files().compactMap { url in
+            guard let data = try? Data(contentsOf: url),
+                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+            return object["index"] as? Int
+        }
+    }
+
+    func testDefaultCapsAreTenFilesAndTwoMegabytes() {
+        let store = DiagnosticsStore(directory: directory)
+        XCTAssertEqual(store.maxFiles, 10)
+        XCTAssertEqual(store.maxBytes, 2 * 1024 * 1024)
+    }
+
+    func testKeepsAtMostMaxFilesDroppingOldestFirst() {
+        let store = DiagnosticsStore(directory: directory)
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        for i in 0..<14 {
+            store.save(payload(i), kind: i.isMultiple(of: 2) ? .metric : .diagnostic, at: start.addingTimeInterval(Double(i)))
+        }
+        XCTAssertEqual(store.files().count, 10)
+        XCTAssertEqual(indices(store), Array(4..<14))
+    }
+
+    func testSizeCapDropsOldestFirst() {
+        let store = DiagnosticsStore(directory: directory, maxFiles: 10, maxBytes: 1_000)
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        for i in 0..<5 {
+            store.save(payload(i, bytes: 300), kind: .metric, at: start.addingTimeInterval(Double(i)))
+        }
+        let total = store.files().reduce(0) { $0 + ((try? Data(contentsOf: $1))?.count ?? 0) }
+        XCTAssertLessThanOrEqual(total, 1_000)
+        XCTAssertEqual(indices(store), [2, 3, 4])
+    }
+
+    func testOversizedPayloadIsDroppedAndKeepsExisting() {
+        let store = DiagnosticsStore(directory: directory, maxFiles: 10, maxBytes: 500)
+        store.save(payload(1), kind: .metric)
+        XCTAssertNil(store.save(payload(2, bytes: 600), kind: .diagnostic))
+        XCTAssertEqual(indices(store), [1])
+    }
+
+    func testSameTimestampDoesNotOverwrite() {
+        let store = DiagnosticsStore(directory: directory)
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        store.save(payload(1), kind: .metric, at: date)
+        store.save(payload(2), kind: .metric, at: date)
+        XCTAssertEqual(store.files().count, 2)
+    }
+
+    func testExportIsNilWhenEmptyAndCombinesPayloads() throws {
+        let store = DiagnosticsStore(directory: directory)
+        let out = directory.appendingPathComponent("out", isDirectory: true)
+        try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+        XCTAssertNil(store.exportCombined(appVersion: "1.0 (1)", to: out))
+
+        store.save(payload(1), kind: .diagnostic, at: Date(timeIntervalSince1970: 1_800_000_000))
+        store.save(payload(2), kind: .metric, at: Date(timeIntervalSince1970: 1_800_000_001))
+        let url = try XCTUnwrap(store.exportCombined(appVersion: "1.0 (1)", to: out))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let payloads = try XCTUnwrap(object["payloads"] as? [[String: Any]])
+        XCTAssertEqual(payloads.map { $0["kind"] as? String }, ["diagnostic", "metric"])
+        XCTAssertEqual(object["version"] as? String, "1.0 (1)")
+    }
+}

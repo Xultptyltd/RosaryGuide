@@ -16,6 +16,8 @@ struct RosaryGuideApp: App {
     init() {
         FontRegistrar.register()
         GuideChrome.applyAtLaunch()
+        // On-device MetricKit diagnostics; registration runs off the main thread.
+        MetricsCollector.shared.start()
         // AuthStore configures Firebase, so it is created before anything that syncs.
         let auth = AuthStore()
         let settings = SettingsStore()

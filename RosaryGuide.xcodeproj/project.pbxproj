@@ -29,6 +29,7 @@
 		7165D260E520AAAB913AEBEC /* PrayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8589A7E167BB2CC661B8B1E9 /* PrayView.swift */; };
 		7522C3875650AD15B90F7C80 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1EFCA22FB596D08D814D6C /* HapticService.swift */; };
 		EF578B46917539FB5057AC3A /* AppStoreReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B6651C4EFC6E27781D4A373 /* AppStoreReview.swift */; };
+		D1A60001B2C3D4E5F6A70001 /* DiagnosticsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A60002B2C3D4E5F6A70002 /* DiagnosticsStore.swift */; };
 		304469E58BDCF71695967946 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B278BD59725C709646CDD918 /* NotificationService.swift */; };
 		7618145F79B5BCF6F9F1B5B7 /* OfferStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43198FB81B224B7B29B7D24D /* OfferStore.swift */; };
 		A9F00101A1B2C3D4E5F6A502 /* AccountSyncStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F00101A1B2C3D4E5F6A501 /* AccountSyncStore.swift */; };
@@ -107,6 +108,7 @@
 		66C5E677CA4145DB823FC9DA /* IntentionSuggestions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentionSuggestions.swift; sourceTree = "<group>"; };
 		6A1EFCA22FB596D08D814D6C /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
 		9B6651C4EFC6E27781D4A373 /* AppStoreReview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreReview.swift; sourceTree = "<group>"; };
+		D1A60002B2C3D4E5F6A70002 /* DiagnosticsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsStore.swift; sourceTree = "<group>"; };
 		B278BD59725C709646CDD918 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		70497BEC59AAFC851AFB4046 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		73615B296B0C41CFA92F7797 /* FeastNarratives.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeastNarratives.swift; sourceTree = "<group>"; };
@@ -184,6 +186,7 @@
 				43198FB81B224B7B29B7D24D /* OfferStore.swift */,
 				A9F00101A1B2C3D4E5F6A501 /* AccountSyncStore.swift */,
 				9B6651C4EFC6E27781D4A373 /* AppStoreReview.swift */,
+				D1A60002B2C3D4E5F6A70002 /* DiagnosticsStore.swift */,
 				6A1EFCA22FB596D08D814D6C /* HapticService.swift */,
 				B278BD59725C709646CDD918 /* NotificationService.swift */,
 				49068D79F0B6F85C616BB1E5 /* LiturgicalCalendar.swift */,
@@ -523,6 +526,7 @@
 				18EA7A7CED25189ABB22C229 /* RosaryStep.swift in Sources */,
 				7522C3875650AD15B90F7C80 /* HapticService.swift in Sources */,
 				EF578B46917539FB5057AC3A /* AppStoreReview.swift in Sources */,
+				D1A60001B2C3D4E5F6A70001 /* DiagnosticsStore.swift in Sources */,
 				304469E58BDCF71695967946 /* NotificationService.swift in Sources */,
 				A637113F6A3490A31C8197DA /* LiturgicalCalendar.swift in Sources */,
 				C11CA0B6D6FA034966F4B455 /* MysteryCalendar.swift in Sources */,

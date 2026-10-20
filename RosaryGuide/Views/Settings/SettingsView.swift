@@ -25,6 +25,8 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     var onClose: (() -> Void)?
 
+    /// Combined MetricKit export for the share sheet; nil hides the row.
+    @State private var diagnosticsExport: URL?
     @State private var confirmClearAppHistory = false
     @State private var didClearAppHistory = false
     @State private var confirmDeleteAccount = false
@@ -104,6 +106,7 @@ struct SettingsView: View {
             Text(appIcon.lastErrorMessage ?? "Try again.")
         }
         .onAppear { appIcon.refreshFromSystem() }
+        .task(loadDiagnosticsExport)
         .alert("Mail not available", isPresented: Binding(
             get: { mailUnavailableMessage != nil },
             set: { if !$0 { mailUnavailableMessage = nil } }
@@ -196,6 +199,10 @@ struct SettingsView: View {
                                 openURL(reviewURL)
                             }
                         }
+                        // On-device MetricKit reports; shown only once there is something to share.
+                        if let diagnosticsExport {
+                            SettingsShareRow(title: "Share diagnostics", icon: "stethoscope", file: diagnosticsExport)
+                        }
                     }
 
                     GuideSectionBoundary()
@@ -282,6 +289,13 @@ struct SettingsView: View {
         } else {
             dismiss()
         }
+    }
+
+    @Sendable private func loadDiagnosticsExport() async {
+        let url = await Task.detached(priority: .utility) {
+            DiagnosticsStore.standard.exportCombined()
+        }.value
+        diagnosticsExport = url
     }
 
     private var appVersion: String {
@@ -552,6 +566,20 @@ private struct SettingsActionRow: View {
     var body: some View {
         Button(action: action) {
             SettingsRowChrome(title: title, icon: icon, value: nil, destructive: destructive, accessory: accessory)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Opens the share sheet for a file the app wrote (the person picks where it goes).
+private struct SettingsShareRow: View {
+    let title: String
+    var icon: String?
+    let file: URL
+
+    var body: some View {
+        ShareLink(item: file, preview: SharePreview("Rosary Guide diagnostics")) {
+            SettingsRowChrome(title: title, icon: icon, value: nil, accessory: .externalLink)
         }
         .buttonStyle(.plain)
     }
