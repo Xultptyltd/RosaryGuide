@@ -404,3 +404,48 @@ final class GuestIntentionTests: XCTestCase {
         XCTAssertEqual(store.intentions.map(\.title), ["A's intention"])
     }
 }
+
+final class ReviewPromptGateTests: XCTestCase {
+    private func gate(version: String) -> (ReviewPromptGate, UserDefaults) {
+        let suite = "ReviewPromptGateTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        addTeardownBlock { defaults.removePersistentDomain(forName: suite) }
+        return (ReviewPromptGate(defaults: defaults, currentVersion: version), defaults)
+    }
+
+    func testNotBeforeTheThirdCompletedRosary() {
+        let (gate, _) = gate(version: "1.0")
+        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 0))
+        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 1))
+        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 2))
+        XCTAssertTrue(gate.shouldPrompt(completedRosaries: 3))
+        XCTAssertTrue(gate.shouldPrompt(completedRosaries: 12))
+    }
+
+    func testAtMostOncePerAppVersion() {
+        let (gate, defaults) = gate(version: "1.0")
+        gate.markPrompted()
+        XCTAssertEqual(defaults.string(forKey: ReviewPromptGate.lastPromptedVersionKey), "1.0")
+        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 3))
+        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 50))
+
+        let nextVersion = ReviewPromptGate(defaults: defaults, currentVersion: "1.1")
+        XCTAssertTrue(nextVersion.shouldPrompt(completedRosaries: 4), "A new version may ask again")
+        nextVersion.markPrompted()
+        XCTAssertFalse(nextVersion.shouldPrompt(completedRosaries: 5))
+    }
+
+    func testUnknownVersionNeverPrompts() {
+        let (gate, _) = gate(version: "")
+        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 10))
+    }
+
+    func testAppStoreLinksFollowTheAppID() {
+        if AppStoreLinks.appID.isEmpty {
+            XCTAssertNil(AppStoreLinks.writeReview, "No ID: the review button stays hidden")
+            XCTAssertNil(AppStoreLinks.productPage)
+        } else {
+            XCTAssertEqual(AppStoreLinks.writeReview?.absoluteString, "https://apps.apple.com/app/id\(AppStoreLinks.appID)?action=write-review")
+        }
+    }
+}

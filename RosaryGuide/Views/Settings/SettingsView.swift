@@ -1,5 +1,4 @@
 import MessageUI
-import StoreKit
 import SwiftUI
 import UIKit
 import UserNotifications
@@ -191,8 +190,11 @@ struct SettingsView: View {
                         SettingsActionRow(title: "Suggest a feature", icon: "lightbulb", accessory: .externalLink) {
                             open("https://xult.ltd/contact/")
                         }
-                        SettingsActionRow(title: "Leave a review", icon: "star", accessory: .externalLink) {
-                            requestReview()
+                        // Opens the App Store's review sheet; hidden until the App Store ID is set.
+                        if let reviewURL = AppStoreLinks.writeReview {
+                            SettingsActionRow(title: "Leave a review", icon: "star", accessory: .externalLink) {
+                                openURL(reviewURL)
+                            }
                         }
                     }
 
@@ -373,11 +375,6 @@ struct SettingsView: View {
             return
         }
         openURL(url)
-    }
-
-    private func requestReview() {
-        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return }
-        AppStore.requestReview(in: scene)
     }
 
     @ViewBuilder

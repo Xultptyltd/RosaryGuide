@@ -278,10 +278,10 @@ struct HomeView: View {
     }
 
     /// Small centred tertiary pill at the end of Home that opens the share sheet.
-    /// No App Store listing exists yet, so it shares the website.
+    /// Shares the App Store page once `AppStoreLinks.appID` is set, the website until then.
     private var shareAppButton: some View {
         ShareLink(
-            item: URL(string: "https://rosaryguide.app")!,
+            item: AppStoreLinks.productPage ?? URL(string: "https://rosaryguide.app")!,
             subject: Text("Rosary Guide"),
             message: Text("I've been praying the Rosary with Rosary Guide. Take a look:"),
             // Share sheet header shows the blue icon (IconPreviewBlue is the same artwork as

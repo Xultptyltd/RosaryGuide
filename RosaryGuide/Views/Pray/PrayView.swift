@@ -1253,6 +1253,14 @@ struct PrayView: View {
                 HapticService.play(.medium, enabled: settings.hapticsEnabled)
             }
         )
+        // The Rosary is recorded as complete on reaching this screen, so the count includes it.
+        // Asked only once the screen has settled, never mid-prayer or over Saint Michael.
+        .task {
+            await ReviewPrompter.requestAfterCompletion(
+                completedRosaries: sessionStore.completedSessions.count,
+                isStillSettled: { !showingMichael }
+            )
+        }
     }
 
     private var completionIntentionIsPapal: Bool {
