@@ -33,14 +33,14 @@ struct LaunchSplashView: View {
 private struct LottieSplashPlayer: UIViewRepresentable {
     var onFinished: () -> Void
 
-    /// The 7.0 s composition plays 2.5× faster (about 2.8 s).
-    static let speed = 2.5
+    /// The 7.0 s composition plays 1.4× faster (about 5.0 s).
+    static let speed = 1.4
     /// JS fallback, started when the script runs: the animation length plus the same 0.2 s
     /// margin as before.
-    static let jsFallbackMilliseconds = 3000
+    static let jsFallbackMilliseconds = 5200
     /// Native safety net from web view creation, in case the page never reports back. Counts
     /// from before the page loads (0.1–0.3 s), so it keeps the original 0.4 s margin.
-    static let fallbackSeconds = 3.4
+    static let fallbackSeconds = 5.6
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onFinished: onFinished)
