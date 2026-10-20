@@ -41,32 +41,35 @@ struct OfferView: View {
             .toolbar(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .largeTitle) {
-                    HStack(alignment: .center) {
-                        GuidePageTitle(text: "Profile")
-                        Spacer(minLength: AppTheme.Space.lg)
-                        Button {
-                            HapticService.play(.light, enabled: settings.hapticsEnabled)
-                            var transaction = Transaction()
-                            transaction.disablesAnimations = true
-                            withTransaction(transaction) { showSettingsDrawer = true }
-                        } label: {
-                            Image(systemName: "gearshape")
-                                .foregroundStyle(palette.ink)
-                                .frame(width: AppTheme.Accessibility.minHitTarget,
-                                       height: AppTheme.Accessibility.minHitTarget)
-                                .background {
-                                    Circle()
-                                        .fill(.clear)
-                                        .guideFloatingGlass(in: Circle(), palette: palette)
-                                }
-                                .contentShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Settings")
-                        .accessibilityHint("Opens settings")
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    GuidePageTitle(text: "Profile")
                 }
+                // A regular bar item: content in the large-title slot is not exposed to
+                // VoiceOver, so the gear lives here to stay reachable.
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        HapticService.play(.light, enabled: settings.hapticsEnabled)
+                        var transaction = Transaction()
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) { showSettingsDrawer = true }
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .foregroundStyle(palette.ink)
+                            .frame(width: AppTheme.Accessibility.minHitTarget,
+                                   height: AppTheme.Accessibility.minHitTarget)
+                            .background {
+                                Circle()
+                                    .fill(.clear)
+                                    .guideFloatingGlass(in: Circle(), palette: palette)
+                            }
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .frame(width: AppTheme.Accessibility.minHitTarget,
+                           height: AppTheme.Accessibility.minHitTarget)
+                    .accessibilityLabel("Settings")
+                    .accessibilityHint("Opens settings")
+                }
+                .sharedBackgroundVisibility(.hidden)
             }
             .fullScreenCover(isPresented: $showSettingsDrawer) {
                 HomeSettingsDrawer(isPresented: $showSettingsDrawer)
@@ -829,6 +832,8 @@ private struct NextRosaryIntentionCard: View {
         }
         .buttonStyle(.plain)
         .guidePressable()
+        // On the card Button only, so the overlaid menu and pray pill keep their own labels.
+        .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Open hidden intention" : "Open \(intention.title)")
         .overlay(alignment: .topTrailing) {
             OverflowMenuButton(
                 isPinned: intention.isPinned,
@@ -843,6 +848,8 @@ private struct NextRosaryIntentionCard: View {
         }
         .overlay(alignment: .bottom) {
             PillButton(title: "Offer a Rosary", filled: false, action: onPray)
+                .accessibilityLabel("Offer a Rosary")
+                .accessibilityHint(IntentionPrivacy.hides(intention, hidden: hideText) ? "Starts a Rosary for this intention" : "Starts a Rosary for \(intention.title)")
                 .padding(.horizontal, AppTheme.Space.lg)
                 .padding(.bottom, AppTheme.Space.lg)
         }
@@ -852,7 +859,6 @@ private struct NextRosaryIntentionCard: View {
         } message: {
             Text("This will delete “\(displayTitle)” from your intentions.")
         }
-        .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Open hidden intention" : "Open \(intention.title)")
     }
 }
 
