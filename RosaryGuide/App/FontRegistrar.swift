@@ -1,9 +1,35 @@
 import Foundation
+import Observation
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
 #endif
 import CoreText
+
+#if canImport(UIKit)
+/// The current Dynamic Type size, observable. Fonts read it while a view's body runs, so
+/// when the user changes the text size every view that built a font redraws at the new
+/// size, without relaunching or leaving the screen.
+@Observable
+final class DynamicTypeObserver {
+    static let shared = DynamicTypeObserver()
+
+    private(set) var category: UIContentSizeCategory
+    @ObservationIgnored private var token: NSObjectProtocol?
+
+    private init() {
+        category = UIApplication.shared.preferredContentSizeCategory
+        token = NotificationCenter.default.addObserver(
+            forName: UIContentSizeCategory.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            let next = UIApplication.shared.preferredContentSizeCategory
+            if self?.category != next { self?.category = next }
+        }
+    }
+}
+#endif
 
 /// Registers Instrument Sans and Newsreader from `Fonts/` (never a top-level `Resources/` folder)
 /// and resolves SwiftUI fonts via UIFont so variable-axis weight / optical size actually apply.
@@ -38,17 +64,20 @@ enum FontRegistrar {
         }
     }
 
-    static func sans(_ size: CGFloat, weight: Font.Weight = .regular, relativeTo textStyle: Font.TextStyle = .body) -> Font {
+    /// Every font scales with Dynamic Type through `UIFontMetrics` for its text style.
+    /// `maxPointSize` caps the scaled size for display type and fixed-height controls
+    /// (at the default Large size the cap never applies, so the design is unchanged).
+    static func sans(_ size: CGFloat, weight: Font.Weight = .regular, relativeTo textStyle: Font.TextStyle = .body, maxPointSize: CGFloat? = nil) -> Font {
         #if canImport(UIKit)
-        Font(sansUI(size, weight: weight, textStyle: uiTextStyle(textStyle)))
+        Font(sansUI(size, weight: weight, textStyle: uiTextStyle(textStyle), maxPointSize: maxPointSize))
         #else
         Font.custom("InstrumentSans-Regular", size: size, relativeTo: textStyle)
         #endif
     }
 
-    static func serif(_ size: CGFloat, italic: Bool = false, opticalSize: CGFloat? = nil, relativeTo textStyle: Font.TextStyle = .body) -> Font {
+    static func serif(_ size: CGFloat, italic: Bool = false, opticalSize: CGFloat? = nil, relativeTo textStyle: Font.TextStyle = .body, maxPointSize: CGFloat? = nil) -> Font {
         #if canImport(UIKit)
-        Font(serifUI(size, italic: italic, opticalSize: opticalSize, textStyle: uiTextStyle(textStyle)))
+        Font(serifUI(size, italic: italic, opticalSize: opticalSize, textStyle: uiTextStyle(textStyle), maxPointSize: maxPointSize))
         #else
         Font.custom(italic ? "Newsreader16pt-Italic" : "Newsreader16pt-Regular", size: size, relativeTo: textStyle)
         #endif
@@ -71,9 +100,9 @@ enum FontRegistrar {
         }
     }
 
-    static func sansUI(_ size: CGFloat, weight: Font.Weight = .regular, textStyle: UIFont.TextStyle = .body) -> UIFont {
+    static func sansUI(_ size: CGFloat, weight: Font.Weight = .regular, textStyle: UIFont.TextStyle = .body, maxPointSize: CGFloat? = nil) -> UIFont {
         let weightAxis = axisWeight(weight)
-        let key = cacheKey(kind: "sans", size: size, axes: "wght=\(weightAxis)", textStyle: textStyle)
+        let key = cacheKey(kind: "sans", size: size, axes: "wght=\(weightAxis)", textStyle: textStyle, maxPointSize: maxPointSize)
         if let cached = uiFontCache[key] { return cached }
         let base = variableFont(
             names: sansCandidates,
@@ -81,14 +110,14 @@ enum FontRegistrar {
             variations: ["wght": weightAxis],
             serifFallback: false
         )
-        let scaled = UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
+        let scaled = scale(base, textStyle: textStyle, maxPointSize: maxPointSize)
         uiFontCache[key] = scaled
         return scaled
     }
 
-    static func serifUI(_ size: CGFloat, italic: Bool = false, opticalSize: CGFloat? = nil, textStyle: UIFont.TextStyle = .body) -> UIFont {
+    static func serifUI(_ size: CGFloat, italic: Bool = false, opticalSize: CGFloat? = nil, textStyle: UIFont.TextStyle = .body, maxPointSize: CGFloat? = nil) -> UIFont {
         let opsz = min(max(opticalSize ?? size, 6), 72)
-        let key = cacheKey(kind: italic ? "serifI" : "serif", size: size, axes: "wght=400,opsz=\(opsz)", textStyle: textStyle)
+        let key = cacheKey(kind: italic ? "serifI" : "serif", size: size, axes: "wght=400,opsz=\(opsz)", textStyle: textStyle, maxPointSize: maxPointSize)
         if let cached = uiFontCache[key] { return cached }
         let base = variableFont(
             names: italic ? serifItalicCandidates : serifCandidates,
@@ -96,9 +125,26 @@ enum FontRegistrar {
             variations: ["wght": 400, "opsz": opsz],
             serifFallback: true
         )
-        let scaled = UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
+        let scaled = scale(base, textStyle: textStyle, maxPointSize: maxPointSize)
         uiFontCache[key] = scaled
         return scaled
+    }
+
+    /// Dynamic Type scaling for `textStyle`, never below the design size and capped at
+    /// `maxPointSize` when given.
+    static func scale(
+        _ base: UIFont,
+        textStyle: UIFont.TextStyle,
+        maxPointSize: CGFloat?,
+        category: UIContentSizeCategory = DynamicTypeObserver.shared.category
+    ) -> UIFont {
+        let metrics = UIFontMetrics(forTextStyle: textStyle)
+        let traits = UITraitCollection(preferredContentSizeCategory: category)
+        return metrics.scaledFont(
+            for: base,
+            maximumPointSize: maxPointSize.map { max($0, base.pointSize) } ?? 0,
+            compatibleWith: traits
+        )
     }
 
     /// Scene-update watchdog stacks land in `CTFontDescriptorCreateCopyWithAttributes`
@@ -106,9 +152,9 @@ enum FontRegistrar {
     /// result so a pray-screen update does not re-enter Core Text.
     private static var uiFontCache: [String: UIFont] = [:]
 
-    private static func cacheKey(kind: String, size: CGFloat, axes: String, textStyle: UIFont.TextStyle) -> String {
-        let category = UIApplication.shared.preferredContentSizeCategory.rawValue
-        return "\(kind)|\(size)|\(axes)|\(textStyle.rawValue)|\(category)"
+    private static func cacheKey(kind: String, size: CGFloat, axes: String, textStyle: UIFont.TextStyle, maxPointSize: CGFloat?) -> String {
+        let category = DynamicTypeObserver.shared.category.rawValue
+        return "\(kind)|\(size)|\(axes)|\(textStyle.rawValue)|\(category)|\(maxPointSize.map { "\($0)" } ?? "-")"
     }
 
     private static func axisWeight(_ weight: Font.Weight) -> CGFloat {

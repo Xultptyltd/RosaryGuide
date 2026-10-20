@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 import FirebaseFirestore
 @testable import RosaryGuide
 
@@ -444,5 +445,58 @@ final class ReviewPromptGateTests: XCTestCase {
         XCTAssertEqual(AppStoreLinks.appID, "6814299309")
         XCTAssertEqual(AppStoreLinks.productPage?.absoluteString, "https://apps.apple.com/app/id6814299309")
         XCTAssertEqual(AppStoreLinks.writeReview?.absoluteString, "https://apps.apple.com/app/id6814299309?action=write-review")
+    }
+}
+
+/// Dynamic Type: every role scales, capped roles stop at their cap, and the default size is unchanged.
+final class DynamicTypeScalingTests: XCTestCase {
+    private let base = UIFont.systemFont(ofSize: 16)
+
+    func testDefaultSizeIsTheDesignSize() {
+        let body = FontRegistrar.scale(base, textStyle: .body, maxPointSize: nil, category: .large)
+        let capped = FontRegistrar.scale(base, textStyle: .callout, maxPointSize: AppTheme.TypeRole.Cap.pillLabel, category: .large)
+        XCTAssertEqual(body.pointSize, 16, accuracy: 0.01)
+        XCTAssertEqual(capped.pointSize, 16, accuracy: 0.01, "A cap never changes the default size")
+    }
+
+    func testReadingTextScalesWithoutLimit() {
+        let ax5 = FontRegistrar.scale(base, textStyle: .body, maxPointSize: nil, category: .accessibilityExtraExtraExtraLarge)
+        XCTAssertGreaterThan(ax5.pointSize, 40)
+        let xl = FontRegistrar.scale(base, textStyle: .body, maxPointSize: nil, category: .extraLarge)
+        XCTAssertGreaterThan(xl.pointSize, 16)
+    }
+
+    func testCappedRolesStopAtTheirCap() {
+        let pill = FontRegistrar.scale(base, textStyle: .callout, maxPointSize: AppTheme.TypeRole.Cap.pillLabel, category: .accessibilityExtraExtraExtraLarge)
+        XCTAssertEqual(pill.pointSize, AppTheme.TypeRole.Cap.pillLabel, accuracy: 0.01)
+        let title = UIFont.systemFont(ofSize: 44)
+        let h1 = FontRegistrar.scale(title, textStyle: .largeTitle, maxPointSize: (44 * AppTheme.TypeRole.Cap.displayScale).rounded(), category: .accessibilityExtraExtraExtraLarge)
+        XCTAssertEqual(h1.pointSize, 57, accuracy: 0.01)
+    }
+}
+
+/// VoiceOver strings for the bead flow.
+final class SpokenProgressTests: XCTestCase {
+    func testBeadDescriptions() {
+        XCTAssertEqual(BeadLocus.decadeHail(1, 3).spokenDescription, "Hail Mary 3 of 10, first decade")
+        XCTAssertEqual(BeadLocus.openingHail(2).spokenDescription, "Hail Mary 2 of 3, opening prayers")
+        XCTAssertEqual(BeadLocus.decadeOurFather(5).spokenDescription, "Our Father, fifth decade")
+        XCTAssertEqual(BeadLocus.decadeGlory(2).spokenDescription, "Glory Be, second decade")
+        XCTAssertEqual(PrayTrackStage.third.spokenName, "Third decade")
+        XCTAssertEqual(PrayTrackStage.closing.spokenName, "Closing prayers")
+    }
+
+    func testEveryStepHasASpokenHeading() {
+        let steps = RosarySequenceBuilder.build(set: .joyful, config: RosaryConfig())
+        XCTAssertFalse(steps.isEmpty)
+        for step in steps {
+            XCTAssertFalse(step.spokenProgress.isEmpty)
+        }
+        let third = steps.first { $0.kind == .hailMary && $0.decadeNumber == 1 && $0.hailMaryNumber == 3 }
+        XCTAssertEqual(third?.spokenProgress, "Hail Mary 3 of 10, first decade")
+        let plate = steps.first { $0.isPlate && $0.decadeNumber == 1 }
+        XCTAssertEqual(plate?.spokenProgress, "First Joyful Mystery, The Annunciation")
+        let opening = steps.first { $0.kind == .hailMary && $0.decadeNumber == nil && $0.hailMaryNumber == 1 }
+        XCTAssertEqual(opening?.spokenProgress, "Hail Mary 1 of 3, opening prayers")
     }
 }

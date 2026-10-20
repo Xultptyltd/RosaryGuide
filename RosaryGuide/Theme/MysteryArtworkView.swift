@@ -43,14 +43,8 @@ struct MysteryArtworkView: View {
                 .frame(width: geo.size.width, height: geo.size.height)
                 .clipped()
         }
-        .accessibilityLabel(Text(label))
-    }
-
-    private var label: String {
-        if let mysteryNumber {
-            return "\(set.shortName) mystery \(mysteryNumber)"
-        }
-        return "\(set.shortName) mysteries"
+        // Decorative: titles and buttons around the art name the mystery.
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder
@@ -421,7 +415,8 @@ struct GuideScrollActionButton: View {
                             .transition(.identity)
                     } else {
                         Text(title)
-                            .font(AppTheme.TypeRole.callout)
+                            .font(AppTheme.TypeRole.pillLabel())
+                            .minimumScaleFactor(0.75)
                             .foregroundStyle(primary ? palette.primaryButtonText : palette.secondaryButtonText)
                             .transition(.identity)
                     }
@@ -453,7 +448,7 @@ struct PillButton: View {
             action()
         } label: {
             Text(title)
-                .font(AppTheme.TypeRole.callout)
+                .font(AppTheme.TypeRole.pillLabel())
                 .foregroundStyle(filled ? palette.primaryButtonText : (tertiary ? palette.tertiaryButtonText : palette.learnMoreButtonText))
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)

@@ -328,7 +328,7 @@ struct CompletionView: View {
             action()
         } label: {
             Text(title)
-                .font(AppTheme.TypeRole.callout(weight: .semibold))
+                .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
                 .foregroundStyle(text)
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)

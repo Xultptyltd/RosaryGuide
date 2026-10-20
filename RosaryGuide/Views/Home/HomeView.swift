@@ -270,6 +270,7 @@ struct HomeView: View {
                         .fill(.clear)
                         .guideFloatingGlass(in: Capsule(), palette: palette)
                 }
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .guidePressable()

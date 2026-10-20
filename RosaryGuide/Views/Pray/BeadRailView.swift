@@ -46,18 +46,7 @@ struct RosaryBeadMapView: View {
     }
 
     private var valueLabel: String {
-        switch locus {
-        case .crucifix: "Crucifix"
-        case .openingOurFather: "Opening Our Father"
-        case .openingHail(let n): "Opening Hail Mary \(n)"
-        case .openingGlory: "Opening Glory Be"
-        case .decadeOurFather(let d): "Decade \(d) Our Father"
-        case .decadeHail(let d, let n): "Decade \(d), Hail Mary \(n)"
-        case .decadeGlory(let d): "Decade \(d) Glory Be"
-        case .decadeFatima(let d): "Decade \(d) Fatima prayer"
-        case .closing: "Closing"
-        case .none: "Rosary"
-        }
+        locus?.spokenDescription ?? "Rosary"
     }
 
     private func pulsePhase(at date: Date) -> CGFloat {
@@ -543,7 +532,7 @@ struct SevenStageTrack: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(stage.label)
+                .accessibilityLabel(stage.spokenName)
                 .accessibilityHint(stage == current ? "Current section" : "Jumps to this section")
             }
         }

@@ -322,7 +322,8 @@ private struct OnboardingAuthButton: View {
                 }
 
                 Text(title)
-                    .font(AppTheme.TypeRole.callout(weight: .semibold))
+                    .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
+                    .minimumScaleFactor(0.75)
             }
             .foregroundStyle(filled ? Color.black : Color.white)
             .frame(maxWidth: .infinity)

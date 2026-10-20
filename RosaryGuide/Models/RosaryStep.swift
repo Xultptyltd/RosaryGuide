@@ -63,3 +63,56 @@ struct RosaryStep: Identifiable, Hashable {
         }
     }
 }
+
+// MARK: - VoiceOver
+
+extension PrayTrackStage {
+    /// Spoken name, e.g. "Opening prayers", "First decade", "Closing prayers".
+    var spokenName: String {
+        switch self {
+        case .opening: "Opening prayers"
+        case .closing: "Closing prayers"
+        default: "\(OrdinalWord.english(rawValue)) decade"
+        }
+    }
+}
+
+extension BeadLocus {
+    /// Where the bead sits, as VoiceOver reads it, e.g. "Hail Mary 3 of 10, first decade".
+    var spokenDescription: String {
+        switch self {
+        case .crucifix: "Crucifix, opening prayers"
+        case .openingOurFather: "Our Father, opening prayers"
+        case .openingHail(let n): "Hail Mary \(n) of 3, opening prayers"
+        case .openingGlory: "Glory Be, opening prayers"
+        case .decadeOurFather(let d): "Our Father, \(Self.decade(d))"
+        case .decadeHail(let d, let n): "Hail Mary \(n) of 10, \(Self.decade(d))"
+        case .decadeGlory(let d): "Glory Be, \(Self.decade(d))"
+        case .decadeFatima(let d): "Fatima Prayer, \(Self.decade(d))"
+        case .closing: "Closing prayers"
+        }
+    }
+
+    private static func decade(_ d: Int) -> String {
+        (1...5).contains(d) ? "\(OrdinalWord.english(d).lowercased()) decade" : "decade \(d)"
+    }
+}
+
+extension RosaryStep {
+    /// The step as VoiceOver announces it: the prayer, its count and its place,
+    /// e.g. "Hail Mary 3 of 10, first decade" or "First Joyful Mystery, The Annunciation".
+    var spokenProgress: String {
+        let name = title.english
+        if isPlate, let mystery {
+            return "\(OrdinalWord.english(mystery.number)) \(mystery.set.shortName) Mystery, \(mystery.title.english)"
+        }
+        if kind == .hailMary, let n = hailMaryNumber {
+            if let d = decadeNumber, (1...5).contains(d) {
+                return "\(name) \(n) of 10, \(OrdinalWord.english(d).lowercased()) decade"
+            }
+            return "\(name) \(n) of 3, opening prayers"
+        }
+        if isFinis { return name }
+        return "\(name), \(stage.spokenName.prefix(1).lowercased() + stage.spokenName.dropFirst())"
+    }
+}

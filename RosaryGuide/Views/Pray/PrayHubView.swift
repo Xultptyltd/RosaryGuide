@@ -12,6 +12,7 @@ struct PrayHubView: View {
     @State private var navigationPath = NavigationPath()
     @State private var pageGutter: CGFloat = AppTheme.gutter
     @Environment(DayClock.self) private var dayClock
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var assignment: MysteryAssignment {
         MysteryCalendar.assignment(on: dayClock.today)
@@ -250,11 +251,15 @@ struct PrayHubView: View {
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "book.closed")
-                    .guideSymbol(size: 30, weight: .medium)
-                    .foregroundStyle(palette.accent)
-                    .frame(width: 56, height: 56)
-                    .background(palette.accentTint, in: Circle())
+                // Decorative; dropped at accessibility sizes so the title keeps whole words.
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Image(systemName: "book.closed")
+                        .guideSymbol(size: 30, weight: .medium)
+                        .foregroundStyle(palette.accent)
+                        .frame(width: 56, height: 56)
+                        .background(palette.accentTint, in: Circle())
+                        .accessibilityHidden(true)
+                }
             }
 
             Text("Prayers, mysteries and how to pray")
@@ -269,7 +274,8 @@ struct PrayHubView: View {
             } label: {
                 HStack {
                     Text("Begin walkthrough")
-                        .font(AppTheme.TypeRole.callout(weight: .semibold))
+                        .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
+                        .minimumScaleFactor(0.75)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .foregroundStyle(palette.primaryButtonText)
@@ -395,7 +401,8 @@ struct PrayHubView: View {
             } label: {
                 HStack {
                     Text(cta)
-                        .font(AppTheme.TypeRole.callout(weight: .semibold))
+                        .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
+                        .minimumScaleFactor(0.75)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .foregroundStyle(palette.secondaryButtonText)
@@ -1080,7 +1087,8 @@ private struct LearnMysteryDetailView: View {
                 } label: {
                     HStack {
                         Text("Pray these mysteries")
-                            .font(AppTheme.TypeRole.callout(weight: .semibold))
+                            .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
+                            .minimumScaleFactor(0.75)
                         .frame(maxWidth: .infinity, alignment: .center)
                     }
                     .foregroundStyle(palette.primaryButtonText)

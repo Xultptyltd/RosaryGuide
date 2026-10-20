@@ -324,11 +324,13 @@ struct FeastsView: View {
             VStack(spacing: AppTheme.Space.xs) {
                 if showsWeekday {
                     Text(calendar.veryShortStandaloneWeekdaySymbols[calendar.component(.weekday, from: day) - 1])
-                        .font(AppTheme.TypeRole.caption)
+                        .font(AppTheme.TypeRole.calendarCaption)
                         .foregroundStyle(palette.dim)
                 }
                 Text(day.formatted(.dateTime.day()))
-                    .font(AppTheme.TypeRole.callout(weight: selected ? .semibold : .regular))
+                    .font(AppTheme.TypeRole.calendarDay(weight: selected ? .semibold : .regular))
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
                     .foregroundStyle(selected ? palette.onAccent : palette.ink)
                     .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
                     .background(selected ? palette.accent : .clear, in: Circle())
@@ -373,7 +375,8 @@ struct FeastsView: View {
                 FeastDetailView(prayLaunch: $prayLaunch, item: item)
             } label: {
                 Text("Learn")
-                    .font(AppTheme.TypeRole.callout)
+                    .font(AppTheme.TypeRole.pillLabel())
+                    .minimumScaleFactor(0.75)
                     .foregroundStyle(palette.learnMoreButtonText)
                     .frame(maxWidth: .infinity)
                     .frame(height: AppTheme.Component.pillHeight)
@@ -412,16 +415,19 @@ private struct FeastTimelineRow: View {
     var topPadding: CGFloat = 14
     var bottomPadding: CGFloat = 14
     @Environment(\.palette) private var palette
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         HStack(alignment: .center, spacing: 20) {
             VStack(spacing: 0) {
                 Text(item.date.formatted(.dateTime.day()))
-                    .font(AppTheme.TypeRole.sectionTitle)
+                    .font(AppTheme.TypeRole.calendarDateNumber)
                     .foregroundStyle(palette.ink)
                 Text(item.date.formatted(.dateTime.month(.abbreviated)).uppercased())
-                    .font(AppTheme.TypeRole.caption(weight: .medium))
+                    .font(AppTheme.TypeRole.calendarCaptionMedium)
                     .tracking(1.1)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     .foregroundStyle(palette.dim)
             }
             .frame(width: 56)
@@ -430,7 +436,7 @@ private struct FeastTimelineRow: View {
                 Text(item.feast.shortTitle)
                     .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
                     .foregroundStyle(palette.ink)
-                    .lineLimit(2)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 5 : 2)
                 Text(item.feast.rank.title)
                     .font(AppTheme.TypeRole.label)
                     .foregroundStyle(palette.dim)

@@ -329,7 +329,8 @@ struct OfferView: View {
         } label: {
             if matchesLearnStyle {
                 Text(title)
-                    .font(AppTheme.TypeRole.callout(weight: .semibold))
+                    .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
+                    .minimumScaleFactor(0.75)
                     .foregroundStyle(palette.secondaryButtonText)
                     .padding(.horizontal, 28)
                     .frame(maxWidth: .infinity)
@@ -344,7 +345,8 @@ struct OfferView: View {
                     }
                     Text(title)
                 }
-                .font(AppTheme.TypeRole.callout(weight: .semibold))
+                .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
+                .minimumScaleFactor(0.75)
                 .foregroundStyle(isPrimary ? palette.primaryButtonText : palette.secondaryButtonText)
                 .frame(maxWidth: .infinity)
                 .multilineTextAlignment(.center)
@@ -472,6 +474,7 @@ struct OfferView: View {
                                 width: AppTheme.Accessibility.minHitTarget,
                                 height: AppTheme.Accessibility.minHitTarget
                             )
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .guidePressable()
@@ -1189,7 +1192,8 @@ private struct PapalIntentionDetailView: View {
                     }
                 } label: {
                     Text(added ? "Done" : "Add to my intentions")
-                        .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                        .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
+                        .minimumScaleFactor(0.75)
                         .foregroundStyle(added ? palette.secondaryButtonText : palette.primaryButtonText)
                         .frame(maxWidth: .infinity)
                         .multilineTextAlignment(.center)
@@ -1589,7 +1593,8 @@ private struct IntentionDetailView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Button(action: onPray) {
                         Text("Offer a Rosary")
-                            .font(AppTheme.TypeRole.callout(weight: .semibold))
+                            .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
+                            .minimumScaleFactor(0.75)
                             .foregroundStyle(palette.secondaryButtonText)
                             .frame(maxWidth: .infinity)
                             .multilineTextAlignment(.center)
@@ -2511,7 +2516,8 @@ struct IntentionEditorSheet: View {
                             )
                     } else {
                         Text("Done")
-                            .font(AppTheme.TypeRole.callout(weight: .semibold))
+                            .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
+                            .minimumScaleFactor(0.75)
                             .foregroundStyle(palette.secondaryButtonText)
                             .frame(maxWidth: .infinity)
                             .multilineTextAlignment(.center)

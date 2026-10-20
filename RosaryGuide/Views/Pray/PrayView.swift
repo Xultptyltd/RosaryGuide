@@ -326,6 +326,10 @@ struct PrayView: View {
         }
         .overlayPreferenceValue(LanguageChipsAnchorKey.self) { stableLanguageChips($0) }
         .onChange(of: index) { _, _ in
+            // Focus stays on Next, so say where the new step is.
+            if UIAccessibility.isVoiceOverRunning, let current, !current.isFinis {
+                AccessibilityNotification.Announcement(current.spokenProgress).post()
+            }
             plateScrollY = 0
             plateHintDismissed = false
             plateNearBottom = false
@@ -380,6 +384,8 @@ struct PrayView: View {
             }
             .frame(height: heroHeight)
             .frame(maxWidth: .infinity, alignment: .top)
+            // Decorative: the heading below names the mystery.
+            .accessibilityHidden(true)
             // Geometry starts below the status bar. Position the fixed artwork
             // canvas at the physical screen top without moving the controls.
             .offset(y: -scrollTop)
@@ -765,8 +771,6 @@ struct PrayView: View {
                     .contentShape(Rectangle())
                     .frame(width: width ?? geo.size.width * 0.15)
                     .onTapGesture { retreat() }
-                    .accessibilityLabel("Previous prayer")
-                    .accessibilityAddTraits(.isButton)
 
                 Spacer(minLength: 0)
 
@@ -774,11 +778,11 @@ struct PrayView: View {
                     .contentShape(Rectangle())
                     .frame(width: width ?? geo.size.width * 0.15)
                     .onTapGesture { advance() }
-                    .accessibilityLabel("Next prayer")
-                    .accessibilityAddTraits(.isButton)
             }
         }
         .allowsHitTesting(true)
+        // Tap shortcuts only; VoiceOver uses the visible Previous and Next buttons.
+        .accessibilityHidden(true)
     }
 
 
@@ -806,7 +810,9 @@ struct PrayView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .padding(.horizontal, 52)
-                .accessibilityLabel(step.progressLabel)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(step.mystery.map { "\(step.stage.spokenName), \($0.title.english)" } ?? step.progressLabel)
+                .accessibilityAddTraits(.isStaticText)
         }
         .padding(.horizontal, AppTheme.Space.lg)
         .padding(.top, AppTheme.Space.xs)
@@ -838,34 +844,41 @@ struct PrayView: View {
 
     private func locus(_ step: RosaryStep) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-            if step.isPlate, let mystery = step.mystery {
-                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
-                    Text(OrdinalWord.roman(mystery.number))
-                        .font(AppTheme.TypeRole.body(weight: .medium))
-                        .foregroundStyle(palette.textSecondary)
-                    Text(mystery.set.shortName)
-                        .font(AppTheme.TypeRole.caption(weight: .medium))
-                        .tracking(AppTheme.RosaryFlow.eyebrowTracking)
-                        .textCase(.uppercase)
-                        .foregroundStyle(palette.faint)
-                }
-                // Locus VStack spacing is 6; +4 → 10pt under the mystery eyebrow.
-                .padding(.bottom, AppTheme.Space.xs)
-            }
-            // Web `.locus .k`: "1 of 10" above Hail Mary on decade beads.
-            if step.kind == .hailMary,
-               step.decadeNumber != nil,
-               let n = step.hailMaryNumber {
-                Text("\(n) of 10")
-                    .font(AppTheme.TypeRole.label(weight: .medium))
-                    .foregroundStyle(palette.faint)
-                    // VStack spacing is 6; +4 → 10pt under "1 of 10".
+            // Eyebrow, count and title read as one heading:
+            // "Hail Mary 3 of 10, first decade" / "First Joyful Mystery, The Annunciation".
+            VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                if step.isPlate, let mystery = step.mystery {
+                    HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
+                        Text(OrdinalWord.roman(mystery.number))
+                            .font(AppTheme.TypeRole.body(weight: .medium))
+                            .foregroundStyle(palette.textSecondary)
+                        Text(mystery.set.shortName)
+                            .font(AppTheme.TypeRole.caption(weight: .medium))
+                            .tracking(AppTheme.RosaryFlow.eyebrowTracking)
+                            .textCase(.uppercase)
+                            .foregroundStyle(palette.faint)
+                    }
+                    // Locus VStack spacing is 6; +4 → 10pt under the mystery eyebrow.
                     .padding(.bottom, AppTheme.Space.xs)
+                }
+                // Web `.locus .k`: "1 of 10" above Hail Mary on decade beads.
+                if step.kind == .hailMary,
+                   step.decadeNumber != nil,
+                   let n = step.hailMaryNumber {
+                    Text("\(n) of 10")
+                        .font(AppTheme.TypeRole.label(weight: .medium))
+                        .foregroundStyle(palette.faint)
+                        // VStack spacing is 6; +4 → 10pt under "1 of 10".
+                        .padding(.bottom, AppTheme.Space.xs)
+                }
+                Text(step.title.primary(for: language))
+                    .font(AppTheme.TypeRole.modalTitle)
+                    .foregroundStyle(palette.ink)
+                    .tracking(-0.2)
             }
-            Text(step.title.primary(for: language))
-                .font(AppTheme.TypeRole.modalTitle)
-                .foregroundStyle(palette.ink)
-                .tracking(-0.2)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(step.spokenProgress)
+            .accessibilityAddTraits(.isHeader)
             if !step.isPlate, language == .bilingual {
                 Text(step.title.latin)
                     .font(AppTheme.TypeRole.bodySmall)
@@ -1192,7 +1205,7 @@ struct PrayView: View {
                 .offset(x: rect.minX, y: rect.minY)
                 .opacity(anchor == nil ? 0 : 1)
                 .allowsHitTesting(anchor != nil)
-                .accessibilityHidden(anchor == nil)
+                .accessibilityHidden(anchor == nil || current?.isPlate == true)
         }
     }
 

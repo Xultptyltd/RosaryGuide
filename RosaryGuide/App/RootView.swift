@@ -88,6 +88,8 @@ struct RootView: View {
                 .environment(offer)
                 .environment(auth)
                 .preferredColorScheme(settings.appearance.colorScheme)
+                // VoiceOver stays inside the prayer flow, not on Home behind it.
+                .accessibilityAddTraits(.isModal)
             }
     }
 

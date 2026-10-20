@@ -635,12 +635,18 @@ private enum SettingsRowAccessory {
 private struct SettingsRowIcon: View {
     let symbol: String
     let tint: Color
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         Image(systemName: symbol)
             .guideSymbol(size: 20, weight: .light)
             .foregroundStyle(tint)
-            .frame(width: AppTheme.Space.xl, alignment: .center)
+            // The glyph grows with the text; at accessibility sizes the column grows with it.
+            .frame(
+                minWidth: AppTheme.Space.xl,
+                maxWidth: dynamicTypeSize.isAccessibilitySize ? nil : AppTheme.Space.xl,
+                alignment: .center
+            )
             .accessibilityHidden(true)
     }
 }
@@ -648,6 +654,7 @@ private struct SettingsRowIcon: View {
 private struct SettingsRowChrome: View {
     @Environment(\.palette) private var palette
     @Environment(\.showsRowDivider) private var showsRowDivider
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let title: String
     var icon: String?
     var subtitle: String?
@@ -656,9 +663,71 @@ private struct SettingsRowChrome: View {
     var accessory: SettingsRowAccessory = .chevron
 
     var body: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            accessibilityLayout
+        } else {
+            standardLayout
+        }
+    }
+
+    /// Accessibility text sizes: the title wraps instead of shrinking and the value moves
+    /// under it, so nothing is cut off.
+    private var accessibilityLayout: some View {
+        let tint = destructive ? palette.destructive : palette.ink
+        return HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
+            if let icon {
+                SettingsRowIcon(symbol: icon, tint: tint)
+            }
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                Text(title)
+                    .font(AppTheme.TypeRole.settingsRow)
+                    .foregroundStyle(tint)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(AppTheme.TypeRole.settingsMeta)
+                        .foregroundStyle(palette.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let value {
+                    Text(value)
+                        .font(AppTheme.TypeRole.settingsRow)
+                        .foregroundStyle(palette.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            accessoryView
+        }
+        .padding(.vertical, AppTheme.Space.md)
+        .frame(minHeight: AppTheme.Component.profileRowHeight)
+        .padding(.bottom, showsRowDivider ? 0 : -AppTheme.Space.lg)
+        .contentShape(Rectangle())
+        .overlay(alignment: .bottom) { SettingsDivider() }
+    }
+
+    @ViewBuilder
+    private var accessoryView: some View {
+        switch accessory {
+        case .none, .chevron:
+            EmptyView()
+        case .externalLink:
+            Image(systemName: "arrow.up.right")
+                .guideSymbol(size: 12, weight: .regular)
+                .foregroundStyle(palette.secondaryText)
+                .accessibilityHidden(true)
+        case .navigation:
+            Image(systemName: "chevron.right")
+                .guideSymbol(size: 12, weight: .regular)
+                .foregroundStyle(palette.secondaryText)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private var standardLayout: some View {
         let tint = destructive ? palette.destructive : palette.ink
 
-        HStack(spacing: AppTheme.Space.md) {
+        return HStack(spacing: AppTheme.Space.md) {
             HStack(spacing: AppTheme.Space.lg) {
                 if let icon {
                     SettingsRowIcon(symbol: icon, tint: tint)
