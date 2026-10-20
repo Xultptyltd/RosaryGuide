@@ -4,6 +4,8 @@ import UIKit
 
 struct OfferView: View {
     @Environment(OfferStore.self) private var offer
+    @Environment(AppIconService.self) private var appIcon
+    @State private var showSettingsDrawer = false
     @Environment(SettingsStore.self) private var settings
     @Environment(SessionStore.self) private var sessionStore
     @Environment(\.palette) private var palette
@@ -11,7 +13,6 @@ struct OfferView: View {
 
     @State private var editor: EditorRoute?
     @State private var papalDetail: SuggestedIntention?
-    @State private var titleScrollOffset: CGFloat = 0
     @State private var navigationPath = NavigationPath()
     @State private var popeStore = PopeIntentionStore.shared
     @State private var intentionDetail: OfferIntention?
@@ -36,21 +37,51 @@ struct OfferView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Group {
-                if offer.sortedIntentions.isEmpty {
-                    emptyState
-                } else {
-                    intentionList
-                }
+                profileContent
             }
             .background(palette.bg)
             .guidePageChrome()
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar(.hidden, for: .navigationBar)
-            .collapsingTitleChrome(
-                "Prayer",
-                scrollOffset: $titleScrollOffset,
-                morphEnabled: true
-            )
+            .navigationTitle("Profile")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar(.visible, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .largeTitle) {
+                    HStack(alignment: .center) {
+                        GuidePageTitle(text: "Profile")
+                        Spacer(minLength: AppTheme.Space.lg)
+                        Button {
+                            HapticService.play(.light, enabled: settings.hapticsEnabled)
+                            var transaction = Transaction()
+                            transaction.disablesAnimations = true
+                            withTransaction(transaction) { showSettingsDrawer = true }
+                        } label: {
+                            Image(systemName: "gearshape")
+                                .foregroundStyle(palette.ink)
+                                .frame(width: AppTheme.Accessibility.minHitTarget,
+                                       height: AppTheme.Accessibility.minHitTarget)
+                                .background {
+                                    Circle()
+                                        .fill(.clear)
+                                        .guideFloatingGlass(in: Circle(), palette: palette)
+                                }
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Settings")
+                        .accessibilityHint("Opens settings")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .fullScreenCover(isPresented: $showSettingsDrawer) {
+                HomeSettingsDrawer(isPresented: $showSettingsDrawer)
+                    .environment(settings)
+                    .environment(sessionStore)
+                    .environment(offer)
+                    .environment(appIcon)
+                    .environment(\.palette, palette)
+                    .preferredColorScheme(settings.appearance.colorScheme)
+            }
             .sheet(item: $editor) { route in
                 IntentionEditorSheet(
                     route: route,
@@ -93,7 +124,7 @@ struct OfferView: View {
                 )
             }
             .navigationDestination(isPresented: $showingMilestones) {
-                JourneyMilestonesView(milestones: sessionStore.journeyMilestones)
+                JourneyMilestonesView(milestones: sessionStore.journeyMilestones, stage: milestoneStage)
             }
             .navigationDestination(isPresented: $showingAllIntentions) {
                 AllIntentionsView(
@@ -110,10 +141,148 @@ struct OfferView: View {
 
 
 
+    private var profileContent: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                Button {
+                    if PremiumStatus.isPremium { showingMilestones = true } else { openJourney() }
+                } label: {
+                    let progress = sessionStore.journeyMilestones
+                    VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                        profileRow(title: milestoneStage.title, detail: "\(progress.earnedCount) of \(progress.items.count) milestones", symbol: "leaf")
+                        Text(milestoneStage.detail)
+                            .font(AppTheme.TypeRole.caption)
+                            .foregroundStyle(palette.dim)
+                            .fixedSize(horizontal: false, vertical: true)
+                        ProgressView(value: Double(progress.earnedCount), total: Double(max(1, progress.items.count)))
+                            .tint(palette.accent)
+                            .accessibilityLabel("Milestones earned")
+                    }
+                    .padding(AppTheme.Space.lg)
+                    .guideCard(fill: palette.surface)
+                }
+                .buttonStyle(.plain)
+
+                GuideSectionBoundary(verticalSpacing: 0)
+
+                syncWarning
+                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    intentionsSectionHeader
+                        .padding(.bottom, AppTheme.Space.sm)
+                    if let currentIntention {
+                        NextRosaryIntentionCard(
+                            intention: currentIntention,
+                            hideText: hideIntentionText,
+                            onOpen: { intentionDetail = currentIntention },
+                            onPray: { prayWith(currentIntention) },
+                            onPin: { offer.togglePin(id: currentIntention.id) },
+                            onEdit: { editor = .edit(currentIntention) },
+                            onDelete: { offer.delete(id: currentIntention.id) },
+                            allowsPin: true
+                        )
+                    }
+                    VStack(spacing: 0) {
+                        if offer.sortedIntentions.isEmpty {
+                            Text("Keep the people, needs and hopes you want to remember in prayer.")
+                                .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, AppTheme.Space.lg)
+                            addIntentionButton(title: "Add your first intention")
+                                .padding(.bottom, AppTheme.Space.lg)
+                        } else {
+                            ForEach(visibleSecondaryIntentions) { item in
+                                MyPrayerIntentionRow(
+                                    intention: item, hideText: hideIntentionText, allowsPin: true,
+                                    onPin: { offer.togglePin(id: item.id) },
+                                    onEdit: { editor = .edit(item) },
+                                    onDelete: { offer.delete(id: item.id) },
+                                    onPray: { prayWith(item) }
+                                )
+                                Hairline().padding(.leading, 62)
+                            }
+                            PillButton(title: "View all intentions", filled: false, tertiary: true) {
+                                showingAllIntentions = true
+                            }
+                            .padding(.top, AppTheme.Space.lg)
+                        }
+                    }
+                }
+
+
+
+                if let papal = visiblePapalSuggestion {
+                    GuideSectionLabel(text: "Holy Father’s intention", prominence: .strong)
+                    PapalMonthCard(item: papal, isAdded: hasAdoptedSuggestion(papal),
+                        onOpen: { papalDetail = papal }, onAdd: { adoptSuggestion(papal) }, onPin: { pinPapalSuggestion(papal) })
+                }
+                GuideSectionBoundary(verticalSpacing: 0)
+
+                GuideSectionLabel(text: "Rhythm", prominence: .strong)
+                    .accessibilityAddTraits(.isHeader)
+
+                MyPrayerJourneySummaryCard(
+                    rhythm: PrayerRhythm(prayedDayStarts: rhythmPrayerDays),
+                    prayedDayStarts: rhythmPrayerDays,
+                    rosariesThisWeek: weeklyCompletedRosaryCount,
+                    isLocked: !PremiumStatus.isPremium
+                )
+                PillButton(title: "View history", filled: false, tertiary: true) {
+                    openJourney()
+                }
+            }
+            .padding(.horizontal, AppTheme.gutter)
+            .padding(.top, GuideRootChrome.contentTop)
+            .padding(.bottom, AppTheme.tabBarContentClearance)
+        }
+    }
+
+    /// Stage follows earned milestones, so a break in prayer never resets it.
+    private var milestoneStage: (title: String, detail: String) {
+        let progress = sessionStore.journeyMilestones
+        let completed = progress.earnedCount
+        let total = progress.items.count
+        if total > 0 && completed == total {
+            return ("Faithfully continuing", "Every milestone reached. Your journey continues.")
+        }
+        let hasPrayer = !rhythmPrayerDays.isEmpty || !sessionStore.completedSessions.isEmpty
+            || !sessionStore.completedDecades.isEmpty || completed > 0
+        guard hasPrayer else {
+            return ("A first prayer awaits", "Begin your first Rosary, one prayer at a time.")
+        }
+        let fraction = Double(completed) / Double(max(1, total))
+        if fraction >= 0.60 {
+            return ("Steady in prayer", "Returning to prayer, through the seasons of life.")
+        }
+        if fraction >= 0.25 {
+            return ("Growing in prayer", "Making room for God in everyday life.")
+        }
+        return ("Beginning in prayer", "A little time with God, one prayer at a time.")
+    }
+
+    private func profileTotal(_ count: Int, caption: String) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+            Text("\(count)").font(AppTheme.TypeRole.headingPrimary).foregroundStyle(palette.ink)
+            Text(caption).font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim)
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func profileRow(title: String, detail: String, symbol: String, eyebrow: String? = nil) -> some View {
+        HStack(spacing: AppTheme.Space.md) {
+            Image(systemName: symbol).guideSymbol(size: 25, weight: .regular)
+                .foregroundStyle(palette.accent)
+                .frame(width: 56, height: 56).background(palette.accentTint, in: Circle())
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                if let eyebrow { Text(eyebrow).font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim) }
+                Text(title).font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.ink)
+                Text(detail).font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "chevron.right").guideSymbol(size: 12, weight: .regular).foregroundStyle(palette.dim)
+        }.contentShape(Rectangle())
+    }
+
     private var emptyState: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                CollapsingTitleSpacer(height: CollapsingTitleMetrics.spacerHeight(gapBelowTitle: CollapsingTitleMetrics.firstComponentGap))
 
                 // Full-bleed illustration: outside page gutter so container is edge-to-edge;
                 // image is scaledToFit inside a taller canvas so no source edge is clipped.
@@ -162,6 +331,7 @@ struct OfferView: View {
                 .padding(.horizontal, AppTheme.gutter)
                 .padding(.top, AppTheme.Space.lg)
             }
+            .padding(.top, GuideRootChrome.contentTop)
             .padding(.bottom, 108)
         }
     }
@@ -364,7 +534,7 @@ struct OfferView: View {
         if PremiumStatus.isPremium {
             showingJourney = true
         } else {
-            premiumNote = "Your rhythm is included with Rosary Guide+. It keeps a record of your prayer rhythm, history and milestones."
+            premiumNote = "Prayer history is included with Rosary Guide+. It keeps a record of your prayer rhythm, history and milestones."
             showingPremium = true
         }
     }
@@ -392,7 +562,6 @@ struct OfferView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
-                    CollapsingTitleSpacer(height: CollapsingTitleMetrics.firstComponentSpacerHeight)
 
                     Button {
                         openJourney()
@@ -492,7 +661,7 @@ struct OfferView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             // Same top breathing room as FeastsView before its title/control block.
-            .padding(.top, AppTheme.Space.sm)
+            .padding(.top, GuideRootChrome.contentTop)
             .padding(.bottom, 108)
         }
     }
@@ -597,7 +766,9 @@ private struct MyPrayerJourneySummaryCard: View {
     }
 
     private var rosaryCaption: String {
-        CountWords.rosariesOfferedThisWeek(rosariesThisWeek)
+        rosariesThisWeek == 0
+            ? "No Rosaries have been prayed yet"
+            : CountWords.rosariesOfferedThisWeek(rosariesThisWeek)
     }
 
     var body: some View {
@@ -3075,7 +3246,6 @@ private struct JourneyCardButtonStyle: ButtonStyle {
 private struct PrayerJourneyView: View {
     @Environment(SessionStore.self) private var sessionStore
     @Environment(\.palette) private var palette
-    @State private var selectedTab: JourneyTab = .overview
     @State private var visibleMonth: Date = Date()
 
     var prayedDayStarts: Set<TimeInterval>
@@ -3130,15 +3300,9 @@ private struct PrayerJourneyView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                tabPicker
-                switch selectedTab {
-                case .overview:
-                    monthCalendar
-                        .padding(.top, AppTheme.Space.lg)
-                case .history:
-                    history
-                        .padding(.top, AppTheme.Space.lg)
-                }
+                monthCalendar
+                history
+                    .padding(.top, AppTheme.sectionGap)
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideDetailChrome.contentTop)
@@ -3146,18 +3310,8 @@ private struct PrayerJourneyView: View {
         }
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
-        .guideDetailChrome("Your rhythm")
+        .guideDetailChrome("Prayer history")
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private var tabPicker: some View {
-        Picker("Journey view", selection: $selectedTab) {
-            ForEach(JourneyTab.allCases) { tab in
-                Text(tab.title).tag(tab)
-            }
-        }
-        .pickerStyle(.segmented)
-        .guideSegmentedControl()
     }
 
     private var rhythmSummary: some View {
@@ -3168,7 +3322,7 @@ private struct PrayerJourneyView: View {
                 .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
 
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                Text("Your rhythm")
+                Text("Prayer history")
                     .font(AppTheme.TypeRole.caption)
                     .foregroundStyle(palette.textSecondary)
                 Text(rhythmTitle)
@@ -3371,18 +3525,6 @@ private struct PrayerJourneyView: View {
         formatter.setLocalizedDateFormatFromTemplate("d MMMM yyyy")
         return formatter
     }()
-}
-
-private enum JourneyTab: String, CaseIterable, Identifiable {
-    case overview
-    case history
-    var id: String { rawValue }
-    var title: String {
-        switch self {
-        case .overview: "Overview"
-        case .history: "History"
-        }
-    }
 }
 
 private struct JourneyHistoryGroup: Identifiable {
@@ -3597,6 +3739,7 @@ private struct JourneyInlineStat: View {
 private struct JourneyMilestonesView: View {
     @Environment(\.palette) private var palette
     let milestones: JourneyMilestones
+    let stage: (title: String, detail: String)
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -3624,26 +3767,32 @@ private struct JourneyMilestonesView: View {
 
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-            // Count first, label under it. VoiceOver reads both as one line.
-            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
-                    Text("\(milestones.earnedCount)")
-                        .font(AppTheme.TypeRole.headingPrimary)
+            HStack(alignment: .center, spacing: AppTheme.Space.md) {
+                Image(systemName: "leaf")
+                    .guideSymbol(size: 25, weight: .regular)
+                    .foregroundStyle(palette.accent)
+                    .frame(width: 56, height: 56)
+                    .background(palette.accentTint, in: Circle())
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    Text(stage.title)
+                        .font(AppTheme.TypeRole.cardTitle)
                         .foregroundStyle(palette.ink)
-                    Text("of \(milestones.items.count)")
-                        .font(AppTheme.TypeRole.callout)
-                        .foregroundStyle(palette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("\(milestones.earnedCount) of \(milestones.items.count) milestones completed")
+                        .font(AppTheme.TypeRole.caption)
+                        .foregroundStyle(palette.dim)
                 }
-                Text("Milestones completed")
-                    .font(AppTheme.TypeRole.caption(weight: .medium))
-                    .foregroundStyle(palette.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(milestones.earnedCount) of \(milestones.items.count) milestones completed")
-
             ProgressView(value: Double(milestones.earnedCount), total: Double(max(1, milestones.items.count)))
                 .tint(palette.accent)
-                .accessibilityHidden(true)
+                .accessibilityLabel("Milestone progress")
+                .accessibilityValue("\(milestones.earnedCount) of \(milestones.items.count) completed")
+            Text(stage.detail)
+                .font(AppTheme.TypeRole.bodySmall)
+                .foregroundStyle(palette.dim)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppTheme.Space.xl)

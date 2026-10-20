@@ -49,8 +49,13 @@ enum IntentionAccent: String, Codable, CaseIterable, Identifiable, Hashable, Sen
         }
     }
 
-    /// Same navy glyph on every fill.
-    var onColor: Color { AppTheme.intentionOn }
+    var onColor: Color {
+        switch self {
+        case .mintGreen: AppTheme.intentionPersonalOn
+        case .skyBlue: AppTheme.intentionSomeoneElseOn
+        case .purple: AppTheme.intentionChurchOn
+        }
+    }
 
     /// Keep existing saved intentions colourful without allowing legacy hues
     /// to reappear in the avatar palette.

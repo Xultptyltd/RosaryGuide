@@ -10,7 +10,6 @@ private struct HomeCTABottomPreferenceKey: PreferenceKey {
 
 struct HomeView: View {
     @Environment(SettingsStore.self) private var settings
-    @Environment(AppIconService.self) private var appIcon
     @Environment(SessionStore.self) private var session
     @Environment(OfferStore.self) private var offer
     @Environment(\.palette) private var palette
@@ -34,7 +33,6 @@ struct HomeView: View {
     @State private var pendingMysteryPrayer: PrayLaunch?
     @State private var mysteryScrollID: String?
     @State private var selectedLiturgicalVerse: LiturgicalVerse?
-    @State private var showSettingsDrawer = false
     @State private var navigationPath = NavigationPath()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -203,15 +201,7 @@ struct HomeView: View {
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(AppTheme.containerRadius)
         }
-        .fullScreenCover(isPresented: $showSettingsDrawer) {
-            HomeSettingsDrawer(isPresented: $showSettingsDrawer)
-                .environment(settings)
-                .environment(session)
-                .environment(offer)
-                .environment(appIcon)
-                .environment(\.palette, palette)
-                .preferredColorScheme(settings.appearance.colorScheme)
-        }
+
     }
 
     private func captureMetrics(_ geo: GeometryProxy) {
@@ -256,7 +246,6 @@ struct HomeView: View {
                 }
                 .padding(.top, artworkTop)
             HStack(spacing: AppTheme.Space.md) {
-                menuButton
                 Spacer(minLength: 0)
                 glassTheme
             }
@@ -264,32 +253,6 @@ struct HomeView: View {
             .padding(.horizontal, AppTheme.gutter)
         }
         .frame(height: AppTheme.homeHeroHeight(viewport: viewport) + topInset + artworkTop)
-    }
-
-    private var menuButton: some View {
-        Button {
-            HapticService.play(.light, enabled: settings.hapticsEnabled)
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                showSettingsDrawer = true
-            }
-        } label: {
-            Image(systemName: "person")
-                .guideSymbol(size: 17, weight: .medium)
-                .foregroundStyle(palette.ink)
-                .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
-                .background {
-                    Circle()
-                        .fill(.clear)
-                        .guideFloatingGlass(in: Circle(), palette: palette)
-                }
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .guidePressable()
-        .accessibilityLabel("Profile and settings")
-        .accessibilityHint("Opens settings")
     }
 
     private var glassTheme: some View {
@@ -643,16 +606,13 @@ struct HomeView: View {
                     let day = entry.0
                     let item = entry.1
                     weekRow(day: day, assignment: item)
-                        .padding(.horizontal, AppTheme.Space.xl)
 
                     if index < MysteryCalendar.week(containing: today).count - 1 {
                         Hairline()
-                            .padding(.horizontal, AppTheme.Space.xl)
-                    }
+                        }
                 }
             }
             .padding(.vertical, AppTheme.Space.sm)
-            .guideCard(fill: palette.surface)
         }
     }
 
@@ -948,7 +908,7 @@ struct HomeView: View {
                 .frame(width: geo.size.width)
                 .clipped()
             }
-            .frame(height: dynamicTypeSize.isAccessibilitySize ? 500 : 340)
+            .frame(height: dynamicTypeSize.isAccessibilitySize ? 550 : 386)
             .padding(.horizontal, -gutter)
 
             mysteryPageDots
@@ -988,8 +948,8 @@ struct HomeView: View {
             selectedMysteryDetail = mystery
         } label: {
             VStack(alignment: .leading, spacing: 0) {
-                MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false)
-                    .frame(height: 144)
+                MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false, cardFraming: true)
+                    .aspectRatio(1.5, contentMode: .fit)
                     .clipped()
 
                 VStack(alignment: .leading, spacing: 0) {
@@ -1008,7 +968,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : 320, alignment: .top)
+            .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : 366, alignment: .top)
             .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
             .guideSoftShadow(elevated: colorScheme == .light)

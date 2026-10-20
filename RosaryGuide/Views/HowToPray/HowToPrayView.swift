@@ -381,7 +381,7 @@ private struct GuideWalkthroughText: UIViewRepresentable {
 
 /// One template for artwork, copy and navigation across all five teaching pages.
 private enum GuideWalkthroughLayout {
-    static let textToButtonGap: CGFloat = 76
+    static let textToButtonGap = AppTheme.Component.readingContentToActionGap
     static let dotHeight: CGFloat = 6
     static let fadeHeight: CGFloat = 160
     static let mysteryLabelScrimOpacity: Double = 0.70

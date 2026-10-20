@@ -357,7 +357,7 @@ struct PrayView: View {
         let readingBottomPad = AppTheme.RosaryFlow.readingBottomPadding
         // Floating action top sits pill height + its bottom padding above the scroll bottom.
         let plateActionClearance = AppTheme.Component.pillHeight + AppTheme.Space.lg
-        let plateTextToActionGap = AppTheme.RosaryFlow.textToActionGap
+        let plateTextToActionGap = AppTheme.Component.prayerReadingContentToActionGap
         let plateBottomAnchorHeight: CGFloat = 1
         let plateEndSpacer = max(
             0,
@@ -722,15 +722,20 @@ struct PrayView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Room under a long prayer: 132pt so the last line clears the floating circle and
-    /// language toggle, plus whatever it takes to leave a real scroll to the bottom.
+    /// Clear Next and the language selector, leaving the shared prayer reading gap,
+    /// plus whatever it takes to leave a real scroll to the bottom.
     /// A prayer that only just overflows (the Closing Prayer at common text sizes) otherwise
     /// had a few points of scroll or none, below the 8pt `ScrollMorph` needs, so scrolling by
     /// hand could never reach the expand line; only a tap expanded it.
     private func prayerScrollTail(_ step: RosaryStep) -> CGFloat {
-        let base: CGFloat = 132
+        let showsBeads = shouldShowBeads(step) && step.bead != nil
+        let base = AppTheme.Component.readingScrollTail(
+            actionClearance: AppTheme.Component.prayerReadingActionClearance,
+            contentBottomPadding: showsBeads ? AppTheme.Space.sm : AppTheme.Space.lg,
+            anchorHeight: 1
+        )
         guard prayerViewportHeight > 1, prayerTextHeight > 1 else { return base }
-        let beads = shouldShowBeads(step) && step.bead != nil ? prayerBeadShelfHeight : 0
+        let beads = showsBeads ? prayerBeadShelfHeight : 0
         let range = prayerTextHeight + beads + base + 1 - prayerViewportHeight
         return base + max(0, ScrollMorph.minimumRange - range)
     }
@@ -1000,11 +1005,14 @@ struct PrayView: View {
         intentionViewportHeight > 1 && intentionListHeight > intentionViewportHeight - intentionFooterRoom
     }
 
-    /// Prayer-style tail when the list scrolls (132pt plus enough for `ScrollMorph.minimumRange`);
-    /// otherwise just the footer room.
+    /// Scrolling intentions leave the shared reading gap above Continue;
+    /// short lists only reserve the existing footer room.
     private var intentionScrollTail: CGFloat {
         guard intentionOverflows else { return intentionFooterRoom }
-        let base: CGFloat = 132
+        let base = AppTheme.Component.readingScrollTail(
+            actionClearance: AppTheme.Component.pillHeight + AppTheme.Space.lg,
+            contentBottomPadding: AppTheme.Space.lg
+        )
         let range = intentionListHeight + base - intentionViewportHeight
         return base + max(0, ScrollMorph.minimumRange - range)
     }
@@ -1356,9 +1364,9 @@ struct PrayView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 Spacer(minLength: 0)
 
-                                // Room so the last lines can clear the floating action.
+                                // Same content-to-action gap as every long prayer.
                                 Color.clear
-                                    .frame(height: 132)
+                                    .frame(height: AppTheme.Component.prayerReadingScrollTail)
                                 Color.clear
                                     .frame(height: 1)
                                     .id(MichaelScrollAnchor.bottom)
@@ -1603,7 +1611,7 @@ struct PrayView: View {
     private func scrollPrayerToBottom() {
         guard Date().timeIntervalSince(prayerLastDrag) > 0.25 else { return }
         HapticService.play(.light, enabled: settings.hapticsEnabled)
-        let contentH = prayerContentHeight > 1 ? prayerContentHeight : prayerTextHeight + 132
+        let contentH = prayerContentHeight > 1 ? prayerContentHeight : prayerTextHeight + AppTheme.Component.prayerReadingScrollTail
         let viewH = prayerViewportHeight
         let maxOffset = max(0, contentH - viewH)
         let distanceFromBottom = maxOffset - prayerScrollY

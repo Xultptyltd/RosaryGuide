@@ -43,9 +43,9 @@ private enum AppTab: String, CaseIterable, Identifiable, Hashable {
     var title: String {
         switch self {
         case .today: "Today"
-        case .pray: "Learn"
+        case .pray: "Pray"
         case .calendar: "Feasts"
-        case .intentions: "Prayer"
+        case .intentions: "Profile"
         }
     }
 

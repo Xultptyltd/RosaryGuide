@@ -18,11 +18,13 @@ enum AppTheme {
     static let brandAccentDarkHighContrast = marianBlueDarkHighContrast
     static let destructiveMenuRed = Color(hex: 0xFF3B30)
     /// Intention category avatar fills (same in light and dark).
-    static let intentionPersonal = Color(hex: 0xC6FFB5)
-    static let intentionSomeoneElse = Color(hex: 0xCEB5FF)
-    static let intentionChurch = Color(hex: 0xFFB5B6)
-    /// Navy glyph on every intention avatar, as on mystery and milestone icons.
-    static let intentionOn = Color(hex: 0x0A2540)
+    static let intentionPersonal = Color(hex: 0xA8DCCB)
+    static let intentionSomeoneElse = Color(hex: 0xC9B6EF)
+    static let intentionChurch = Color(hex: 0xADCFF0)
+    /// Category-specific dark glyphs on the solid pastel intention fills.
+    static let intentionPersonalOn = Color(hex: 0x183E35)
+    static let intentionSomeoneElseOn = Color(hex: 0x38264F)
+    static let intentionChurchOn = Color(hex: 0x203C57)
 
     /// Mystery-set colours (trial palette, same in light and dark). Separate from the
     /// intention avatar colours so intentions are unaffected.
@@ -89,7 +91,6 @@ enum AppTheme {
 
     enum RosaryFlow {
         static let readingBottomPadding: CGFloat = 28
-        static let textToActionGap: CGFloat = 32
         static let prayerTitleBodyGap: CGFloat = 22
         static let announcementSpacing: CGFloat = 10
         static let eyebrowTracking: CGFloat = 2
@@ -469,19 +470,23 @@ enum GuideChrome {
         // content can show through. An opaque backgroundColor cancels that.
         let nav = UINavigationBarAppearance()
         nav.configureWithDefaultBackground()
-        nav.shadowColor = .clear
-        nav.titleTextAttributes = [
-            .foregroundColor: ink,
-            .font: FontRegistrar.sansUI(17, weight: .medium)
-        ]
+        // Keep app ink while letting UIKit own title fonts, sizing and bar material.
+        nav.titleTextAttributes = [.foregroundColor: ink]
         nav.largeTitleTextAttributes = [
             .foregroundColor: ink,
-            .font: FontRegistrar.serifUI(34, opticalSize: 34)
+            // H1 token: same face as Home's mystery title.
+            .font: AppTheme.TypeRole.h1UIFont(AppTheme.TypeRole.h1NavigationSize)
         ]
         let navBar = UINavigationBar.appearance()
         navBar.standardAppearance = nav
-        navBar.scrollEdgeAppearance = nav
-        navBar.compactAppearance = nav
+        // At rest (large title showing) UIKit uses the scroll-edge appearance; give it the
+        // same title fonts on a transparent bar so the H1 token applies there too.
+        let edge = UINavigationBarAppearance()
+        edge.configureWithTransparentBackground()
+        edge.titleTextAttributes = nav.titleTextAttributes
+        edge.largeTitleTextAttributes = nav.largeTitleTextAttributes
+        navBar.scrollEdgeAppearance = edge
+        navBar.compactAppearance = nil
         navBar.tintColor = ink
 
         // Use the system tab bar material (liquid glass on iOS 26) so scrolled
@@ -542,6 +547,28 @@ extension View {
     }
 }
 
+/// Standard system large-title navigation for tab roots.
+/// UIKit owns the collapse, safe areas, material and toolbar placement.
+struct GuideRootChrome: ViewModifier {
+    static let contentTop = AppTheme.Space.xl
+    let title: String
+
+    func body(content: Content) -> some View {
+        content
+            .guidePageChrome()
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.large)
+            .guidePageTitle(title)
+            .toolbar(.visible, for: .navigationBar)
+    }
+}
+
+extension View {
+    func guideRootChrome(_ title: String) -> some View {
+        modifier(GuideRootChrome(title: title))
+    }
+}
+
 /// The one chrome for pushed level-2+ screens: small centred inline title, native
 /// back button and edge swipe. Tab roots and the Settings root keep the large
 /// collapsing title instead. Start scroll content `contentTop` under the bar.
@@ -569,24 +596,18 @@ extension View {
     }
 }
 
-/// Standard iOS navigation bar look for custom sticky headers: transparent with no line at
-/// rest, then the system bar material (frosted blur of the content beneath) with a hairline
-/// separator along the bottom once content scrolls under it. Covers the status bar too.
+/// Custom sticky-header blur with the app's page-colour tint.
 struct GuideChromeBar: ViewModifier {
     @Environment(\.displayScale) private var displayScale
     @Environment(\.palette) private var palette
     /// 0 at rest, 1 when scrolled.
     var progress: CGFloat
-    /// Tint with `prayBg` instead of `bg` (prayer screens).
     var prayerBackground = false
 
-    /// Page colour over the blur. High enough to match the page, low enough
-    /// that blurred content still shows faintly through.
     static let tintOpacity: Double = 0.78
 
     func body(content: Content) -> some View {
         content.background(alignment: .top) {
-            // Health-style: strong blur, tinted with the page colour (not grey).
             GuideBlurView()
                 .overlay {
                     (prayerBackground ? palette.prayBg : palette.bg)
@@ -616,7 +637,6 @@ extension View {
     }
 }
 
-/// Large-radius system blur under the sticky header tint.
 private struct GuideBlurView: UIViewRepresentable {
     func makeUIView(context: Context) -> UIVisualEffectView {
         UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
@@ -1465,6 +1485,20 @@ extension AppTheme {
 
     /// Shared chrome measurements.
     enum Component {
+        /// Reading content clearance above the expanded floating action.
+        static let readingContentToActionGap: CGFloat = 76
+        static let prayerReadingContentToActionGap: CGFloat = 48
+        /// Distance from the scroll viewport bottom to the top of Next/Done.
+        static var prayerReadingActionClearance: CGFloat {
+            pillHeight + prayerFooterControlGap + segmentedControlHeight + Space.lg
+        }
+        /// Clear the floating footer without counting existing content padding twice.
+        static func readingScrollTail(actionClearance: CGFloat, contentBottomPadding: CGFloat, anchorHeight: CGFloat = 0) -> CGFloat {
+            max(0, actionClearance + prayerReadingContentToActionGap - contentBottomPadding - anchorHeight)
+        }
+        static var prayerReadingScrollTail: CGFloat {
+            readingScrollTail(actionClearance: prayerReadingActionClearance, contentBottomPadding: Space.lg, anchorHeight: 1)
+        }
         static let calendarHandleWidth: CGFloat = 36
         static let calendarHandleHeight: CGFloat = 4
         static let calendarHandleDividerGap: CGFloat = 2

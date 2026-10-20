@@ -27,6 +27,8 @@ struct MysteryArtworkView: View {
     var kind: Kind = .plate
     /// Soft bottom dissolve into the surrounding card. Off for a hard image/body edge.
     var bottomFade: Bool = true
+    /// Use scene-specific framing for the Home mystery cards.
+    var cardFraming: Bool = false
     /// Finish hero only. Top of the visible image, as a fraction of the artwork.
     var cropTop: CGFloat? = nil
 
@@ -71,7 +73,7 @@ struct MysteryArtworkView: View {
                 FocusedRasterImage(
                     directory: path.directory,
                     name: path.name,
-                    focus: wide ? ArtCatalog.bandFocus(set: set, number: number) : ArtCatalog.focus(set: set, number: number)
+                    focus: cardFraming ? ArtCatalog.cardFocus(set: set, number: number) : (wide ? ArtCatalog.bandFocus(set: set, number: number) : ArtCatalog.focus(set: set, number: number))
                 )
                 .overlay { plateScrim }
             } else {
@@ -285,13 +287,15 @@ struct GuideSectionDivider: View {
     private var fill: Color { palette.surface }
 }
 
-/// Shared full-bleed section boundary with 16pt clear space on both sides.
+/// Shared full-bleed section boundary with 16pt clear space above and below.
 struct GuideSectionBoundary: View {
     var gutter: CGFloat = AppTheme.gutter
+    /// Set to zero when the enclosing stack already supplies the section spacing.
+    var verticalSpacing: CGFloat = AppTheme.Space.lg
     var body: some View {
         GuideSectionDivider()
             .padding(.horizontal, -gutter)
-            .padding(.vertical, AppTheme.Space.md)
+            .padding(.vertical, verticalSpacing)
     }
 }
 

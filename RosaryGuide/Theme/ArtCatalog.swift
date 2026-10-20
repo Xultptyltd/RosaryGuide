@@ -80,6 +80,19 @@ enum ArtCatalog {
         return UnitPoint(x: 0.5, y: y)
     }
 
+    /// Home cards show a taller band, anchored toward the faces in each scene.
+    /// Values position the crop within the overflow, rather than image coordinates.
+    static func cardFocus(set: MysterySetKind, number: Int) -> UnitPoint {
+        let values: [CGFloat]
+        switch set {
+        case .joyful: values = [0.15, 0.0, 0.28, 0.12, 0.20]
+        case .luminous: values = [0.0, 0.12, 0.15, 0.0, 0.15]
+        case .sorrowful: values = [0.15, 0.12, 0.0, 0.0, 0.0]
+        case .glorious: values = [0.0, 0.0, 0.0, 0.0, 0.0]
+        }
+        return UnitPoint(x: 0.5, y: values[max(0, min(number - 1, 4))])
+    }
+
     static func bandFocus(set: MysterySetKind, number: Int) -> UnitPoint {
         let values: [CGFloat]
         switch set {

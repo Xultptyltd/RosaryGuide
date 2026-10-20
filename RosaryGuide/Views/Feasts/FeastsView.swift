@@ -79,7 +79,6 @@ struct FeastsView: View {
     @State private var weekOffset = 0
     @State private var expandedWeek: Int? = 0
     @State private var selectedDay: Date = Calendar.current.startOfDay(for: Date())
-    @State private var titleScrollOffset: CGFloat = 0
     @State private var navigationPath = NavigationPath()
 
     private var calendar: Calendar { .current }
@@ -96,7 +95,6 @@ struct FeastsView: View {
         NavigationStack(path: $navigationPath) {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    CollapsingTitleSpacer(height: CollapsingTitleMetrics.firstComponentSpacerHeight)
                     Picker("Scope", selection: $filter) {
                         ForEach(FeastScope.allCases) { Text($0.title).tag($0) }
                     }
@@ -171,16 +169,13 @@ struct FeastsView: View {
                     }
                 }
                 .padding(.horizontal, AppTheme.gutter)
-                .padding(.top, AppTheme.Space.sm)
+                .padding(.top, GuideRootChrome.contentTop)
                 .padding(.bottom, AppTheme.tabBarContentClearance)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollDisabled(calendarDrag != nil)
             .tint(palette.accent)
-            .guidePageChrome()
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar(.hidden, for: .navigationBar)
-            .collapsingTitleChrome("Feasts", scrollOffset: $titleScrollOffset)
+            .guideRootChrome("Feasts")
         }
     }
 

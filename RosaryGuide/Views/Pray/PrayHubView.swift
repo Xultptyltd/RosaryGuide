@@ -6,7 +6,7 @@ struct PrayHubView: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
     @Binding var prayLaunch: PrayLaunch?
-    @State private var titleScrollOffset: CGFloat = 0
+    @State private var searchText = ""
     @State private var showingWalkthrough = false
     @State private var expandedQuestion: LearnArticle?
     @State private var navigationPath = NavigationPath()
@@ -25,39 +25,42 @@ struct PrayHubView: View {
         NavigationStack(path: $navigationPath) {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        CollapsingTitleSpacer(height: CollapsingTitleMetrics.firstComponentSpacerHeight)
+                    searchField
+                    if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         introCard
+                            .padding(.top, AppTheme.Space.xl)
+                        GuideSectionBoundary(gutter: pageGutter)
+                        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+                            GuideSectionLabel(text: "Prayers & mysteries", prominence: .strong)
+                            VStack(spacing: 0) {
+                                NavigationLink { mysteriesPage } label: {
+                                    hubRow("The mysteries", detail: "Meditate on the life of Jesus and Mary", symbol: "sparkles", showsIcon: false)
+                                }
+                                Hairline()
+                                NavigationLink { rosaryPrayersPage } label: {
+                                    hubRow("Rosary prayers", detail: "The prayers at the heart of each decade", symbol: "hands.sparkles", showsIcon: false)
+                                }
+                                Hairline()
+                                NavigationLink { libraryPage } label: {
+                                    hubRow("All prayers", detail: "Rosary prayers, Memorare, Saint Michael and more", symbol: "heart", showsIcon: false, endsSection: true)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        // Preserve the decorative ends; its frame already provides
+                        // 16pt around the central band, so add no extra padding here.
+                        GuideSectionBoundary(gutter: pageGutter, verticalSpacing: 0)
+
+                        questionsSection
+                        GuideSectionBoundary(gutter: pageGutter)
+                        prayTodayCard
+                    } else {
+                        searchResults
+                            .padding(.top, AppTheme.Space.xl)
                     }
-                    .guideReveal()
-
-                    GuideSectionBoundary(gutter: pageGutter)
-
-                    mysteriesSection
-                        .guideReveal(delay: 0.06)
-
-                    GuideSectionBoundary(gutter: pageGutter)
-
-                    prayersSection
-                        .guideReveal(delay: 0.08)
-
-                    GuideSectionBoundary(gutter: pageGutter)
-
-                    optionalPrayersSection
-                        .guideReveal(delay: 0.1)
-
-                    GuideSectionBoundary(gutter: pageGutter)
-
-                    questionsSection
-                        .guideReveal(delay: 0.14)
-
-                    GuideSectionBoundary(gutter: pageGutter)
-
-                    prayTodayCard
-                        .guideReveal(delay: 0.18)
                 }
                 .padding(.horizontal, pageGutter)
-                .padding(.top, AppTheme.Space.sm)
+                .padding(.top, GuideRootChrome.contentTop)
                 .padding(.bottom, 108)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .background {
@@ -69,14 +72,174 @@ struct PrayHubView: View {
                 }
             }
             .scrollBounceBehavior(.basedOnSize)
-            .guidePageChrome()
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar(.hidden, for: .navigationBar)
-            .collapsingTitleChrome("Learn", scrollOffset: $titleScrollOffset)
+            .guideRootChrome("Pray")
             .fullScreenCover(isPresented: $showingWalkthrough) {
                 RosaryWalkthroughView(onClose: { showingWalkthrough = false })
             }
         }
+    }
+
+    private var allPrayers: [Prayer] {
+        [PrayerCatalog.signOfTheCross, PrayerCatalog.apostlesCreed, PrayerCatalog.ourFather,
+         PrayerCatalog.hailMary, PrayerCatalog.gloryBe, PrayerCatalog.hailHolyQueen,
+         PrayerCatalog.concluding, PrayerCatalog.fatima, PrayerCatalog.sacramentMostHoly,
+         PrayerCatalog.memorare, PrayerCatalog.saintMichael] + PrayerCatalog.additionalLibraryPrayers
+    }
+
+    private var searchField: some View {
+        HStack(spacing: AppTheme.Space.md) {
+            Image(systemName: "magnifyingglass").foregroundStyle(palette.dim)
+            TextField("Search prayers and mysteries", text: $searchText)
+                .font(AppTheme.TypeRole.bodySmall)
+                .foregroundStyle(palette.ink)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+            if !searchText.isEmpty {
+                Button { searchText = "" } label: { Image(systemName: "xmark.circle.fill") }
+                    .foregroundStyle(palette.dim)
+                    .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, AppTheme.Space.lg)
+        .frame(minHeight: AppTheme.Component.pillHeight)
+        .background(palette.surface, in: Capsule())
+        .overlay { Capsule().stroke(palette.hair, lineWidth: 1) }
+    }
+
+    private var rosaryPrayersPage: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                rosaryPrayerGroup("Opening prayers", detail: "Begin on the crucifix, then the first beads.", prayers: [
+                    PrayerCatalog.signOfTheCross, PrayerCatalog.apostlesCreed,
+                    PrayerCatalog.ourFather, PrayerCatalog.hailMary, PrayerCatalog.gloryBe
+                ])
+                GuideSectionBoundary(verticalSpacing: 0)
+                rosaryPrayerGroup("Each decade", detail: "One Our Father, ten Hail Marys and one Glory be.", prayers: [
+                    PrayerCatalog.ourFather, PrayerCatalog.hailMary, PrayerCatalog.gloryBe, PrayerCatalog.fatima
+                ])
+                GuideSectionBoundary(verticalSpacing: 0)
+                rosaryPrayerGroup("Closing prayers", detail: "Conclude after the final decade, then make the Sign of the Cross.", prayers: [
+                    PrayerCatalog.hailHolyQueen, PrayerCatalog.versicle, PrayerCatalog.concluding,
+                    PrayerCatalog.signOfTheCross
+                ])
+            }
+            .padding(.horizontal, AppTheme.gutter)
+            .padding(.top, GuideDetailChrome.contentTop)
+            .padding(.bottom, AppTheme.tabBarContentClearance)
+        }
+        .background(palette.bg)
+        .guideDetailChrome("Rosary prayers")
+    }
+
+    private func rosaryPrayerGroup(_ title: String, detail: String, prayers: [Prayer]) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+            GuideSectionLabel(text: title, prominence: .strong)
+                .accessibilityAddTraits(.isHeader)
+            Text(detail)
+                .font(AppTheme.TypeRole.caption)
+                .foregroundStyle(palette.dim)
+                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 0) {
+                ForEach(prayers) { prayer in
+                    prayerNavRow(prayer: prayer, endsSection: prayer.id == prayers.last?.id)
+                    if prayer.id != prayers.last?.id { Hairline() }
+                }
+            }
+        }
+    }
+
+    private var mysteriesPage: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                Text("Contemplate the life of Jesus with Mary through the four sets of mysteries.")
+                    .guideThemeSummaryStyle()
+                VStack(spacing: 0) {
+                    ForEach(MysterySetKind.displayOrder, id: \.self) { set in
+                        NavigationLink {
+                            LearnMysteryDetailView(set: set, prayLaunch: $prayLaunch)
+                        } label: {
+                            learnRow(LearnRow(mysterySet: set,
+                                title: "\(set.shortName) Mysteries", detail: set.weekdayNames,
+                                destination: .mystery(set)))
+                                .padding(.vertical, AppTheme.Space.sm)
+                        }
+                        .buttonStyle(.plain)
+                        if set != MysterySetKind.displayOrder.last { Hairline() }
+                    }
+                }
+            }
+            .padding(.horizontal, AppTheme.gutter)
+            .padding(.top, GuideDetailChrome.contentTop)
+            .padding(.bottom, AppTheme.tabBarContentClearance)
+        }
+        .background(palette.bg)
+        .guideDetailChrome("The mysteries")
+    }
+
+    private var libraryPage: some View {
+        AllPrayersView(prayers: allPrayers)
+    }
+
+    private var searchResults: some View {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prayers = allPrayers.filter { PrayerCatalog.matchesSearch($0, query: query) }
+        let sets = MysterySetKind.displayOrder.filter { "\($0.shortName) Mysteries".localizedCaseInsensitiveContains(query) }
+        return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+            if prayers.isEmpty && sets.isEmpty {
+                Text("No prayers or mysteries found. Try another search.")
+                    .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
+            }
+            ForEach(prayers) { prayer in prayerNavRow(prayer: prayer); Hairline() }
+            ForEach(sets, id: \.self) { set in
+                NavigationLink { LearnMysteryDetailView(set: set, prayLaunch: $prayLaunch) } label: {
+                    hubRow("\(set.shortName) Mysteries", detail: set.weekdayNames, symbol: "sparkles")
+                }.buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var rosaryFeature: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+            HStack(alignment: .top, spacing: AppTheme.Space.md) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    Text(session.resumableSession == nil ? "The Rosary" : "Resume your Rosary")
+                        .font(AppTheme.TypeRole.headingPrimary).foregroundStyle(palette.ink)
+                    Text("Meditate on the life of Jesus with Mary")
+                        .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
+                }
+                Spacer(minLength: 0)
+                MysterySetIcon(set: todaysSet)
+            }
+            PillButton(title: session.resumableSession?.continueCTATitle ?? "Pray the Rosary") {
+                HapticService.play(.medium, enabled: settings.hapticsEnabled)
+                if let resumable = session.resumableSession { prayLaunch = .resume(resumable) }
+                else { prayLaunch = .fresh(todaysSet) }
+            }
+        }
+        .padding(AppTheme.Space.xl)
+        .guideCard(fill: palette.surface)
+    }
+
+    private func hubRow(_ title: String, detail: String?, symbol: String, showsIcon: Bool = true, endsSection: Bool = false) -> some View {
+        HStack(spacing: AppTheme.Space.md) {
+            if showsIcon {
+                Image(systemName: symbol)
+                .guideSymbol(size: 24, weight: .regular)
+                .foregroundStyle(palette.accent)
+                .frame(width: 52, height: 52)
+                .background(palette.accentTint, in: Circle())
+            }
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                Text(title).font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.ink)
+                if let detail { Text(detail).font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim) }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "chevron.right").guideSymbol(size: 12, weight: .regular).foregroundStyle(palette.dim)
+        }
+        .frame(minHeight: endsSection ? 0 : 52)
+        .padding(.top, AppTheme.Space.lg)
+        .padding(.bottom, endsSection ? 0 : AppTheme.Space.lg)
+        .contentShape(Rectangle())
     }
 
     private var introCard: some View {
@@ -272,7 +435,7 @@ struct PrayHubView: View {
         }
     }
 
-    private func prayerNavRow(prayer: Prayer) -> some View {
+    private func prayerNavRow(prayer: Prayer, endsSection: Bool = false) -> some View {
         NavigationLink {
             LearnPrayerDetailView(prayer: prayer)
         } label: {
@@ -294,7 +457,9 @@ struct PrayHubView: View {
                     .foregroundStyle(palette.secondaryText)
                     .accessibilityHidden(true)
             }
-            .padding(.vertical, AppTheme.Space.lg)
+            .padding(.top, AppTheme.Space.xl)
+            .padding(.bottom, endsSection ? 0 : AppTheme.Space.xl)
+            .frame(minHeight: endsSection ? AppTheme.Accessibility.minHitTarget : 72)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -529,6 +694,82 @@ private struct LearnArticleView: View {
     }
 }
 
+private struct AllPrayersView: View {
+    @Environment(SettingsStore.self) private var settings
+    @Environment(\.palette) private var palette
+    @State private var query = ""
+    let prayers: [Prayer]
+
+    private var results: [Prayer] {
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return prayers
+            .filter { term.isEmpty || PrayerCatalog.matchesSearch($0, query: term) }
+            .sorted {
+                $0.title.primary(for: settings.language)
+                    .localizedStandardCompare($1.title.primary(for: settings.language)) == .orderedAscending
+            }
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                HStack(spacing: AppTheme.Space.md) {
+                    Image(systemName: "magnifyingglass").foregroundStyle(palette.dim)
+                    TextField("Search prayers", text: $query)
+                        .font(AppTheme.TypeRole.bodySmall)
+                        .foregroundStyle(palette.ink)
+                        .autocorrectionDisabled()
+                        .submitLabel(.search)
+                    if !query.isEmpty {
+                        Button { query = "" } label: {
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(palette.dim)
+                        }
+                        .accessibilityLabel("Clear search")
+                    }
+                }
+                .padding(.horizontal, AppTheme.Space.lg)
+                .frame(minHeight: AppTheme.Component.pillHeight)
+                .background(palette.surface, in: Capsule())
+                .overlay { Capsule().stroke(palette.hair, lineWidth: 1) }
+
+                LazyVStack(spacing: 0) {
+                    ForEach(results) { prayer in
+                        NavigationLink { LearnPrayerDetailView(prayer: prayer) } label: {
+                            HStack(spacing: AppTheme.Space.md) {
+                                Text(prayer.title.primary(for: settings.language))
+                                    .font(AppTheme.TypeRole.bodySmall)
+                                    .foregroundStyle(palette.ink)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Image(systemName: "chevron.right")
+                                    .guideSymbol(size: 12, weight: .regular)
+                                    .foregroundStyle(palette.dim)
+                            }
+                            .padding(.vertical, AppTheme.Space.xl)
+                            .frame(minHeight: 72)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if prayer.id != results.last?.id { Hairline() }
+                    }
+                    if results.isEmpty {
+                        Text("No prayers found. Try another search.")
+                            .font(AppTheme.TypeRole.bodySmall)
+                            .foregroundStyle(palette.dim)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, AppTheme.Space.lg)
+                    }
+                }
+            }
+            .padding(.horizontal, AppTheme.gutter)
+            .padding(.top, GuideDetailChrome.contentTop)
+            .padding(.bottom, AppTheme.tabBarContentClearance)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background(palette.bg)
+        .guideDetailChrome("All prayers")
+    }
+}
+
 private struct LearnPrayerDetailView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(\.palette) private var palette
@@ -536,26 +777,27 @@ private struct LearnPrayerDetailView: View {
     /// Page-local language; starts from the prayer language setting, never writes it.
     @State private var language: PrayerLanguage?
 
-    @State private var openAbout: String?
+    @State private var showingAbout = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    private var shown: PrayerLanguage { language ?? settings.language }
+    private var shown: PrayerLanguage { prayer.text.hasDistinctLatin ? (language ?? settings.language) : .english }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                     Text(prayer.title.english)
                         .font(AppTheme.TypeRole.screenTitle)
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
-                    if prayer.title.latin != prayer.title.english {
+                    if !prayer.title.latin.isEmpty && prayer.title.latin != prayer.title.english {
                         Text(prayer.title.latin)
-                            .font(AppTheme.TypeRole.bodySmall())
-                            .foregroundStyle(palette.dim)
+                            .guideThemeSummaryStyle()
                     }
                 }
 
+                if prayer.text.hasDistinctLatin {
                 Picker("Language", selection: Binding(get: { shown }, set: { language = $0 })) {
                     Text("English").tag(PrayerLanguage.english)
                     Text("Latin").tag(PrayerLanguage.latin)
@@ -564,13 +806,11 @@ private struct LearnPrayerDetailView: View {
                 .guideSegmentedControl()
                 .labelsHidden()
                 .accessibilityLabel("Prayer language")
+                }
 
-                BilingualStack(
-                    text: prayer.text,
-                    language: shown,
-                    font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
-                    pointSize: AppTheme.TypeRole.prayerLineHeightReference(scale: settings.textSize.scale)
-                )
+                prayerReader
+                    .padding(.horizontal, AppTheme.Space.sm)
+                    .padding(.vertical, AppTheme.Space.lg)
 
                 if prayer.id == "sign-of-the-cross" {
                     GuideSectionBoundary()
@@ -584,9 +824,12 @@ private struct LearnPrayerDetailView: View {
                     .padding(.vertical, -AppTheme.Space.xl)
 
                 aboutBlock
+
             }
+            .frame(maxWidth: 560, alignment: .leading)
             .padding(.horizontal, AppTheme.gutter)
-            .padding(.top, AppTheme.Space.sm)
+            .frame(maxWidth: .infinity)
+            .padding(.top, AppTheme.Space.lg)
             .padding(.bottom, AppTheme.Space.section)
         }
         .background(palette.bg)
@@ -645,62 +888,110 @@ private struct LearnPrayerDetailView: View {
         }
     }
 
-    private var aboutBlock: some View {
-        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-            Text("About this prayer")
-                .font(AppTheme.TypeRole.headline)
-                .foregroundStyle(palette.ink)
-                .accessibilityAddTraits(.isHeader)
-            // Same row group and accordion style as Common questions on Learn.
-            VStack(spacing: 0) {
-                aboutAccordion("History of the prayer", text: history)
-                Hairline()
-                aboutAccordion("Why we pray it", text: why)
+    @ViewBuilder
+    private var prayerReader: some View {
+        if shown == .bilingual && prayer.text.hasDistinctLatin {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xxl) {
+                    prayerColumn(prayer.text.english)
+                    prayerColumn(prayer.text.latin)
+                }
+            } else {
+                HStack(alignment: .top, spacing: AppTheme.Space.xl) {
+                    prayerColumn(prayer.text.english)
+                    prayerColumn(prayer.text.latin)
+                }
             }
-            .padding(.horizontal, AppTheme.Space.lg)
-            .guideRowGroup()
+        } else {
+            prayerColumn(shown == .latin ? prayer.text.latinOrEnglish : prayer.text.english)
         }
     }
 
-    private func aboutAccordion(_ title: String, text: String) -> some View {
-        let isOpen = openAbout == title
-        return VStack(alignment: .leading, spacing: 0) {
-            Button {
-                openAbout = isOpen ? nil : title
-            } label: {
-                HStack(alignment: .center, spacing: AppTheme.Space.md) {
-                    Text(title)
-                        .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+    private func prayerColumn(_ text: String) -> some View {
+        let paragraphs = text.components(separatedBy: "\n\n").filter { !$0.isEmpty }
+        return VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+            ForEach(Array(paragraphs.enumerated()), id: \.offset) { _, paragraph in
+                prayerParagraph(paragraph)
+                    .font(AppTheme.TypeRole.prayerText(scale: settings.textSize.scale))
+                    .lineSpacing(AppTheme.Space.sm)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func prayerParagraph(_ paragraph: String) -> Text {
+        if prayer.id == "litany-of-loreto" {
+            let responses = [", pray for us.", ", have mercy on us.", ", spare us, O Lord.", ", graciously hear us, O Lord."]
+            if let response = responses.first(where: { paragraph.hasSuffix($0) }) {
+                let invocation = String(paragraph.dropLast(response.count))
+                let lead = Text(invocation + ", ").foregroundColor(palette.ink)
+                let answer = Text(String(response.dropFirst(2))).foregroundColor(palette.dim)
+                return Text("\(lead)\(answer)")
+            }
+        }
+        return Text(paragraph).foregroundColor(palette.ink)
+    }
+
+    private var aboutBlock: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+            Button { showingAbout.toggle() } label: {
+                HStack(spacing: AppTheme.Space.md) {
+                    Text("About this prayer")
+                        .font(AppTheme.TypeRole.bodySmall)
                         .foregroundStyle(palette.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: AppTheme.Space.sm)
+                    Spacer()
                     Image(systemName: "chevron.down")
-                        .font(AppTheme.TypeRole.caption(weight: .semibold))
-                        .foregroundStyle(palette.faint)
-                        .rotationEffect(.degrees(isOpen ? 180 : 0))
+                        .guideSymbol(size: 12, weight: .regular)
+                        .foregroundStyle(palette.dim)
+                        .rotationEffect(.degrees(showingAbout ? 180 : 0))
                 }
-                .padding(.vertical, AppTheme.Space.lg)
+                .frame(minHeight: AppTheme.Accessibility.minHitTarget)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(title)
-            .accessibilityValue(isOpen ? "Expanded" : "Collapsed")
-
-            if isOpen {
-                Text(text)
-                    .font(AppTheme.TypeRole.callout)
-                    .lineSpacing(5)
-                    .foregroundStyle(palette.dim)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.trailing, AppTheme.Space.sm)
-                    .padding(.bottom, AppTheme.Space.xl)
-                    .transition(MotionTokens.accordionTransition)
+            .accessibilityValue(showingAbout ? "Expanded" : "Collapsed")
+            if showingAbout {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                    let information = PrayerCatalog.information(for: prayer.id) ?? (history + "\n\n" + why)
+                    VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                        ForEach(Array(information.components(separatedBy: "\n\n").enumerated()), id: \.offset) { _, paragraph in
+                            Text(paragraph)
+                                .font(AppTheme.TypeRole.bodySmall)
+                                .foregroundStyle(palette.dim)
+                                .lineSpacing(AppTheme.Space.xs)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    if let notes = PrayerCatalog.libraryNotes(for: prayer.id) {
+                        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                            GuideSectionLabel(text: "Sources", prominence: .strong)
+                            ForEach(notes.references, id: \.url) { reference in
+                                Link(destination: reference.url) {
+                                    HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                                        Text(reference.title).font(AppTheme.TypeRole.caption)
+                                        Image(systemName: "arrow.up.right").guideSymbol(size: 12, weight: .regular)
+                                    }
+                                    .foregroundStyle(palette.ink)
+                                    .padding(.vertical, AppTheme.Space.sm)
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(.bottom, AppTheme.Space.lg)
             }
         }
-        .guideAccordion(isExpanded: isOpen)
+        .guideAccordion(isExpanded: showingAbout)
     }
 
     private var history: String {
+        if let notes = PrayerCatalog.libraryNotes(for: prayer.id) { return notes.history }
+        return existingHistory
+    }
+
+    private var existingHistory: String {
         switch prayer.id {
         case "sign-of-the-cross": "Christians have marked themselves with the cross from the earliest days. Around AD 200, Tertullian wrote that believers traced it on their foreheads throughout the day. Its words echo Jesus' command to baptise in the name of the Trinity (Matthew 28:19)."
         case "apostles-creed": "The Creed grew from an early baptismal creed of the Church in Rome, known as the Old Roman Symbol. It reached its present form by the eighth century. Tradition links its twelve articles to the Apostles, though they did not write it."
@@ -713,11 +1004,17 @@ private struct LearnPrayerDetailView: View {
         case "sacrament-most-holy": "No one knows who wrote this short prayer of praise to Jesus in the Eucharist, or when. It spread through Eucharistic devotion. Many people now add it after the Fatima prayer at each decade."
         case "memorare": "The Memorare is often linked to Saint Bernard of Clairvaux, but its text comes from the 15th century. In the 1600s Fr Claude Bernard, a Paris priest called \"the Poor Priest\", spread it widely among prisoners and the sick."
         case "saint-michael": "Pope Leo XIII wrote this prayer in 1886 and added it to the prayers said after Low Mass. They were said worldwide until 1965. The prayer draws on Scripture's picture of Michael as protector of God's people (Daniel 12:1; Revelation 12:7–9)."
+        case "versicle": "This short versicle and response forms part of the conclusion of the Rosary in the Compendium of the Catechism of the Catholic Church."
         default: ""
         }
     }
 
     private var why: String {
+        if let notes = PrayerCatalog.libraryNotes(for: prayer.id) { return notes.purpose }
+        return existingPurpose
+    }
+
+    private var existingPurpose: String {
         switch prayer.id {
         case "sign-of-the-cross": "We begin and end the Rosary with the Sign of the Cross. In one simple gesture we profess faith in the Trinity, recall our baptism and place our whole prayer under Christ's Cross."
         case "apostles-creed": "We pray the Creed on the crucifix as the Rosary begins. Before we meditate, we stand with the whole Church and profess what we believe. The mysteries that follow unfold this faith."
@@ -730,6 +1027,7 @@ private struct LearnPrayerDetailView: View {
         case "sacrament-most-holy": "Though not part of the traditional Rosary, this prayer joins our meditation to adoration. It reminds us that the Jesus we meet in each mystery is truly with us still in the Blessed Sacrament."
         case "memorare": "Many pray the Memorare after the Rosary. It reminds us that no one who turned to Mary has ever been left without help. We bring her our needs with a child's trust."
         case "saint-michael": "Many add this prayer after the Rosary. It reminds us that the spiritual life is a real battle. We ask Saint Michael to defend us, so that we stay faithful to God."
+        case "versicle": "We ask the Mother of God to pray for us, that we may be made worthy of Christ’s promises."
         default: ""
         }
     }
