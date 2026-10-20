@@ -337,6 +337,12 @@ final class AuthStore: NSObject {
 
     private func apply(user: User?) {
         userID = user?.uid
+        // Guests never call Firebase, so App Check stays idle for them (Info.plist turns
+        // auto-refresh off at launch). Signed in, tokens refresh ahead of Auth/Firestore calls;
+        // either way a request still fetches a token on demand.
+        if FirebaseApp.app() != nil {
+            AppCheck.appCheck().isTokenAutoRefreshEnabled = user != nil
+        }
         provider = Self.provider(for: user)
         let name = (user?.displayName ?? user?.providerData.compactMap(\.displayName).first)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -431,12 +437,18 @@ final class AuthStore: NSObject {
     }
 }
 
+/// Release App Check: App Attest where the device supports it (iOS 14+ with a Secure Enclave),
+/// DeviceCheck on older devices, and no provider where neither exists (the simulator), so
+/// requests go out without a token instead of failing on an unsupported attestation.
 private final class RosaryGuideAppCheckProviderFactory: NSObject, AppCheckProviderFactory {
     func createProvider(with app: FirebaseApp) -> AppCheckProvider? {
         if DCAppAttestService.shared.isSupported {
             return AppAttestProvider(app: app)
         }
-        return DeviceCheckProvider(app: app)
+        if DCDevice.current.isSupported {
+            return DeviceCheckProvider(app: app)
+        }
+        return nil
     }
 }
 
