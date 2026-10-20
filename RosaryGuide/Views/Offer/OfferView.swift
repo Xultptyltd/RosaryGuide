@@ -751,6 +751,9 @@ private struct MyPrayerJourneySummaryCard: View {
                     Text(calendar.veryShortStandaloneWeekdaySymbols[calendar.component(.weekday, from: day) - 1])
                         .font(AppTheme.TypeRole.caption)
                         .foregroundStyle(calendar.isDateInToday(day) ? palette.ink : palette.dim)
+                        // "Tu" / "Sa" stay on one line at accessibility sizes.
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
                     Circle()
                         .fill(prayed ? palette.accent : palette.hair)
                         .frame(width: 14, height: 14)

@@ -433,12 +433,10 @@ private struct FeastTimelineRow: View {
             .frame(width: 56)
 
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                Text(item.feast.shortTitle)
-                    .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                WordSafeText(item.feast.shortTitle, font: AppTheme.TypeRole.calloutUIFont(weight: .semibold))
                     .foregroundStyle(palette.ink)
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 5 : 2)
-                Text(item.feast.rank.title)
-                    .font(AppTheme.TypeRole.label)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 6 : 2)
+                WordSafeText(item.feast.rank.title, font: AppTheme.TypeRole.captionUIFont())
                     .foregroundStyle(palette.dim)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

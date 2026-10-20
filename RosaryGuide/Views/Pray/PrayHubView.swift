@@ -90,7 +90,13 @@ struct PrayHubView: View {
     private var searchField: some View {
         HStack(spacing: AppTheme.Space.md) {
             Image(systemName: "magnifyingglass").foregroundStyle(palette.dim)
-            TextField("Search prayers and mysteries", text: $searchText)
+            // The prompt carries the font so the placeholder scales with Dynamic Type too.
+            TextField(
+                "Search prayers and mysteries",
+                text: $searchText,
+                prompt: Text(dynamicTypeSize.isAccessibilitySize ? "Search" : "Search prayers and mysteries")
+                    .font(AppTheme.TypeRole.bodySmall)
+            )
                 .font(AppTheme.TypeRole.bodySmall)
                 .foregroundStyle(palette.ink)
                 .autocorrectionDisabled()
@@ -704,6 +710,7 @@ private struct LearnArticleView: View {
 private struct AllPrayersView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(\.palette) private var palette
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var query = ""
     let prayers: [Prayer]
 
@@ -722,7 +729,12 @@ private struct AllPrayersView: View {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
                 HStack(spacing: AppTheme.Space.md) {
                     Image(systemName: "magnifyingglass").foregroundStyle(palette.dim)
-                    TextField("Search prayers", text: $query)
+                    TextField(
+                        "Search prayers",
+                        text: $query,
+                        prompt: Text(dynamicTypeSize.isAccessibilitySize ? "Search" : "Search prayers")
+                            .font(AppTheme.TypeRole.bodySmall)
+                    )
                         .font(AppTheme.TypeRole.bodySmall)
                         .foregroundStyle(palette.ink)
                         .autocorrectionDisabled()

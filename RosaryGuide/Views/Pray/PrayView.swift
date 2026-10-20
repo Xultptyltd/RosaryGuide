@@ -57,6 +57,7 @@ struct PrayView: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var launch: PrayLaunch
 
@@ -807,7 +808,8 @@ struct PrayView: View {
                     .accessibilityLabel("Close")
             }
             progressNowLabel(step)
-                .lineLimit(1)
+                // Accessibility sizes: two lines at word boundaries instead of truncating.
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
                 .minimumScaleFactor(0.8)
                 .padding(.horizontal, 52)
                 .accessibilityElement(children: .ignore)
@@ -823,7 +825,16 @@ struct PrayView: View {
     @ViewBuilder
     private func progressNowLabel(_ step: RosaryStep) -> some View {
         let font = AppTheme.TypeRole.label(weight: .medium)
-        if let mystery = step.mystery,
+        if dynamicTypeSize.isAccessibilitySize {
+            let text = step.mystery.map { mystery in
+                [.first, .second, .third, .fourth, .fifth].contains(step.stage)
+                    ? "\(OrdinalWord.roman(mystery.number)) · \(mystery.title.english)"
+                    : step.progressLabel
+            } ?? step.progressLabel
+            WordSafeText(text, font: AppTheme.TypeRole.captionUIFont(weight: .medium))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(palette.ink)
+        } else if let mystery = step.mystery,
            [.first, .second, .third, .fourth, .fifth].contains(step.stage) {
             HStack(spacing: 0) {
                 Text(OrdinalWord.roman(mystery.number))

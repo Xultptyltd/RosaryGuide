@@ -679,19 +679,16 @@ private struct SettingsRowChrome: View {
                 SettingsRowIcon(symbol: icon, tint: tint)
             }
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                Text(title)
-                    .font(AppTheme.TypeRole.settingsRow)
+                WordSafeText(title, font: AppTheme.TypeRole.settingsRowUIFont)
                     .foregroundStyle(tint)
                     .fixedSize(horizontal: false, vertical: true)
                 if let subtitle {
-                    Text(subtitle)
-                        .font(AppTheme.TypeRole.settingsMeta)
+                    WordSafeText(subtitle, font: AppTheme.TypeRole.settingsMetaUIFont)
                         .foregroundStyle(palette.dim)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 if let value {
-                    Text(value)
-                        .font(AppTheme.TypeRole.settingsRow)
+                    WordSafeText(value, font: AppTheme.TypeRole.settingsRowUIFont)
                         .foregroundStyle(palette.dim)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -1104,8 +1101,8 @@ private struct SettingsToggleRow: View {
                         if let icon {
                             SettingsRowIcon(symbol: icon, tint: palette.ink)
                         }
-                        Text(title)
-                            .font(AppTheme.TypeRole.settingsRow)
+                        // Accessibility sizes: wrap at word boundaries instead of truncating.
+                        WordSafeText(title, font: AppTheme.TypeRole.settingsRowUIFont)
                             .foregroundStyle(palette.ink)
                     }
                 }
@@ -1139,10 +1136,16 @@ private struct SettingsLastRowBottomTrimBody<Inner: View>: View {
 
 private struct SettingsLastRowTrim<Content: View>: View {
     @Environment(\.showsRowDivider) private var showsRowDivider
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ViewBuilder var content: Content
 
     var body: some View {
-        content.frame(height: showsRowDivider ? nil : AppTheme.Component.profileRowHeight - AppTheme.Space.lg, alignment: .top)
+        if dynamicTypeSize.isAccessibilitySize {
+            // A fixed height would cut wrapped titles; trim the same amount from the bottom instead.
+            content.padding(.bottom, showsRowDivider ? 0 : -AppTheme.Space.lg)
+        } else {
+            content.frame(height: showsRowDivider ? nil : AppTheme.Component.profileRowHeight - AppTheme.Space.lg, alignment: .top)
+        }
     }
 }
 

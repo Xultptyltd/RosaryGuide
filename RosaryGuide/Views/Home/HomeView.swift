@@ -295,6 +295,7 @@ struct HomeView: View {
                 Text("Share Rosary Guide")
                     .font(AppTheme.TypeRole.callout)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             .foregroundStyle(palette.tertiaryButtonText)
             .padding(.horizontal, AppTheme.Space.lg)
@@ -551,10 +552,9 @@ struct HomeView: View {
                         } else {
                             feastDateText(featured.date)
                         }
-                        Text(featured.feast.shortTitle)
-                            .font(AppTheme.TypeRole.headingSecondary)
+                        WordSafeText(featured.feast.shortTitle, font: AppTheme.TypeRole.headingSecondaryUIFont)
                             .foregroundStyle(palette.ink)
-                            .lineLimit(3)
+                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 5 : 3)
                             .minimumScaleFactor(0.82)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -571,15 +571,31 @@ struct HomeView: View {
                 NavigationLink {
                     FeastDetailView(prayLaunch: $prayLaunch, item: item)
                 } label: {
-                    HStack(alignment: .top, spacing: AppTheme.Space.md) {
-                        feastDateText(item.date)
-                            .frame(width: 64, alignment: .leading)
-                        Text(item.feast.shortTitle)
-                            .font(AppTheme.TypeRole.bodySmall)
-                            .foregroundStyle(palette.ink)
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Spacer()
+                    Group {
+                        if dynamicTypeSize.isAccessibilitySize {
+                            // Accessibility sizes: date above the title so neither breaks mid-word.
+                            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                                feastDateText(item.date)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.6)
+                                WordSafeText(item.feast.shortTitle, font: AppTheme.TypeRole.calloutUIFont())
+                                    .foregroundStyle(palette.ink)
+                                    .lineLimit(5)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            HStack(alignment: .top, spacing: AppTheme.Space.md) {
+                                feastDateText(item.date)
+                                    .frame(width: 64, alignment: .leading)
+                                Text(item.feast.shortTitle)
+                                    .font(AppTheme.TypeRole.bodySmall)
+                                    .foregroundStyle(palette.ink)
+                                    .lineLimit(2)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer()
+                            }
+                        }
                     }
                     .padding(.horizontal, AppTheme.Space.xl)
                     .padding(.vertical, AppTheme.Space.md)
@@ -620,8 +636,13 @@ struct HomeView: View {
     private func weekRow(day: Date, assignment: MysteryAssignment) -> some View {
         let prayed = session.prayed(on: day)
         let isToday = Calendar.current.isDateInToday(day)
+        // Accessibility sizes: the mystery set moves under the date instead of truncating.
+        let stacked = dynamicTypeSize.isAccessibilitySize
+        let rowLayout = stacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: AppTheme.Space.xs))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: AppTheme.Space.sm))
 
-        return HStack(alignment: .center, spacing: AppTheme.Space.sm) {
+        return rowLayout {
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 Text(day.formatted(.dateTime.weekday(.wide)))
                     .font(AppTheme.TypeRole.body)
@@ -668,7 +689,7 @@ struct HomeView: View {
                 .foregroundStyle(isToday ? palette.textPrimary : palette.textSecondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
-                .frame(maxWidth: .infinity, alignment: .trailing)
+                .frame(maxWidth: .infinity, alignment: stacked ? .leading : .trailing)
 
             if prayed {
                 Image(systemName: "checkmark.circle.fill")
@@ -954,8 +975,7 @@ struct HomeView: View {
                     .clipped()
 
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(mystery.title.primary(for: settings.language))
-                        .font(AppTheme.TypeRole.cardTitle)
+                    WordSafeText(mystery.title.primary(for: settings.language), font: AppTheme.TypeRole.headingSecondaryUIFont)
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
 
@@ -1081,15 +1101,18 @@ struct HomeView: View {
                                         .tracking(1.2)
                                         .textCase(.uppercase)
                                         .foregroundStyle(palette.faint)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.5)
                                 }
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
                                 .frame(width: 44)
 
                                 HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
-                                    Text(item.feast.shortTitle)
-                                        .font(AppTheme.TypeRole.serifBody)
+                                    WordSafeText(item.feast.shortTitle, font: AppTheme.TypeRole.serifBodyUIFont)
                                         .foregroundStyle(palette.ink)
                                         .multilineTextAlignment(.leading)
-                                        .lineLimit(2)
+                                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 5 : 2)
                                         .minimumScaleFactor(0.92)
                                     if Calendar.current.isDateInToday(item.date) {
                                         Text("Today")

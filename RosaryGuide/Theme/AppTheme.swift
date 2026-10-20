@@ -1501,6 +1501,23 @@ extension AppTheme {
         }
         static var settingsMeta: Font { caption }
 
+        #if canImport(UIKit)
+        // UIKit twins of the roles above (the same cached UIFont), for `WordSafeText`.
+        static func bodyUIFont(weight: Font.Weight = .regular) -> UIFont {
+            FontRegistrar.sansUI(16, weight: regularized(weight), textStyle: .body)
+        }
+        static func calloutUIFont(weight: Font.Weight = .regular) -> UIFont {
+            FontRegistrar.sansUI(16, weight: regularized(weight), textStyle: .callout)
+        }
+        static func captionUIFont(weight: Font.Weight = .regular) -> UIFont {
+            FontRegistrar.sansUI(12, weight: regularized(weight), textStyle: .caption1)
+        }
+        static var headingSecondaryUIFont: UIFont { FontRegistrar.sansUI(22, weight: .regular, textStyle: .title2) }
+        static var serifBodyUIFont: UIFont { FontRegistrar.serifUI(20, opticalSize: 20, textStyle: .body) }
+        static var settingsRowUIFont: UIFont { bodyUIFont() }
+        static var settingsMetaUIFont: UIFont { captionUIFont() }
+        #endif
+
         private static func regularized(_ weight: Font.Weight) -> Font.Weight {
             if weight == .semibold || weight == .bold || weight == .heavy || weight == .black {
                 return .regular
@@ -1850,3 +1867,80 @@ extension AppTheme {
         }
     }
 }
+
+#if canImport(UIKit)
+/// Text that wraps only between words. At accessibility sizes, if the longest word is wider
+/// than the space, the whole label steps down in size (to `minimumScale`) instead of breaking
+/// inside the word ("Notification / s"). Below accessibility sizes it is exactly
+/// `Text(text).font(Font(font))`.
+struct WordSafeText: View {
+    let text: String
+    let font: UIFont
+    var minimumScale: CGFloat = 0.5
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    init(_ text: String, font: UIFont, minimumScale: CGFloat = 0.5) {
+        self.text = text
+        self.font = font
+        self.minimumScale = minimumScale
+    }
+
+    var body: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            // ViewThatFits takes the first size whose longest word fits the width.
+            ViewThatFits(in: .horizontal) {
+                ForEach(Self.scales(down: minimumScale), id: \.self) { scale in
+                    let sized = scale == 1 ? font : font.withSize(font.pointSize * scale)
+                    LongestWordWidth(width: Self.longestWordWidth(text, font: sized)) {
+                        Text(text).font(Font(sized))
+                    }
+                }
+            }
+        } else {
+            Text(text).font(Font(font))
+        }
+    }
+
+    static func scales(down minimum: CGFloat) -> [CGFloat] {
+        var out: [CGFloat] = [1]
+        var next: CGFloat = 0.94
+        while next > minimum {
+            out.append(next)
+            next -= 0.06
+        }
+        out.append(minimum)
+        return out
+    }
+
+    static func words(in text: String) -> [String] {
+        text.components(separatedBy: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "-\u{2010}\u{2013}\u{2014}/")))
+            .filter { !$0.isEmpty }
+    }
+
+    static func longestWordWidth(_ text: String, font: UIFont) -> CGFloat {
+        let widest = words(in: text)
+            .map { ($0 as NSString).size(withAttributes: [.font: font]).width }
+            .max() ?? 0
+        return ceil(widest) + 1
+    }
+}
+
+/// Reports `width` as its ideal width (what ViewThatFits compares) and otherwise lays out
+/// its one child unchanged.
+private struct LongestWordWidth: Layout {
+    let width: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let child = subviews.first else { return .zero }
+        if proposal.width == nil {
+            let size = child.sizeThatFits(ProposedViewSize(width: width, height: proposal.height))
+            return CGSize(width: width, height: size.height)
+        }
+        return child.sizeThatFits(proposal)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(bounds.size))
+    }
+}
+#endif

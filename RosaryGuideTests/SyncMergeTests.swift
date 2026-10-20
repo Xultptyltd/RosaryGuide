@@ -500,3 +500,26 @@ final class SpokenProgressTests: XCTestCase {
         XCTAssertEqual(opening?.spokenProgress, "Hail Mary 1 of 3, opening prayers")
     }
 }
+
+@MainActor
+final class WordSafeTextTests: XCTestCase {
+    func testWordsSplitOnSpacesAndHyphens() {
+        XCTAssertEqual(WordSafeText.words(in: "Our Lady of Mount-Carmel"), ["Our", "Lady", "of", "Mount", "Carmel"])
+        XCTAssertEqual(WordSafeText.words(in: "  Notifications \n"), ["Notifications"])
+    }
+
+    func testLongestWordDecidesTheWidth() {
+        let font = UIFont.systemFont(ofSize: 40)
+        let widest = WordSafeText.longestWordWidth("The Commemoration of All", font: font)
+        let single = WordSafeText.longestWordWidth("Commemoration", font: font)
+        XCTAssertEqual(widest, single, accuracy: 0.001)
+        XCTAssertGreaterThan(widest, WordSafeText.longestWordWidth("The of All", font: font))
+    }
+
+    func testScalesStepDownToTheMinimum() {
+        let scales = WordSafeText.scales(down: 0.5)
+        XCTAssertEqual(scales.first, 1)
+        XCTAssertEqual(scales.last, 0.5)
+        XCTAssertEqual(scales, scales.sorted(by: >))
+    }
+}
