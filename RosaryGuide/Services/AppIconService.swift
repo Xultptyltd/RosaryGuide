@@ -2,10 +2,13 @@ import Foundation
 import Observation
 import UIKit
 
+/// Raw values are stored and synced (firestore.rules allows "black", "white", "blue") and name
+/// the artwork, so they never change. Since 1.589 (5) Marian blue is the primary icon and black
+/// is an alternate; before that black was the primary. Listed in Settings in this order.
 enum AppIconOption: String, CaseIterable, Identifiable, Codable {
+    case blue
     case black
     case white
-    case blue
 
     var id: String { rawValue }
 
@@ -17,12 +20,12 @@ enum AppIconOption: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    /// `nil` restores the primary (Black) icon.
+    /// `nil` restores the primary (Marian blue) icon.
     var alternateIconName: String? {
         switch self {
-        case .black: nil
+        case .blue: nil
+        case .black: "AppIconBlack"
         case .white: "AppIconWhite"
-        case .blue: "AppIconBlue"
         }
     }
 
@@ -36,9 +39,11 @@ enum AppIconOption: String, CaseIterable, Identifiable, Codable {
 
     static func from(alternateIconName name: String?) -> AppIconOption {
         switch name {
+        case "AppIconBlack": .black
         case "AppIconWhite": .white
-        case "AppIconBlue": .blue
-        default: .black
+        // "AppIconBlue" is the blue alternate from before blue became the primary. It stays in
+        // the bundle (same artwork) so a device that picked it keeps its icon with no alert.
+        default: .blue
         }
     }
 }

@@ -71,7 +71,7 @@ struct SyncedPreferences: Codable, Equatable {
         dailyReminderMinutes: 19 * 60,
         feastAlertsEnabled: false,
         feastAlertMinutes: SyncedPreferences.defaultFeastAlertMinutes,
-        appIcon: .black,
+        appIcon: .blue,
         updatedAt: .syncNever
     )
 
@@ -667,6 +667,7 @@ final class AccountSyncStore {
         appIcon.onUserSelect = { [weak settings] option in
             settings?.appIconChoice = option
         }
+        settings.migrateToBluePrimaryIcon(showing: appIcon.current)
     }
 
     private var activeOwner: String? {

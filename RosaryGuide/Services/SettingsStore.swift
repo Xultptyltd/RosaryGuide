@@ -17,6 +17,7 @@ final class SettingsStore {
         /// Shared with the `@AppStorage` readers in the intention views.
         static let hideIntentionText = "offer.hideIntentionText"
         static let appIcon = "settings.appIcon"
+        static let bluePrimaryIconMigrated = "settings.appIcon.bluePrimaryMigrated"
         static let rosaryConfig = "settings.rosaryConfig"
         static let updatedAt = "settings.updatedAt"
         static let fieldUpdatedAt = "settings.fieldUpdatedAt"
@@ -182,7 +183,7 @@ final class SettingsStore {
         feastAlertsEnabled = defaults.bool(forKey: Keys.feastAlerts)
         feastAlertMinutes = defaults.object(forKey: Keys.feastAlertMinutes) as? Int ?? SyncedPreferences.defaultFeastAlertMinutes
         hideIntentionText = defaults.bool(forKey: Keys.hideIntentionText)
-        appIconChoice = AppIconOption(rawValue: defaults.string(forKey: Keys.appIcon) ?? "") ?? .black
+        appIconChoice = AppIconOption(rawValue: defaults.string(forKey: Keys.appIcon) ?? "") ?? .blue
         preferencesUpdatedAt = Date(timeIntervalSince1970: defaults.double(forKey: Keys.updatedAt))
         fieldUpdatedAt = (defaults.dictionary(forKey: Keys.fieldUpdatedAt) as? [String: Double] ?? [:])
             .mapValues { Date(timeIntervalSince1970: $0) }
@@ -261,6 +262,18 @@ final class SettingsStore {
         isApplyingSynced = true
         defer { isApplyingSynced = false }
         appIconChoice = option
+    }
+
+    /// Before 1.589 (5) black was the primary icon, so a stored "black" on a device showing the
+    /// primary icon was just the old default. Blue is the primary now: once, record blue as a
+    /// change so this device and the account follow the new default, and the account's old
+    /// "black" does not switch the icon back (with the system alert). Black picked after this
+    /// is the black alternate and is kept.
+    func migrateToBluePrimaryIcon(showing current: AppIconOption) {
+        guard !defaults.bool(forKey: Keys.bluePrimaryIconMigrated) else { return }
+        defaults.set(true, forKey: Keys.bluePrimaryIconMigrated)
+        guard hasStoredAppIconChoice, appIconChoice == .black, current == .blue else { return }
+        appIconChoice = .blue
     }
 
     /// Gives never-changed preferences a real timestamp before their first upload.

@@ -286,7 +286,7 @@ struct HomeView: View {
             subject: Text("Rosary Guide"),
             message: Text("I've been praying the Rosary with Rosary Guide. Take a look:"),
             // Share sheet header shows the blue icon (IconPreviewBlue is the same artwork as
-            // the AppIconBlue alternate icon) instead of the site's preview.
+            // the primary AppIcon) instead of the site's preview.
             preview: SharePreview("Rosary Guide", image: Image("IconPreviewBlue"))
         ) {
             HStack(spacing: AppTheme.Space.sm) {

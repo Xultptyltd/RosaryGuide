@@ -145,7 +145,7 @@ final class PreferencesMergeTests: XCTestCase {
         let remote = prefs(updatedAt: 20) { $0.textSize = .large }
         let merged = SyncedPreferences.merge(local: local, remote: remote, now: now)
         XCTAssertEqual(merged.textSize, .large)
-        XCTAssertEqual(merged.appIcon, .black, "The newer document wins every field it has no time for")
+        XCTAssertEqual(merged.appIcon, .blue, "The newer document wins every field it has no time for")
         XCTAssertEqual(merged.changedAt(.appIcon), t0.addingTimeInterval(20))
     }
 
@@ -742,5 +742,66 @@ final class SessionSyncPayloadTests: XCTestCase {
         let session = try XCTUnwrap(long.firestoreData()["session"] as? [String: Any])
         XCTAssertEqual((session["intentionIds"] as? [String])?.count, 4)
         XCTAssertEqual((session["intentionTitles"] as? [String])?.count, 4)
+    }
+}
+
+/// Marian blue is the primary icon since 1.589 (5); black is an alternate.
+final class AppIconOptionTests: XCTestCase {
+    private func withDefaults(_ body: (UserDefaults) -> Void) {
+        let name = "AppIconOptionTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        body(defaults)
+    }
+
+    func testBlueIsPrimaryAndListedFirst() {
+        XCTAssertEqual(AppIconOption.allCases.first, .blue)
+        XCTAssertNil(AppIconOption.blue.alternateIconName)
+        XCTAssertEqual(AppIconOption.black.alternateIconName, "AppIconBlack")
+        XCTAssertEqual(AppIconOption.white.alternateIconName, "AppIconWhite")
+        XCTAssertEqual(SyncedPreferences.defaults.appIcon, .blue)
+    }
+
+    func testSystemIconNamesMapBack() {
+        XCTAssertEqual(AppIconOption.from(alternateIconName: nil), .blue)
+        XCTAssertEqual(AppIconOption.from(alternateIconName: "AppIconBlue"), .blue, "the old blue alternate")
+        XCTAssertEqual(AppIconOption.from(alternateIconName: "AppIconBlack"), .black)
+        XCTAssertEqual(AppIconOption.from(alternateIconName: "AppIconWhite"), .white)
+    }
+
+    func testOldDefaultBlackBecomesBlueOnceAsAChange() {
+        withDefaults { defaults in
+            defaults.set("black", forKey: "settings.appIcon")
+            let settings = SettingsStore(defaults: defaults)
+            settings.migrateToBluePrimaryIcon(showing: .blue)
+            XCTAssertEqual(settings.appIconChoice, .blue)
+            XCTAssertNotNil(settings.fieldUpdatedAt[SyncedPreferences.Field.appIcon.rawValue], "stamped so it beats the account's old black")
+            XCTAssertEqual(SettingsStore(defaults: defaults).appIconChoice, .blue)
+
+            // Black picked after the migration is the black alternate and stays.
+            settings.appIconChoice = .black
+            settings.migrateToBluePrimaryIcon(showing: .blue)
+            XCTAssertEqual(settings.appIconChoice, .black)
+        }
+    }
+
+    func testMigrationLeavesOtherChoicesAlone() {
+        withDefaults { defaults in
+            defaults.set("white", forKey: "settings.appIcon")
+            let settings = SettingsStore(defaults: defaults)
+            settings.migrateToBluePrimaryIcon(showing: .white)
+            XCTAssertEqual(settings.appIconChoice, .white)
+        }
+        withDefaults { defaults in
+            defaults.set("blue", forKey: "settings.appIcon")
+            let settings = SettingsStore(defaults: defaults)
+            settings.migrateToBluePrimaryIcon(showing: .blue) // old AppIconBlue alternate
+            XCTAssertEqual(settings.appIconChoice, .blue)
+        }
+        withDefaults { defaults in
+            let settings = SettingsStore(defaults: defaults)
+            settings.migrateToBluePrimaryIcon(showing: .blue)
+            XCTAssertFalse(settings.hasStoredAppIconChoice, "a fresh install records nothing")
+        }
     }
 }
