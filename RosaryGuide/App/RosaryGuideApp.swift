@@ -14,7 +14,6 @@ struct RosaryGuideApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
-        FontRegistrar.register()
         GuideChrome.applyAtLaunch()
         // On-device MetricKit diagnostics; registration runs off the main thread.
         MetricsCollector.shared.start()

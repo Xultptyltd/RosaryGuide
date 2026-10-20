@@ -385,7 +385,6 @@ struct ThemedRoot<Content: View>: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(palette.bg.ignoresSafeArea())
             .onAppear {
-                FontRegistrar.register()
                 GuideChrome.apply(palette)
             }
             .onChange(of: colorScheme) { _, newScheme in

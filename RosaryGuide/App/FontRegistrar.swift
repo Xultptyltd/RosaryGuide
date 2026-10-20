@@ -31,8 +31,8 @@ final class DynamicTypeObserver {
 }
 #endif
 
-/// Registers Instrument Sans and Newsreader from `Fonts/` (never a top-level `Resources/` folder)
-/// and resolves SwiftUI fonts via UIFont so variable-axis weight / optical size actually apply.
+/// Resolves Instrument Sans and Newsreader (in `Fonts/`, registered once by iOS through
+/// `UIAppFonts` in Info.plist) via UIFont so variable-axis weight / optical size actually apply.
 enum FontRegistrar {
     private static let sansCandidates = [
         "InstrumentSans-Regular",
@@ -50,19 +50,6 @@ enum FontRegistrar {
         "Newsreader 16pt Italic",
         "Newsreader-Italic"
     ]
-
-    static func register() {
-        let files = ["InstrumentSans.ttf", "Newsreader.ttf", "Newsreader-Italic.ttf"]
-        for file in files {
-            let name = (file as NSString).deletingPathExtension
-            let ext = (file as NSString).pathExtension
-            guard let url = Bundle.main.url(forResource: name, withExtension: ext, subdirectory: "Fonts")
-                    ?? Bundle.main.url(forResource: name, withExtension: ext) else {
-                continue
-            }
-            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
-        }
-    }
 
     /// Every font scales with Dynamic Type through `UIFontMetrics` for its text style.
     /// `maxPointSize` caps the scaled size for display type and fixed-height controls
