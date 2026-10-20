@@ -1093,6 +1093,7 @@ private struct EmptyPapalIntentionCard: View {
 private struct PapalMonthCard: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let item: SuggestedIntention
     let isAdded: Bool
     let onOpen: () -> Void
@@ -1110,17 +1111,17 @@ private struct PapalMonthCard: View {
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    Text(item.title)
-                        .font(AppTheme.TypeRole.callout(weight: .semibold))
+                    // Large sizes: the whole title wraps instead of "For mental health mi…".
+                    WordSafeText(item.title, font: AppTheme.TypeRole.calloutUIFont(weight: .semibold))
                         .foregroundStyle(palette.ink)
-                        .lineLimit(2)
+                        .lineLimit(dynamicTypeSize >= .xxLarge ? nil : 2)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     Text(monthLabel)
                         .font(AppTheme.TypeRole.caption)
                         .foregroundStyle(palette.textSecondary)
-                        .lineLimit(2)
+                        .lineLimit(dynamicTypeSize >= .xxLarge ? nil : 2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

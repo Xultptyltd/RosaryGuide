@@ -511,7 +511,9 @@ struct PrayView: View {
                 }
 
             // Fixed floating chrome — last so it composites above the hero canvas.
-            plateTopChrome(step)
+            // Once the mystery text scrolls up under it, the chrome gets the same frosted
+            // bar as long prayers so the header never sits on top of reading text.
+            plateTopChrome(step, textUnderChrome: plateScrollY > heroSpacer + textTopPadding - chromeH)
         }
         .background(palette.prayBg)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -529,7 +531,7 @@ struct PrayView: View {
     }
 
     /// Floating Aa / title / close + progress — translucent scrim, not an opaque slab.
-    private func plateTopChrome(_ step: RosaryStep) -> some View {
+    private func plateTopChrome(_ step: RosaryStep, textUnderChrome: Bool) -> some View {
         VStack(spacing: 0) {
             header(step)
             SevenStageTrack(current: step.stage) { jump(to: $0) }
@@ -550,6 +552,7 @@ struct PrayView: View {
                 .ignoresSafeArea(edges: .top)
                 .allowsHitTesting(false)
         }
+        .guideChromeBar(visible: textUnderChrome, prayerBackground: true)
     }
 
     /// Soft wash from page colour into the hero — no hard horizontal edge.
