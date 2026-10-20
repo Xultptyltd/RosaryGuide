@@ -11,6 +11,7 @@ private enum SettingsDestination: Hashable {
     case faqs
     case acknowledgements
     case license(String)
+    case appIcon
 }
 
 struct SettingsView: View {
@@ -137,7 +138,7 @@ struct SettingsView: View {
                         SettingsNavigationRow(title: "Notifications", icon: "bell", destination: .notifications)
 
                         if appIcon.supportsAlternateIcons {
-                            AppIconChoices()
+                            SettingsNavigationRow(title: "App icon", icon: "app", destination: .appIcon)
                         }
                     }
 
@@ -395,6 +396,8 @@ struct SettingsView: View {
             SettingsRosaryScreen()
         case .acknowledgements:
             SettingsAcknowledgementsScreen()
+        case .appIcon:
+            SettingsAppIconScreen()
         case .license(let id):
             if let entry = LicenseCatalog.entry(id: id) {
                 SettingsLicenseScreen(entry: entry)
@@ -719,89 +722,151 @@ private struct SettingsRowChrome: View {
     }
 }
 
-/// The icon tiles picker (as before 7433662), as one flat row in General.
-/// Picking an icon also records the synced appIcon preference
-/// (AppIconService.onUserSelect -> SettingsStore.appIconChoice). Errors show as an alert
-/// on SettingsView.
-private struct AppIconChoices: View {
+/// Settings > App icon: a home screen preview with the chosen icon, then one flat card per
+/// icon. Picking an icon also records the synced appIcon preference
+/// (AppIconService.onUserSelect -> SettingsStore.appIconChoice).
+private struct SettingsAppIconScreen: View {
     @Environment(AppIconService.self) private var appIcon
+    @Environment(SettingsStore.self) private var settings
     @Environment(\.palette) private var palette
-    @Environment(\.showsRowDivider) private var showsRowDivider
 
-    private let previewSize: CGFloat = 64
-    private let tileSpacing = AppTheme.Space.md
+    private let thumbnailSize: CGFloat = 56
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+        SettingsDetailScaffold(title: "App icon") {
+            AppIconHomePreview(selected: appIcon.current)
+
+            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                GuideSectionLabel(text: "Available", prominence: .strong)
+                    .accessibilityAddTraits(.isHeader)
+
+                VStack(spacing: AppTheme.Space.sm) {
+                    ForEach(AppIconOption.allCases) { option in
+                        row(option)
+                    }
+                }
+            }
+        }
+        .onAppear { appIcon.refreshFromSystem() }
+        // Pushed pages don't show SettingsView's alerts, so surface errors here.
+        .alert("App icon not changed", isPresented: Binding(
+            get: { appIcon.lastErrorMessage != nil },
+            set: { if !$0 { appIcon.clearError() } }
+        )) {
+            Button("OK", role: .cancel) { appIcon.clearError() }
+        } message: {
+            Text(appIcon.lastErrorMessage ?? "Try again.")
+        }
+    }
+
+    private func row(_ option: AppIconOption) -> some View {
+        let selected = appIcon.current == option
+        return Button {
+            guard !selected else { return }
+            HapticService.play(.light, enabled: settings.hapticsEnabled)
+            appIcon.select(option)
+        } label: {
             HStack(spacing: AppTheme.Space.lg) {
-                SettingsRowIcon(symbol: "app", tint: palette.ink)
-                Text("App icon")
+                AppIconThumbnail(option: option, size: thumbnailSize)
+                Text(option.title)
                     .font(AppTheme.TypeRole.settingsRow)
                     .foregroundStyle(palette.ink)
                     .lineLimit(1)
-            }
-            .accessibilityAddTraits(.isHeader)
-
-            // Icon choices sit in the standard flat card.
-            HStack(spacing: tileSpacing) {
-                ForEach(AppIconOption.allCases) { option in
-                    iconCell(option)
+                Spacer(minLength: AppTheme.Space.sm)
+                if selected {
+                    Image(systemName: "checkmark")
+                        .font(AppTheme.TypeRole.settingsRow.weight(.semibold))
+                        .foregroundStyle(palette.ink)
                 }
             }
-            .frame(maxWidth: .infinity)
-            .padding(AppTheme.Space.lg)
+            .padding(AppTheme.Space.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .guideCard()
-        }
-        .padding(.vertical, AppTheme.Space.lg)
-        // As the last row, trim so the card sits Space.lg above the section band.
-        // Measured untrimmed card-to-band gap was ~52pt (row padding, boundary padding
-        // and the boundary's empty frame); trim measured in render to leave Space.lg + Space.xs (reads as 16 beside the divider's curved ends). The trim lives
-        // in a child view so it reads `showsRowDivider` after DividedRows sets it.
-        .modifier(SettingsLastRowBottomTrim(amount: AppTheme.Space.lg + AppTheme.Space.sm))
-        .overlay(alignment: .bottom) { SettingsDivider() }
-        .onAppear { appIcon.refreshFromSystem() }
-        .accessibilityElement(children: .contain)
-    }
-
-    @ViewBuilder
-    private func iconCell(_ option: AppIconOption) -> some View {
-        let selected = appIcon.current == option
-        Button {
-            if !selected { appIcon.select(option) }
-        } label: {
-            iconLabel(option, selected: selected)
+            .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(option.title) app icon")
-        .accessibilityAddTraits(selected ? [.isSelected] : [])
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : [.isButton])
+    }
+}
+
+/// An icon preview image with the home screen's continuous corner.
+private struct AppIconThumbnail: View {
+    @Environment(\.palette) private var palette
+    let option: AppIconOption
+    let size: CGFloat
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: size * 0.225, style: .continuous)
+        Image(option.previewImageName)
+            .resizable()
+            .scaledToFill()
+            .frame(width: size, height: size)
+            .clipShape(shape)
+            .overlay { shape.strokeBorder(palette.selectionStroke, lineWidth: AppTheme.Component.panelStrokeWidth) }
+    }
+}
+
+/// A phone outline, cropped at the bottom, showing the chosen icon as "Rosary Guide" in the
+/// first slot beside neutral placeholder apps (plain tiles with SF Symbols).
+private struct AppIconHomePreview: View {
+    @Environment(\.palette) private var palette
+    let selected: AppIconOption
+
+    private let tile: CGFloat = 52
+    private let visibleHeight: CGFloat = 236
+    private static let placeholders: [(symbol: String, title: String)] = [
+        ("calendar", "Calendar"), ("photo", "Photos"), ("camera", "Camera"),
+        ("envelope", "Mail"), ("note.text", "Notes"), ("checklist", "Reminders"), ("clock", "Clock")
+    ]
+
+    var body: some View {
+        let frameShape = UnevenRoundedRectangle(topLeadingRadius: 44, topTrailingRadius: 44, style: .continuous)
+        let screenShape = UnevenRoundedRectangle(topLeadingRadius: 36, topTrailingRadius: 36, style: .continuous)
+        let columns = Array(repeating: GridItem(.flexible(), spacing: AppTheme.Space.md), count: 4)
+
+        LazyVGrid(columns: columns, spacing: AppTheme.Space.lg) {
+            slot(title: "Rosary Guide") { AppIconThumbnail(option: selected, size: tile) }
+            ForEach(Self.placeholders, id: \.title) { app in
+                slot(title: app.title) {
+                    RoundedRectangle(cornerRadius: tile * 0.225, style: .continuous)
+                        .fill(palette.surface)
+                        .frame(width: tile, height: tile)
+                        .overlay {
+                            Image(systemName: app.symbol)
+                                .font(.system(size: tile * 0.42, weight: .regular))
+                                .foregroundStyle(palette.dim)
+                        }
+                }
+            }
+        }
+        .padding(.horizontal, AppTheme.Space.lg)
+        .padding(.top, AppTheme.Space.xl)
+        .frame(maxWidth: .infinity, minHeight: visibleHeight, alignment: .top)
+        .background(palette.bg, in: screenShape)
+        .clipShape(screenShape)
+        .padding([.horizontal, .top], AppTheme.Space.sm)
+        .overlay { frameShape.strokeBorder(palette.selectionStroke, lineWidth: 2) }
+        .padding(.horizontal, AppTheme.Space.xl)
+        .padding(.top, AppTheme.Space.lg)
+        .frame(height: visibleHeight, alignment: .top)
+        .clipped()
+        .frame(maxWidth: .infinity)
+        .guideCard()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Home screen preview with the \(selected.title) Rosary Guide icon")
     }
 
-    private func iconLabel(_ option: AppIconOption, selected: Bool) -> some View {
-        VStack(spacing: AppTheme.Space.sm) {
-            Image(option.previewImageName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: previewSize, height: previewSize)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(
-                            selected ? palette.accent : palette.selectionStroke,
-                            lineWidth: selected ? 2.5 : AppTheme.Component.panelStrokeWidth
-                        )
-                }
-                .shadow(
-                    color: selected ? palette.selectedShadow : .clear,
-                    radius: selected ? 6 : 0,
-                    y: selected ? 2 : 0
-                )
-
-            Text(option.title)
-                .font(AppTheme.TypeRole.themeSummary)
-                .foregroundStyle(selected ? palette.accent : palette.dim)
+    private func slot<Icon: View>(title: String, @ViewBuilder icon: () -> Icon) -> some View {
+        VStack(spacing: AppTheme.Space.xs) {
+            icon()
+            Text(title)
+                .font(AppTheme.TypeRole.caption)
+                .foregroundStyle(palette.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity)
-        .contentShape(Rectangle())
     }
 }
 
