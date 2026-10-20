@@ -10,32 +10,40 @@ import UIKit
 /// Never ship a top-level `Resources/` folder — iOS codesign treats that as a macOS bundle.
 enum ArtCatalog {
 
+    /// One file per plate: the standard and wide plates were byte-identical, so both shapes
+    /// load the same image and crop it in the view. `wide` is kept for callers' framing.
     static func platePath(set: MysterySetKind, slug: String, scheme: ColorScheme, wide: Bool) -> (directory: String, name: String) {
         let theme = scheme == .dark ? "dark" : "light"
-        let file = wide ? "mystery-\(slug)-wide" : "mystery-\(slug)"
-        return ("Art/\(theme)/\(set.rawValue)", file)
+        return ("Art/\(theme)/\(set.rawValue)", "mystery-\(slug)")
     }
 
+    /// One file per hero: the tall and wide heroes were byte-identical; the view crops each shape.
     static func heroPath(set: MysterySetKind, scheme: ColorScheme, tall: Bool) -> (directory: String, name: String) {
         let theme = scheme == .dark ? "dark" : "light"
-        let shape = tall ? "tall" : "wide"
-        return ("Art/hero", "hero-\(set.rawValue)-\(theme)-\(shape)")
+        return ("Art/hero", "hero-\(set.rawValue)-\(theme)")
     }
 
     /// Feast hero art: dedicated light/dark PNGs under `Art/feasts`, or a mapped mystery wide plate.
     static func feastHeroPath(feastId: String, scheme: ColorScheme) -> (directory: String, name: String, ext: String)? {
         if let plate = feastMysteryPlate(for: feastId) {
             let theme = scheme == .dark ? "dark" : "light"
-            return ("Art/\(theme)/\(plate.set.rawValue)", "mystery-\(plate.slug)-wide", "jpg")
+            return ("Art/\(theme)/\(plate.set.rawValue)", "mystery-\(plate.slug)", "jpg")
         }
         if dedicatedFeastHeroIDs.contains(feastId) {
-            let directory = scheme == .dark ? "Art/feasts/dark" : "Art/feasts"
-            return (directory, "feast-\(feastId)", "png")
+            if scheme == .dark {
+                return ("Art/feasts/dark", "feast-\(feastId)", darkFeastPNGIDs.contains(feastId) ? "png" : "jpg")
+            }
+            return ("Art/feasts", "feast-\(feastId)", "jpg")
         }
         return nil
     }
 
-    /// Feasts with dedicated PNGs under `Art/feasts/` and `Art/feasts/dark/`.
+    /// Dark feast art kept as lossless PNG: JPEG nudged their near-black backgrounds by one level.
+    private static let darkFeastPNGIDs: Set<String> = [
+        "advent-1", "carmel", "christ-the-king", "holy-saturday", "nativity-mary", "sacred-heart"
+    ]
+
+    /// Feasts with dedicated art under `Art/feasts/` (JPEG) and `Art/feasts/dark/`.
     private static let dedicatedFeastHeroIDs: Set<String> = [
         "advent-1", "all-saints", "all-souls", "ash-wednesday", "carmel", "christ-the-king",
         "epiphany", "fatima", "guadalupe", "guardian-angels", "holy-name-mary", "holy-saturday",
