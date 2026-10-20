@@ -440,12 +440,9 @@ final class ReviewPromptGateTests: XCTestCase {
         XCTAssertFalse(gate.shouldPrompt(completedRosaries: 10))
     }
 
-    func testAppStoreLinksFollowTheAppID() {
-        if AppStoreLinks.appID.isEmpty {
-            XCTAssertNil(AppStoreLinks.writeReview, "No ID: the review button stays hidden")
-            XCTAssertNil(AppStoreLinks.productPage)
-        } else {
-            XCTAssertEqual(AppStoreLinks.writeReview?.absoluteString, "https://apps.apple.com/app/id\(AppStoreLinks.appID)?action=write-review")
-        }
+    func testAppStoreLinksUseTheAppleID() {
+        XCTAssertEqual(AppStoreLinks.appID, "6814299309")
+        XCTAssertEqual(AppStoreLinks.productPage?.absoluteString, "https://apps.apple.com/app/id6814299309")
+        XCTAssertEqual(AppStoreLinks.writeReview?.absoluteString, "https://apps.apple.com/app/id6814299309?action=write-review")
     }
 }

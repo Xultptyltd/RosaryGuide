@@ -5,8 +5,8 @@ import UIKit
 /// App Store links, built from the one App Store Connect Apple ID.
 enum AppStoreLinks {
     /// The numeric App Store Connect Apple ID (App Information > Apple ID).
-    /// Empty until the listing exists; every App Store link is hidden while it is empty.
-    static let appID = ""
+    /// If this is ever emptied, every App Store link hides itself.
+    static let appID = "6814299309"
 
     static var productPage: URL? {
         appID.isEmpty ? nil : URL(string: "https://apps.apple.com/app/id\(appID)")
