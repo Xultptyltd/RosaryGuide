@@ -7,7 +7,6 @@ import UserNotifications
 private enum SettingsDestination: Hashable {
     case notifications
     case rosary
-    case aboutPremium
     case faqs
     case acknowledgements
     case license(String)
@@ -32,7 +31,7 @@ struct SettingsView: View {
     @State private var confirmDeleteAccount = false
     @State private var didDeleteAccount = false
     @State private var accountDeletionError: String?
-    @State private var placeholderMessage: String?
+    @State private var mailUnavailableMessage: String?
     @State private var showOnboardingPreview = false
     @State private var mailDraft: SettingsMailDraft?
     @State private var showReportChoice = false
@@ -104,13 +103,13 @@ struct SettingsView: View {
             Text(appIcon.lastErrorMessage ?? "Try again.")
         }
         .onAppear { appIcon.refreshFromSystem() }
-        .alert("Coming soon", isPresented: Binding(
-            get: { placeholderMessage != nil },
-            set: { if !$0 { placeholderMessage = nil } }
+        .alert("Mail not available", isPresented: Binding(
+            get: { mailUnavailableMessage != nil },
+            set: { if !$0 { mailUnavailableMessage = nil } }
         )) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(placeholderMessage ?? "This will be available in a future update.")
+            Text(mailUnavailableMessage ?? "")
         }
     }
 
@@ -120,10 +119,6 @@ struct SettingsView: View {
 
         return ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                PremiumUpsellIfNeeded {
-                    placeholderMessage = "Premium trials will be available when subscriptions are configured."
-                }
-
                 VStack(alignment: .leading, spacing: 0) {
                     SettingsSection(title: "General") {
                         SettingsNavigationRow(title: "Customise rosary", icon: "slider.horizontal.3", destination: .rosary)
@@ -170,8 +165,6 @@ struct SettingsView: View {
                             }
                             .disabled(auth.isWorking)
                         }
-
-                        SettingsNavigationRow(title: "Premium", icon: "crown", destination: .aboutPremium)
                     }
 
                     if !auth.isSignedIn, let message = auth.errorMessage {
@@ -369,7 +362,7 @@ struct SettingsView: View {
         ]
 
         guard let url = components.url else {
-            placeholderMessage = "Mail is not available on this device."
+            mailUnavailableMessage = "Mail is not available on this device."
             return
         }
         openURL(url)
@@ -383,8 +376,6 @@ struct SettingsView: View {
     @ViewBuilder
     private func destinationView(_ destination: SettingsDestination) -> some View {
         switch destination {
-        case .aboutPremium:
-            SettingsPremiumScreen()
         case .faqs:
             SettingsFAQScreen()
         case .notifications:
@@ -905,73 +896,6 @@ private struct SettingsDetailScaffold<Content: View>: View {
         .guideDetailChrome(title)
     }
 }
-
-/// The Settings Premium screen for pushing from outside Settings (e.g. the
-/// Rosary Guide+ card on My prayer). Owns its own "Coming soon" alert, which
-/// SettingsView otherwise provides.
-struct PremiumScreen: View {
-    /// Optional context line shown at the top (e.g. why the user landed here).
-    var note: String? = nil
-
-    var body: some View {
-        SettingsPremiumScreen(note: note)
-    }
-}
-
-private struct SettingsPremiumScreen: View {
-    var note: String? = nil
-    // Own the alert so it presents on this page when pushed from Settings
-    // (root SettingsView alerts only appear after swipe-back).
-    @State private var placeholderMessage: String?
-
-    var body: some View {
-        SettingsDetailScaffold(title: "Premium") {
-            if let note {
-                SettingsFootnote(note)
-            }
-
-            PremiumUpsellIfNeeded {
-                placeholderMessage = "Premium trials will be available when subscriptions are configured."
-            }
-
-            SettingsSection(title: "Premium") {
-                SettingsValueActionRow(title: "Lifetime Premium", icon: "infinity", value: "save 40%") {
-                    placeholderMessage = "Lifetime Premium is not available yet."
-                }
-                SettingsActionRow(title: "Restore purchase", icon: "arrow.clockwise") {
-                    placeholderMessage = "Purchases are not configured yet."
-                }
-            }
-
-            #if DEBUG
-            PremiumModeDebugSection()
-            #endif
-        }
-        .alert("Coming soon", isPresented: Binding(
-            get: { placeholderMessage != nil },
-            set: { if !$0 { placeholderMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(placeholderMessage ?? "This will be available in a future update.")
-        }
-    }
-}
-
-#if DEBUG
-/// Developer switch between the free tier and Rosary Guide+ (Debug builds only).
-private struct PremiumModeDebugSection: View {
-    @Bindable private var premium = PremiumDebugOverride.shared
-
-    var body: some View {
-        SettingsSection(title: "Developer") {
-            SettingsToggleRow(title: "Premium mode", icon: "hammer", isOn: $premium.isPremium)
-        }
-
-        SettingsFootnote("For testing only. Switches the app between free and Rosary Guide+.")
-    }
-}
-#endif
 
 private struct SettingsFAQScreen: View {
     var body: some View {

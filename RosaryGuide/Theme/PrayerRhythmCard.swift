@@ -247,7 +247,6 @@ struct PrayerRhythmCard: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var rhythm: PrayerRhythm
-    var isLocked = false
 
     private enum Metric {
         static let radius: CGFloat = AppTheme.containerRadius
@@ -312,9 +311,6 @@ struct PrayerRhythmCard: View {
 
             Color.clear
                 .frame(width: 12)
-
-            trailingAffordance
-                .frame(maxHeight: .infinity, alignment: .center)
         }
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -329,9 +325,6 @@ struct PrayerRhythmCard: View {
                 .padding(.top, AppTheme.Space.xl)
             dotGrid
                 .padding(.top, AppTheme.Space.md)
-            trailingAffordance
-                .padding(.top, AppTheme.Space.md)
-                .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 
@@ -412,27 +405,6 @@ struct PrayerRhythmCard: View {
                 }
             }
         }
-    }
-
-    private var trailingAffordance: some View {
-        HStack(spacing: 6) {
-            if isLocked {
-                Image(systemName: "lock.fill")
-                    .guideSymbol(size: 10, weight: .semibold)
-                Text("Guide+")
-                    .font(AppTheme.TypeRole.caption)
-            }
-        }
-        .foregroundStyle(isLocked ? palette.accent : palette.ink.opacity(isDark ? 0.62 : 0.52))
-        .padding(.horizontal, isLocked ? 8 : 0)
-        .padding(.vertical, isLocked ? 5 : 0)
-        .background {
-            if isLocked {
-                Capsule(style: .continuous)
-                    .fill(palette.accent.opacity(isDark ? 0.18 : 0.12))
-            }
-        }
-        .accessibilityHidden(true)
     }
 
     @ViewBuilder

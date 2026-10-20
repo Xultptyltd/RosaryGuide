@@ -225,9 +225,6 @@ struct ThemePalette {
 
     var prayerBackground: Color { background }
     var artworkFallbackBackground: Color { Color(hex: 0x17181A) }
-    var premiumBorderOpacity: Double { scheme == .dark ? 0.30 : 0.35 }
-    var premiumGold: Color { scheme == .dark ? Color(hex: 0xE2C489) : Color(hex: 0x8A6322) }
-    var premiumBorderGold: Color { scheme == .dark ? Color(hex: 0xD9B56E) : Color(hex: 0xA97F35) }
     var feastIndicator: Color { scheme == .light ? Color(hex: 0xC4922C) : Color(hex: 0xE2B75A) }
     var accentTint: Color {
         scheme == .dark

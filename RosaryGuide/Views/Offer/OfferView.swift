@@ -16,17 +16,12 @@ struct OfferView: View {
     @State private var navigationPath = NavigationPath()
     @State private var popeStore = PopeIntentionStore.shared
     @State private var intentionDetail: OfferIntention?
-    @State private var showingPremium = false
     @State private var showingJourney = false
     @State private var showingMilestones = false
     /// Pushes the All intentions screen from "See all".
     @State private var showingAllIntentions = false
-    /// Set when Premium opens because the free intention limit was hit.
-    @State private var premiumNote: String?
     /// Banking-style privacy: when true, mask personal intention titles on the list surface.
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
-    /// Space an IntentionListRow leaves under its icon (its vertical padding).
-    private static let intentionRowBottomInset: CGFloat = 10
     /// Rows shown under the Add button; more than this shows "See all".
     private static let collapsedIntentionRowLimit = 3
     @Environment(DayClock.self) private var dayClock
@@ -112,9 +107,6 @@ struct OfferView: View {
                     onPray: { prayWith(item) }
                 )
             }
-            .navigationDestination(isPresented: $showingPremium) {
-                PremiumScreen(note: premiumNote)
-            }
             .navigationDestination(isPresented: $showingJourney) {
                 PrayerJourneyView(
                     prayedDayStarts: sessionStore.completedDayStarts,
@@ -132,9 +124,6 @@ struct OfferView: View {
                     onPray: { prayWith($0) }
                 )
             }
-            .onChange(of: showingPremium) { _, showing in
-                if !showing { premiumNote = nil }
-            }
             .onAppear { offer.pruneExpired() }
         }
     }
@@ -145,7 +134,7 @@ struct OfferView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
                 Button {
-                    if PremiumStatus.isPremium { showingMilestones = true } else { openJourney() }
+                    showingMilestones = true
                 } label: {
                     let progress = sessionStore.journeyMilestones
                     VStack(alignment: .leading, spacing: AppTheme.Space.md) {
@@ -223,8 +212,7 @@ struct OfferView: View {
                 MyPrayerJourneySummaryCard(
                     rhythm: PrayerRhythm(prayedDayStarts: rhythmPrayerDays),
                     prayedDayStarts: rhythmPrayerDays,
-                    rosariesThisWeek: weeklyCompletedRosaryCount,
-                    isLocked: !PremiumStatus.isPremium
+                    rosariesThisWeek: weeklyCompletedRosaryCount
                 )
                 PillButton(title: "View history", filled: false, tertiary: true) {
                     openJourney()
@@ -315,16 +303,10 @@ struct OfferView: View {
                         }
                     }
 
-                    if PremiumStatus.isPremium {
-                        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                            GuideSectionDivider()
-                                .padding(.horizontal, -AppTheme.gutter)
-                            milestonesSection
-                        }
-                    } else {
-                        prayerJourneysSection
-                            // sectionGap above (the stack already adds Space.lg).
-                            .padding(.top, AppTheme.sectionGap - AppTheme.Space.lg)
+                    VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                        GuideSectionDivider()
+                            .padding(.horizontal, -AppTheme.gutter)
+                        milestonesSection
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -418,11 +400,6 @@ struct OfferView: View {
     private var visibleSecondaryIntentions: [OfferIntention] {
         Array(secondaryIntentions.prefix(Self.collapsedIntentionRowLimit))
     }
-    /// Visible space under the last list row's icon, subtracted so the Prayer
-    /// journeys gap reads as sectionGap.
-    private var intentionListBottomInset: CGFloat {
-        secondaryIntentions.isEmpty ? 0 : Self.intentionRowBottomInset
-    }
     private var papalSuggestion: SuggestedIntention? {
         suggestions.first(where: isPapalSuggestion)
     }
@@ -475,19 +452,6 @@ struct OfferView: View {
         }
     }
 
-    /// "Prayer journeys" section: title, sectionTitleGap, then the Rosary Guide+ card.
-    /// Hidden for Rosary Guide+ users (`PremiumStatus.isPremium`).
-    private var prayerJourneysSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            GuideSectionLabel(text: "Prayer journeys", prominence: .strong)
-                .accessibilityAddTraits(.isHeader)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            PremiumUpsellCard { showingPremium = true }
-                .padding(.top, AppTheme.sectionTitleGap)
-        }
-    }
-
     /// "Your intentions" section title. The right slot keeps the hide/show intentions
     /// toggle; "See all" lives at the bottom of the visible list.
     private var intentionsSectionHeader: some View {
@@ -531,12 +495,7 @@ struct OfferView: View {
     }
 
     private func openJourney() {
-        if PremiumStatus.isPremium {
-            showingJourney = true
-        } else {
-            premiumNote = "Prayer history is included with Rosary Guide+. It keeps a record of your prayer rhythm, history and milestones."
-            showingPremium = true
-        }
+        showingJourney = true
     }
 
     private var milestonesSection: some View {
@@ -569,12 +528,11 @@ struct OfferView: View {
                         MyPrayerJourneySummaryCard(
                             rhythm: PrayerRhythm(prayedDayStarts: rhythmPrayerDays),
                             prayedDayStarts: rhythmPrayerDays,
-                            rosariesThisWeek: weeklyCompletedRosaryCount,
-                            isLocked: !PremiumStatus.isPremium
+                            rosariesThisWeek: weeklyCompletedRosaryCount
                         )
                     }
                     .buttonStyle(JourneyCardButtonStyle())
-                    .accessibilityHint(PremiumStatus.isPremium ? "Opens your prayer journey" : "Rosary Guide Plus is required")
+                    .accessibilityHint("Opens your prayer journey")
 
                     syncWarning
                         .padding(.top, AppTheme.Space.md)
@@ -650,14 +608,8 @@ struct OfferView: View {
                     .padding(.top, AppTheme.sectionTitleGap)
                 }
 
-                if PremiumStatus.isPremium {
-                    GuideSectionBoundary()
-                    milestonesSection
-                } else {
-                    prayerJourneysSection
-                        // Visible sectionGap: intention rows carry their own bottom inset.
-                        .padding(.top, AppTheme.sectionGap - intentionListBottomInset)
-                }
+                GuideSectionBoundary()
+                milestonesSection
             }
             .padding(.horizontal, AppTheme.gutter)
             // Same top breathing room as FeastsView before its title/control block.
@@ -698,10 +650,6 @@ struct OfferView: View {
             }
             // Already in the list — editable from the row menu; don't force the editor open.
         } else {
-            guard papal || offer.canAddIntention else {
-                showIntentionLimitPremium()
-                return
-            }
             _ = offer.add(
                 title: item.title,
                 note: item.note,
@@ -734,18 +682,9 @@ struct OfferView: View {
         prayLaunch = .fresh(item.prayMystery(today: todaySet), intentionId: item.id)
     }
 
-    /// Add flow entry: the editor, or Rosary Guide+ when a free user is at the limit.
+    /// Add flow entry: opens the editor (no intention limit).
     private func startAddingIntention() {
-        if offer.canAddIntention {
-            editor = .create
-        } else {
-            showIntentionLimitPremium()
-        }
-    }
-
-    private func showIntentionLimitPremium() {
-        premiumNote = IntentionLimit.premiumNote
-        showingPremium = true
+        editor = .create
     }
 }
 
@@ -754,7 +693,6 @@ private struct MyPrayerJourneySummaryCard: View {
     let rhythm: PrayerRhythm
     let prayedDayStarts: Set<TimeInterval>
     let rosariesThisWeek: Int
-    var isLocked: Bool = false
 
     private var rhythmHeadline: String {
         if rhythm.weekRun >= 2, rhythm.prayedDaysThisWeek > 0 {
@@ -783,13 +721,6 @@ private struct MyPrayerJourneySummaryCard: View {
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
-
-                    if isLocked {
-                        Image(systemName: "lock.fill")
-                            .guideSymbol(size: 13, weight: .regular)
-                            .foregroundStyle(palette.dim)
-                            .accessibilityHidden(true)
-                    }
                 }
 
                 Text(rosaryCaption)
@@ -1885,7 +1816,7 @@ private struct IntentionDetailView: View {
 }
 
 
-/// Premium Holy Father suggestion — larger portrait, generous type and padding.
+/// Featured Holy Father suggestion — larger portrait, generous type and padding.
 private struct PapalSuggestionCard: View {
     @Environment(\.palette) private var palette
     let item: SuggestedIntention
@@ -2168,13 +2099,6 @@ struct IntentionIconView: View {
         size * AppTheme.LineIcon.glyphRatio
     }
 
-}
-
-/// Copy for the free intention limit, shared by My prayer and the in-rosary sheet.
-enum IntentionLimit {
-    static var premiumNote: String {
-        "Free accounts can keep \(PremiumStatus.freeIntentionLimit) intentions. Rosary Guide+ removes the limit. The Pope's monthly intention never counts."
-    }
 }
 
 enum EditorRoute: Identifiable, Hashable {
@@ -2837,8 +2761,7 @@ struct IntentionEditorSheet: View {
             let priorCurrentId: UUID? = makeCurrent
                 ? nil
                 : offer.sortedIntentions.first(where: \.isPinned)?.id
-            // nil when a free user is at the limit (entry points normally route to Premium first).
-            guard let created = offer.add(
+            let created = offer.add(
                 title: title,
                 note: note,
                 pin: makeCurrent,
@@ -2847,10 +2770,7 @@ struct IntentionEditorSheet: View {
                 accent: accent,
                 emoji: resolvedEmoji,
                 suggestOn: Array(suggestOn).filter { MysterySetKind.displayOrder.contains($0) }
-            ) else {
-                dismiss()
-                return
-            }
+            )
             if let priorCurrentId {
                 offer.setCurrent(id: priorCurrentId)
             }

@@ -15,7 +15,6 @@ struct PrayIntentionSheet: View {
 
     @State private var popeStore = PopeIntentionStore.shared
     @State private var editorRoute: EditorRoute?
-    @State private var showingPremium = false
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
 
     private var suggestions: [SuggestedIntention] { IntentionSuggestions.forDay(popeStore: popeStore) }
@@ -133,12 +132,6 @@ struct PrayIntentionSheet: View {
                 .environment(\.palette, palette)
             }
         }
-        .sheet(isPresented: $showingPremium) {
-            NavigationStack {
-                PremiumScreen(note: IntentionLimit.premiumNote)
-            }
-            .environment(\.palette, palette)
-        }
         .presentationDetents(availableDetents, selection: $selectedDetent)
         .onChange(of: fittedDetent, initial: true) { _, detent in
             selectedDetent = detent
@@ -150,12 +143,7 @@ struct PrayIntentionSheet: View {
 
     private var addIntentionCard: some View {
         PillButton(title: "Add an intention", filled: false) {
-            // Free users at the intention limit go to Rosary Guide+ instead of the editor.
-            if offer.canAddIntention {
-                editorRoute = .create
-            } else {
-                showingPremium = true
-            }
+            editorRoute = .create
         }
         .accessibilityLabel("Add an intention")
         .padding(.top, 6)
@@ -309,18 +297,14 @@ struct PrayIntentionSheet: View {
             chosenTitle = existing.title
             chosenNote = existing.note ?? item.note ?? ""
         } else {
-            guard let created = offer.add(
+            let created = offer.add(
                 title: item.title,
                 note: item.note,
                 sourceId: papal ? item.id : nil,
                 category: papal ? .world : .personal,
                 accent: papal ? .purple : .mintGreen,
                 emoji: papal ? "✝️" : nil
-            ) else {
-                // Non-papal suggestion while a free user is at the limit.
-                showingPremium = true
-                return
-            }
+            )
             chosenId = created.id
             chosenTitle = created.title
             chosenNote = created.note ?? ""
@@ -454,7 +438,6 @@ struct IntentionMultiSelectList: View {
 
     @State private var popeStore = PopeIntentionStore.shared
     @State private var editorRoute: EditorRoute?
-    @State private var showingPremium = false
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
 
     private let cardMinHeight: CGFloat = 64
@@ -521,12 +504,7 @@ struct IntentionMultiSelectList: View {
             }
 
             GuideTextButton(title: "Add an intention") {
-                // Free users at the intention limit go to Rosary Guide+ instead of the editor.
-                if offer.canAddIntention {
-                    editorRoute = .create
-                } else {
-                    showingPremium = true
-                }
+                editorRoute = .create
             }
             .padding(.top, AppTheme.Space.xs)
         }
@@ -544,12 +522,6 @@ struct IntentionMultiSelectList: View {
                 }
             )
             .environment(offer)
-            .environment(\.palette, palette)
-        }
-        .sheet(isPresented: $showingPremium) {
-            NavigationStack {
-                PremiumScreen(note: IntentionLimit.premiumNote)
-            }
             .environment(\.palette, palette)
         }
     }
@@ -575,17 +547,16 @@ struct IntentionMultiSelectList: View {
                 offer.update(locked)
             }
             if !selectedIds.contains(existing.id) { selectedIds.append(existing.id) }
-        } else if let created = offer.add(
-            title: item.title,
-            note: item.note,
-            sourceId: item.id,
-            category: .world,
-            accent: .purple,
-            emoji: "✝️"
-        ) {
-            selectedIds.append(created.id)
         } else {
-            showingPremium = true
+            let created = offer.add(
+                title: item.title,
+                note: item.note,
+                sourceId: item.id,
+                category: .world,
+                accent: .purple,
+                emoji: "✝️"
+            )
+            selectedIds.append(created.id)
         }
     }
 
