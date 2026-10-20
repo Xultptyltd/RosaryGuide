@@ -403,16 +403,29 @@ final class MilestonePersistenceTests: XCTestCase {
         XCTAssertEqual(old.allIntentionTitles, ["Church"])
     }
 
-    func testSyncWithOnlyFirstIntentionKeepsLocalList() {
+    func testSyncedIntentionsAndSettingsApplyToSameRosary() {
         isolated { defaults in
             let store = SessionStore(defaults: defaults)
             let ids = [UUID(), UUID(), UUID()]
-            store.start(set: .joyful, language: .english, intentionIds: ids, intentionTitles: ["A", "B", "C"])
+            store.start(set: .joyful, language: .english, intentionIds: ids, intentionTitles: ["A", "B", "C"],
+                        intentionCategory: .someone, intentionSourceId: "source")
+            let localId = store.session?.id
+            var config = RosaryConfig()
+            config.memorare = true
             var remote = store.syncedProgress
-            remote.session?.intentionIds = [ids[0]] // cloud schema carries only the first intention
-            remote.session?.intentionTitles = ["A"]
+            remote.session?.id = UUID()
+            remote.session?.intentionIds = [ids[0], ids[2]] // edited on another device
+            remote.session?.intentionTitles = ["A", "C"]
+            remote.session?.rosaryConfig = config
+            remote.session?.intentionCategory = nil // not in the account schema
+            remote.session?.intentionSourceId = nil
             store.applySynced(remote)
-            XCTAssertEqual(store.session?.intentionIds, ids)
+            XCTAssertEqual(store.session?.intentionIds, [ids[0], ids[2]])
+            XCTAssertEqual(store.session?.intentionTitles, ["A", "C"])
+            XCTAssertEqual(store.session?.rosaryConfig, config)
+            XCTAssertEqual(store.session?.id, localId)
+            XCTAssertEqual(store.session?.intentionCategory, .someone)
+            XCTAssertEqual(store.session?.intentionSourceId, "source")
         }
     }
 

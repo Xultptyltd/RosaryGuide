@@ -627,3 +627,120 @@ final class DiagnosticsStoreTests: XCTestCase {
         XCTAssertEqual(object["version"] as? String, "1.0 (1)")
     }
 }
+
+/// The in-progress Rosary syncs with its full intention list and Rosary settings.
+final class SessionSyncPayloadTests: XCTestCase {
+    private let ids = [
+        "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222",
+        "33333333-3333-4333-8333-333333333333", "44444444-4444-4444-8444-444444444444"
+    ].compactMap(UUID.init(uuidString:))
+    private let titles = ["For Mum", "For Dad", "For the Church", "For peace"]
+    private let started = Date(timeIntervalSince1970: 1_792_000_000)
+
+    private var config: RosaryConfig {
+        var config = RosaryConfig()
+        config.translation = .douayRheims
+        config.oSacrament = true
+        config.closingPrayers = false
+        config.memorare = true
+        return config
+    }
+
+    private func progress(intentions: Int = 4, config: RosaryConfig? = nil) -> SyncedProgress {
+        let session = PrayerSession(
+            mysterySet: .sorrowful, stepIndex: 12, startedAt: started, updatedAt: started.addingTimeInterval(60),
+            includeSaintMichael: false, language: .bilingual, intentionId: nil, intentionTitle: nil,
+            intentionIds: Array(ids.prefix(intentions)), intentionTitles: Array(titles.prefix(intentions)),
+            rosaryConfig: config ?? self.config)
+        return SyncedProgress(completedDays: ["2026-10-19", "2026-10-20"], session: session,
+                              sessionChangedAt: started.addingTimeInterval(60))
+    }
+
+    /// Timestamps become a marker so the payload can be compared with the shared fixture.
+    private func jsonShape(_ value: Any) -> Any {
+        switch value {
+        case is Timestamp: return ["__timestamp": true]
+        case let map as [String: Any]: return map.mapValues(jsonShape)
+        case let list as [Any]: return list.map(jsonShape)
+        default: return value
+        }
+    }
+
+    /// `tests/firestore.rules.test.js` writes the same fixture against the deployed rules file,
+    /// so this ties the app's payload to what the rules accept.
+    func testPayloadMatchesRulesFixture() throws {
+        let fixture = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("tests/fixtures/app-progress-payload.json")
+        let expected = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: fixture)) as? NSDictionary)
+        let actual = try XCTUnwrap(jsonShape(progress().firestoreData()) as? [String: Any])
+        XCTAssertEqual(NSDictionary(dictionary: actual), expected)
+    }
+
+    func testOlderRulesStepDownToFirstIntentionWithoutSettings() throws {
+        let rosariesOnly = try XCTUnwrap(progress().firestoreData(schema: .withoutRosaries)["session"] as? [String: Any])
+        XCTAssertEqual((rosariesOnly["intentionIds"] as? [String])?.count, 4)
+        XCTAssertNotNil(rosariesOnly["rosaryConfig"])
+
+        let legacy = try XCTUnwrap(progress().firestoreData(schema: .withoutSessionExtras)["session"] as? [String: Any])
+        XCTAssertNil(legacy["intentionIds"])
+        XCTAssertNil(legacy["intentionTitles"])
+        XCTAssertNil(legacy["rosaryConfig"])
+        XCTAssertEqual(legacy["intentionId"] as? String, ids[0].uuidString)
+        XCTAssertEqual(legacy["intentionTitle"] as? String, "For Mum")
+        // A step-down copy compares equal to what the older document can hold, so it does not re-upload forever.
+        let stored = progress().stored(as: .withoutSessionExtras)
+        XCTAssertEqual(stored.session?.intentionIds, [ids[0]])
+        XCTAssertEqual(stored.session?.rosaryConfig, .default)
+    }
+
+    func testRoundTripKeepsListsAndSettings() throws {
+        let original = progress()
+        let parsed = try XCTUnwrap(SyncedProgress(firestore: original.firestoreData()))
+        XCTAssertEqual(parsed.session?.intentionIds, ids)
+        XCTAssertEqual(parsed.session?.intentionTitles, titles)
+        XCTAssertEqual(parsed.session?.rosaryConfig, config)
+        // Same document as before: no upload is triggered by a fresh read.
+        var resaved = parsed.stored(as: .full)
+        resaved.session?.id = original.session!.id
+        XCTAssertEqual(resaved, original.stored(as: .full))
+    }
+
+    func testOlderDocumentKeepsThisDevicesListAndSettings() throws {
+        let local = progress()
+        var data = local.firestoreData(schema: .withoutSessionExtras)
+        let parsed = try XCTUnwrap(SyncedProgress(firestore: data))
+        XCTAssertEqual(parsed.session?.intentionIds, [ids[0]])
+        XCTAssertEqual(parsed.session?.rosaryConfig, .default)
+
+        let filled = parsed.fillingSessionFields(missingIn: data, from: local.session)
+        XCTAssertEqual(filled.session?.intentionIds, ids)
+        XCTAssertEqual(filled.session?.intentionTitles, titles)
+        XCTAssertEqual(filled.session?.rosaryConfig, config)
+
+        // A different Rosary in the document is taken as it is.
+        var other = data["session"] as! [String: Any]
+        other["mysterySet"] = "joyful"
+        data["session"] = other
+        let unrelated = try XCTUnwrap(SyncedProgress(firestore: data)).fillingSessionFields(missingIn: data, from: local.session)
+        XCTAssertEqual(unrelated.session?.intentionIds, [ids[0]])
+        XCTAssertEqual(unrelated.session?.rosaryConfig, .default)
+    }
+
+    func testNewerDocumentFieldsAreNotOverwrittenByThisDevice() throws {
+        let remote = progress(intentions: 2, config: .default)
+        let data = remote.firestoreData()
+        let filled = try XCTUnwrap(SyncedProgress(firestore: data)).fillingSessionFields(missingIn: data, from: progress().session)
+        XCTAssertEqual(filled.session?.intentionIds, Array(ids.prefix(2)))
+        XCTAssertEqual(filled.session?.rosaryConfig, .default)
+    }
+
+    func testCappedAtFourIntentions() throws {
+        var long = progress()
+        long.session?.intentionIds = ids + [UUID()]
+        long.session?.intentionTitles = titles + [String(repeating: "x", count: 200)]
+        let session = try XCTUnwrap(long.firestoreData()["session"] as? [String: Any])
+        XCTAssertEqual((session["intentionIds"] as? [String])?.count, 4)
+        XCTAssertEqual((session["intentionTitles"] as? [String])?.count, 4)
+    }
+}

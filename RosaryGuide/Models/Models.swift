@@ -558,7 +558,7 @@ enum BibleTranslation: String, CaseIterable, Codable, Identifiable, Sendable {
 
 /// How the user prays the Rosary. Saved on each `PrayerSession` so a resumed
 /// Rosary rebuilds the same steps (and `stepIndex` keeps its meaning) even if
-/// Settings changed meanwhile. Local only until the Firestore rules are deployed.
+/// Settings changed meanwhile. Syncs with the in-progress Rosary (`session.rosaryConfig`).
 struct RosaryConfig: Codable, Equatable, Hashable, Sendable {
     var translation: BibleTranslation = .rsv2ce
     var fatimaPrayer = true

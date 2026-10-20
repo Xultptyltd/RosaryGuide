@@ -1,4 +1,5 @@
 const fs = require("fs");
+const path = require("path");
 const {
   assertFails,
   assertSucceeds,
@@ -76,6 +77,16 @@ function validProgress(overrides = {}) {
     updatedAt: new Date(),
     ...overrides,
   };
+}
+
+/** Replaces the fixture's `{ "__timestamp": true }` markers with the current time. */
+function withTimestamps(value) {
+  if (Array.isArray(value)) return value.map(withTimestamps);
+  if (value && typeof value === "object") {
+    if (value.__timestamp === true) return new Date();
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, withTimestamps(item)]));
+  }
+  return value;
 }
 
 function withoutKey(object, key) {
@@ -184,6 +195,17 @@ async function main() {
     await assertFails(setDoc(progress, validProgress({ session: validSession({ intentionTitles: ["x".repeat(161)] }) })));
     await assertFails(setDoc(progress, validProgress({ session: validSession({ intentionTitles: ["A", 2] }) })));
     await assertFails(setDoc(progress, validProgress({ session: validSession({ extra: 1 }) })));
+    const sessionConfig = { translation: "vulgate", fatimaPrayer: true, oSacrament: false, closingPrayers: true, memorare: false, saintMichael: true, intentionsStep: true };
+    await assertSucceeds(setDoc(progress, validProgress({ session: validSession({ intentionIds: ids, intentionTitles: ["A", "B", "C", "D"], rosaryConfig: sessionConfig }) })));
+    await assertSucceeds(setDoc(progress, validProgress({ session: validSession({ rosaryConfig: {} }) })));
+    await assertFails(setDoc(progress, validProgress({ session: validSession({ rosaryConfig: { ...sessionConfig, translation: "kjv" } }) })));
+    await assertFails(setDoc(progress, validProgress({ session: validSession({ rosaryConfig: { ...sessionConfig, memorare: "yes" } }) })));
+    await assertFails(setDoc(progress, validProgress({ session: validSession({ rosaryConfig: { ...sessionConfig, isAdmin: true } }) })));
+    await assertFails(setDoc(progress, validProgress({ session: validSession({ rosaryConfig: "default" }) })));
+    // The exact payload the app writes (RosaryGuideTests SessionSyncPayloadTests checks it matches).
+    const appPayload = withTimestamps(JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/app-progress-payload.json"), "utf8")));
+    await assertSucceeds(setDoc(progress, appPayload));
+    await assertSucceeds(setDoc(progress, { ...appPayload, rosaries: { [VALID_ID]: { mysterySet: "sorrowful", startedAt: new Date(), completedAt: new Date(), duration: 1200, intentionTitles: ["For Mum"] } } }));
     const rosary = { mysterySet: "joyful", startedAt: new Date(), completedAt: new Date(), duration: 1200, intentionTitles: ["For Mum"] };
     await assertSucceeds(setDoc(progress, validProgress({ rosaries: { [VALID_ID]: rosary } })));
     await assertSucceeds(setDoc(progress, validProgress({ rosaries: {} })));

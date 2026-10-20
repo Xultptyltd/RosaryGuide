@@ -65,7 +65,7 @@ No other document id under `meta` can be read or written, and the `meta` collect
 - `dailyReminderEnabled: bool`
 - `dailyReminderMinutes: int` (0–1439, minutes after local midnight)
 - `feastAlertsEnabled: bool`
-- `feastAlertMinutes: int` (0–1439, feast day alert time in minutes after local midnight; default 480 = 8:00 am. Device copies and documents written before this field existed are read as 480. Required by the rules, so builds that write it need the updated rules published.)
+- `feastAlertMinutes: int` (0–1439, feast day alert time in minutes after local midnight; default 480 = 8:00 am. Device copies and documents written before this field existed are read as 480. Required by the rules.)
 - `appIcon: "black" | "white" | "blue"`
 - `updatedAt: timestamp` (client time of the last user change; used for last-write-wins; at most one day in the future)
 
@@ -74,7 +74,7 @@ No other document id under `meta` can be read or written, and the `meta` collect
 - `schemaVersion: 1`
 - `completedDays: string[]` (local calendar days `yyyy-MM-dd` with a finished rosary; at most 400, the app keeps 366 days)
 - `historyResetAt: timestamp?` (set by "Delete prayer history" so other devices don't merge older days back)
-- `session: map?` (the in-progress rosary: `mysterySet`, `stepIndex` 0–500, `startedAt`, `updatedAt`, `includeSaintMichael`, `language`, optional `intentionId` UUID and `intentionTitle` ≤ 160 chars)
+- `session: map?` (the in-progress rosary: `mysterySet`, `stepIndex` 0–500, `startedAt`, `updatedAt`, `includeSaintMichael`, `language`, optional `intentionId` UUID and `intentionTitle` ≤ 160 chars for older builds, and optional `intentionIds` / `intentionTitles` lists of up to 4 offered intentions and `rosaryConfig` (the steps this Rosary was built with). Documents without the lists or `rosaryConfig` keep the device's values for the same Rosary.)
 - `sessionChangedAt: timestamp` (last-write-wins for `session`)
 - `updatedAt: timestamp`
 
@@ -109,8 +109,10 @@ They prove:
 - User A can get/write/delete only `users/A/meta/preferences` and `users/A/meta/progress`; User B and signed-out users cannot read or write them; other `meta` ids and listing `meta` fail
 - preferences with missing or extra fields, unknown enum values, out-of-range reminder minutes, wrong types or far-future `updatedAt` fail
 - progress with malformed or too many day keys, non-string days, extra fields, out-of-range `stepIndex`, bad `intentionId`, overlong `intentionTitle` or far-future timestamps fail
+- the in-progress rosary's `intentionIds` / `intentionTitles` (up to 4) and `rosaryConfig` pass; a fifth intention, bad ids, overlong titles, unknown `rosaryConfig` keys, translations or types fail
+- `tests/fixtures/app-progress-payload.json`, the exact progress document the app writes (checked by `SessionSyncPayloadTests` in the XCTest suite), passes with and without `rosaries`
 
-Latest local result (5 Oct 2026, with the preferences/progress rules): passed with the Firestore Emulator and JDK 21. Run with:
+Latest local result (20 Oct 2026, with the deployed rules): passed with the Firestore Emulator and JDK 21. Run with:
 
 ```zsh
 JAVA_HOME=/opt/homebrew/opt/openjdk@21 PATH=/opt/homebrew/opt/openjdk@21/bin:$PATH npm run test:rules
@@ -147,7 +149,7 @@ Preferences and progress (`AccountSyncStore`):
 - A missing document is only treated as "nothing in the account yet" (and the device copy uploaded) when the server confirms it, never from a cache-only result.
 - After preferences arrive from the account, notifications are rescheduled through `NotificationService.reschedule`, which never asks for permission and schedules nothing unless permission was already granted. If the reminders are on but this iPhone has not been asked yet, the Notifications page shows "Allow notifications".
 - A synced app icon is applied with `setAlternateIconName` when the app is in the foreground (iOS shows its usual "icon changed" alert).
-- If a listener fails (offline start, or rules not yet published), it is restarted the next time the app comes to the foreground.
+- If a listener fails (for example, an offline start), it is restarted the next time the app comes to the foreground.
 
 Intentions:
 

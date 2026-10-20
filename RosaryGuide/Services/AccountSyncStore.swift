@@ -188,9 +188,12 @@ struct SyncedProgress: Codable, Equatable {
     static let maxRosaries = 1500
 
     /// How much of the document the deployed rules accept (see `SyncedPreferences.Schema`).
+    /// Each step also drops what the steps before it dropped.
     enum Schema: Int, Comparable {
         case full = 0
         case withoutRosaries = 1
+        /// The in-progress Rosary carries only its first intention and no Rosary settings.
+        case withoutSessionExtras = 2
 
         static func < (a: Schema, b: Schema) -> Bool { a.rawValue < b.rawValue }
     }
@@ -256,7 +259,35 @@ struct SyncedProgress: Codable, Equatable {
     func stored(as schema: Schema) -> SyncedProgress {
         var copy = normalized
         if schema >= .withoutRosaries { copy.rosaries = nil }
+        if schema >= .withoutSessionExtras, var session = copy.session {
+            session.intentionIds = Array(session.intentionIds.prefix(1))
+            session.intentionTitles = Array(session.intentionTitles.prefix(1))
+            session.rosaryConfig = .default
+            copy.session = session
+        }
         return copy
+    }
+
+    /// An account document written before the in-progress Rosary carried its full intention
+    /// list and Rosary settings has neither key. For the same Rosary, keep what this device
+    /// knows instead of the single intention and default settings the document implies.
+    func fillingSessionFields(missingIn data: [String: Any], from local: PrayerSession?) -> SyncedProgress {
+        guard var incoming = session, let local,
+              let map = data["session"] as? [String: Any],
+              incoming.startedAt.syncRounded == local.startedAt.syncRounded,
+              incoming.mysterySet == local.mysterySet,
+              incoming.intentionId == local.intentionId
+        else { return self }
+        if map["intentionIds"] == nil {
+            incoming.intentionIds = local.intentionIds
+            incoming.intentionTitles = local.intentionTitles
+        }
+        if map["rosaryConfig"] == nil {
+            incoming.rosaryConfig = local.rosaryConfig
+        }
+        var copy = self
+        copy.session = incoming
+        return copy.normalized
     }
 
     /// Prayed days are a union (minus anything wiped by the newest "Delete local data").
@@ -393,7 +424,7 @@ extension RosaryConfig {
     }
 }
 
-private extension SyncedProgress {
+extension SyncedProgress {
     init?(firestore data: [String: Any]) {
         guard
             let days = data["completedDays"] as? [String],
@@ -419,7 +450,10 @@ private extension SyncedProgress {
                 intentionTitle: map["intentionTitle"] as? String,
                 // Older clients only write the single keys; the initializer falls back to them.
                 intentionIds: (map["intentionIds"] as? [String])?.compactMap(UUID.init(uuidString:)),
-                intentionTitles: map["intentionTitles"] as? [String]
+                intentionTitles: map["intentionTitles"] as? [String],
+                // Documents from before Rosary settings synced decode as `.default`;
+                // `fillingSessionFields(missingIn:from:)` keeps this device's settings for them.
+                rosaryConfig: (map["rosaryConfig"] as? [String: Any]).map(RosaryConfig.init(firestore:)) ?? .default
             )
         }
 
@@ -463,9 +497,12 @@ private extension SyncedProgress {
             if let title = session.intentionTitle {
                 map["intentionTitle"] = title
             }
-            // The deployed rules (firestore.rules `validSession`) only allow the single
-            // intention keys, so only the first intention syncs until the rules accept
-            // `intentionIds` / `intentionTitles`. Extra intentions stay on this device.
+            // The single keys stay for older builds, which read only those.
+            if schema < .withoutSessionExtras {
+                map["intentionIds"] = session.intentionIds.map(\.uuidString)
+                map["intentionTitles"] = session.intentionTitles
+                map["rosaryConfig"] = session.rosaryConfig.firestoreData()
+            }
             data["session"] = map
         }
         if let rosaries = value.rosaries, schema < .withoutRosaries {
@@ -604,7 +641,7 @@ final class AccountSyncStore {
     /// Bead-by-bead progress is not uploaded on every step (Spark quota); it goes up with the
     /// next significant change or when the app leaves the foreground.
     private var progressNeedsUpload = false
-    /// A listener that failed (offline start, rules not published yet) is dead; it is restarted
+    /// A listener that failed (offline start, or rules that reject a read) is dead; it is restarted
     /// the next time the app comes to the foreground.
     private var listenerFailed = false
     /// Steps down when the deployed rules reject newer fields (see `SyncedPreferences.Schema`).
@@ -736,7 +773,8 @@ final class AccountSyncStore {
                 return
             }
             if !snapshot.isFromCache { syncErrorMessage = nil }
-            let merged = SyncedProgress.merge(local: local, remote: remote)
+            let filled = remote.fillingSessionFields(missingIn: data, from: local.session)
+            let merged = SyncedProgress.merge(local: local, remote: filled)
             if merged != local {
                 session.applySynced(merged)
                 saveLocalCopies(for: uid)
@@ -852,7 +890,8 @@ final class AccountSyncStore {
         }
     }
 
-    /// Rules published before this build reject `rosaries`; keep prayed days syncing without it.
+    /// Older rules reject `rosaries` or the in-progress Rosary's full intention list and settings;
+    /// step down so prayed days keep syncing. The deployed rules accept the full document.
     private func progressWriteFailed(_ error: Error, schema: SyncedProgress.Schema, uid: String) {
         guard uid == userID else { return }
         if Self.isPermissionDenied(error), let next = SyncedProgress.Schema(rawValue: schema.rawValue + 1) {

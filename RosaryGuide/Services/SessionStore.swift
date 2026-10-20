@@ -628,21 +628,17 @@ final class SessionStore {
         historyResetAt = progress.historyResetAt
         sessionChangedAt = progress.sessionChangedAt
         if var incoming = progress.session, incoming.isResumable {
-            // The deployed account schema has no intention-category field. Preserve the
-            // local snapshot when the same in-progress session comes back from sync.
-            if incoming.startedAt.syncRounded == session?.startedAt.syncRounded,
-               incoming.mysterySet == session?.mysterySet,
-               incoming.intentionId == session?.intentionId {
-                incoming.id = session?.id ?? incoming.id
-                // Sync carries only the first intention; keep the local full list.
-                if let local = session, incoming.intentionIds.count <= 1 {
-                    incoming.intentionIds = local.intentionIds
-                    incoming.intentionTitles = local.intentionTitles
-                }
-                incoming.intentionCategory = incoming.intentionCategory ?? session?.intentionCategory
-                incoming.intentionSourceId = incoming.intentionSourceId ?? session?.intentionSourceId
-                // Rosary settings are local only for now; keep the steps this Rosary was built with.
-                if let local = session { incoming.rosaryConfig = local.rosaryConfig }
+            // Intentions and Rosary settings come from sync (older account documents are
+            // filled in by `SyncedProgress.fillingSessionFields`). The account schema has no
+            // intention-category or source field, and no local id, so keep those for the
+            // same in-progress Rosary.
+            if let local = session,
+               incoming.startedAt.syncRounded == local.startedAt.syncRounded,
+               incoming.mysterySet == local.mysterySet,
+               incoming.intentionId == local.intentionId {
+                incoming.id = local.id
+                incoming.intentionCategory = incoming.intentionCategory ?? local.intentionCategory
+                incoming.intentionSourceId = incoming.intentionSourceId ?? local.intentionSourceId
             }
             session = incoming
         } else {
