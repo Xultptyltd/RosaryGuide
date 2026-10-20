@@ -1274,6 +1274,11 @@ private struct SettingsRosaryScreen: View {
 }
 
 private struct SettingsAcknowledgementsScreen: View {
+    @Environment(\.palette) private var palette
+
+    /// Credit for the PopeLeo / PopeLeoWide image sets (CC BY-SA 4.0 requires it).
+    static let popePhotoCredit = "Photo of Pope Leo XIV: Edgar Beltrán, The Pillar, via Wikimedia Commons, CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). Cropped; the cropped image is shared under the same licence."
+
     var body: some View {
         SettingsDetailScaffold(title: "Acknowledgements") {
             DividedRows {
@@ -1286,6 +1291,17 @@ private struct SettingsAcknowledgementsScreen: View {
                 SettingsValueOnlyRow(title: "World English Bible, Catholic Edition", value: "Public domain")
                 SettingsValueOnlyRow(title: "Douay-Rheims (Challoner, 1899)", value: "Public domain")
                 SettingsValueOnlyRow(title: "Clementine Vulgate", value: "Public domain")
+            }
+
+            SettingsSection(title: "Photos") {
+                Text(Self.popePhotoCredit)
+                    .font(AppTheme.TypeRole.settingsMeta)
+                    .foregroundStyle(palette.dim)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, AppTheme.Space.md)
+                    .textSelection(.enabled)
             }
         }
     }
