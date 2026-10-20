@@ -44,12 +44,6 @@
 		98170303FFF360ECF63D9EEC /* FeastsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF863537C38D8D4053DADC66 /* FeastsView.swift */; };
 		9CE94D3DD8CD7F743E61E83A /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B45CCA2BDAA20E92DEB2807 /* RootView.swift */; };
 		A1C00101A1B2C3D4E5F60102 /* AppIconService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60101 /* AppIconService.swift */; };
-		A1C00101A1B2C3D4E5F60121 /* AppIconWhite@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60111 /* AppIconWhite@2x.png */; };
-		A1C00101A1B2C3D4E5F60122 /* AppIconWhite@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60112 /* AppIconWhite@3x.png */; };
-		A1C00101A1B2C3D4E5F60123 /* AppIconBlue@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60113 /* AppIconBlue@2x.png */; };
-		A1C00101A1B2C3D4E5F60124 /* AppIconBlue@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60114 /* AppIconBlue@3x.png */; };
-		A1C00101A1B2C3D4E5F60125 /* AppIconWhite.png in Resources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60115 /* AppIconWhite.png */; };
-		A1C00101A1B2C3D4E5F60126 /* AppIconBlue.png in Resources */ = {isa = PBXBuildFile; fileRef = A1C00101A1B2C3D4E5F60116 /* AppIconBlue.png */; };
 		A21E8071973B2454C07D064D /* HowToPrayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD04A739CD276BFD692104B7 /* HowToPrayView.swift */; };
 		A637113F6A3490A31C8197DA /* LiturgicalCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49068D79F0B6F85C616BB1E5 /* LiturgicalCalendar.swift */; };
 		A7C10007A1B2C3D4E5F60007 /* ThemeTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C10006A1B2C3D4E5F60006 /* ThemeTokenTests.swift */; };
@@ -123,12 +117,6 @@
 		991251FFFCB12E381DCA553A /* RosarySequenceBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosarySequenceBuilder.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5C /* HomeSettingsDrawer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSettingsDrawer.swift; sourceTree = "<group>"; };
 		A1C00101A1B2C3D4E5F60101 /* AppIconService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconService.swift; sourceTree = "<group>"; };
-		A1C00101A1B2C3D4E5F60111 /* AppIconWhite@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconWhite@2x.png"; sourceTree = "<group>"; };
-		A1C00101A1B2C3D4E5F60112 /* AppIconWhite@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconWhite@3x.png"; sourceTree = "<group>"; };
-		A1C00101A1B2C3D4E5F60113 /* AppIconBlue@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconBlue@2x.png"; sourceTree = "<group>"; };
-		A1C00101A1B2C3D4E5F60114 /* AppIconBlue@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconBlue@3x.png"; sourceTree = "<group>"; };
-		A1C00101A1B2C3D4E5F60115 /* AppIconWhite.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppIconWhite.png; sourceTree = "<group>"; };
-		A1C00101A1B2C3D4E5F60116 /* AppIconBlue.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppIconBlue.png; sourceTree = "<group>"; };
 		A7C10006A1B2C3D4E5F60006 /* ThemeTokenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeTokenTests.swift; sourceTree = "<group>"; };
 		A7C1000EA1B2C3D4E5F6000E /* PrayerRhythmTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerRhythmTests.swift; sourceTree = "<group>"; };
 		A7C10A11A1B2C3D4E5F60A11 /* SyncMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMergeTests.swift; sourceTree = "<group>"; };
@@ -356,12 +344,6 @@
 				D9EF17A3557946A382A9BB17 /* Fonts */,
 				A9F00101A1B2C3D4E5F61004 /* Animations */,
 				EF9404A057D2BFA4ABE2F620 /* Preview Content */,
-				A1C00101A1B2C3D4E5F60111 /* AppIconWhite@2x.png */,
-				A1C00101A1B2C3D4E5F60112 /* AppIconWhite@3x.png */,
-				A1C00101A1B2C3D4E5F60113 /* AppIconBlue@2x.png */,
-				A1C00101A1B2C3D4E5F60114 /* AppIconBlue@3x.png */,
-				A1C00101A1B2C3D4E5F60115 /* AppIconWhite.png */,
-				A1C00101A1B2C3D4E5F60116 /* AppIconBlue.png */,
 			);
 			path = RosaryGuide;
 			sourceTree = "<group>";
@@ -493,12 +475,6 @@
 				214885458E9A4307B45D76C0 /* Art in Resources */,
 				EE5F4F6C5D5847F99D26F8BB /* Fonts in Resources */,
 				A9F00101A1B2C3D4E5F61003 /* Animations in Resources */,
-				A1C00101A1B2C3D4E5F60121 /* AppIconWhite@2x.png in Resources */,
-				A1C00101A1B2C3D4E5F60122 /* AppIconWhite@3x.png in Resources */,
-				A1C00101A1B2C3D4E5F60123 /* AppIconBlue@2x.png in Resources */,
-				A1C00101A1B2C3D4E5F60124 /* AppIconBlue@3x.png in Resources */,
-				A1C00101A1B2C3D4E5F60125 /* AppIconWhite.png in Resources */,
-				A1C00101A1B2C3D4E5F60126 /* AppIconBlue.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -602,6 +578,7 @@
 		14ADAE885DB53A4B73BAA090 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconWhite AppIconBlue";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = RosaryGuide/RosaryGuide.entitlements;
@@ -639,6 +616,7 @@
 		60D684F7398B95CC245B18C5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconWhite AppIconBlue";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = RosaryGuide/RosaryGuide-Debug.entitlements;
