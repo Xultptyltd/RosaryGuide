@@ -1,4 +1,5 @@
 import XCTest
+import FirebaseFirestore
 @testable import RosaryGuide
 
 /// Merge and conflict rules for data that follows the account between devices.
@@ -278,5 +279,128 @@ private extension SyncedProgress {
         var copy = self
         copy.completedDays = days
         return copy
+    }
+}
+
+/// Sign-in is optional: guests keep everything on the device, and an account only adds sync.
+final class LaunchGateTests: XCTestCase {
+    func testGuestsReachTheAppOnceOnboardingIsDone() {
+        XCTAssertTrue(LaunchGate.showsApp(didCompleteOnboarding: true, isSignedIn: false))
+        XCTAssertTrue(LaunchGate.showsApp(didCompleteOnboarding: true, isSignedIn: true))
+        XCTAssertTrue(LaunchGate.showsApp(didCompleteOnboarding: false, isSignedIn: true), "Existing accounts skip onboarding")
+        XCTAssertFalse(LaunchGate.showsApp(didCompleteOnboarding: false, isSignedIn: false))
+    }
+}
+
+@MainActor
+final class GuestIntentionTests: XCTestCase {
+    private final class FakeListener: NSObject, ListenerRegistration {
+        func remove() {}
+    }
+
+    /// Records uploads and lets a test deliver a server snapshot.
+    private final class FakeRepository: IntentionRepository {
+        var onChange: ((Result<IntentionSnapshot, Error>) -> Void)?
+        var uploaded: [UUID] = []
+        var deleted: [UUID] = []
+
+        func listen(uid: String, onChange: @escaping (Result<IntentionSnapshot, Error>) -> Void) -> ListenerRegistration {
+            self.onChange = onChange
+            return FakeListener()
+        }
+        func upsert(_ intention: OfferIntention, uid: String) async throws { uploaded.append(intention.id) }
+        func delete(id: UUID, uid: String) async throws { deleted.append(id) }
+        func fetchAll(uid: String) async throws -> [OfferIntention] { [] }
+        func deleteAll(uid: String) async throws {}
+        func clearLocalCache() async throws {}
+
+        func deliverServer(_ intentions: [OfferIntention]) {
+            onChange?(.success(IntentionSnapshot(intentions: intentions, confirmedIDs: Set(intentions.map(\.id)), isFromCache: false)))
+        }
+    }
+
+    private func settle() async throws {
+        try await Task.sleep(nanoseconds: 80_000_000)
+    }
+
+    /// Waits (up to 3 s) for listener events and uploads, which hop through tasks.
+    private func eventually(_ condition: () -> Bool) async throws {
+        for _ in 0..<60 where !condition() {
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+    }
+
+    private func freshDefaults() -> UserDefaults {
+        UserDefaults(suiteName: "GuestIntentionTests.\(UUID())")!
+    }
+
+    func testGuestIntentionsStayOnDeviceWithoutSyncing() {
+        let defaults = freshDefaults()
+        let repository = FakeRepository()
+        let store = OfferStore(defaults: defaults, repository: repository)
+        store.configureSync(for: nil)
+        let added = store.add(title: "For my family")
+        XCTAssertTrue(repository.uploaded.isEmpty)
+        XCTAssertNil(repository.onChange, "A guest never listens to Firestore")
+
+        let relaunched = OfferStore(defaults: defaults, repository: FakeRepository())
+        XCTAssertEqual(relaunched.intentions.map(\.id), [added.id])
+    }
+
+    func testSigningInMergesAndUploadsGuestIntentions() async throws {
+        let defaults = freshDefaults()
+        let repository = FakeRepository()
+        let store = OfferStore(defaults: defaults, repository: repository)
+        let mine = store.add(title: "Made as a guest")
+        let cloud = OfferIntention(title: "Already in the account", createdAt: Date(), updatedAt: Date().syncRounded)
+
+        store.configureSync(for: "user-a")
+        repository.deliverServer([cloud])
+        try await eventually { store.intentions.count == 2 && repository.uploaded.contains(mine.id) }
+
+        XCTAssertEqual(Set(store.intentions.map(\.id)), [mine.id, cloud.id], "Nothing is lost on sign-in")
+        XCTAssertTrue(repository.uploaded.contains(mine.id), "Guest intentions go up to the account")
+    }
+
+    func testSignOutKeepsIntentionsAndRemembersDeletions() async throws {
+        let defaults = freshDefaults()
+        let repository = FakeRepository()
+        let store = OfferStore(defaults: defaults, repository: repository)
+        store.configureSync(for: "user-a")
+        let kept = store.add(title: "Kept")
+        let removed = store.add(title: "Removed later")
+        repository.deliverServer(store.intentions)
+        try await eventually { repository.uploaded.count >= 2 }
+        try await settle()
+
+        store.configureSync(for: nil)
+        XCTAssertEqual(Set(store.intentions.map(\.id)), [kept.id, removed.id], "Sign-out keeps the list")
+        store.delete(id: removed.id)
+        let added = store.add(title: "Added while signed out")
+        repository.uploaded.removeAll()
+
+        let relaunched = OfferStore(defaults: defaults, repository: repository)
+        XCTAssertEqual(Set(relaunched.intentions.map(\.id)), [kept.id, added.id])
+
+        relaunched.configureSync(for: "user-a")
+        repository.deliverServer(store.intentions.filter { $0.id != added.id } + [
+            OfferIntention(id: removed.id, title: "Removed later", createdAt: Date(timeIntervalSince1970: 0), updatedAt: Date(timeIntervalSince1970: 1))
+        ])
+        try await eventually { repository.uploaded.contains(added.id) && repository.deleted.contains(removed.id) }
+        XCTAssertEqual(Set(relaunched.intentions.map(\.id)), [kept.id, added.id], "A delete made while signed out sticks")
+        XCTAssertTrue(repository.uploaded.contains(added.id))
+        XCTAssertTrue(repository.deleted.contains(removed.id))
+    }
+
+    func testAnotherAccountDoesNotSeeTheSignedOutList() {
+        let defaults = freshDefaults()
+        let store = OfferStore(defaults: defaults, repository: FakeRepository())
+        store.configureSync(for: "user-a")
+        store.add(title: "A's intention")
+        store.configureSync(for: nil)
+        store.configureSync(for: "user-b")
+        XCTAssertTrue(store.intentions.isEmpty, "Accounts never mix")
+        store.configureSync(for: "user-a")
+        XCTAssertEqual(store.intentions.map(\.title), ["A's intention"])
     }
 }

@@ -224,7 +224,7 @@ private struct OnboardingSignInView: View {
                             .lineSpacing(2)
                             .accessibilityAddTraits(.isHeader)
 
-                        Text("Sign in to keep your Rosary Guide\naccount across your devices.")
+                        Text("Sign in to sync your prayers and\nintentions across your devices.")
                             .font(AppTheme.TypeRole.body)
                             .foregroundStyle(Color.white.opacity(0.72))
                             .multilineTextAlignment(.center)
@@ -249,6 +249,20 @@ private struct OnboardingSignInView: View {
                         }
                         .disabled(auth.isWorking)
                         .accessibilityLabel(auth.isSigningInWithGoogle ? "Signing in with Google" : "Continue with Google")
+
+                        // Sign-in is optional: everything works on this device without an account.
+                        GuideTextButton(
+                            title: "Continue without an account",
+                            accessibilityLabel: "Continue without an account. You can sign in later in Settings",
+                            alignment: .center
+                        ) {
+                            HapticService.play(.light, enabled: settings.hapticsEnabled)
+                            auth.errorMessage = nil
+                            onComplete()
+                        }
+                        .environment(\.palette, ThemePalette(scheme: .dark))
+                        .disabled(auth.isWorking)
+                        .padding(.top, AppTheme.Space.xs)
 
                         if let message = auth.errorMessage {
                             Text(message)

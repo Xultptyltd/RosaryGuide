@@ -33,11 +33,13 @@ struct RosaryGuideApp: App {
         WindowGroup {
             ThemedRoot {
                 ZStack {
-                    if didCompleteOnboarding && auth.isSignedIn {
+                    // Signing in is optional (App Review 5.1.1(v)): guests use everything on this
+                    // device, and an account only adds sync.
+                    if LaunchGate.showsApp(didCompleteOnboarding: didCompleteOnboarding, isSignedIn: auth.isSignedIn) {
                         RootView()
                             .transition(.opacity)
                     } else {
-                        OnboardingView(startsAtSignIn: didCompleteOnboarding) {
+                        OnboardingView {
                             withAnimation(.easeOut(duration: 0.28)) {
                                 didCompleteOnboarding = true
                             }
@@ -56,7 +58,6 @@ struct RosaryGuideApp: App {
                     }
                 }
                 .animation(.easeInOut(duration: 0.32), value: didCompleteOnboarding)
-                .animation(.easeInOut(duration: 0.32), value: auth.isSignedIn)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .environment(settings)
@@ -106,8 +107,8 @@ struct RosaryGuideApp: App {
             }
             .onChange(of: auth.userID) { _, userID in
                 // Signing out keeps data: intentions, preferences and prayer progress stay in the
-                // account and in a per-account copy on this device. Another account gets its own
-                // copy, so accounts never mix. Delete account clears everything explicitly.
+                // account and on this device, and the app carries on as a guest (no sync). Another
+                // account gets its own copy, so accounts never mix. Delete account clears everything.
                 offer.configureSync(for: userID)
                 sync.configureSync(for: userID)
                 if userID != nil {
@@ -115,5 +116,13 @@ struct RosaryGuideApp: App {
                 }
             }
         }
+    }
+}
+
+/// Which screen the app opens on. Onboarding shows once; after that the app is always open,
+/// signed in or not. Signing in (from onboarding or Settings) only turns on sync.
+enum LaunchGate {
+    static func showsApp(didCompleteOnboarding: Bool, isSignedIn: Bool) -> Bool {
+        didCompleteOnboarding || isSignedIn
     }
 }

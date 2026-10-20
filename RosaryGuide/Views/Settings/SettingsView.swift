@@ -66,7 +66,9 @@ struct SettingsView: View {
                 didClearAppHistory = true
             }
         } message: {
-            Text("This clears your prayer progress, prayer history, intentions and settings on this device. When signed in, the wipe also reaches your account. Your sign-in stays.")
+            Text(auth.isSignedIn
+                 ? "This clears your prayer progress, prayer history, intentions and settings on this device. The wipe also reaches your account. Your sign-in stays."
+                 : "This clears your prayer progress, prayer history, intentions and settings on this device.")
         }
         .alert("App history cleared", isPresented: $didClearAppHistory) {
             Button("OK", role: .cancel) {}
@@ -141,7 +143,8 @@ struct SettingsView: View {
 
                     GuideSectionBoundary()
 
-                    SettingsSection(title: "Account") {
+                    // Signing in is optional and only adds sync; guests keep everything on this device.
+                    SettingsSection(title: auth.isSignedIn ? "Account" : "Sign in to sync") {
                         if auth.isSignedIn {
                             SettingsValueOnlyRow(
                                 title: "Signed in with",
@@ -150,7 +153,7 @@ struct SettingsView: View {
                             )
                         } else {
                             SettingsActionRow(
-                                title: auth.isSigningInWithApple ? "Signing in..." : "Continue with Apple",
+                                title: auth.isSigningInWithApple ? "Signing in..." : "Sign in with Apple",
                                 icon: "apple.logo",
                                 accessory: .none
                             ) {
@@ -159,7 +162,7 @@ struct SettingsView: View {
                             }
                             .disabled(auth.isWorking)
 
-                            SettingsActionRow(title: auth.isSigningInWithGoogle ? "Signing in..." : "Continue with Google", icon: "g.circle", accessory: .none) {
+                            SettingsActionRow(title: auth.isSigningInWithGoogle ? "Signing in..." : "Sign in with Google", icon: "g.circle", accessory: .none) {
                                 HapticService.play(.medium, enabled: settings.hapticsEnabled)
                                 auth.signInWithGoogle()
                             }
@@ -167,9 +170,10 @@ struct SettingsView: View {
                         }
                     }
 
-                    if !auth.isSignedIn, let message = auth.errorMessage {
-                        SettingsFootnote(message)
-                            .padding(.top, AppTheme.Space.lg)
+                    if !auth.isSignedIn {
+                        SettingsFootnote(auth.errorMessage ?? "Your intentions, prayer history and settings are kept on this device. Sign in to back them up and sync them across your devices.")
+                            // The footnote pulls itself up by sectionGap; this leaves an lg gap under the rows.
+                            .padding(.top, AppTheme.sectionGap)
                     }
 
                     if auth.isSignedIn, let message = sync.syncErrorMessage {
@@ -203,16 +207,19 @@ struct SettingsView: View {
                         SettingsNavigationRow(title: "Acknowledgements", icon: "heart", destination: .acknowledgements)
                     }
 
-                    if auth.isSignedIn {
-                        GuideSectionBoundary()
-                        DividedRows {
+                    GuideSectionBoundary()
+                    DividedRows {
+                        // Account-only rows appear only while signed in.
+                        if auth.isSignedIn {
                             SettingsActionRow(title: "Sign out", icon: "rectangle.portrait.and.arrow.right") {
                                 auth.signOut()
                                 dismiss()
                             }
-                            SettingsActionRow(title: "Clear app history", icon: "trash", destructive: true) {
-                                confirmClearAppHistory = true
-                            }
+                        }
+                        SettingsActionRow(title: "Clear app history", icon: "trash", destructive: true) {
+                            confirmClearAppHistory = true
+                        }
+                        if auth.isSignedIn {
                             SettingsActionRow(
                                 title: auth.isWorking ? "Deleting..." : "Delete account",
                                 icon: "person.crop.circle.badge.xmark",

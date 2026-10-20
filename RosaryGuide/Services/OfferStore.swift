@@ -6,8 +6,12 @@ import Observation
 @MainActor
 final class OfferStore {
     private enum Keys {
-        /// Pre-account copy from older builds. Adopted by the first account that signs in.
+        /// The guest copy: intentions kept before any account signed in on this device (and the
+        /// pre-account copy from older builds). Adopted by the first account that signs in.
         static let legacyIntentions = "offer.intentions"
+        /// The account whose device copy is on screen. Stays set after sign-out, so a guest
+        /// keeps that list (with no syncing) and the same account picks up the changes later.
+        static let activeOwner = "offer.activeOwner"
         /// Old one-shot migration marker; no longer used, removed on account deletion.
         static let migrationPrefix = "offer.firestoreMigrated."
         /// This device's copy of one account's intentions. Kept on sign-out so nothing is lost.
@@ -23,7 +27,15 @@ final class OfferStore {
     private let defaults: UserDefaults
     private let repository: IntentionRepository
     private var listener: ListenerRegistration?
+    /// The signed-in account being synced, or nil for a guest.
     private var userID: String?
+    /// The account whose device copy is shown and saved; nil for the guest copy.
+    private var owner: String? {
+        didSet {
+            if let owner { defaults.set(owner, forKey: Keys.activeOwner) }
+            else { defaults.removeObject(forKey: Keys.activeOwner) }
+        }
+    }
     private var isApplyingRemoteSnapshot = false
     /// True while swapping accounts, so the list is not written to the wrong account's copy.
     private var isSwitchingAccount = false
@@ -70,28 +82,29 @@ final class OfferStore {
     init(defaults: UserDefaults = .standard, repository: IntentionRepository = IntentionRepositoryFactory.make()) {
         self.defaults = defaults
         self.repository = repository
-        intentions = Self.loadIntentions(defaults: defaults, key: Keys.legacyIntentions)
+        let owner = defaults.string(forKey: Keys.activeOwner)
+        self.owner = owner
+        intentions = Self.loadIntentions(defaults: defaults, key: owner.map(Keys.intentions) ?? Keys.legacyIntentions)
         pruneExpired()
     }
 
-    /// Switches to the signed-in account's intentions (or none when signed out).
+    /// Switches to the signed-in account's intentions, or stops syncing for a guest.
     ///
-    /// Sign-out keeps each account's copy on this device and keeps Firestore's offline cache,
-    /// which still holds any writes that have not reached the server yet. Signing back in
-    /// shows the device copy at once, then merges it with the cloud copy. Accounts never mix:
-    /// each has its own device copy.
+    /// Signing in is optional. A guest's intentions live on this device; the first account
+    /// that signs in adopts them and uploads them. Sign-out stops syncing but keeps the list on
+    /// screen and on this device (deletions are still recorded), so nothing is lost, and the
+    /// same account merges any changes made meanwhile when it signs back in. Firestore's offline
+    /// cache still holds writes that had not reached the server. Accounts never mix: each has
+    /// its own device copy, and another account starts from its own.
     func configureSync(for uid: String?) {
         if uid == userID && (listener != nil || uid == nil) { return }
 
         listener?.remove()
         listener = nil
         userID = uid
+        syncErrorMessage = nil
 
-        guard let uid else {
-            replaceWithoutSyncing([])
-            syncErrorMessage = nil
-            return
-        }
+        guard let uid else { return }
 
         var local = Self.loadIntentions(defaults: defaults, key: Keys.intentions(uid))
         let legacy = Self.loadIntentions(defaults: defaults, key: Keys.legacyIntentions)
@@ -102,8 +115,8 @@ final class OfferStore {
         }
         defaults.removeObject(forKey: Keys.legacyIntentions)
         replaceWithoutSyncing(local.filter { !$0.isExpired })
+        owner = uid
         persistIntentions()
-        syncErrorMessage = nil
         startListening(uid: uid)
     }
 
@@ -122,6 +135,7 @@ final class OfferStore {
         listener?.remove()
         listener = nil
         userID = nil
+        owner = nil
         replaceWithoutSyncing([])
         defaults.removeObject(forKey: Keys.legacyIntentions)
         if let deletedUID {
@@ -290,7 +304,7 @@ final class OfferStore {
 
     private func persistIntentions() {
         guard !isSwitchingAccount else { return }
-        let key = userID.map(Keys.intentions) ?? Keys.legacyIntentions
+        let key = owner.map(Keys.intentions) ?? Keys.legacyIntentions
         if let data = try? JSONEncoder().encode(intentions) {
             defaults.set(data, forKey: key)
         }
@@ -391,17 +405,20 @@ final class OfferStore {
     }
 
     private func syncLocalChangeIfNeeded(oldValue: [OfferIntention]) {
-        guard !isApplyingRemoteSnapshot, let userID else { return }
+        guard !isApplyingRemoteSnapshot, !isSwitchingAccount else { return }
 
         let previous = Dictionary(uniqueKeysWithValues: oldValue.map { ($0.id, $0) })
         let current = Dictionary(uniqueKeysWithValues: intentions.map { ($0.id, $0) })
         let removed = Set(previous.keys).subtracting(current.keys)
-        if !removed.isEmpty {
-            var deleted = deletedIDs(uid: userID)
+        // Recorded for the owning account even while signed out, so an intention deleted
+        // meanwhile is not brought back by the account copy at the next sign-in.
+        if !removed.isEmpty, let owner {
+            var deleted = deletedIDs(uid: owner)
             let deletedAt = now().syncRounded
             for id in removed { deleted[id] = deletedAt }
-            setDeletedIDs(deleted, uid: userID)
+            setDeletedIDs(deleted, uid: owner)
         }
+        guard let userID else { return }
 
         for intention in intentions where previous[intention.id] != intention {
             Task {
