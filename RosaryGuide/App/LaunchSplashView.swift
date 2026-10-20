@@ -33,6 +33,15 @@ struct LaunchSplashView: View {
 private struct LottieSplashPlayer: UIViewRepresentable {
     var onFinished: () -> Void
 
+    /// The 7.0 s composition plays 2.5× faster (about 2.8 s).
+    static let speed = 2.5
+    /// JS fallback, started when the script runs: the animation length plus the same 0.2 s
+    /// margin as before.
+    static let jsFallbackMilliseconds = 3000
+    /// Native safety net from web view creation, in case the page never reports back. Counts
+    /// from before the page loads (0.1–0.3 s), so it keeps the original 0.4 s margin.
+    static let fallbackSeconds = 3.4
+
     func makeCoordinator() -> Coordinator {
         Coordinator(onFinished: onFinished)
     }
@@ -53,7 +62,7 @@ private struct LottieSplashPlayer: UIViewRepresentable {
 
         webView.loadHTMLString(Self.html, baseURL: Bundle.main.resourceURL)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 7.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.fallbackSeconds) {
             context.coordinator.finish()
         }
 
@@ -114,12 +123,13 @@ private struct LottieSplashPlayer: UIViewRepresentable {
             autoplay: true,
             animationData: animationData
           });
+          instance.setSpeed(\(speed));
           instance.addEventListener('complete', function() {
             window.webkit.messageHandlers.splashDone.postMessage('complete');
           });
           setTimeout(function() {
             window.webkit.messageHandlers.splashDone.postMessage('fallback');
-          }, 7200);
+          }, \(jsFallbackMilliseconds));
           </script>
         </body>
         </html>
