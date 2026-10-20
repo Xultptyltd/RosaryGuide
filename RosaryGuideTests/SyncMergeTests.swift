@@ -593,6 +593,25 @@ final class DiagnosticsStoreTests: XCTestCase {
         XCTAssertEqual(store.files().count, 2)
     }
 
+    func testRemoveAllDeletesFolderAndExportSoShareRowHides() throws {
+        let store = DiagnosticsStore(directory: directory.appendingPathComponent("Diagnostics", isDirectory: true))
+        let out = directory.appendingPathComponent("out", isDirectory: true)
+        try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+        store.save(payload(1), kind: .diagnostic)
+        store.save(payload(2), kind: .metric, at: Date().addingTimeInterval(1))
+        let export = try XCTUnwrap(store.exportCombined(appVersion: "1.0 (1)", to: out))
+
+        store.removeAll(exportFolder: out)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: store.directory.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: export.path))
+        XCTAssertTrue(store.isEmpty)
+        // Settings shows the row only when an export exists.
+        XCTAssertNil(store.exportCombined(appVersion: "1.0 (1)", to: out))
+        // The store keeps working afterwards.
+        XCTAssertNotNil(store.save(payload(3), kind: .metric))
+    }
+
     func testExportIsNilWhenEmptyAndCombinesPayloads() throws {
         let store = DiagnosticsStore(directory: directory)
         let out = directory.appendingPathComponent("out", isDirectory: true)

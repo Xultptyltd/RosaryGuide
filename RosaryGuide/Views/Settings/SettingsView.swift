@@ -323,6 +323,9 @@ struct SettingsView: View {
         session.clearHistoryAndData()
         offer.clearAll()
         settings.resetLocalPreferences(keepingAppIcon: appIcon.current)
+        // Stored MetricKit reports go too, which hides "Share diagnostics".
+        DiagnosticsStore.standard.removeAll()
+        diagnosticsExport = nil
         Task {
             await NotificationService.reschedule(settings.notificationPlan)
         }

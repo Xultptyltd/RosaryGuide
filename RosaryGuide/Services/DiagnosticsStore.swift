@@ -11,6 +11,7 @@ import MetricKit
 struct DiagnosticsStore {
     static let defaultMaxFiles = 10
     static let defaultMaxBytes = 2 * 1024 * 1024
+    static let exportFileName = "RosaryGuide-diagnostics.json"
 
     let directory: URL
     var maxFiles: Int = DiagnosticsStore.defaultMaxFiles
@@ -76,8 +77,10 @@ struct DiagnosticsStore {
         }
     }
 
-    func removeAll() {
-        for url in files() { try? FileManager.default.removeItem(at: url) }
+    /// Deletes the whole diagnostics folder and any earlier export (used by "Clear app history").
+    func removeAll(exportFolder: URL = FileManager.default.temporaryDirectory) {
+        try? FileManager.default.removeItem(at: directory)
+        try? FileManager.default.removeItem(at: exportFolder.appendingPathComponent(Self.exportFileName))
     }
 
     /// One JSON file holding every stored payload, written to the temporary directory for
@@ -98,7 +101,7 @@ struct DiagnosticsStore {
             "payloads": payloads
         ]
         guard let data = try? JSONSerialization.data(withJSONObject: combined, options: [.prettyPrinted, .sortedKeys]) else { return nil }
-        let url = folder.appendingPathComponent("RosaryGuide-diagnostics.json")
+        let url = folder.appendingPathComponent(Self.exportFileName)
         do {
             try data.write(to: url, options: .atomic)
             return url
