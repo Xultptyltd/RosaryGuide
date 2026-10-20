@@ -10,7 +10,8 @@ def new_id() -> str:
     return uuid.uuid4().hex[:24].upper()
 
 def main() -> int:
-    root = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
+    # Defaults to the repo root (this script lives in tools/); pass a path to override.
+    root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent
     pbx = root / "RosaryGuide.xcodeproj" / "project.pbxproj"
     if not pbx.exists():
         print(f"missing {pbx}", file=sys.stderr)

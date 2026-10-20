@@ -43,13 +43,13 @@ A rosary already underway can be resumed only on the **same calendar day**.
 ## Texts and type
 
 - Traditional prayer texts in English and Latin (Sign of the Cross, Apostles’ Creed, Our Father, Hail Mary, Glory Be, Fatima prayer, Hail Holy Queen, concluding collect, Prayer to Saint Michael).
-- All **20 mysteries** use **RSV-2CE** excerpts, titles, and fruits from `WebsiteReference/mysteries.js`.
+- All **20 mysteries** use **RSV-2CE** excerpts, titles, and fruits from `docs/WebsiteReference/mysteries.js`.
 - Completion quotes from saints and Our Lady of Fatima.
-- **Instrument Sans** and **Newsreader** live in `RosaryGuide/Fonts/` (original `.woff2` plus iOS `.ttf`). They are registered at launch and listed in `UIAppFonts`. Home type size, tracking, and line-height follow `WebsiteReference/app.css` (`h1.title` clamp, `--gut`, 1.02 display leading).
+- **Instrument Sans** and **Newsreader** live in `RosaryGuide/Fonts/` (original `.woff2` plus iOS `.ttf`). They are registered at launch and listed in `UIAppFonts`. Home type size, tracking, and line-height follow `docs/WebsiteReference/app.css` (`h1.title` clamp, `--gut`, 1.02 display leading).
 
 ## Art
 
-Theme-aware paintings match `WebsiteReference/art.js`:
+Theme-aware paintings match `docs/WebsiteReference/art.js`:
 
 ```
 RosaryGuide/Art/
@@ -60,7 +60,7 @@ RosaryGuide/Art/
 
 Light and dark plates share composition; the theme only changes the marble ground. The Xcode project copies `Art/` and `Fonts/` to the **bundle root**. Do not put a top-level `Resources/` folder in the `.app` — iOS codesign treats that as an invalid macOS-style bundle (Info.plist unbound, device install fails).
 
-`WebsiteReference/` holds the website CSS/JS used as the native parity reference (`art.js`, `mysteries.js`, `prayers.js`, `theme.js`, `app.css`).
+`docs/WebsiteReference/` holds the website CSS/JS used as the native parity reference (`art.js`, `mysteries.js`, `prayers.js`, `theme.js`, `app.css`).
 
 ## Privacy
 
@@ -76,5 +76,6 @@ Settings and the in-progress rosary are stored in `UserDefaults` on the device. 
 RosaryGuide.xcodeproj
 RosaryGuide/                  App, models, catalogs, services, views, Art, Fonts
 RosaryGuideTests/             Calendar, sequence, and theme-token tests
-WebsiteReference/             Website CSS/JS for parity
+docs/                         Reference notes: Feasts-2026.md, WebsiteReference/ (website CSS/JS for parity)
+tools/                        One-off developer scripts (not part of the app)
 ```
