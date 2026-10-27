@@ -135,14 +135,13 @@ struct PrayView: View {
     @State private var intentionContentHeight: CGFloat = 0
     @State private var intentionViewportHeight: CGFloat = 0
     @State private var intentionScrollY: CGFloat = 0
+    /// Bumped by the footer's Add intention button; the list opens its editor.
+    @State private var intentionAddRequests = 0
     @State private var intentionActionLocked = false
     @State private var intentionArrowArmed = false
     @State private var intentionLastDrag = Date.distantPast
     @State private var intentionScrollPosition = ScrollPosition(edge: .top)
     @State private var didRecordCarry = false
-    /// Locked when entering finis so Offered for survives session.complete() / store churn.
-    /// Each row carries its own icon and papal flag.
-    @State private var completionIntentions: [CompletionIntention]?
     /// Chosen before the finis screen exists so its first update does not write UserDefaults.
     @State private var completionQuote: CompletionQuote?
     /// Stops the bead TimelineView before the finis screen is inserted.
@@ -944,7 +943,9 @@ struct PrayView: View {
 
                             IntentionMultiSelectList(
                                 selectedIds: intentionSelection,
-                                mysterySet: intentionSheetMysterySet
+                                mysterySet: intentionSheetMysterySet,
+                                showsAddButton: false,
+                                addRequests: intentionAddRequests
                             )
                         }
                         .padding(.horizontal, AppTheme.gutter)
@@ -998,15 +999,26 @@ struct PrayView: View {
                     if scrollGeo.size.height > 1 { intentionViewportHeight = scrollGeo.size.height }
                 }
                 .overlay(alignment: .bottom) {
-                    // Solid circle while there is more list below; full Continue at the bottom
-                    // or when the list fits (shared `GuideScrollActionButton`).
-                    scrollActionChrome(
-                        showScroll: intentionCanScrollFurther,
-                        expandedTitle: "Continue",
-                        scrollLabel: "Scroll to see more intentions",
-                        onScroll: { scrollIntentionsToBottom() },
-                        onAdvance: { advance() }
-                    )
+                    // Add intention and Continue share one row. Continue is a solid circle while
+                    // there is more list below and the full button at the bottom or when the list
+                    // fits (shared `GuideScrollActionButton`); Add intention takes the rest.
+                    HStack(spacing: AppTheme.Space.md) {
+                        PillButton(title: "Add intention", filled: false) {
+                            intentionAddRequests += 1
+                        }
+                        .accessibilityLabel("Add an intention")
+
+                        GuideScrollActionButton(
+                            showScroll: intentionCanScrollFurther,
+                            title: "Continue",
+                            scrollLabel: "Scroll to see more intentions",
+                            primary: true,
+                            pinsTrailing: false,
+                            onScroll: { scrollIntentionsToBottom() },
+                            onAdvance: { advance() }
+                        )
+                    }
+                    .animation(reduceMotion ? nil : MotionTokens.reveal, value: intentionCanScrollFurther)
                     .padding(.horizontal, AppTheme.gutter)
                     .padding(.top, AppTheme.Space.md)
                     .padding(.bottom, AppTheme.Space.lg)
@@ -1269,7 +1281,6 @@ struct PrayView: View {
     private var finisLayer: some View {
         CompletionView(
             mysterySet: launch.mysterySet,
-            intentions: completionIntentions ?? [],
             quote: completionQuote ?? QuoteCatalog.quote(),
             onDone: { finishRosary() },
             // Saint Michael switched on in Rosary settings is already a step; no extra offer.
@@ -1286,45 +1297,6 @@ struct PrayView: View {
                 completedRosaries: sessionStore.completedSessions.count,
                 isStillSettled: { !showingMichael }
             )
-        }
-    }
-
-    private var completionIntentionIds: [UUID] {
-        if !chosenIntentionIds.isEmpty { return chosenIntentionIds }
-        if let ids = sessionStore.session?.intentionIds, !ids.isEmpty { return ids }
-        return launch.intentionId.map { [$0] } ?? []
-    }
-
-    /// Resolve the offered intentions from live state, session, or OfferStore — then freeze them.
-    /// One row per intention, each with its own category icon when it is still stored.
-    private func resolvedIntentionsForCompletion() -> [CompletionIntention] {
-        let ids = completionIntentionIds
-        let titles: [String]
-        if !OfferedIntentions.titles(chosenIntentionTitles, legacy: nil).isEmpty {
-            titles = chosenIntentionTitles
-        } else if let stored = sessionStore.session?.intentionTitles,
-                  !OfferedIntentions.titles(stored, legacy: nil).isEmpty {
-            titles = stored
-        } else {
-            titles = ids.map { offer.intention(id: $0)?.title ?? "" }
-        }
-        return titles.enumerated().compactMap { offset, raw in
-            let title = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !title.isEmpty else { return nil }
-            let found = ids.indices.contains(offset) ? offer.intention(id: ids[offset]) : nil
-            return CompletionIntention(
-                id: offset,
-                title: title,
-                face: found.map {
-                    CompletionIntentionFace(accent: $0.accent, emoji: $0.displayEmoji, isPapal: $0.isPapal)
-                }
-            )
-        }
-    }
-
-    private func lockCompletionIntentionIfNeeded() {
-        if completionIntentions == nil {
-            completionIntentions = resolvedIntentionsForCompletion()
         }
     }
 
@@ -1798,7 +1770,6 @@ struct PrayView: View {
             startSession(set: set)
             sessionStore.updateStep(index)
             didRecordCarry = false
-            completionIntentions = nil
             completionQuote = nil
             beadTimelinePaused = false
             finishBlack = 0
@@ -1835,7 +1806,6 @@ struct PrayView: View {
             }
             showingIntentionStep = false
             didRecordCarry = false
-            completionIntentions = nil
             completionQuote = nil
             beadTimelinePaused = false
             finishBlack = 0
@@ -1925,7 +1895,6 @@ struct PrayView: View {
         // fonts — so the bead TimelineView stops with the rest of the UI.
         // Beads keep running until the fade below actually starts.
         DispatchQueue.main.async {
-            let intentions = resolvedIntentionsForCompletion()
             let quote = QuoteCatalog.selectCompletionQuote()
             RosaryTickLibrary.preload()
             let fade = reduceMotion ? 0.01 : 0.62
@@ -1936,9 +1905,6 @@ struct PrayView: View {
                 var transaction = Transaction()
                 transaction.disablesAnimations = true
                 withTransaction(transaction) {
-                    if completionIntentions == nil {
-                        completionIntentions = intentions
-                    }
                     completionQuote = quote
                     showingCompletion = true
                     finishBlack = 0
@@ -1989,9 +1955,6 @@ struct PrayView: View {
             startSession(set: set)
             flushPendingActivePrayerTimeIfNeeded()
             freshSetPending = nil
-        }
-        if steps.indices.contains(next), steps[next].isFinis {
-            lockCompletionIntentionIfNeeded()
         }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
             showingIntentionStep = false

@@ -396,6 +396,8 @@ struct GuideScrollActionButton: View {
     var title: String
     var scrollLabel: String
     var primary: Bool = false
+    /// Pushes the circle to the trailing edge. Off when it shares a row with another button.
+    var pinsTrailing: Bool = true
     var onScroll: () -> Void
     var onAdvance: () -> Void
     @Environment(\.palette) private var palette
@@ -403,7 +405,7 @@ struct GuideScrollActionButton: View {
 
     var body: some View {
         HStack {
-            if showScroll { Spacer(minLength: 0) }
+            if showScroll && pinsTrailing { Spacer(minLength: 0) }
             Button(action: showScroll ? onScroll : onAdvance) {
                 let side = AppTheme.Component.mysteryPlateActionCircle
                 ZStack {

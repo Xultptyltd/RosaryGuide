@@ -190,12 +190,17 @@ struct OfferView: View {
                                     onDelete: { offer.delete(id: item.id) },
                                     onPray: { prayWith(item) }
                                 )
-                                Hairline().padding(.leading, 62)
+                                if item.id != visibleSecondaryIntentions.last?.id || showsSeeAllIntentions {
+                                    Hairline().padding(.leading, 62)
+                                }
                             }
-                            PillButton(title: "View all intentions", filled: false, tertiary: true) {
-                                showingAllIntentions = true
+                            // Only once there is more than the profile can show (4 or more).
+                            if showsSeeAllIntentions {
+                                PillButton(title: "View all intentions", filled: false, tertiary: true) {
+                                    showingAllIntentions = true
+                                }
+                                .padding(.top, AppTheme.Space.lg)
                             }
-                            .padding(.top, AppTheme.Space.lg)
                         }
                     }
                 }
@@ -398,6 +403,9 @@ struct OfferView: View {
     private var secondaryIntentions: [OfferIntention] {
         guard let currentIntention else { return offer.sortedIntentions }
         return offer.sortedIntentions.filter { $0.id != currentIntention.id }
+    }
+    private var showsSeeAllIntentions: Bool {
+        IntentionListRules.showsSeeAll(intentionCount: offer.sortedIntentions.count)
     }
     private var hasMoreIntentionRows: Bool {
         secondaryIntentions.count > Self.collapsedIntentionRowLimit
@@ -2302,6 +2310,16 @@ private enum EditorSheetScrollAnchor {
     static let bottom = "intention-editor-bottom"
 }
 
+/// Profile list rules, kept out of the view so they can be tested.
+enum IntentionListRules {
+    /// "See all intentions" appears once the user has this many intentions.
+    static let seeAllMinimum = 4
+
+    static func showsSeeAll(intentionCount: Int) -> Bool {
+        intentionCount >= seeAllMinimum
+    }
+}
+
 struct IntentionEditorSheet: View {
     @Environment(OfferStore.self) private var offer
     @Environment(\.palette) private var palette
@@ -2327,7 +2345,7 @@ struct IntentionEditorSheet: View {
     @State private var showingDeleteAlert = false
     @State private var keyboardVisible = false
     @State private var editorActionExpanded = false
-    @Namespace private var editorActionNamespace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var titleFieldFocused: Bool
 
     var body: some View {
@@ -2494,7 +2512,7 @@ struct IntentionEditorSheet: View {
 
     private func settleEditorAction(_ proxy: ScrollViewProxy) {
         guard !editorActionExpanded else { return }
-        withAnimation(.spring(response: 0.42, dampingFraction: 0.84)) {
+        withAnimation(reduceMotion ? nil : Self.editorActionMorph) {
             editorActionExpanded = true
             proxy.scrollTo(EditorSheetScrollAnchor.bottom, anchor: .bottom)
         }
@@ -2502,57 +2520,55 @@ struct IntentionEditorSheet: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 
+    /// One spring for every part of the Done morph (circle, label, footer fill).
+    static let editorActionMorph = Animation.spring(response: 0.42, dampingFraction: 0.86)
+
+    /// One persistent capsule that changes width: a 52pt circle while typing, the full-width
+    /// Done pill otherwise. The label views never leave the hierarchy (they only cross their
+    /// opacity), so there is no insertion/removal transition and no second capsule to match.
     private func editorBottomAction(onSettle: @escaping () -> Void) -> some View {
         let showCompact = keyboardVisible && !editorActionExpanded
+        let side = AppTheme.Component.mysteryPlateActionCircle
 
-        return HStack {
+        return Button {
             if showCompact {
-                Spacer(minLength: 0)
+                onSettle()
+            } else {
+                save()
             }
-            Button {
-                if showCompact {
-                    onSettle()
-                } else {
-                    save()
-                }
-            } label: {
-                Group {
-                    if showCompact {
-                        Image(systemName: "chevron.down")
-                            .guideSymbol(size: 17, weight: .semibold)
-                            .foregroundStyle(palette.secondaryButtonText)
-                            .frame(
-                                width: AppTheme.Component.mysteryPlateActionCircle,
-                                height: AppTheme.Component.mysteryPlateActionCircle
-                            )
-                    } else {
-                        Text("Done")
-                            .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
-                            .minimumScaleFactor(0.75)
-                            .foregroundStyle(palette.secondaryButtonText)
-                            .frame(maxWidth: .infinity)
-                            .multilineTextAlignment(.center)
-                            .frame(height: AppTheme.Component.pillHeight)
-                    }
-                }
-                .background {
-                    Capsule()
-                        .fill(palette.secondaryButtonFill)
-                        .matchedGeometryEffect(id: "editor-bottom-action-background", in: editorActionNamespace)
-                }
-                .contentShape(Capsule())
+        } label: {
+            ZStack {
+                Image(systemName: "chevron.down")
+                    .guideSymbol(size: 17, weight: .semibold)
+                    .foregroundStyle(palette.secondaryButtonText)
+                    .opacity(showCompact ? 1 : 0)
+
+                Text("Done")
+                    .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
+                    .foregroundStyle(palette.secondaryButtonText)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .opacity(showCompact ? 0 : 1)
             }
-            .buttonStyle(.plain)
-            .guidePressable()
-            .disabled(!showCompact && !canSaveIntention)
-            .opacity(!showCompact && !canSaveIntention ? 0.45 : 1)
-            .accessibilityLabel(showCompact ? "Scroll to bottom" : "Done")
+            .frame(minWidth: side, maxWidth: showCompact ? side : .infinity)
+            .frame(height: AppTheme.Component.pillHeight)
+            .background(palette.secondaryButtonFill, in: Capsule())
+            .clipShape(Capsule())
+            .contentShape(Capsule())
         }
-        .animation(.spring(response: 0.42, dampingFraction: 0.84), value: showCompact)
+        .buttonStyle(.plain)
+        .guidePressable()
+        .disabled(!showCompact && !canSaveIntention)
+        .opacity(!showCompact && !canSaveIntention ? 0.45 : 1)
+        .accessibilityLabel(showCompact ? "Scroll to bottom" : "Done")
+        // Pinned to the trailing edge, so the circle grows leftwards into the pill.
+        .frame(maxWidth: .infinity, alignment: .trailing)
         .padding(.horizontal, AppTheme.gutter)
         .padding(.top, AppTheme.Space.sm)
         .padding(.bottom, AppTheme.Space.lg)
         .background(palette.bg.opacity(showCompact ? 0 : 1))
+        // After the footer fill, so the fill fades on the same spring as the capsule.
+        .animation(reduceMotion ? nil : Self.editorActionMorph, value: showCompact)
     }
 
     private var editingItem: OfferIntention? {
@@ -2723,8 +2739,8 @@ struct IntentionEditorSheet: View {
 
     private var routeTitle: String {
         switch route {
-        case .create: "Add Intention"
-        case .edit: "Edit Intention"
+        case .create: "Add intention"
+        case .edit: "Edit intention"
         }
     }
 

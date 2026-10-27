@@ -250,10 +250,20 @@ private struct OnboardingSignInView: View {
                         .disabled(auth.isWorking)
                         .accessibilityLabel(auth.isSigningInWithGoogle ? "Signing in with Google" : "Continue with Google")
 
+                        if let message = auth.errorMessage {
+                            Text(message)
+                                .font(AppTheme.TypeRole.caption())
+                                .foregroundStyle(Color.white.opacity(0.62))
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(4)
+                                .padding(.top, AppTheme.Space.xs)
+                        }
+
                         // Sign-in is optional: everything works on this device without an account.
+                        // Always the last action, an underlined text button under the sign-in pills.
                         GuideTextButton(
-                            title: "Continue without an account",
-                            accessibilityLabel: "Continue without an account. You can sign in later in Settings",
+                            title: OnboardingCopy.continueWithoutSigningUp,
+                            accessibilityLabel: "Continue without signing up. You can sign in later in Settings",
                             alignment: .center
                         ) {
                             HapticService.play(.light, enabled: settings.hapticsEnabled)
@@ -263,15 +273,6 @@ private struct OnboardingSignInView: View {
                         .environment(\.palette, ThemePalette(scheme: .dark))
                         .disabled(auth.isWorking)
                         .padding(.top, AppTheme.Space.xs)
-
-                        if let message = auth.errorMessage {
-                            Text(message)
-                                .font(AppTheme.TypeRole.caption())
-                                .foregroundStyle(Color.white.opacity(0.62))
-                                .multilineTextAlignment(.center)
-                                .lineSpacing(4)
-                                .padding(.top, AppTheme.Space.xs)
-                            }
                     }
                     .padding(.horizontal, AppTheme.gutter)
                     .padding(.bottom, AppTheme.Space.xl)
@@ -301,6 +302,10 @@ private struct OnboardingSignInView: View {
         HapticService.play(.medium, enabled: settings.hapticsEnabled)
         onComplete()
     }
+}
+
+enum OnboardingCopy {
+    static let continueWithoutSigningUp = "Continue without signing up"
 }
 
 private struct OnboardingAuthButton: View {

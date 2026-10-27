@@ -291,6 +291,11 @@ final class LaunchGateTests: XCTestCase {
         XCTAssertTrue(LaunchGate.showsApp(didCompleteOnboarding: false, isSignedIn: true), "Existing accounts skip onboarding")
         XCTAssertFalse(LaunchGate.showsApp(didCompleteOnboarding: false, isSignedIn: false))
     }
+
+    func testGuestButtonCopyIsSentenceCase() {
+        XCTAssertEqual(OnboardingCopy.continueWithoutSigningUp, "Continue without signing up")
+        XCTAssertFalse(OnboardingCopy.continueWithoutSigningUp.hasSuffix("."))
+    }
 }
 
 @MainActor
@@ -803,5 +808,15 @@ final class AppIconOptionTests: XCTestCase {
             settings.migrateToBluePrimaryIcon(showing: .blue)
             XCTAssertFalse(settings.hasStoredAppIconChoice, "a fresh install records nothing")
         }
+    }
+}
+
+final class IntentionListRulesTests: XCTestCase {
+    func testSeeAllAppearsFromFourIntentions() {
+        for count in 0...3 {
+            XCTAssertFalse(IntentionListRules.showsSeeAll(intentionCount: count), "\(count) intentions")
+        }
+        XCTAssertTrue(IntentionListRules.showsSeeAll(intentionCount: 4))
+        XCTAssertTrue(IntentionListRules.showsSeeAll(intentionCount: 12))
     }
 }

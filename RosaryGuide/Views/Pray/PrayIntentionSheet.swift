@@ -435,6 +435,10 @@ struct IntentionMultiSelectList: View {
 
     @Binding var selectedIds: [UUID]
     var mysterySet: MysterySetKind
+    /// Off when the host shows its own Add intention button (the prayer step's footer).
+    var showsAddButton = true
+    /// Each change opens the new-intention editor, so a host button can drive it.
+    var addRequests = 0
 
     @State private var popeStore = PopeIntentionStore.shared
     @State private var editorRoute: EditorRoute?
@@ -503,10 +507,15 @@ struct IntentionMultiSelectList: View {
                 selectedIds = []
             }
 
-            GuideTextButton(title: "Add an intention") {
-                editorRoute = .create
+            if showsAddButton {
+                GuideTextButton(title: "Add an intention") {
+                    editorRoute = .create
+                }
+                .padding(.top, AppTheme.Space.xs)
             }
-            .padding(.top, AppTheme.Space.xs)
+        }
+        .onChange(of: addRequests) { _, _ in
+            editorRoute = .create
         }
         .sheet(item: $editorRoute) { route in
             IntentionEditorSheet(
