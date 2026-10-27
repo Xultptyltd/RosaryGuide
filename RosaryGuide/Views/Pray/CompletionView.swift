@@ -7,15 +7,21 @@ struct CompletionIntentionFace: Equatable {
     var isPapal: Bool
 }
 
+/// One intention offered with the Rosary, frozen when the finish screen opens.
+struct CompletionIntention: Identifiable, Equatable {
+    var id: Int
+    var title: String
+    /// Nil when the rosary was offered with a title but no stored intention.
+    var face: CompletionIntentionFace?
+}
+
 /// Ceremonial end-of-rosary screen: art → symbol → label → mystery title →
 /// optional intention → quote → calm space → Done → optional St Michael prayer.
 /// No stats, X, or confetti — stillness as the emotional endpoint.
 struct CompletionView: View {
     var mysterySet: MysterySetKind
-    var intentionTitle: String?
-    var intentionIsPapal: Bool = false
-    /// Nil when the rosary was offered with a title but no stored intention.
-    var intentionFace: CompletionIntentionFace? = nil
+    /// Every intention the Rosary was offered for, in the order chosen.
+    var intentions: [CompletionIntention] = []
     var quote: CompletionQuote
     var onDone: () -> Void
     var onMichael: (() -> Void)?
@@ -36,6 +42,8 @@ struct CompletionView: View {
     @State private var settled = false
     /// Icon slot in the finish coordinate space. Written only when it actually moves.
     @State private var slot: CGRect = .zero
+    /// Natural height of the intention rows; above the cap they scroll in the card.
+    @State private var intentionsContentHeight: CGFloat = 0
 
     /// Resting icon. The ring is about half the 1024 canvas, so 88pt
     /// leaves a drawn tick about the size of the old emblem.
@@ -57,21 +65,23 @@ struct CompletionView: View {
         "\(mysterySet.shortName) Mysteries"
     }
 
-    private var hasIntention: Bool {
-        guard let intentionTitle else { return false }
-        return !intentionTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    /// Taller lists scroll inside the card so the artwork and Done keep their room.
+    private static let intentionsMaxHeight: CGFloat = 264
+
+    private var shownIntentions: [CompletionIntention] {
+        intentions.filter { !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
+
+    private var hasIntention: Bool { !shownIntentions.isEmpty }
 
     /// Holy Father stays readable. Personal intentions use the fuller
     /// finish-screen phrase, not the short "Hidden" used in the prayer row.
-    private var intentionIsHidden: Bool {
-        hideIntentionText && !intentionIsPapal
+    private func isHidden(_ intention: CompletionIntention) -> Bool {
+        hideIntentionText && !(intention.face?.isPapal ?? false)
     }
 
-    private var displayIntentionTitle: String {
-        guard let intentionTitle else { return "Hidden intention" }
-        if intentionIsHidden { return "Hidden intention" }
-        return intentionTitle
+    private func displayTitle(_ intention: CompletionIntention) -> String {
+        isHidden(intention) ? "Hidden intention" : intention.title
     }
 
     var body: some View {
@@ -103,6 +113,9 @@ struct CompletionView: View {
 
                 completionContent()
                     .padding(.horizontal, AppTheme.gutter)
+                    // Laid out before the artwork, so a long intention takes
+                    // room from the picture, never from its own text.
+                    .layoutPriority(1)
                     .offset(y: resting ? 0 : 108)
                     .opacity(resting ? 1 : 0)
 
@@ -254,37 +267,74 @@ struct CompletionView: View {
         }
     }
 
-    /// Category icon (or Pope portrait) and title, on the shared surface.
+    /// Offered-for list: one flat card, one row per intention. Every title
+    /// wraps in full. A long list scrolls inside the card.
     /// No "Offered for" label — VoiceOver still says who it was offered for.
     private var offeredForSurface: some View {
-        HStack(spacing: 0) {
-            Spacer(minLength: 0)
-            HStack(spacing: AppTheme.Space.sm) {
-                if let intentionFace {
-                    IntentionIconView(
-                        accent: intentionFace.accent,
-                        emoji: intentionFace.emoji,
-                        size: 27,
-                        usesPopePortrait: intentionFace.isPapal
-                    )
-                    .accessibilityHidden(true)
+        let scrolls = intentionsContentHeight > Self.intentionsMaxHeight
+        return ScrollView {
+            intentionRows
+                // The rows' height depends only on the width, never on this
+                // frame, so reading it cannot feed back into layout.
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                    if abs(height - intentionsContentHeight) > 0.5 {
+                        intentionsContentHeight = height
+                    }
                 }
-
-                Text(displayIntentionTitle)
-                    .font(AppTheme.TypeRole.bodySmall(weight: .medium))
-                    .foregroundStyle(intentionIsHidden ? palette.completionMeta : palette.completionMetaValue)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-                    .layoutPriority(-1)
-            }
-            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, AppTheme.Space.sm)
+        .scrollDisabled(!scrolls)
+        .scrollBounceBehavior(.basedOnSize)
+        // Flash the bar once so a clipped last row reads as "more below".
+        .scrollIndicators(scrolls ? .visible : .hidden)
+        .scrollIndicatorsFlash(trigger: scrolls)
+        .frame(height: intentionsContentHeight > 0 ? min(intentionsContentHeight, Self.intentionsMaxHeight) : nil)
         .frame(maxWidth: .infinity)
         .guideCard(radius: AppTheme.nestedRadius, fill: palette.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+    }
+
+    private var intentionRows: some View {
+        let rows = shownIntentions
+        return VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(rows.enumerated()), id: \.element.id) { index, intention in
+                intentionRow(intention)
+                if index < rows.count - 1 {
+                    Rectangle()
+                        .fill(palette.completionMeta.opacity(0.22))
+                        .frame(height: 0.5)
+                        .padding(.leading, intention.face == nil ? 14 : 14 + 27 + AppTheme.Space.md)
+                        .accessibilityHidden(true)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func intentionRow(_ intention: CompletionIntention) -> some View {
+        let hidden = isHidden(intention)
+        let title = displayTitle(intention)
+        return HStack(alignment: .center, spacing: AppTheme.Space.md) {
+            if let face = intention.face {
+                IntentionIconView(
+                    accent: face.accent,
+                    emoji: face.emoji,
+                    size: 27,
+                    usesPopePortrait: face.isPapal
+                )
+                .accessibilityHidden(true)
+            }
+
+            Text(title)
+                .font(AppTheme.TypeRole.bodySmall(weight: .medium))
+                .foregroundStyle(hidden ? palette.completionMeta : palette.completionMetaValue)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Offered for \(displayIntentionTitle)")
+        .accessibilityLabel("Offered for \(title)")
     }
 
     private func actions() -> some View {

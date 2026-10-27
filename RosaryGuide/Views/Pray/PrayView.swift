@@ -66,6 +66,8 @@ struct PrayView: View {
     @State private var confirmReplace = false
     @State private var didConfigure = false
     @State private var showingMichael = false
+    /// Saint Michael after the Rosary keeps its own English / Latin / Both choice.
+    @State private var michaelLanguage: PrayerLanguage?
     @State private var michaelContentHeight: CGFloat = 0
     @State private var michaelViewportHeight: CGFloat = 0
     @State private var michaelActionLocked = false
@@ -139,9 +141,8 @@ struct PrayView: View {
     @State private var intentionScrollPosition = ScrollPosition(edge: .top)
     @State private var didRecordCarry = false
     /// Locked when entering finis so Offered for survives session.complete() / store churn.
-    @State private var completionIntentionTitle: String?
-    /// Icon and papal flag locked with the title. Nil for a title with no stored intention.
-    @State private var completionIntentionFace: CompletionIntentionFace?
+    /// Each row carries its own icon and papal flag.
+    @State private var completionIntentions: [CompletionIntention]?
     /// Chosen before the finis screen exists so its first update does not write UserDefaults.
     @State private var completionQuote: CompletionQuote?
     /// Stops the bead TimelineView before the finis screen is inserted.
@@ -1268,9 +1269,7 @@ struct PrayView: View {
     private var finisLayer: some View {
         CompletionView(
             mysterySet: launch.mysterySet,
-            intentionTitle: completionIntentionTitle,
-            intentionIsPapal: completionIntentionFace?.isPapal ?? completionIntentionIsPapal,
-            intentionFace: completionIntentionFace,
+            intentions: completionIntentions ?? [],
             quote: completionQuote ?? QuoteCatalog.quote(),
             onDone: { finishRosary() },
             // Saint Michael switched on in Rosary settings is already a step; no extra offer.
@@ -1290,49 +1289,42 @@ struct PrayView: View {
         }
     }
 
-    private var completionIntentionIsPapal: Bool {
-        guard completionIntentionIds.count == 1 else { return false }
-        return completionIntentionIds.first.flatMap { offer.intention(id: $0)?.isPapal } ?? false
-    }
-
     private var completionIntentionIds: [UUID] {
         if !chosenIntentionIds.isEmpty { return chosenIntentionIds }
         if let ids = sessionStore.session?.intentionIds, !ids.isEmpty { return ids }
         return launch.intentionId.map { [$0] } ?? []
     }
 
-    /// Resolve the display title from live state, session, or OfferStore — then freeze it.
-    /// Several intentions read as "A, B and C".
-    private func resolvedIntentionTitleForCompletion() -> String? {
-        let chosen = OfferedIntentions.titles(chosenIntentionTitles, legacy: nil)
-        if !chosen.isEmpty { return OfferedIntentions.summary(chosen) }
-
-        let stored = OfferedIntentions.titles(sessionStore.session?.intentionTitles, legacy: nil)
-        if !stored.isEmpty { return OfferedIntentions.summary(stored) }
-
-        let looked = OfferedIntentions.titles(completionIntentionIds.compactMap { offer.intention(id: $0)?.title }, legacy: nil)
-        return OfferedIntentions.summary(looked)
-    }
-
-    /// Snapshot the category icon at the same moment as the title.
-    /// Icon only for a single intention; several intentions have no one face.
-    private func resolvedIntentionFaceForCompletion() -> CompletionIntentionFace? {
-        guard completionIntentionIds.count == 1,
-              let id = completionIntentionIds.first,
-              let found = offer.intention(id: id) else { return nil }
-        return CompletionIntentionFace(
-            accent: found.accent,
-            emoji: found.displayEmoji,
-            isPapal: found.isPapal
-        )
+    /// Resolve the offered intentions from live state, session, or OfferStore — then freeze them.
+    /// One row per intention, each with its own category icon when it is still stored.
+    private func resolvedIntentionsForCompletion() -> [CompletionIntention] {
+        let ids = completionIntentionIds
+        let titles: [String]
+        if !OfferedIntentions.titles(chosenIntentionTitles, legacy: nil).isEmpty {
+            titles = chosenIntentionTitles
+        } else if let stored = sessionStore.session?.intentionTitles,
+                  !OfferedIntentions.titles(stored, legacy: nil).isEmpty {
+            titles = stored
+        } else {
+            titles = ids.map { offer.intention(id: $0)?.title ?? "" }
+        }
+        return titles.enumerated().compactMap { offset, raw in
+            let title = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !title.isEmpty else { return nil }
+            let found = ids.indices.contains(offset) ? offer.intention(id: ids[offset]) : nil
+            return CompletionIntention(
+                id: offset,
+                title: title,
+                face: found.map {
+                    CompletionIntentionFace(accent: $0.accent, emoji: $0.displayEmoji, isPapal: $0.isPapal)
+                }
+            )
+        }
     }
 
     private func lockCompletionIntentionIfNeeded() {
-        if completionIntentionTitle == nil {
-            completionIntentionTitle = resolvedIntentionTitleForCompletion()
-        }
-        if completionIntentionFace == nil {
-            completionIntentionFace = resolvedIntentionFaceForCompletion()
+        if completionIntentions == nil {
+            completionIntentions = resolvedIntentionsForCompletion()
         }
     }
 
@@ -1356,24 +1348,16 @@ struct PrayView: View {
         .padding(.top, AppTheme.Space.xs)
     }
 
-    /// Same title block as `locus` on a non-plate prayer.
-    private var michaelLocus: some View {
-        let prayer = PrayerCatalog.saintMichael
-        return VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-            Text(prayer.title.primary(for: language))
-                .font(AppTheme.TypeRole.modalTitle)
-                .foregroundStyle(palette.ink)
-                .tracking(-0.2)
-            if language == .bilingual {
-                Text(prayer.title.latin)
-                    .font(AppTheme.TypeRole.bodySmall)
-                    .foregroundStyle(palette.dim)
+    /// Page-local language, like the Prayers section. Starts from the prayer
+    /// language each time the page opens and never writes the setting.
+    private var michaelLanguageSelection: Binding<PrayerLanguage> {
+        Binding(
+            get: { michaelLanguage ?? language },
+            set: { newValue in
+                guard newValue != (michaelLanguage ?? language) else { return }
+                michaelLanguage = newValue
             }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        // 48pt from the close button's bottom edge to this title. No stage track on this page.
-        .padding(.top, PrayerTitleChrome.belowClose)
-        .padding(.bottom, 22)
+        )
     }
 
     private var michaelLayer: some View {
@@ -1384,19 +1368,17 @@ struct PrayView: View {
                     GeometryReader { scrollGeo in
                         ScrollView {
                             VStack(spacing: 0) {
-                                Spacer(minLength: 0)
-                                VStack(alignment: .leading, spacing: 0) {
-                                    michaelLocus
-                                    BilingualStack(
-                                        text: PrayerCatalog.saintMichael.text,
-                                        language: language,
-                                        font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
-                                        pointSize: AppTheme.TypeRole.prayerLineHeightReference(scale: settings.textSize.scale)
-                                    )
-                                }
+                                // The same block, widths and spacing as Saint Michael
+                                // in the Prayers section.
+                                PrayerReaderBlock(
+                                    prayer: PrayerCatalog.saintMichael,
+                                    language: michaelLanguageSelection
+                                )
+                                .frame(maxWidth: 560, alignment: .leading)
                                 .padding(.horizontal, AppTheme.gutter)
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, AppTheme.Space.lg)
                                 .padding(.bottom, AppTheme.Space.lg)
-                                .frame(maxWidth: .infinity, alignment: .leading)
                                 Spacer(minLength: 0)
 
                                 // Same content-to-action gap as every long prayer.
@@ -1459,7 +1441,7 @@ struct PrayView: View {
                                 michaelLastDrag = Date()
                             }
                         }
-                        .onChange(of: settings.language) { resetMichaelScrollState() }
+                        .onChange(of: michaelLanguage) { resetMichaelScrollState() }
                         .onChange(of: settings.textSize) { resetMichaelScrollState() }
                     }
                     .onPreferenceChange(MichaelContentHeightKey.self) { height in
@@ -1498,7 +1480,6 @@ struct PrayView: View {
                                 }
                                 disarmLater { michaelArrowArmed = false }
                             }
-                            languageChips
                         }
                         .padding(.horizontal, AppTheme.gutter)
                         .padding(.bottom, AppTheme.Space.lg)
@@ -1506,9 +1487,12 @@ struct PrayView: View {
                     }
                 }
         }
-        .background(palette.prayBg.ignoresSafeArea())
-        // Opening Saint Michael again starts as a circle at the top.
-        .onAppear { resetMichaelScrollState() }
+        .background(palette.bg.ignoresSafeArea())
+        // Opening Saint Michael again starts as a circle at the top, in the prayer language.
+        .onAppear {
+            michaelLanguage = nil
+            resetMichaelScrollState()
+        }
     }
 
     /// New content (appear, language, text size): re-measure from scratch so the
@@ -1814,8 +1798,7 @@ struct PrayView: View {
             startSession(set: set)
             sessionStore.updateStep(index)
             didRecordCarry = false
-            completionIntentionTitle = nil
-            completionIntentionFace = nil
+            completionIntentions = nil
             completionQuote = nil
             beadTimelinePaused = false
             finishBlack = 0
@@ -1852,8 +1835,7 @@ struct PrayView: View {
             }
             showingIntentionStep = false
             didRecordCarry = false
-            completionIntentionTitle = nil
-            completionIntentionFace = nil
+            completionIntentions = nil
             completionQuote = nil
             beadTimelinePaused = false
             finishBlack = 0
@@ -1943,8 +1925,7 @@ struct PrayView: View {
         // fonts — so the bead TimelineView stops with the rest of the UI.
         // Beads keep running until the fade below actually starts.
         DispatchQueue.main.async {
-            let title = resolvedIntentionTitleForCompletion()
-            let face = resolvedIntentionFaceForCompletion()
+            let intentions = resolvedIntentionsForCompletion()
             let quote = QuoteCatalog.selectCompletionQuote()
             RosaryTickLibrary.preload()
             let fade = reduceMotion ? 0.01 : 0.62
@@ -1955,11 +1936,8 @@ struct PrayView: View {
                 var transaction = Transaction()
                 transaction.disablesAnimations = true
                 withTransaction(transaction) {
-                    if completionIntentionTitle == nil {
-                        completionIntentionTitle = title
-                    }
-                    if completionIntentionFace == nil {
-                        completionIntentionFace = face
+                    if completionIntentions == nil {
+                        completionIntentions = intentions
                     }
                     completionQuote = quote
                     showingCompletion = true

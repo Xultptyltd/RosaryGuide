@@ -789,6 +789,97 @@ private struct AllPrayersView: View {
     }
 }
 
+/// Title, English / Latin / Both control and prayer text, as one block.
+/// The Prayers section and the Saint Michael page after the Rosary both use it,
+/// so the two read identically.
+struct PrayerReaderBlock: View {
+    @Environment(SettingsStore.self) private var settings
+    @Environment(\.palette) private var palette
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    var prayer: Prayer
+    /// The language shown. Prayers without distinct Latin always read in English.
+    @Binding var language: PrayerLanguage
+
+    private var shown: PrayerLanguage { prayer.text.hasDistinctLatin ? language : .english }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                Text(prayer.title.english)
+                    .font(AppTheme.TypeRole.screenTitle)
+                    .foregroundStyle(palette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+                if !prayer.title.latin.isEmpty && prayer.title.latin != prayer.title.english {
+                    Text(prayer.title.latin)
+                        .guideThemeSummaryStyle()
+                }
+            }
+
+            if prayer.text.hasDistinctLatin {
+                Picker("Language", selection: $language) {
+                    Text("English").tag(PrayerLanguage.english)
+                    Text("Latin").tag(PrayerLanguage.latin)
+                    Text("Both").tag(PrayerLanguage.bilingual)
+                }
+                .guideSegmentedControl()
+                .labelsHidden()
+                .accessibilityLabel("Prayer language")
+            }
+
+            prayerReader
+                .padding(.horizontal, AppTheme.Space.sm)
+                .padding(.vertical, AppTheme.Space.lg)
+        }
+    }
+
+    @ViewBuilder
+    private var prayerReader: some View {
+        if shown == .bilingual {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xxl) {
+                    prayerColumn(prayer.text.english)
+                    prayerColumn(prayer.text.latin)
+                }
+            } else {
+                HStack(alignment: .top, spacing: AppTheme.Space.xl) {
+                    prayerColumn(prayer.text.english)
+                    prayerColumn(prayer.text.latin)
+                }
+            }
+        } else {
+            prayerColumn(shown == .latin ? prayer.text.latinOrEnglish : prayer.text.english)
+        }
+    }
+
+    private func prayerColumn(_ text: String) -> some View {
+        let paragraphs = text.components(separatedBy: "\n\n").filter { !$0.isEmpty }
+        return VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+            ForEach(Array(paragraphs.enumerated()), id: \.offset) { _, paragraph in
+                prayerParagraph(paragraph)
+                    .font(AppTheme.TypeRole.prayerText(scale: settings.textSize.scale))
+                    .lineSpacing(AppTheme.Space.sm)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func prayerParagraph(_ paragraph: String) -> Text {
+        if prayer.id == "litany-of-loreto" {
+            let responses = [", pray for us.", ", have mercy on us.", ", spare us, O Lord.", ", graciously hear us, O Lord."]
+            if let response = responses.first(where: { paragraph.hasSuffix($0) }) {
+                let invocation = String(paragraph.dropLast(response.count))
+                let lead = Text(invocation + ", ").foregroundColor(palette.ink)
+                let answer = Text(String(response.dropFirst(2))).foregroundColor(palette.dim)
+                return Text("\(lead)\(answer)")
+            }
+        }
+        return Text(paragraph).foregroundColor(palette.ink)
+    }
+}
+
 private struct LearnPrayerDetailView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(\.palette) private var palette
@@ -797,39 +888,16 @@ private struct LearnPrayerDetailView: View {
     @State private var language: PrayerLanguage?
 
     @State private var showingAbout = false
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var shown: PrayerLanguage { prayer.text.hasDistinctLatin ? (language ?? settings.language) : .english }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                    Text(prayer.title.english)
-                        .font(AppTheme.TypeRole.screenTitle)
-                        .foregroundStyle(palette.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityAddTraits(.isHeader)
-                    if !prayer.title.latin.isEmpty && prayer.title.latin != prayer.title.english {
-                        Text(prayer.title.latin)
-                            .guideThemeSummaryStyle()
-                    }
-                }
-
-                if prayer.text.hasDistinctLatin {
-                Picker("Language", selection: Binding(get: { shown }, set: { language = $0 })) {
-                    Text("English").tag(PrayerLanguage.english)
-                    Text("Latin").tag(PrayerLanguage.latin)
-                    Text("Both").tag(PrayerLanguage.bilingual)
-                }
-                .guideSegmentedControl()
-                .labelsHidden()
-                .accessibilityLabel("Prayer language")
-                }
-
-                prayerReader
-                    .padding(.horizontal, AppTheme.Space.sm)
-                    .padding(.vertical, AppTheme.Space.lg)
+                PrayerReaderBlock(
+                    prayer: prayer,
+                    language: Binding(get: { shown }, set: { language = $0 })
+                )
 
                 if prayer.id == "sign-of-the-cross" {
                     GuideSectionBoundary()
@@ -905,52 +973,6 @@ private struct LearnPrayerDetailView: View {
                 .font(AppTheme.TypeRole.label)
                 .foregroundStyle(palette.dim)
         }
-    }
-
-    @ViewBuilder
-    private var prayerReader: some View {
-        if shown == .bilingual && prayer.text.hasDistinctLatin {
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: AppTheme.Space.xxl) {
-                    prayerColumn(prayer.text.english)
-                    prayerColumn(prayer.text.latin)
-                }
-            } else {
-                HStack(alignment: .top, spacing: AppTheme.Space.xl) {
-                    prayerColumn(prayer.text.english)
-                    prayerColumn(prayer.text.latin)
-                }
-            }
-        } else {
-            prayerColumn(shown == .latin ? prayer.text.latinOrEnglish : prayer.text.english)
-        }
-    }
-
-    private func prayerColumn(_ text: String) -> some View {
-        let paragraphs = text.components(separatedBy: "\n\n").filter { !$0.isEmpty }
-        return VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-            ForEach(Array(paragraphs.enumerated()), id: \.offset) { _, paragraph in
-                prayerParagraph(paragraph)
-                    .font(AppTheme.TypeRole.prayerText(scale: settings.textSize.scale))
-                    .lineSpacing(AppTheme.Space.sm)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func prayerParagraph(_ paragraph: String) -> Text {
-        if prayer.id == "litany-of-loreto" {
-            let responses = [", pray for us.", ", have mercy on us.", ", spare us, O Lord.", ", graciously hear us, O Lord."]
-            if let response = responses.first(where: { paragraph.hasSuffix($0) }) {
-                let invocation = String(paragraph.dropLast(response.count))
-                let lead = Text(invocation + ", ").foregroundColor(palette.ink)
-                let answer = Text(String(response.dropFirst(2))).foregroundColor(palette.dim)
-                return Text("\(lead)\(answer)")
-            }
-        }
-        return Text(paragraph).foregroundColor(palette.ink)
     }
 
     private var aboutBlock: some View {
