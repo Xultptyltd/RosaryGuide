@@ -17,7 +17,8 @@ struct OfferView: View {
     @State private var popeStore = PopeIntentionStore.shared
     @State private var intentionDetail: OfferIntention?
     @State private var showingJourney = false
-    @State private var showingMilestones = false
+    /// Rhythm screen tab (calendar or milestones) the next push opens on.
+    @State private var journeyTab: JourneyTab = .rhythm
     /// Pushes the All intentions screen from "See all".
     @State private var showingAllIntentions = false
     /// Banking-style privacy: when true, mask personal intention titles on the list surface.
@@ -115,11 +116,11 @@ struct OfferView: View {
                     prayedDayStarts: sessionStore.completedDayStarts,
                     completedSessions: sessionStore.completedSessions,
                     completedDecades: sessionStore.completedDecades,
-                    prayerTimeByDay: sessionStore.prayerTimeByDay
+                    prayerTimeByDay: sessionStore.prayerTimeByDay,
+                    milestones: sessionStore.journeyMilestones,
+                    stage: milestoneStage,
+                    tab: $journeyTab
                 )
-            }
-            .navigationDestination(isPresented: $showingMilestones) {
-                JourneyMilestonesView(milestones: sessionStore.journeyMilestones, stage: milestoneStage)
             }
             .navigationDestination(isPresented: $showingAllIntentions) {
                 AllIntentionsView(
@@ -137,7 +138,7 @@ struct OfferView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
                 Button {
-                    showingMilestones = true
+                    openJourney(.milestones)
                 } label: {
                     let progress = sessionStore.journeyMilestones
                     VStack(alignment: .leading, spacing: AppTheme.Space.md) {
@@ -508,7 +509,9 @@ struct OfferView: View {
         return sessionStore.completedSessions.filter { week.contains($0.completedAt) }.count
     }
 
-    private func openJourney() {
+    /// Opens the Rhythm screen; milestones are a tab there, not a separate screen.
+    private func openJourney(_ tab: JourneyTab = .rhythm) {
+        journeyTab = tab
         showingJourney = true
     }
 
@@ -525,7 +528,7 @@ struct OfferView: View {
             }
 
             GuideTextButton(title: "View all milestones") {
-                showingMilestones = true
+                openJourney(.milestones)
             }
             .padding(.top, -AppTheme.Space.md)
         }
@@ -3197,15 +3200,40 @@ private struct JourneyCardButtonStyle: ButtonStyle {
     }
 }
 
+/// The two tabs of the Rhythm screen.
+private enum JourneyTab: String, CaseIterable, Identifiable {
+    case rhythm
+    case milestones
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .rhythm: "Rhythm"
+        case .milestones: "Milestones"
+        }
+    }
+}
+
+/// A tapped calendar day, for the day detail sheet.
+private struct JourneySelectedDay: Identifiable {
+    var date: Date
+    var id: String { SyncedProgress.dayKey(for: date) }
+}
+
 private struct PrayerJourneyView: View {
     @Environment(SessionStore.self) private var sessionStore
     @Environment(\.palette) private var palette
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var visibleMonth: Date = Date()
+    @State private var selectedDay: JourneySelectedDay?
 
     var prayedDayStarts: Set<TimeInterval>
     var completedSessions: [CompletedPrayerSession]
     var completedDecades: [CompletedDecadeSession]
     var prayerTimeByDay: [String: TimeInterval]
+    var milestones: JourneyMilestones
+    var stage: (title: String, detail: String)
+    @Binding var tab: JourneyTab
 
     private var partialDayStarts: Set<TimeInterval> {
         let calendar = Calendar.current
@@ -3247,16 +3275,30 @@ private struct PrayerJourneyView: View {
         guard let interval = calendar.dateInterval(of: .month, for: visibleMonth) else { return 0 }
         return prayerTimeByDay.reduce(0) { total, entry in
             guard let date = SyncedProgress.date(forDayKey: entry.key), interval.contains(date) else { return total }
-            return total + max(0, entry.value)
+            return total + JourneyDuration.dayTotal(entry.value)
         }
     }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                monthCalendar
-                history
-                    .padding(.top, AppTheme.sectionGap)
+                Picker("View", selection: $tab.animation(reduceMotion ? nil : MotionTokens.selection)) {
+                    ForEach(JourneyTab.allCases) { option in
+                        Text(option.title).tag(option)
+                    }
+                }
+                .guideSegmentedControl()
+                .background(SegmentedSelectedColors(thumb: UIColor(palette.ink), title: UIColor(palette.bg)))
+                .padding(.bottom, AppTheme.Space.xl)
+
+                switch tab {
+                case .rhythm:
+                    monthCalendar
+                    history
+                        .padding(.top, AppTheme.sectionGap)
+                case .milestones:
+                    JourneyMilestonesContent(milestones: milestones, stage: stage)
+                }
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideDetailChrome.contentTop)
@@ -3264,8 +3306,22 @@ private struct PrayerJourneyView: View {
         }
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
-        .guideDetailChrome("Prayer history")
+        .guideDetailChrome("Rhythm")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $selectedDay) { day in
+            JourneyDayDetailSheet(
+                date: day.date,
+                entries: JourneyDayDetail.entries(
+                    dayKey: day.id,
+                    sessions: completedSessions,
+                    decades: completedDecades,
+                    prayedDayKeys: sessionStore.completedDayKeys
+                )
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(AppTheme.containerRadius)
+        }
     }
 
     private var rhythmSummary: some View {
@@ -3337,7 +3393,18 @@ private struct PrayerJourneyView: View {
                 ForEach(Array(month.weeks.enumerated()), id: \.offset) { _, week in
                     HStack(spacing: AppTheme.Space.sm) {
                         ForEach(Array(week.enumerated()), id: \.offset) { _, day in
-                            JourneyCalendarCell(day: day)
+                            if let day, !day.isFuture {
+                                Button {
+                                    selectedDay = JourneySelectedDay(date: day.date)
+                                } label: {
+                                    JourneyCalendarCell(day: day)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityHint("Shows what was prayed that day")
+                            } else {
+                                JourneyCalendarCell(day: day)
+                            }
                         }
                     }
                 }
@@ -3690,33 +3757,26 @@ private struct JourneyInlineStat: View {
     }
 }
 
-private struct JourneyMilestonesView: View {
+/// The Milestones tab of the Rhythm screen. Scrolling and chrome belong to the screen.
+private struct JourneyMilestonesContent: View {
     @Environment(\.palette) private var palette
     let milestones: JourneyMilestones
     let stage: (title: String, detail: String)
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 0) {
-                summaryCard
-                ForEach(milestones.orderedCategories) { category in
-                    GuideSectionBoundary()
-                    VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                        GuideSectionLabel(text: category.rawValue, prominence: .strong)
-                            .accessibilityAddTraits(.isHeader)
-                        ForEach(milestones.items.filter { $0.category == category }) { item in
-                            JourneyMilestoneCard(item: item)
-                        }
+        VStack(alignment: .leading, spacing: 0) {
+            summaryCard
+            ForEach(milestones.orderedCategories) { category in
+                GuideSectionBoundary()
+                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                    GuideSectionLabel(text: category.rawValue, prominence: .strong)
+                        .accessibilityAddTraits(.isHeader)
+                    ForEach(milestones.items.filter { $0.category == category }) { item in
+                        JourneyMilestoneCard(item: item)
                     }
                 }
             }
-            .padding(.horizontal, AppTheme.gutter)
-            .padding(.top, GuideDetailChrome.contentTop)
-            .padding(.bottom, AppTheme.tabBarContentClearance)
         }
-        .background(palette.bg.ignoresSafeArea())
-        .guideDetailChrome("Milestones")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var summaryCard: some View {
@@ -3891,12 +3951,15 @@ private struct JourneyHistoryRow: View {
     }
 
     private var statusText: String {
+        let status: String
         switch row.kind {
         case .rosary:
-            return "Rosary completed"
+            status = "Rosary completed"
         case .decade(let number):
-            return "Decade \(OrdinalWord.roman(number)) prayed"
+            status = "Decade \(OrdinalWord.roman(number)) prayed"
         }
+        guard let duration = JourneyDuration.reliable(row.duration) else { return status }
+        return "\(status) · \(JourneyDuration.text(duration))"
     }
 
     private var normalizedIntentionTitle: String? {
@@ -3951,6 +4014,135 @@ private extension JourneyHistoryRow.Model.Kind {
             return "rosary"
         case .decade(let number):
             return "decade-\(number)"
+        }
+    }
+}
+
+
+/// What was prayed on one calendar day: each Rosary or decade with its mystery set, time,
+/// intentions and how long it took.
+private struct JourneyDayDetailSheet: View {
+    @Environment(\.palette) private var palette
+    let date: Date
+    let entries: [JourneyDayEntry]
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    Text(date.formatted(.dateTime.weekday(.wide).day().month(.wide).year()))
+                        .font(AppTheme.TypeRole.headingPrimary)
+                        .foregroundStyle(palette.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(summary)
+                        .font(AppTheme.TypeRole.caption)
+                        .foregroundStyle(palette.textSecondary)
+                }
+
+                if entries.isEmpty {
+                    Text("No prayer recorded on this day.")
+                        .font(AppTheme.TypeRole.bodySmall)
+                        .foregroundStyle(palette.dim)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(AppTheme.Space.lg)
+                        .guideCard(fill: palette.surface)
+                } else {
+                    VStack(spacing: AppTheme.Space.sm) {
+                        ForEach(entries) { entry in
+                            JourneyDayEntryRow(entry: entry)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding(.horizontal, AppTheme.gutter)
+            .padding(.top, AppTheme.Space.xxl)
+            .padding(.bottom, AppTheme.Space.xl)
+        }
+        .background(palette.bg)
+    }
+
+    private var summary: String {
+        let rosaries = entries.filter { $0.kind == .rosary || $0.kind == .recordedDay }.count
+        let decades = entries.count - rosaries
+        var parts: [String] = []
+        if rosaries > 0 { parts.append(rosaries == 1 ? "1 Rosary" : "\(rosaries) Rosaries") }
+        if decades > 0 { parts.append(decades == 1 ? "1 decade" : "\(decades) decades") }
+        if let total = JourneyDayDetail.totalDuration(entries) { parts.append(JourneyDuration.text(total)) }
+        return parts.isEmpty ? "Nothing prayed" : parts.joined(separator: " · ")
+    }
+}
+
+private struct JourneyDayEntryRow: View {
+    @Environment(\.palette) private var palette
+    let entry: JourneyDayEntry
+
+    var body: some View {
+        HStack(alignment: .center, spacing: AppTheme.Space.md) {
+            icon
+
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                Text(title)
+                    .font(AppTheme.TypeRole.body(weight: .regular))
+                    .foregroundStyle(palette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(status)
+                    .font(AppTheme.TypeRole.caption())
+                    .foregroundStyle(palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let intentions = OfferedIntentions.summary(entry.intentionTitles) {
+                    Text("For \(intentions)")
+                        .font(AppTheme.TypeRole.caption())
+                        .foregroundStyle(palette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let duration = entry.duration {
+                Text(JourneyDuration.text(duration))
+                    .font(AppTheme.TypeRole.caption(weight: .medium))
+                    .foregroundStyle(palette.ink)
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize()
+            }
+        }
+        .padding(AppTheme.Space.lg)
+        .guideCard(fill: palette.surface)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var title: String {
+        guard let set = entry.mysterySet else { return "Rosary prayed" }
+        return "\(set.shortName) Mysteries"
+    }
+
+    private var status: String {
+        let time = entry.completedAt.map { $0.formatted(date: .omitted, time: .shortened) }
+        switch entry.kind {
+        case .rosary:
+            return time.map { "Rosary · finished \($0)" } ?? "Rosary"
+        case .decade(let number):
+            return time.map { "Decade \(OrdinalWord.roman(number)) · \($0)" } ?? "Decade \(OrdinalWord.roman(number))"
+        case .recordedDay:
+            return "Prayed before times and mysteries were recorded"
+        }
+    }
+
+    @ViewBuilder
+    private var icon: some View {
+        if let set = entry.mysterySet {
+            MysterySetIcon(set: set)
+        } else {
+            ZStack {
+                Circle().fill(palette.accentTint)
+                Image(systemName: "circle.dotted")
+                    .guideSymbol(size: 19, weight: .regular)
+                    .foregroundStyle(palette.ink)
+            }
+            .frame(width: AppTheme.MysteryIcon.circleSize, height: AppTheme.MysteryIcon.circleSize)
+            .accessibilityHidden(true)
         }
     }
 }

@@ -148,7 +148,7 @@ struct PrayView: View {
     @State private var beadTimelinePaused = false
     /// Black veil over the closing prayer. Beads keep running underneath until this covers them.
     @State private var finishBlack: Double = 0
-    @State private var activePrayerStart: Date?
+    @State private var prayerClock = ActivePrayerClock()
     @State private var pendingActivePrayerTime: TimeInterval = 0
     @State private var prayerAutosaveTask: Task<Void, Never>?
     @State private var isClosingPrayerFlow = false
@@ -1260,7 +1260,15 @@ struct PrayView: View {
                 HapticService.play(.medium, enabled: settings.hapticsEnabled)
             }
         )
-        // The Rosary is recorded as complete on reaching this screen, so the count includes it.
+        // The Rosary is recorded as complete on reaching this screen: timing stops here, so the
+        // Complete screen and Saint Michael are not counted, and closing the app now keeps it.
+        // Deferred a turn so it never runs inside the transition's own update.
+        .onAppear {
+            DispatchQueue.main.async {
+                saveActivePrayerTime(continueTiming: false)
+                markRosaryCompletedIfNeeded()
+            }
+        }
         // Asked only once the screen has settled, never mid-prayer or over Saint Michael.
         .task {
             await ReviewPrompter.requestAfterCompletion(
@@ -1679,11 +1687,14 @@ struct PrayView: View {
         dismiss()
     }
 
+    /// Timing runs only while a prayer step is on screen and the app is active; it stops on
+    /// the Complete screen (see `ActivePrayerClock` for the idle allowance).
     private func startActivePrayerTimerIfNeeded() {
-        guard activePrayerStart == nil else { return }
+        guard !prayerClock.isRunning else { return }
         guard didConfigure else { return }
-        guard !showingCompletion else { return }
-        activePrayerStart = Date()
+        guard !showingCompletion, current?.isFinis != true else { return }
+        guard scenePhase == .active else { return }
+        prayerClock.resume(at: Date())
     }
 
     private func checkpointActivePrayerTime() {
@@ -1691,10 +1702,8 @@ struct PrayView: View {
     }
 
     private func saveActivePrayerTime(continueTiming: Bool) {
-        guard let start = activePrayerStart else { return }
-        let now = Date()
-        activePrayerStart = continueTiming ? now : nil
-        let duration = max(0, now.timeIntervalSince(start))
+        guard prayerClock.isRunning else { return }
+        let duration = prayerClock.take(at: Date(), keepRunning: continueTiming)
         if sessionStore.session != nil {
             sessionStore.addActivePrayerTime(duration + pendingActivePrayerTime)
             pendingActivePrayerTime = 0
@@ -1923,6 +1932,7 @@ struct PrayView: View {
 
     private func move(to next: Int) {
         checkpointActivePrayerTime()
+        prayerClock.touch(at: Date())
         if let set = freshSetPending, next > 0 {
             startSession(set: set)
             flushPendingActivePrayerTimeIfNeeded()

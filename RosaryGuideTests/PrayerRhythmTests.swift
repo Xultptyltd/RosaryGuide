@@ -619,3 +619,156 @@ final class RosaryConfigSyncTests: XCTestCase {
     }
 }
 
+
+/// Rosary timing: only foreground, interacted-with time counts toward a Rosary's duration.
+final class ActivePrayerClockTests: XCTestCase {
+    private let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+
+    func testBackgroundTimeIsExcluded() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(300), keepRunning: false), 300)
+        XCTAssertFalse(clock.isRunning, "Backgrounding pauses the clock")
+        // Two hours locked; nothing counts until the prayer is on screen again.
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(7_500), keepRunning: false), 0)
+        clock.resume(at: t0.addingTimeInterval(7_500))
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(7_740), keepRunning: false), 240)
+    }
+
+    func testCheckpointsDoNotDoubleCount() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        let first = clock.take(at: t0.addingTimeInterval(10), keepRunning: true)
+        let second = clock.take(at: t0.addingTimeInterval(25), keepRunning: true)
+        let last = clock.take(at: t0.addingTimeInterval(30), keepRunning: false)
+        XCTAssertEqual(first + second + last, 30)
+    }
+
+    func testResumeWhileRunningKeepsTheStart() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        clock.resume(at: t0.addingTimeInterval(60))
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(90), keepRunning: false), 90)
+    }
+
+    func testIdleStepIsCapped() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        // Phone left on a table with the screen awake for three hours.
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(3 * 3600), keepRunning: false), ActivePrayerClock.idleLimit)
+    }
+
+    func testInteractionExtendsTheAllowance() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        clock.touch(at: t0.addingTimeInterval(15 * 60))
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(30 * 60), keepRunning: false), 30 * 60)
+    }
+
+    func testClockMovingBackwardsCreditsNothing() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(-600), keepRunning: true), 0)
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(60), keepRunning: false), 60)
+    }
+
+    func testPausedClockTakesNothing() {
+        var clock = ActivePrayerClock()
+        XCTAssertEqual(clock.take(at: t0, keepRunning: false), 0)
+    }
+
+    func testSyncEchoKeepsActiveTimeOfTheSameRosary() throws {
+        let store = SessionStore(defaults: UserDefaults(suiteName: "RosaryTimingTests.\(UUID())")!)
+        store.start(set: .joyful, language: .english)
+        store.addActivePrayerTime(420)
+        store.recordCompletedDecadeIfNeeded(1)
+        var echo = try XCTUnwrap(store.session)
+        echo.id = UUID()
+        echo.activeDuration = 0
+        echo.completedDecades = []
+        echo.lastCompletedDecadeActiveDuration = 0
+        store.applySynced(SyncedProgress(completedDays: [], session: echo, sessionChangedAt: Date()))
+        let session = try XCTUnwrap(store.session)
+        XCTAssertEqual(session.activeDuration, 420)
+        XCTAssertEqual(session.completedDecades, [1])
+        store.recordCompletedDecadeIfNeeded(1)
+        XCTAssertEqual(store.completedDecades.count, 1, "An echo must not let a decade be recorded twice")
+    }
+}
+
+/// Rhythm calendar day detail and duration display.
+final class JourneyDayDetailTests: XCTestCase {
+    private var calendar: Calendar {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Australia/Sydney")!
+        return cal
+    }
+
+    private func at(_ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
+        calendar.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour, minute: minute))!
+    }
+
+    private func rosary(_ set: MysterySetKind, start: Date, minutes: Double, duration: TimeInterval, titles: [String]? = nil) -> CompletedPrayerSession {
+        CompletedPrayerSession(id: UUID(), sessionId: UUID(), mysterySet: set, startedAt: start,
+                               completedAt: start.addingTimeInterval(minutes * 60), duration: duration,
+                               intentionId: nil, intentionTitle: nil, intentionTitles: titles)
+    }
+
+    private func decade(_ number: Int, at date: Date, duration: TimeInterval, session: UUID = UUID()) -> CompletedDecadeSession {
+        CompletedDecadeSession(id: UUID(), sessionId: session, mysterySet: .sorrowful, decadeNumber: number,
+                               completedAt: date, duration: duration, intentionId: nil, intentionTitle: nil)
+    }
+
+    func testDurationTextAndLegacySanitising() {
+        XCTAssertNil(JourneyDuration.reliable(0), "Old records saved no duration")
+        XCTAssertNil(JourneyDuration.reliable(10 * 3600), "Wall-clock spans are not prayer time")
+        XCTAssertNil(JourneyDuration.reliable(.nan))
+        XCTAssertNil(JourneyDuration.reliable(nil))
+        XCTAssertEqual(JourneyDuration.reliable(1_080), 1_080)
+        XCTAssertEqual(JourneyDuration.text(20), "Under a minute")
+        XCTAssertEqual(JourneyDuration.text(60), "1 min")
+        XCTAssertEqual(JourneyDuration.text(18 * 60), "18 mins")
+        XCTAssertEqual(JourneyDuration.text(3600), "1 hr")
+        XCTAssertEqual(JourneyDuration.text(3600 + 300), "1 hr 5 mins")
+        XCTAssertEqual(JourneyDuration.dayTotal(40 * 3600), JourneyDuration.longestDay)
+        XCTAssertEqual(JourneyDuration.dayTotal(-5), 0)
+    }
+
+    func testSeveralPrayersOnOneDayOldestFirst() {
+        let evening = rosary(.glorious, start: at(27, 19), minutes: 22, duration: 20 * 60, titles: ["Mum"])
+        let morning = rosary(.joyful, start: at(27, 7), minutes: 18, duration: 17 * 60)
+        let otherDay = rosary(.luminous, start: at(26, 9), minutes: 20, duration: 19 * 60)
+        let lone = decade(3, at: at(27, 12), duration: 4 * 60)
+        let entries = JourneyDayDetail.entries(dayKey: "2026-10-27", sessions: [evening, otherDay, morning],
+                                               decades: [lone], prayedDayKeys: ["2026-10-26", "2026-10-27"], calendar: calendar)
+        XCTAssertEqual(entries.map(\.kind), [.rosary, .decade(3), .rosary])
+        XCTAssertEqual(entries.map(\.mysterySet), [.joyful, .sorrowful, .glorious])
+        XCTAssertEqual(entries.last?.intentionTitles, ["Mum"])
+        XCTAssertEqual(JourneyDayDetail.totalDuration(entries), (17 + 4 + 20) * 60)
+    }
+
+    func testDecadesOfAFinishedRosaryFoldIntoIt() {
+        let finished = rosary(.sorrowful, start: at(27, 8), minutes: 20, duration: 19 * 60)
+        let parts = (1...5).map { decade($0, at: at(27, 8, $0 * 3), duration: 180, session: finished.sessionId!) }
+        let entries = JourneyDayDetail.entries(dayKey: "2026-10-27", sessions: [finished], decades: parts,
+                                               prayedDayKeys: ["2026-10-27"], calendar: calendar)
+        XCTAssertEqual(entries.map(\.kind), [.rosary])
+    }
+
+    func testRosaryCrossingMidnightBelongsToItsStartDay() {
+        let late = rosary(.joyful, start: at(26, 23, 50), minutes: 20, duration: 19 * 60)
+        XCTAssertEqual(JourneyDayDetail.entries(dayKey: "2026-10-26", sessions: [late], decades: [], prayedDayKeys: ["2026-10-26"], calendar: calendar).count, 1)
+        XCTAssertTrue(JourneyDayDetail.entries(dayKey: "2026-10-27", sessions: [late], decades: [], prayedDayKeys: [], calendar: calendar).isEmpty)
+    }
+
+    func testLegacyDayAndUntimedRecords() {
+        let legacy = JourneyDayDetail.entries(dayKey: "2026-10-20", sessions: [], decades: [], prayedDayKeys: ["2026-10-20"], calendar: calendar)
+        XCTAssertEqual(legacy.map(\.kind), [.recordedDay])
+        XCTAssertNil(JourneyDayDetail.totalDuration(legacy))
+        let untimed = rosary(.joyful, start: at(21, 9), minutes: 600, duration: 0)
+        let entries = JourneyDayDetail.entries(dayKey: "2026-10-21", sessions: [untimed], decades: [], prayedDayKeys: ["2026-10-21"], calendar: calendar)
+        XCTAssertEqual(entries.map(\.kind), [.rosary])
+        XCTAssertNil(entries.first?.duration)
+        XCTAssertTrue(JourneyDayDetail.entries(dayKey: "2026-10-22", sessions: [], decades: [], prayedDayKeys: [], calendar: calendar).isEmpty)
+    }
+}

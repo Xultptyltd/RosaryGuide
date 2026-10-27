@@ -637,6 +637,12 @@ final class SessionStore {
                incoming.mysterySet == local.mysterySet,
                incoming.intentionId == local.intentionId {
                 incoming.id = local.id
+                // The account never stores active time or finished decades, so an echo of this
+                // Rosary must not reset them (that cut a signed-in Rosary's duration short).
+                incoming.activeDuration = max(incoming.activeDuration, local.activeDuration)
+                incoming.completedDecades.formUnion(local.completedDecades)
+                incoming.lastCompletedDecadeActiveDuration = max(incoming.lastCompletedDecadeActiveDuration,
+                                                                  local.lastCompletedDecadeActiveDuration)
                 incoming.intentionCategory = incoming.intentionCategory ?? local.intentionCategory
                 incoming.intentionSourceId = incoming.intentionSourceId ?? local.intentionSourceId
             }
@@ -679,6 +685,143 @@ final class SessionStore {
     private static func load(key: String, defaults: UserDefaults) -> PrayerSession? {
         guard let data = defaults.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(PrayerSession.self, from: data)
+    }
+}
+
+/// Active time inside the Rosary flow. The view resumes it when the prayer is on screen and
+/// the app is active, and takes the elapsed time when it pauses (background, screen lock,
+/// leaving the flow) or checkpoints (step changes, periodic autosave). A step left open with
+/// the screen awake credits at most `idleLimit` after the last interaction, so a phone left
+/// on a table does not count hours of prayer.
+struct ActivePrayerClock: Equatable {
+    static let idleLimit: TimeInterval = 20 * 60
+
+    private(set) var runningSince: Date?
+    private(set) var lastInteraction: Date?
+
+    var isRunning: Bool { runningSince != nil }
+
+    /// Starts timing (if paused). Coming back to the prayer counts as an interaction.
+    mutating func resume(at now: Date) {
+        guard runningSince == nil else { return }
+        runningSince = now
+        lastInteraction = now
+    }
+
+    /// A step change or other deliberate action: the idle allowance starts again.
+    mutating func touch(at now: Date) {
+        lastInteraction = now
+    }
+
+    /// Active seconds since the last take. Keeps running from `now` when `keepRunning`,
+    /// otherwise pauses. Never negative, even if the clock moved backwards.
+    mutating func take(at now: Date, keepRunning: Bool) -> TimeInterval {
+        guard let start = runningSince else { return 0 }
+        let idleEnd = max(lastInteraction ?? start, start).addingTimeInterval(Self.idleLimit)
+        let end = min(now, idleEnd)
+        let credited = max(0, end.timeIntervalSince(start))
+        runningSince = keepRunning ? max(now, start) : nil
+        return credited.isFinite ? credited : 0
+    }
+}
+
+/// Duration display rules for the Rhythm screen. Records saved before active timing could
+/// hold zero or wall-clock spans (hours or days); those show no duration instead of nonsense.
+enum JourneyDuration {
+    /// Longest single Rosary or decade shown as a duration.
+    static let longestPlausible: TimeInterval = 3 * 60 * 60
+    /// Most prayer time a single day contributes to totals.
+    static let longestDay: TimeInterval = 12 * 60 * 60
+
+    static func reliable(_ duration: TimeInterval?) -> TimeInterval? {
+        guard let duration, duration.isFinite, duration >= 1, duration <= longestPlausible else { return nil }
+        return duration
+    }
+
+    static func dayTotal(_ duration: TimeInterval) -> TimeInterval {
+        guard duration.isFinite else { return 0 }
+        return min(max(0, duration), longestDay)
+    }
+
+    /// "Under a minute", "1 min", "18 mins", "1 hr", "1 hr 5 mins".
+    static func text(_ duration: TimeInterval) -> String {
+        let minutes = Int((duration / 60).rounded())
+        if minutes < 1 { return "Under a minute" }
+        if minutes < 60 { return minutes == 1 ? "1 min" : "\(minutes) mins" }
+        let hours = minutes / 60
+        let rest = minutes % 60
+        let hourText = hours == 1 ? "1 hr" : "\(hours) hrs"
+        guard rest > 0 else { return hourText }
+        return "\(hourText) \(rest == 1 ? "1 min" : "\(rest) mins")"
+    }
+}
+
+/// One prayer on a calendar day in the Rhythm screen.
+struct JourneyDayEntry: Identifiable, Equatable {
+    enum Kind: Equatable {
+        case rosary
+        case decade(Int)
+        /// A day saved before per-Rosary records: prayed, but no set, time or intentions.
+        case recordedDay
+    }
+
+    let id: String
+    let kind: Kind
+    let mysterySet: MysterySetKind?
+    let startedAt: Date?
+    let completedAt: Date?
+    /// Nil when this prayer has no trustworthy duration.
+    let duration: TimeInterval?
+    let intentionTitles: [String]
+}
+
+/// What was prayed on one calendar day, oldest first. A finished Rosary belongs to the day it
+/// was started (as on the calendar); a separate decade to the day it was prayed. A prayed day
+/// with no Rosary record (saved before per-Rosary history) shows as a recorded day.
+enum JourneyDayDetail {
+    static func entries(
+        dayKey: String,
+        sessions: [CompletedPrayerSession],
+        decades: [CompletedDecadeSession],
+        prayedDayKeys: Set<String>,
+        calendar: Calendar = .current
+    ) -> [JourneyDayEntry] {
+        var result: [JourneyDayEntry] = []
+        for session in sessions where SessionStore.creditedDayKey(startedAt: session.startedAt, completedAt: session.completedAt, calendar: calendar) == dayKey {
+            result.append(JourneyDayEntry(
+                id: "rosary-\(session.id.uuidString)", kind: .rosary, mysterySet: session.mysterySet,
+                startedAt: session.startedAt, completedAt: session.completedAt,
+                duration: JourneyDuration.reliable(session.duration), intentionTitles: session.allIntentionTitles))
+        }
+        // Decades of a finished Rosary are part of that Rosary (its duration covers them);
+        // only decades of a Rosary that was never finished stand on their own.
+        let finishedSessionIds = Set(sessions.compactMap(\.sessionId))
+        for decade in decades where !finishedSessionIds.contains(decade.sessionId)
+            && SyncedProgress.dayKey(for: decade.completedAt, calendar: calendar) == dayKey {
+            result.append(JourneyDayEntry(
+                id: "decade-\(decade.id.uuidString)", kind: .decade(decade.decadeNumber), mysterySet: decade.mysterySet,
+                startedAt: nil, completedAt: decade.completedAt,
+                duration: JourneyDuration.reliable(decade.duration), intentionTitles: decade.allIntentionTitles))
+        }
+        let hasRosary = result.contains { $0.kind == .rosary }
+        if prayedDayKeys.contains(dayKey), !hasRosary {
+            result.append(JourneyDayEntry(id: "day-\(dayKey)", kind: .recordedDay, mysterySet: nil,
+                                          startedAt: nil, completedAt: nil, duration: nil, intentionTitles: []))
+        }
+        return result.sorted { lhs, rhs in
+            switch (lhs.completedAt, rhs.completedAt) {
+            case let (l?, r?): return l != r ? l < r : lhs.id < rhs.id
+            case (nil, _?): return true
+            case (_?, nil): return false
+            case (nil, nil): return lhs.id < rhs.id
+            }
+        }
+    }
+
+    /// Sum of the durations that are known; nil when none are.
+    static func totalDuration(_ entries: [JourneyDayEntry]) -> TimeInterval? {
+        let known = entries.compactMap(\.duration)
+        return known.isEmpty ? nil : known.reduce(0, +)
     }
 }
 
