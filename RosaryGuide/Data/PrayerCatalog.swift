@@ -285,3 +285,176 @@ extension PrayerCatalog {
         }
     }
 }
+
+// MARK: - Novenas and Rosary types (Learn)
+
+/// A devotion explained on the Learn screen. Text is limited to established
+/// prayers and facts, each page carrying the sources it was checked against.
+struct Devotion: Identifiable, Hashable, Sendable {
+    struct Step: Hashable, Sendable {
+        var title: String
+        var detail: String
+    }
+
+    struct Passage: Hashable, Sendable {
+        var heading: String
+        var body: String
+    }
+
+    struct Station: Hashable, Sendable {
+        var title: String
+        var reference: String
+    }
+
+    var id: String
+    var eyebrow: String
+    var title: String
+    var summary: String
+    var about: [String]
+    /// Mystery whose artwork represents the devotion.
+    var artSet: MysterySetKind
+    var artMystery: Int
+    var stepsTitle: String
+    var steps: [Step]
+    var stationsTitle: String? = nil
+    var stations: [Station] = []
+    var passages: [Passage] = []
+    /// Existing prayers from the library, by id.
+    var prayerIDs: [String] = []
+    /// Shows links to the four sets so each mystery's Scripture is one tap away.
+    var linksMysterySets = false
+    var references: [PrayerCatalog.Reference]
+
+    static func == (lhs: Devotion, rhs: Devotion) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+}
+
+enum DevotionCatalog {
+    static let all: [Devotion] = [scripturalRosary, divineMercyChaplet, sevenSorrowsChaplet, novena]
+
+    static func devotion(id: String) -> Devotion? { all.first { $0.id == id } }
+
+    static func matchesSearch(_ devotion: Devotion, query: String) -> Bool {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return false }
+        return [devotion.title, devotion.eyebrow, devotion.summary].contains { $0.localizedCaseInsensitiveContains(query) }
+    }
+
+    private static let directory = PrayerCatalog.Reference(
+        title: "Holy See — Directory on Popular Piety and the Liturgy",
+        url: URL(string: "https://www.vatican.va/roman_curia/congregations/ccdds/documents/rc_con_ccdds_doc_20020513_vers-direttorio_en.html")!
+    )
+
+    static let scripturalRosary = Devotion(
+        id: "scriptural-rosary",
+        eyebrow: "Rosary type",
+        title: "Scriptural Rosary",
+        summary: "The Rosary prayed with a Bible passage for each mystery, so God’s word leads the meditation",
+        about: [
+            "Saint John Paul II recommended following the announcement of each mystery with a related Bible passage, long or short, and then a moment of silence before the vocal prayers (Rosarium Virginis Mariae, 30–31).",
+            "Some also add a short phrase after the name of Jesus in each Hail Mary that recalls the mystery. The Directory on Popular Piety and the Liturgy commends a short Scriptural clause fixed for each decade (201)."
+        ],
+        artSet: .joyful,
+        artMystery: 1,
+        stepsTitle: "For each decade",
+        steps: [
+            Devotion.Step(title: "Announce the mystery", detail: "For example, the Annunciation"),
+            Devotion.Step(title: "Read the passage", detail: "Each mystery below has its Scripture"),
+            Devotion.Step(title: "Pause in silence", detail: "Let the word settle before you pray"),
+            Devotion.Step(title: "Pray the decade", detail: "One Our Father, ten Hail Marys and one Glory be")
+        ],
+        linksMysterySets: true,
+        references: [
+            PrayerCatalog.Reference(title: "Holy See — Rosarium Virginis Mariae, 30–31", url: URL(string: "https://www.vatican.va/content/john-paul-ii/en/apost_letters/2002/documents/hf_jp-ii_apl_20021016_rosarium-virginis-mariae.html")!),
+            directory
+        ]
+    )
+
+    static let divineMercyChaplet = Devotion(
+        id: "divine-mercy-chaplet",
+        eyebrow: "Chaplet",
+        title: "Chaplet of Divine Mercy",
+        summary: "Prayed on ordinary Rosary beads, asking God’s mercy for us and for the whole world",
+        about: [
+            "The chaplet comes from the writings of Saint Faustina Kowalska, canonised in 2000. The Directory on Popular Piety and the Liturgy asks that devotion to the Divine Mercy be understood in the light of the Second Sunday of Easter, now called Divine Mercy Sunday (154).",
+            "The words below follow the USCCB."
+        ],
+        artSet: .glorious,
+        artMystery: 1,
+        stepsTitle: "How to pray",
+        steps: [
+            Devotion.Step(title: "Begin", detail: "Sign of the Cross, then the optional opening prayer"),
+            Devotion.Step(title: "On the first beads", detail: "One Our Father, one Hail Mary and the Apostles’ Creed"),
+            Devotion.Step(title: "On each Our Father bead", detail: "Eternal Father, I offer you…"),
+            Devotion.Step(title: "On each of the ten Hail Mary beads", detail: "For the sake of his sorrowful Passion…"),
+            Devotion.Step(title: "To conclude", detail: "Holy God, three times")
+        ],
+        passages: [
+            Devotion.Passage(heading: "Opening prayer, optional", body: FeastNarratives.divineMercy.english),
+            Devotion.Passage(heading: "On each Our Father bead", body: "Eternal Father, I offer you the Body and Blood, soul and divinity of your dearly beloved Son, our Lord Jesus Christ, in atonement for our sins and those of the whole world."),
+            Devotion.Passage(heading: "On each Hail Mary bead", body: "For the sake of his sorrowful Passion, have mercy on us and on the whole world."),
+            Devotion.Passage(heading: "Three times to conclude", body: "Holy God, Holy Mighty One, Holy Immortal One, have mercy on us and on the whole world.")
+        ],
+        prayerIDs: ["sign-of-the-cross", "our-father", "hail-mary", "apostles-creed"],
+        references: [
+            PrayerCatalog.Reference(title: "USCCB — Chaplet of Divine Mercy", url: URL(string: "https://www.usccb.org/prayers/divine-mercy-chaplet")!),
+            directory
+        ]
+    )
+
+    static let sevenSorrowsChaplet = Devotion(
+        id: "seven-sorrows-chaplet",
+        eyebrow: "Chaplet",
+        title: "Chaplet of the Seven Sorrows",
+        summary: "Also called the Servite Rosary, it keeps company with Mary in seven sorrows of her life",
+        about: [
+            "In 1239 the seven founders of the Servite Order took up the sorrows of Mary standing beneath the Cross as their order’s principal devotion. The seven sorrows below are those listed by the Catholic Encyclopedia for the Servite feast.",
+            "The Church keeps the memorial of Our Lady of Sorrows on 15 September."
+        ],
+        artSet: .sorrowful,
+        artMystery: 5,
+        stepsTitle: "How to pray",
+        steps: [
+            Devotion.Step(title: "For each sorrow", detail: "Name it and ponder it for a moment"),
+            Devotion.Step(title: "Then pray", detail: "One Our Father and seven Hail Marys"),
+            Devotion.Step(title: "Many also add", detail: "Three Hail Marys in honour of Our Lady’s tears")
+        ],
+        stationsTitle: "The seven sorrows",
+        stations: [
+            Devotion.Station(title: "The prophecy of Simeon", reference: "Luke 2:34–35"),
+            Devotion.Station(title: "The flight into Egypt", reference: "Matthew 2:13–14"),
+            Devotion.Station(title: "The loss of Jesus in Jerusalem", reference: "Luke 2:43–45"),
+            Devotion.Station(title: "Meeting Jesus on the way to Calvary", reference: "Tradition"),
+            Devotion.Station(title: "Standing at the foot of the Cross", reference: "John 19:25"),
+            Devotion.Station(title: "Jesus is taken down from the Cross", reference: "Matthew 27:57–59"),
+            Devotion.Station(title: "The burial of Jesus", reference: "John 19:40–42")
+        ],
+        prayerIDs: ["our-father", "hail-mary"],
+        references: [
+            PrayerCatalog.Reference(title: "Catholic Encyclopedia — Feasts of the Seven Sorrows", url: URL(string: "https://www.newadvent.org/cathen/14151b.htm")!),
+            PrayerCatalog.Reference(title: "Secular Servites — Rosary of the Seven Sorrows", url: URL(string: "https://secularservites.org/wp-content/uploads/2026/02/Servite_Seven_Sorrows_Rosary_Version_1.pdf")!)
+        ]
+    )
+
+    static let novena = Devotion(
+        id: "novena",
+        eyebrow: "Novena",
+        title: "Praying a novena",
+        summary: "Nine days of prayer for one intention, or to prepare for a feast",
+        about: [
+            "The word comes from the Latin novem, nine. The model is the first novena: after the Ascension the apostles joined in continuous prayer with Mary, the mother of Jesus, while they waited for the Holy Spirit (Acts 1:14). The Pentecost novena grew from this (Directory on Popular Piety and the Liturgy, 155).",
+            "Feasts are often prepared with a novena, such as the novena of the Immaculate Conception and the Christmas novena (Directory, 102–103), and the novena for the dead before 2 November (Directory, 260). Novenas before feasts of Our Lady are commended especially when they lead to Confession and the Eucharist (Directory, 189)."
+        ],
+        artSet: .glorious,
+        artMystery: 3,
+        stepsTitle: "With the Rosary",
+        steps: [
+            Devotion.Step(title: "Choose your intention", detail: "Or the feast you are preparing for"),
+            Devotion.Step(title: "Pray for nine days", detail: "Offer the Rosary for it each day, nine days in a row")
+        ],
+        references: [
+            directory,
+            PrayerCatalog.Reference(title: "Catholic Encyclopedia — Novena", url: URL(string: "https://www.newadvent.org/cathen/11141b.htm")!)
+        ]
+    )
+}

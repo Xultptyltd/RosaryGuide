@@ -139,7 +139,7 @@ enum FeastNarratives {
         latin: nil
     )
 
-    private static let divineMercy = FeastRelatedPrayer(
+    static let divineMercy = FeastRelatedPrayer(
         id: "divine-mercy",
         title: "Divine Mercy Chaplet (opening)",
         english: """

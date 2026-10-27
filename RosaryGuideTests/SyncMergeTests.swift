@@ -820,3 +820,43 @@ final class IntentionListRulesTests: XCTestCase {
         XCTAssertTrue(IntentionListRules.showsSeeAll(intentionCount: 12))
     }
 }
+
+final class DevotionCatalogTests: XCTestCase {
+    func testEveryDevotionIsSourcedAndComplete() {
+        XCTAssertEqual(DevotionCatalog.all.map(\.id), ["scriptural-rosary", "divine-mercy-chaplet", "seven-sorrows-chaplet", "novena"])
+        XCTAssertEqual(Set(DevotionCatalog.all.map(\.id)).count, DevotionCatalog.all.count)
+        for devotion in DevotionCatalog.all {
+            XCTAssertFalse(devotion.references.isEmpty, devotion.id)
+            XCTAssertFalse(devotion.steps.isEmpty, devotion.id)
+            XCTAssertFalse(devotion.about.isEmpty, devotion.id)
+            XCTAssertNotNil(MysteryCatalog.mysteries(for: devotion.artSet).first { $0.number == devotion.artMystery }, devotion.id)
+        }
+    }
+
+    func testUILabelsHaveNoFullStops() {
+        for devotion in DevotionCatalog.all {
+            let labels = [devotion.eyebrow, devotion.title, devotion.summary, devotion.stepsTitle]
+                + devotion.steps.flatMap { [$0.title, $0.detail] }
+                + devotion.stations.flatMap { [$0.title, $0.reference] }
+                + devotion.passages.map(\.heading)
+            for label in labels {
+                XCTAssertFalse(label.hasSuffix("."), "\(devotion.id): \(label)")
+            }
+        }
+    }
+
+    func testSevenSorrowsHasSevenStationsAndLinkedPrayersExist() {
+        XCTAssertEqual(DevotionCatalog.sevenSorrowsChaplet.stations.count, 7)
+        let known = Set([PrayerCatalog.signOfTheCross, PrayerCatalog.apostlesCreed, PrayerCatalog.ourFather,
+                         PrayerCatalog.hailMary, PrayerCatalog.gloryBe].map(\.id))
+        for devotion in DevotionCatalog.all {
+            XCTAssertTrue(Set(devotion.prayerIDs).isSubset(of: known), devotion.id)
+        }
+    }
+
+    func testSearchFindsDevotions() {
+        XCTAssertTrue(DevotionCatalog.matchesSearch(DevotionCatalog.divineMercyChaplet, query: "mercy"))
+        XCTAssertTrue(DevotionCatalog.matchesSearch(DevotionCatalog.novena, query: "Novena"))
+        XCTAssertFalse(DevotionCatalog.matchesSearch(DevotionCatalog.novena, query: "  "))
+    }
+}

@@ -31,13 +31,11 @@ struct PrayHubView: View {
                         introCard
                             .padding(.top, AppTheme.Space.xl)
                         GuideSectionBoundary(gutter: pageGutter)
+                        mysteryTilesSection
+                        GuideSectionBoundary(gutter: pageGutter)
                         VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-                            GuideSectionLabel(text: "Prayers & mysteries", prominence: .strong)
+                            GuideSectionLabel(text: "Prayers", prominence: .strong)
                             VStack(spacing: 0) {
-                                NavigationLink { mysteriesPage } label: {
-                                    hubRow("The mysteries", detail: "Meditate on the life of Jesus and Mary", symbol: "sparkles", showsIcon: false)
-                                }
-                                Hairline()
                                 NavigationLink { rosaryPrayersPage } label: {
                                     hubRow("Rosary prayers", detail: "The prayers at the heart of each decade", symbol: "hands.sparkles", showsIcon: false)
                                 }
@@ -51,6 +49,8 @@ struct PrayHubView: View {
                         // Preserve the decorative ends; its frame already provides
                         // 16pt around the central band, so add no extra padding here.
                         GuideSectionBoundary(gutter: pageGutter, verticalSpacing: 0)
+                        devotionTilesSection
+                        GuideSectionBoundary(gutter: pageGutter)
 
                         questionsSection
                         GuideSectionBoundary(gutter: pageGutter)
@@ -155,32 +155,69 @@ struct PrayHubView: View {
         }
     }
 
-    private var mysteriesPage: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                Text("Contemplate the life of Jesus with Mary through the four sets of mysteries.")
-                    .guideThemeSummaryStyle()
-                VStack(spacing: 0) {
-                    ForEach(MysterySetKind.displayOrder, id: \.self) { set in
-                        NavigationLink {
-                            LearnMysteryDetailView(set: set, prayLaunch: $prayLaunch)
-                        } label: {
-                            learnRow(LearnRow(mysterySet: set,
-                                title: "\(set.shortName) Mysteries", detail: set.weekdayNames,
-                                destination: .mystery(set)))
-                                .padding(.vertical, AppTheme.Space.sm)
-                        }
-                        .buttonStyle(.plain)
-                        if set != MysterySetKind.displayOrder.last { Hairline() }
+    /// The four sets as tiles, in the feast-day mystery tile format.
+    private var mysteryTilesSection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+            GuideSectionLabel(text: "The mysteries", prominence: .strong)
+                .accessibilityAddTraits(.isHeader)
+            VStack(spacing: AppTheme.Space.md) {
+                ForEach(MysterySetKind.displayOrder, id: \.self) { set in
+                    NavigationLink {
+                        LearnMysteryDetailView(set: set, prayLaunch: $prayLaunch)
+                    } label: {
+                        learnTile(eyebrow: set.weekdayNames, title: "\(set.shortName) Mysteries", set: set, mysteryNumber: 1)
                     }
+                    .buttonStyle(.plain)
+                    .guidePressable()
                 }
             }
-            .padding(.horizontal, AppTheme.gutter)
-            .padding(.top, GuideDetailChrome.contentTop)
-            .padding(.bottom, AppTheme.tabBarContentClearance)
         }
-        .background(palette.bg)
-        .guideDetailChrome("The mysteries")
+    }
+
+    private var devotionTilesSection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+            GuideSectionLabel(text: "Novenas & Rosary types", prominence: .strong)
+                .accessibilityAddTraits(.isHeader)
+            VStack(spacing: AppTheme.Space.md) {
+                ForEach(DevotionCatalog.all) { devotion in
+                    NavigationLink {
+                        DevotionDetailView(devotion: devotion, prayLaunch: $prayLaunch)
+                    } label: {
+                        learnTile(eyebrow: devotion.eyebrow, title: devotion.title, set: devotion.artSet, mysteryNumber: devotion.artMystery)
+                    }
+                    .buttonStyle(.plain)
+                    .guidePressable()
+                }
+            }
+        }
+    }
+
+    private func learnTile(eyebrow: String, title: String, set: MysterySetKind, mysteryNumber: Int) -> some View {
+        let slug = MysteryCatalog.mysteries(for: set).first { $0.number == mysteryNumber }?.artSlug
+        return HStack(alignment: .center, spacing: AppTheme.Space.md) {
+            MysteryArtworkView(set: set, mysteryNumber: mysteryNumber, slug: slug, kind: .plate)
+                .frame(width: 56, height: 56)
+                .clipShape(Circle())
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                GuideSectionLabel(text: eyebrow, prominence: .strong)
+                Text(title)
+                    .font(AppTheme.TypeRole.body(weight: .semibold))
+                    .foregroundStyle(palette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Image(systemName: "chevron.right")
+                .guideSymbol(size: 12, weight: .regular)
+                .foregroundStyle(palette.dim)
+                .accessibilityHidden(true)
+        }
+        .padding(AppTheme.Space.lg)
+        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: false)
+        .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 
     private var libraryPage: some View {
@@ -191,8 +228,9 @@ struct PrayHubView: View {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let prayers = allPrayers.filter { PrayerCatalog.matchesSearch($0, query: query) }
         let sets = MysterySetKind.displayOrder.filter { "\($0.shortName) Mysteries".localizedCaseInsensitiveContains(query) }
+        let devotions = DevotionCatalog.all.filter { DevotionCatalog.matchesSearch($0, query: query) }
         return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            if prayers.isEmpty && sets.isEmpty {
+            if prayers.isEmpty && sets.isEmpty && devotions.isEmpty {
                 Text("No prayers or mysteries found. Try another search.")
                     .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
             }
@@ -200,6 +238,11 @@ struct PrayHubView: View {
             ForEach(sets, id: \.self) { set in
                 NavigationLink { LearnMysteryDetailView(set: set, prayLaunch: $prayLaunch) } label: {
                     hubRow("\(set.shortName) Mysteries", detail: set.weekdayNames, symbol: "sparkles")
+                }.buttonStyle(.plain)
+            }
+            ForEach(devotions) { devotion in
+                NavigationLink { DevotionDetailView(devotion: devotion, prayLaunch: $prayLaunch) } label: {
+                    hubRow(devotion.title, detail: devotion.eyebrow, symbol: "book.closed")
                 }.buttonStyle(.plain)
             }
         }
@@ -1070,6 +1113,245 @@ private struct LearnPrayerDetailView: View {
         case "saint-michael": "Many add this prayer after the Rosary. It reminds us that the spiritual life is a real battle. We ask Saint Michael to defend us, so that we stay faithful to God."
         case "versicle": "We ask the Mother of God to pray for us, that we may be made worthy of Christ’s promises."
         default: ""
+        }
+    }
+}
+
+/// Learn page for a chaplet, Rosary type or novena. Reuses the library prayers
+/// and the mystery pages rather than repeating their text.
+private struct DevotionDetailView: View {
+    @Environment(\.palette) private var palette
+    var devotion: Devotion
+    @Binding var prayLaunch: PrayLaunch?
+
+    private static let library: [Prayer] = [
+        PrayerCatalog.signOfTheCross, PrayerCatalog.apostlesCreed, PrayerCatalog.ourFather,
+        PrayerCatalog.hailMary, PrayerCatalog.gloryBe
+    ]
+
+    private var prayers: [Prayer] {
+        devotion.prayerIDs.compactMap { id in Self.library.first { $0.id == id } }
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                MysteryArtworkView(
+                    set: devotion.artSet,
+                    mysteryNumber: devotion.artMystery,
+                    slug: MysteryCatalog.mysteries(for: devotion.artSet).first { $0.number == devotion.artMystery }?.artSlug,
+                    kind: .heroWide
+                )
+                .frame(height: 220)
+                .clipShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+                .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                    Text(devotion.title)
+                        .font(AppTheme.TypeRole.screenTitle)
+                        .foregroundStyle(palette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(devotion.summary)
+                        .font(AppTheme.TypeRole.body)
+                        .lineSpacing(8)
+                        .foregroundStyle(palette.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                stepsSection
+
+                if let stationsTitle = devotion.stationsTitle, !devotion.stations.isEmpty {
+                    stationsSection(stationsTitle)
+                }
+
+                if !devotion.passages.isEmpty {
+                    passagesSection
+                }
+
+                if devotion.linksMysterySets {
+                    mysterySetsSection
+                }
+
+                if !prayers.isEmpty {
+                    prayersSection
+                }
+
+                aboutSection
+            }
+            .frame(maxWidth: 560, alignment: .leading)
+            .padding(.horizontal, AppTheme.gutter)
+            .frame(maxWidth: .infinity)
+            .padding(.top, AppTheme.Space.xl)
+            .padding(.bottom, AppTheme.tabBarContentClearance)
+        }
+        .background(palette.bg)
+        .guideDetailChrome(devotion.eyebrow)
+    }
+
+    private func heading(_ text: String) -> some View {
+        GuideSectionLabel(text: text, prominence: .strong)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private var stepsSection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+            heading(devotion.stepsTitle)
+            VStack(spacing: 0) {
+                ForEach(Array(devotion.steps.enumerated()), id: \.offset) { index, step in
+                    numberedRow(index + 1, title: step.title, detail: step.detail)
+                    if index < devotion.steps.count - 1 {
+                        Hairline().padding(.leading, AppTheme.Space.xxl + AppTheme.Space.lg)
+                    }
+                }
+            }
+            .padding(.horizontal, AppTheme.Space.lg)
+            .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: false)
+        }
+    }
+
+    private func stationsSection(_ title: String) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+            heading(title)
+            VStack(spacing: 0) {
+                ForEach(Array(devotion.stations.enumerated()), id: \.offset) { index, station in
+                    numberedRow(index + 1, title: station.title, detail: station.reference)
+                    if index < devotion.stations.count - 1 {
+                        Hairline().padding(.leading, AppTheme.Space.xxl + AppTheme.Space.lg)
+                    }
+                }
+            }
+            .padding(.horizontal, AppTheme.Space.lg)
+            .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: false)
+        }
+    }
+
+    private func numberedRow(_ number: Int, title: String, detail: String) -> some View {
+        HStack(spacing: AppTheme.Space.lg) {
+            Text("\(number)")
+                .font(AppTheme.TypeRole.callout(weight: .semibold))
+                .foregroundStyle(palette.stepNumberText)
+                .frame(width: AppTheme.Space.xxl, height: AppTheme.Space.xxl)
+                .background(palette.stepNumberFill, in: Circle())
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                Text(title)
+                    .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                    .foregroundStyle(palette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(detail)
+                    .font(AppTheme.TypeRole.label)
+                    .foregroundStyle(palette.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, AppTheme.Space.md)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var passagesSection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+            heading("The words")
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(devotion.passages.enumerated()), id: \.offset) { index, passage in
+                    VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                        GuideSectionLabel(text: passage.heading, color: palette.secondaryText)
+                        Text(passage.body)
+                            .font(AppTheme.TypeRole.bodySmall)
+                            .foregroundStyle(palette.ink)
+                            .lineSpacing(AppTheme.Space.xs)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, AppTheme.Space.lg)
+                    .accessibilityElement(children: .combine)
+                    if index < devotion.passages.count - 1 { Hairline() }
+                }
+            }
+            .padding(.horizontal, AppTheme.Space.lg)
+            .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: false)
+        }
+    }
+
+    private var mysterySetsSection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+            heading("Scripture for each mystery")
+            VStack(spacing: 0) {
+                ForEach(MysterySetKind.displayOrder, id: \.self) { set in
+                    NavigationLink {
+                        LearnMysteryDetailView(set: set, prayLaunch: $prayLaunch)
+                    } label: {
+                        linkRow("\(set.shortName) Mysteries", detail: set.weekdayNames)
+                    }
+                    .buttonStyle(.plain)
+                    if set != MysterySetKind.displayOrder.last { Hairline() }
+                }
+            }
+        }
+    }
+
+    private var prayersSection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+            heading("Prayers you will need")
+            VStack(spacing: 0) {
+                ForEach(prayers) { prayer in
+                    NavigationLink {
+                        LearnPrayerDetailView(prayer: prayer)
+                    } label: {
+                        linkRow(prayer.title.english, detail: nil)
+                    }
+                    .buttonStyle(.plain)
+                    if prayer.id != prayers.last?.id { Hairline() }
+                }
+            }
+        }
+    }
+
+    private func linkRow(_ title: String, detail: String?) -> some View {
+        HStack(spacing: AppTheme.Space.md) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                Text(title).font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.ink)
+                if let detail { Text(detail).font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim) }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "chevron.right")
+                .guideSymbol(size: 12, weight: .regular)
+                .foregroundStyle(palette.dim)
+                .accessibilityHidden(true)
+        }
+        .frame(minHeight: AppTheme.Accessibility.minHitTarget)
+        .padding(.vertical, AppTheme.Space.sm)
+        .contentShape(Rectangle())
+    }
+
+    private var aboutSection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+            heading("About")
+            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                ForEach(Array(devotion.about.enumerated()), id: \.offset) { _, paragraph in
+                    Text(paragraph)
+                        .font(AppTheme.TypeRole.bodySmall)
+                        .foregroundStyle(palette.dim)
+                        .lineSpacing(AppTheme.Space.xs)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                GuideSectionLabel(text: "Sources", color: palette.secondaryText)
+                ForEach(devotion.references, id: \.url) { reference in
+                    Link(destination: reference.url) {
+                        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                            Text(reference.title).font(AppTheme.TypeRole.caption)
+                                .multilineTextAlignment(.leading)
+                            Image(systemName: "arrow.up.right").guideSymbol(size: 12, weight: .regular)
+                        }
+                        .foregroundStyle(palette.ink)
+                        .padding(.vertical, AppTheme.Space.sm)
+                    }
+                }
+            }
+            .padding(.top, AppTheme.Space.sm)
         }
     }
 }

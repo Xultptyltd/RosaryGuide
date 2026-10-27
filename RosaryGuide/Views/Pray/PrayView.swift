@@ -999,26 +999,16 @@ struct PrayView: View {
                     if scrollGeo.size.height > 1 { intentionViewportHeight = scrollGeo.size.height }
                 }
                 .overlay(alignment: .bottom) {
-                    // Add intention and Continue share one row. Continue is a solid circle while
-                    // there is more list below and the full button at the bottom or when the list
-                    // fits (shared `GuideScrollActionButton`); Add intention takes the rest.
-                    HStack(spacing: AppTheme.Space.md) {
-                        PillButton(title: "Add intention", filled: false) {
+                    // Stacked: Add intention in the grey tertiary pill (as Complete decade),
+                    // Continue below it in the secondary pill (as Next).
+                    VStack(spacing: AppTheme.Space.md) {
+                        PillButton(title: "Add intention", filled: false, tertiary: true) {
                             intentionAddRequests += 1
                         }
                         .accessibilityLabel("Add an intention")
 
-                        GuideScrollActionButton(
-                            showScroll: intentionCanScrollFurther,
-                            title: "Continue",
-                            scrollLabel: "Scroll to see more intentions",
-                            primary: true,
-                            pinsTrailing: false,
-                            onScroll: { scrollIntentionsToBottom() },
-                            onAdvance: { advance() }
-                        )
+                        PillButton(title: "Continue", filled: false) { advance() }
                     }
-                    .animation(reduceMotion ? nil : MotionTokens.reveal, value: intentionCanScrollFurther)
                     .padding(.horizontal, AppTheme.gutter)
                     .padding(.top, AppTheme.Space.md)
                     .padding(.bottom, AppTheme.Space.lg)
@@ -1038,7 +1028,7 @@ struct PrayView: View {
 
     /// Footer room (button + its padding) the list must leave clear.
     private var intentionFooterRoom: CGFloat {
-        AppTheme.Component.pillHeight + AppTheme.Space.md + AppTheme.Space.lg
+        AppTheme.Component.pillHeight * 2 + AppTheme.Space.md * 2 + AppTheme.Space.lg
     }
 
     private var intentionOverflows: Bool {
@@ -1050,15 +1040,11 @@ struct PrayView: View {
     private var intentionScrollTail: CGFloat {
         guard intentionOverflows else { return intentionFooterRoom }
         let base = AppTheme.Component.readingScrollTail(
-            actionClearance: AppTheme.Component.pillHeight + AppTheme.Space.lg,
+            actionClearance: AppTheme.Component.pillHeight * 2 + AppTheme.Space.md + AppTheme.Space.lg,
             contentBottomPadding: AppTheme.Space.lg
         )
         let range = intentionListHeight + base - intentionViewportHeight
         return base + max(0, ScrollMorph.minimumRange - range)
-    }
-
-    private var intentionCanScrollFurther: Bool {
-        intentionOverflows && !intentionActionLocked
     }
 
     private func resetIntentionScrollState() {
@@ -1067,24 +1053,6 @@ struct PrayView: View {
         intentionScrollY = 0
         intentionLastDrag = .distantPast
         intentionScrollPosition = ScrollPosition(edge: .top)
-    }
-
-    /// Same tap behaviour as `scrollPrayerToBottom`.
-    private func scrollIntentionsToBottom() {
-        guard Date().timeIntervalSince(intentionLastDrag) > 0.25 else { return }
-        HapticService.play(.light, enabled: settings.hapticsEnabled)
-        let maxOffset = max(0, intentionContentHeight - intentionViewportHeight)
-        let distanceFromBottom = maxOffset - intentionScrollY
-        intentionArrowArmed = distanceFromBottom > 8
-        withAnimation(reduceMotion ? nil : MotionTokens.reveal, completionCriteria: .logicallyComplete) {
-            intentionActionLocked = true
-            if distanceFromBottom > 8 {
-                intentionScrollPosition.scrollTo(y: maxOffset)
-            }
-        } completion: {
-            intentionArrowArmed = false
-        }
-        disarmLater { intentionArrowArmed = false }
     }
 
     private var intentionSelection: Binding<[UUID]> {
