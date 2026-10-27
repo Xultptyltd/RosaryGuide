@@ -495,6 +495,7 @@ private struct GuideWalkthroughPage<Content: View>: View {
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, AppTheme.Space.lg)
             .padding(.bottom, GuideWalkthroughLayout.bottomPadding)
+            .guideFooterBackdrop(prayerBackground: true)
         }
         .onChange(of: isActive) { _, active in
             guard active else { return }

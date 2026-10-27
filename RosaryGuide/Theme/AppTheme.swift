@@ -682,6 +682,55 @@ extension View {
     }
 }
 
+/// Soft backdrop for buttons that float over scrolling content (prayer steps, intention
+/// step, guides, sheet footers). A fade of the page colour, not a bar: text scrolling
+/// underneath dims out before it reaches the buttons. Mirrors the mystery plate's top
+/// scrim. With Reduce Transparency it is the solid page colour.
+struct GuideFooterBackdrop: ViewModifier {
+    @Environment(\.palette) private var palette
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    var prayerBackground = false
+    var visible = true
+
+    /// How far the fade reaches above the footer's own top edge.
+    static let fadeReach: CGFloat = AppTheme.Space.xl
+
+    func body(content: Content) -> some View {
+        content.background(alignment: .bottom) {
+            let page = prayerBackground ? palette.prayBg : palette.bg
+            Group {
+                if reduceTransparency {
+                    page
+                } else {
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear, location: 0),
+                            .init(color: page.opacity(colorScheme == .light ? 0.55 : 0.50), location: 0.22),
+                            .init(color: page.opacity(colorScheme == .light ? 0.86 : 0.82), location: 0.48),
+                            .init(color: page.opacity(colorScheme == .light ? 0.94 : 0.92), location: 1)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .padding(.top, -Self.fadeReach)
+                }
+            }
+            .ignoresSafeArea(edges: .bottom)
+            .opacity(visible ? 1 : 0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+}
+
+extension View {
+    /// See `GuideFooterBackdrop`.
+    func guideFooterBackdrop(prayerBackground: Bool = false, visible: Bool = true) -> some View {
+        modifier(GuideFooterBackdrop(prayerBackground: prayerBackground, visible: visible))
+    }
+}
+
 private struct GuideBlurView: UIViewRepresentable {
     func makeUIView(context: Context) -> UIVisualEffectView {
         UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))

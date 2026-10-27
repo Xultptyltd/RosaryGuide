@@ -624,6 +624,7 @@ struct PrayView: View {
         .padding(.horizontal, AppTheme.gutter)
         .padding(.top, AppTheme.Space.sm)
         .padding(.bottom, AppTheme.Space.lg)
+        .guideFooterBackdrop(prayerBackground: true)
     }
 
         /// Non-plate pray column (unchanged mid-column / Creed pin behavior).
@@ -1012,6 +1013,7 @@ struct PrayView: View {
                     .padding(.horizontal, AppTheme.gutter)
                     .padding(.top, AppTheme.Space.md)
                     .padding(.bottom, AppTheme.Space.lg)
+                    .guideFooterBackdrop(prayerBackground: true)
                 }
             }
             .onAppear { resetIntentionScrollState() }
@@ -1424,6 +1426,7 @@ struct PrayView: View {
                         .padding(.horizontal, AppTheme.gutter)
                         .padding(.bottom, AppTheme.Space.lg)
                         .padding(.top, AppTheme.Space.md)
+                        .guideFooterBackdrop()
                     }
                 }
         }
@@ -1640,6 +1643,7 @@ struct PrayView: View {
         .padding(.horizontal, AppTheme.gutter)
         .padding(.bottom, AppTheme.Space.lg)
         .padding(.top, AppTheme.Space.md)
+        .guideFooterBackdrop(prayerBackground: true)
     }
 
     // MARK: - Navigation

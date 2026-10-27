@@ -2566,7 +2566,7 @@ struct IntentionEditorSheet: View {
         .padding(.horizontal, AppTheme.gutter)
         .padding(.top, AppTheme.Space.sm)
         .padding(.bottom, AppTheme.Space.lg)
-        .background(palette.bg.opacity(showCompact ? 0 : 1))
+        .guideFooterBackdrop(visible: !showCompact)
         // After the footer fill, so the fill fades on the same spring as the capsule.
         .animation(reduceMotion ? nil : Self.editorActionMorph, value: showCompact)
     }
@@ -2932,6 +2932,7 @@ private struct IntentionIconPickerSheet: View {
                 .padding(.horizontal, horizontalPad)
                 .padding(.top, 6)
                 .padding(.bottom, 18) // ~12pt higher above the keyboard
+                .guideFooterBackdrop()
             }
             .background(palette.bg)
             .navigationTitle("Choose an icon")

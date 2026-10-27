@@ -757,7 +757,7 @@ struct HomeView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.vertical, AppTheme.Space.lg)
-            .background(palette.bg)
+            .guideFooterBackdrop()
         }
         .background(palette.bg)
     }
@@ -1050,7 +1050,7 @@ struct HomeView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.vertical, AppTheme.Space.lg)
-            .background(palette.bg)
+            .guideFooterBackdrop()
         }
         .background(palette.bg)
     }
