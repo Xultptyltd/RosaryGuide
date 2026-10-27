@@ -32,6 +32,8 @@ struct HomeView: View {
     @State private var selectedMysteryDetail: Mystery?
     @State private var pendingMysteryPrayer: PrayLaunch?
     @State private var mysteryScrollID: String?
+    /// Visible page in the opened mystery sheet; swiping moves through the set in order.
+    @State private var mysteryDetailPageID: String?
     @State private var selectedLiturgicalVerse: LiturgicalVerse?
     @State private var navigationPath = NavigationPath()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -185,12 +187,17 @@ struct HomeView: View {
                 .presentationCornerRadius(AppTheme.containerRadius)
         }
         .sheet(item: $selectedMysteryDetail, onDismiss: {
+            // Leave the Home rail on the last mystery read, so closing feels continuous.
+            if let page = mysteryDetailPageID, mysteries.contains(where: { $0.id == page }) {
+                mysteryScrollID = page
+            }
+            mysteryDetailPageID = nil
             if let launch = pendingMysteryPrayer {
                 pendingMysteryPrayer = nil
                 prayLaunch = launch
             }
         }) { mystery in
-            mysteryDetailSheet(mystery)
+            mysteryDetailPager(startingAt: mystery)
                 .presentationDetents([.height(mysteryDetailSheetHeight(for: mystery)), .large])
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(AppTheme.containerRadius)
@@ -488,10 +495,10 @@ struct HomeView: View {
 
                 Spacer(minLength: 0)
             }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, AppTheme.Space.xxl)
             .padding(.bottom, AppTheme.Space.xl)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .background(palette.bg)
     }
@@ -745,10 +752,10 @@ struct HomeView: View {
                     .foregroundStyle(palette.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, AppTheme.Space.xxl)
             .padding(.bottom, AppTheme.Space.xl)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             PillButton(title: "Explore this feast", filled: false) {
@@ -967,12 +974,17 @@ struct HomeView: View {
     private func mysteryCard(_ mystery: Mystery) -> some View {
         Button {
             HapticService.play(.light, enabled: settings.hapticsEnabled)
-            selectedMysteryDetail = mystery
+            openMysteryDetail(mystery)
         } label: {
             VStack(alignment: .leading, spacing: 0) {
+                // Layout priority: the art takes its full-width 3:2 slot before the text block
+                // (which is maxHeight .infinity) claims the rest. Without it the fixed card height
+                // was split first and the art shrank, leaving a bare strip on the card's right.
                 MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false, cardFraming: true)
                     .aspectRatio(1.5, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
                     .clipped()
+                    .layoutPriority(1)
 
                 VStack(alignment: .leading, spacing: 0) {
                     WordSafeText(mystery.title.primary(for: settings.language), font: AppTheme.TypeRole.headingSecondaryUIFont)
@@ -1005,9 +1017,82 @@ struct HomeView: View {
         "Mystery \(mystery.number), \(mystery.title.primary(for: settings.language))."
     }
 
-    private func mysteryDetailSheet(_ mystery: Mystery) -> some View {
-        ScrollView(showsIndicators: false) {
+    /// Opens the mystery sheet on `mystery`; the sheet pages through the rest of its set.
+    private func openMysteryDetail(_ mystery: Mystery) {
+        mysteryDetailPageID = mystery.id
+        selectedMysteryDetail = mystery
+    }
+
+    /// The opened mystery: one page per mystery of the tapped card's set, in order, starting on
+    /// the tapped one. Swipe horizontally to move between them; the sheet's drag-to-close and
+    /// detents are unchanged. VoiceOver reads only the visible page and the page indicator is
+    /// adjustable (swipe up/down) to move between mysteries; three-finger scroll also pages.
+    private func mysteryDetailPager(startingAt start: Mystery) -> some View {
+        let pages = MysteryCatalog.mysteries(for: start.set)
+        let current = pages.first { $0.id == mysteryDetailPageID } ?? start
+        let index = pages.firstIndex { $0.id == current.id } ?? 0
+
+        return ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(alignment: .top, spacing: 0) {
+                ForEach(pages) { page in
+                    mysteryDetailPage(page)
+                        .containerRelativeFrame(.horizontal)
+                        .id(page.id)
+                        .accessibilityHidden(page.id != current.id)
+                }
+            }
+            .scrollTargetLayout()
+        }
+        .scrollTargetBehavior(.paging)
+        .scrollPosition(id: $mysteryDetailPageID)
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        .onAppear {
+            if mysteryDetailPageID == nil { mysteryDetailPageID = start.id }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: AppTheme.Space.md) {
+                GuidePageDots(current: index, count: pages.count, alignment: .center)
+                    .accessibilityLabel("Mystery \(index + 1) of \(pages.count), \(current.title.primary(for: settings.language))")
+                    .accessibilityHint("Swipe up or down to change mystery")
+                    .accessibilityAddTraits(.updatesFrequently)
+                    .accessibilityAdjustableAction { direction in
+                        switch direction {
+                        case .increment: showMysteryDetailPage(index + 1, in: pages)
+                        case .decrement: showMysteryDetailPage(index - 1, in: pages)
+                        @unknown default: break
+                        }
+                    }
+                PillButton(title: "Pray this decade", filled: false) {
+                    pendingMysteryPrayer = .fresh(current.set, intentionId: explicitLaunchIntentionId,
+                                                 startingDecade: current.number)
+                    selectedMysteryDetail = nil
+                }
+            }
+            .padding(.horizontal, AppTheme.gutter)
+            .padding(.top, AppTheme.Space.md)
+            .padding(.bottom, AppTheme.Space.lg)
+            .guideFooterBackdrop()
+        }
+        .background(palette.bg)
+    }
+
+    private func showMysteryDetailPage(_ target: Int, in pages: [Mystery]) {
+        guard pages.indices.contains(target) else { return }
+        if reduceMotion {
+            mysteryDetailPageID = pages[target].id
+        } else {
+            withAnimation(.easeOut(duration: 0.25)) { mysteryDetailPageID = pages[target].id }
+        }
+    }
+
+    private func mysteryDetailPage(_ mystery: Mystery) -> some View {
+        ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false, cardFraming: true)
+                    .aspectRatio(Self.mysteryDetailArtAspect, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                     Text("\(OrdinalWord.english(mystery.number)) mystery · \(mystery.set.name.primary(for: settings.language))")
                         .font(AppTheme.TypeRole.caption)
@@ -1037,31 +1122,31 @@ struct HomeView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            // Width first, then the equal gutters: every text block shares one column
+            // that is exactly `gutter` from both sheet edges.
+            .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, AppTheme.Space.xxl)
             .padding(.bottom, AppTheme.Space.xl)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            PillButton(title: "Pray this decade", filled: false) {
-                pendingMysteryPrayer = .fresh(mystery.set, intentionId: explicitLaunchIntentionId,
-                                             startingDecade: mystery.number)
-                selectedMysteryDetail = nil
-            }
-            .padding(.horizontal, AppTheme.gutter)
-            .padding(.vertical, AppTheme.Space.lg)
-            .guideFooterBackdrop()
-        }
-        .background(palette.bg)
     }
 
+    /// Wide crop of the card art for the opened mystery, so the text starts above the fold.
+    static let mysteryDetailArtAspect: CGFloat = 2
+
     private func mysteryDetailSheetHeight(for mystery: Mystery) -> CGFloat {
-        let title = mystery.title.primary(for: settings.language)
-        let excerpt = MysteryScripture.display(for: mystery, translation: settings.rosaryConfig.translation, language: settings.language)
-        let titleLines = title.count > 28 ? 2 : 1
-        let excerptLines = CGFloat(max(3, Int(ceil(Double(excerpt.count) / 42.0))))
-        let estimated = 240 + CGFloat(titleLines * 40) + excerptLines * 25 + AppTheme.Component.pillHeight
-        return dynamicTypeSize.isAccessibilitySize ? 640 : min(max(estimated, 460), 640)
+        // One detent for the whole set, so swiping never resizes the sheet under the finger.
+        let pages = MysteryCatalog.mysteries(for: mystery.set)
+        let artHeight = (viewport.width - AppTheme.Space.lg - AppTheme.gutter * 2) / Self.mysteryDetailArtAspect
+        let tallest = pages.map { page -> CGFloat in
+            let title = page.title.primary(for: settings.language)
+            let excerpt = MysteryScripture.display(for: page, translation: settings.rosaryConfig.translation, language: settings.language)
+            let titleLines = title.count > 28 ? 2 : 1
+            let excerptLines = CGFloat(max(3, Int(ceil(Double(excerpt.count) / 42.0))))
+            return 240 + CGFloat(titleLines * 40) + excerptLines * 25 + AppTheme.Component.pillHeight
+        }.max() ?? 460
+        let estimated = tallest + artHeight + AppTheme.Space.xl + AppTheme.Space.lg
+        return dynamicTypeSize.isAccessibilitySize ? 640 : min(max(estimated, 460), 760)
     }
 
     private var upcomingMarian: [DatedFeast] {
