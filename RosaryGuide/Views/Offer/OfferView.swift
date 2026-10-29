@@ -204,8 +204,8 @@ struct OfferView: View {
                             }
                         }
                     }
-                    // A last row's own 8pt bottom inset would stack on the 16pt section gap; cancel it so dividers sit 16pt from both sides.
-                    .padding(.bottom, endsOnIntentionRow ? -AppTheme.Space.sm : 0)
+                    // Cancels the last row's 8pt inset plus 4pt, so the divider sits 12pt below the last row (16pt below the divider).
+                    .padding(.bottom, endsOnIntentionRow ? -(AppTheme.Space.sm + AppTheme.Space.xs) : 0)
                 }
 
 
