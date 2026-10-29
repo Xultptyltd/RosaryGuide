@@ -260,9 +260,6 @@ struct OfferView: View {
             showSignInChoice = true
         } label: {
             HStack(spacing: AppTheme.Space.md) {
-                Image(systemName: "person.crop.circle.badge.plus").guideSymbol(size: 22, weight: .regular)
-                    .foregroundStyle(palette.accentText)
-                    .frame(width: 44, height: 44).background(palette.accentTint, in: Circle())
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     Text(auth.isWorking ? "Signing in..." : "Create an account or sign in")
                         .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.ink)
