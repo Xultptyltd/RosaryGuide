@@ -143,10 +143,6 @@ struct OfferView: View {
                     let progress = sessionStore.journeyMilestones
                     VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                         profileRow(title: milestoneStage.title, detail: "\(progress.earnedCount) of \(progress.items.count) milestones", symbol: "leaf")
-                        Text(milestoneStage.detail)
-                            .font(AppTheme.TypeRole.caption)
-                            .foregroundStyle(palette.dim)
-                            .fixedSize(horizontal: false, vertical: true)
                         ProgressView(value: Double(progress.earnedCount), total: Double(max(1, progress.items.count)))
                             .tint(palette.accent)
                             .accessibilityLabel("Milestones earned")
@@ -3794,10 +3790,6 @@ private struct JourneyMilestonesContent: View {
                 .tint(palette.accent)
                 .accessibilityLabel("Milestone progress")
                 .accessibilityValue("\(milestones.earnedCount) of \(milestones.items.count) completed")
-            Text(stage.detail)
-                .font(AppTheme.TypeRole.bodySmall)
-                .foregroundStyle(palette.dim)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppTheme.Space.xl)
