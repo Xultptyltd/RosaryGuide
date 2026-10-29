@@ -179,8 +179,8 @@ struct OfferView: View {
                                 .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.vertical, AppTheme.Space.lg)
-                            addIntentionButton(title: "Add your first intention")
-                                .padding(.bottom, AppTheme.Space.lg)
+                            // Secondary pill; the stack's lg spacing below matches the lg above, so it sits midway to the divider.
+                            PillButton(title: "Add intention", filled: false, action: startAddingIntention)
                         } else {
                             ForEach(visibleSecondaryIntentions) { item in
                                 MyPrayerIntentionRow(
@@ -515,6 +515,8 @@ struct OfferView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             // Controls retain 44pt tap areas without adding height above the label.
             .overlay(alignment: .trailing) {
+                // Hidden until there is an intention to hide or add to.
+                if !offer.sortedIntentions.isEmpty {
                 HStack(spacing: AppTheme.Space.sm) {
                     titlePrivacyButton
 
@@ -531,6 +533,7 @@ struct OfferView: View {
                     .buttonStyle(.plain)
                     .guidePressable()
                     .accessibilityLabel("Add an intention")
+                }
                 }
             }
     }
