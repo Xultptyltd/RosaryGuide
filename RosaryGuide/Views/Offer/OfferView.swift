@@ -160,7 +160,8 @@ struct OfferView: View {
                 syncWarning
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                     intentionsSectionHeader
-                        .padding(.bottom, AppTheme.Space.sm)
+                        // Empty state uses only the stack's 8pt title-to-body gap.
+                        .padding(.bottom, offer.sortedIntentions.isEmpty ? 0 : AppTheme.Space.sm)
                     if let currentIntention {
                         NextRosaryIntentionCard(
                             intention: currentIntention,
@@ -175,10 +176,10 @@ struct OfferView: View {
                     }
                     VStack(spacing: 0) {
                         if offer.sortedIntentions.isEmpty {
-                            Text("Keep the people, needs and hopes you want to remember in prayer.")
+                            Text("Keep the people you pray for here")
                                 .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, AppTheme.Space.lg)
+                                .padding(.bottom, AppTheme.Space.lg)
                             // Secondary pill; the stack's lg spacing below matches the lg above, so it sits midway to the divider.
                             PillButton(title: "Add intention", filled: false, action: startAddingIntention)
                         } else {
