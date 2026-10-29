@@ -1110,13 +1110,7 @@ struct HomeView: View {
                         .foregroundStyle(palette.dim)
                 }
 
-                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                    GuideSectionLabel(text: "Fruit of this mystery", prominence: .strong)
-                    Text(mystery.fruit.primary(for: settings.language))
-                        .font(AppTheme.TypeRole.body)
-                        .foregroundStyle(palette.dim)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                MysteryFruitLine(fruit: mystery.fruit.primary(for: settings.language), isMystery: true)
             }
             // Width first, then the equal gutters: every text block shares one column
             // that is exactly `gutter` from both sheet edges.

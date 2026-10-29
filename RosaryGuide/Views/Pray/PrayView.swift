@@ -1119,18 +1119,7 @@ struct PrayView: View {
                     .foregroundStyle(palette.faint)
             }
             if let fruit = step.subtitle {
-                VStack(alignment: .leading, spacing: step.isPlate ? AppTheme.Space.sm : AppTheme.Space.md) {
-                    Hairline()
-                    HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
-                        Text("Fruit")
-                            .font(AppTheme.TypeRole.prayerFruitLabel(isMystery: step.isPlate))
-                            .tracking(step.isPlate ? AppTheme.RosaryFlow.fruitTracking : 0)
-                            .foregroundStyle(palette.textSecondary)
-                        Text(fruit.primary(for: .english))
-                            .font(AppTheme.TypeRole.bodySmall(weight: .medium))
-                            .foregroundStyle(palette.ink)
-                    }
-                }
+                MysteryFruitLine(fruit: fruit.primary(for: .english), isMystery: step.isPlate)
                 .padding(.top, step.isPlate ? AppTheme.Space.sm : AppTheme.Space.lg)
             }
         }

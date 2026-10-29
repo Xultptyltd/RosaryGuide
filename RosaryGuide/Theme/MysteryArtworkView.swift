@@ -546,3 +546,26 @@ struct SyncNotice: View {
     SyncNotice("Settings and prayer history are saved on this device but could not sync")
         .padding(AppTheme.Space.lg)
 }
+
+/// The "Fruit" line under a mystery: hairline, then label and fruit on one baseline.
+/// Shared by the Rosary flow and the mystery screen opened from Home.
+struct MysteryFruitLine: View {
+    let fruit: String
+    var isMystery: Bool = true
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: isMystery ? AppTheme.Space.sm : AppTheme.Space.md) {
+            Hairline()
+            HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                Text("Fruit")
+                    .font(AppTheme.TypeRole.prayerFruitLabel(isMystery: isMystery))
+                    .tracking(isMystery ? AppTheme.RosaryFlow.fruitTracking : 0)
+                    .foregroundStyle(palette.textSecondary)
+                Text(fruit)
+                    .font(AppTheme.TypeRole.bodySmall(weight: .medium))
+                    .foregroundStyle(palette.ink)
+            }
+        }
+    }
+}
