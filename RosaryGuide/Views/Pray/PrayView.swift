@@ -63,6 +63,8 @@ struct PrayView: View {
 
     @State private var steps: [RosaryStep] = []
     @State private var index: Int = 0
+    /// Decades that have already had their one success haptic this session.
+    @State private var celebratedDecades: Set<Int> = []
     @State private var confirmReplace = false
     @State private var didConfigure = false
     @State private var showingMichael = false
@@ -1958,8 +1960,9 @@ struct PrayView: View {
 
     private func playHaptic(from previous: RosaryStep? = nil, viaCompleteDecade: Bool = false) {
         if let current {
-            let kind = RosaryHaptics.arrival(at: current, from: previous, viaCompleteDecade: viaCompleteDecade)
-            HapticService.play(kind, enabled: settings.hapticsEnabled)
+            let result = RosaryHaptics.arrival(at: current, from: previous, viaCompleteDecade: viaCompleteDecade, celebrated: celebratedDecades)
+            if let decade = result.celebratedDecade { celebratedDecades.insert(decade) }
+            HapticService.play(result.kind, enabled: settings.hapticsEnabled)
         }
     }
 }

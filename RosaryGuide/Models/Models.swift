@@ -490,10 +490,19 @@ enum RosaryHaptics {
 
     /// Haptic for arriving on a step. Finishing a decade (by Complete decade, or by moving
     /// on from its closing prayer) is the one success moment.
-    static func arrival(at step: RosaryStep, from previous: RosaryStep?, viaCompleteDecade: Bool = false) -> HapticKind {
-        if viaCompleteDecade { return .success }
-        if let previous, previous.closesDecade, step.id > previous.id { return .success }
-        return step.haptic
+    /// Each decade celebrates once: pass the decades already celebrated, and the
+    /// returned decade (if any) should be added to that set by the caller.
+    static func arrival(at step: RosaryStep, from previous: RosaryStep?, viaCompleteDecade: Bool = false, celebrated: Set<Int> = []) -> (kind: HapticKind, celebratedDecade: Int?) {
+        let decade: Int?
+        if viaCompleteDecade {
+            decade = previous?.decadeNumber ?? step.decadeNumber
+        } else if let previous, previous.closesDecade, step.id > previous.id {
+            decade = previous.decadeNumber
+        } else {
+            return (step.haptic, nil)
+        }
+        if let decade, celebrated.contains(decade) { return (step.haptic, nil) }
+        return (.success, decade)
     }
 }
 

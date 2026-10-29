@@ -811,11 +811,23 @@ final class RosaryHapticsTests: XCTestCase {
     func testDecadeCompletionIsTheOnlySuccess() throws {
         let closing = try XCTUnwrap(steps.firstIndex { $0.closesDecade })
         let next = steps[closing + 1]
-        XCTAssertEqual(RosaryHaptics.arrival(at: next, from: steps[closing]), .success)
+        XCTAssertEqual(RosaryHaptics.arrival(at: next, from: steps[closing]).kind, .success)
         // Stepping back onto a decade's closing prayer is not a completion.
-        XCTAssertEqual(RosaryHaptics.arrival(at: steps[closing], from: next), steps[closing].haptic)
+        XCTAssertEqual(RosaryHaptics.arrival(at: steps[closing], from: next).kind, steps[closing].haptic)
         let hail = try XCTUnwrap(steps.firstIndex { $0.kind == .hailMary && $0.decadeNumber == 1 })
-        XCTAssertEqual(RosaryHaptics.arrival(at: steps[hail + 1], from: steps[hail]), .soft)
-        XCTAssertEqual(RosaryHaptics.arrival(at: steps[hail + 1], from: steps[hail], viaCompleteDecade: true), .success)
+        XCTAssertEqual(RosaryHaptics.arrival(at: steps[hail + 1], from: steps[hail]).kind, .soft)
+        XCTAssertEqual(RosaryHaptics.arrival(at: steps[hail + 1], from: steps[hail], viaCompleteDecade: true).kind, .success)
+    }
+
+    func testCompleteDecadeCelebratesOnce() throws {
+        let hail = try XCTUnwrap(steps.firstIndex { $0.kind == .hailMary && $0.decadeNumber == 1 })
+        let skip = RosaryHaptics.arrival(at: steps[hail + 1], from: steps[hail], viaCompleteDecade: true)
+        XCTAssertEqual(skip.kind, .success)
+        XCTAssertEqual(skip.celebratedDecade, 1)
+        // Leaving decade one's closing prayer (e.g. after Fatima) stays quiet.
+        let closing = try XCTUnwrap(steps.firstIndex { $0.closesDecade && $0.decadeNumber == 1 })
+        let leave = RosaryHaptics.arrival(at: steps[closing + 1], from: steps[closing], celebrated: [1])
+        XCTAssertEqual(leave.kind, steps[closing + 1].haptic)
+        XCTAssertNil(leave.celebratedDecade)
     }
 }
