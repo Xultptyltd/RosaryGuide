@@ -204,6 +204,8 @@ struct OfferView: View {
                             }
                         }
                     }
+                    // A last row's own 8pt bottom inset would stack on the 16pt section gap; cancel it so dividers sit 16pt from both sides.
+                    .padding(.bottom, endsOnIntentionRow ? -AppTheme.Space.sm : 0)
                 }
 
 
@@ -466,6 +468,10 @@ struct OfferView: View {
     /// user's list. Per month: the suggestion id is "pope-<yearMonth>", so October's
     /// adopted intention ("pope-2026-10") does not hide November's card.
     /// Removing it brings the card back.
+    private var endsOnIntentionRow: Bool {
+        !offer.sortedIntentions.isEmpty && !visibleSecondaryIntentions.isEmpty && !showsSeeAllIntentions
+    }
+
     private var showsBackupDivider: Bool {
         guard let papalSuggestion else { return false }
         return hasAdoptedThisMonthsPapal(papalSuggestion)
