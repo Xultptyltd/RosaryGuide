@@ -140,9 +140,6 @@ struct OfferView: View {
     private var profileContent: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-                if !auth.isSignedIn {
-                    signInBanner
-                }
                 Button {
                     openJourney(.milestones)
                 } label: {
@@ -217,6 +214,11 @@ struct OfferView: View {
                     PapalMonthCard(item: papal, isAdded: hasAdoptedSuggestion(papal),
                         onOpen: { papalDetail = papal }, onAdd: { adoptSuggestion(papal) }, onPin: { pinPapalSuggestion(papal) })
                 }
+
+                if !auth.isSignedIn {
+                    signInBanner
+                        .padding(.top, AppTheme.Space.lg)
+                }
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideRootChrome.contentTop)
@@ -254,33 +256,32 @@ struct OfferView: View {
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Guests only: invites them to make an account so intentions and history sync.
+    /// Guests only, at the foot of Profile: invites them to make an account so intentions and history sync.
     private var signInBanner: some View {
-        Button {
-            showSignInChoice = true
-        } label: {
-            HStack(spacing: AppTheme.Space.md) {
-                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    Text(auth.isWorking ? "Signing in..." : "Create an account or sign in")
-                        .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.ink)
-                    Text(auth.errorMessage ?? "Keep your intentions and history safe across devices")
-                        .font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "chevron.right").guideSymbol(size: 12, weight: .regular).foregroundStyle(palette.dim)
+        VStack(spacing: AppTheme.Space.md) {
+            Image(systemName: "icloud.and.arrow.up").guideSymbol(size: 34, weight: .regular)
+                .foregroundStyle(palette.ink)
+                .accessibilityHidden(true)
+            VStack(spacing: AppTheme.Space.xs) {
+                Text("Create an account or sign in")
+                    .font(AppTheme.TypeRole.body(weight: .semibold)).foregroundStyle(palette.ink)
+                    .accessibilityAddTraits(.isHeader)
+                Text(auth.errorMessage ?? "Keep your intentions and history safe across devices")
+                    .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
             }
-            .padding(AppTheme.Space.md)
-            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            PillButton(title: auth.isWorking ? "Signing in..." : "Sign in") {
+                showSignInChoice = true
+            }
+            .fixedSize()
+            .disabled(auth.isWorking)
+            .padding(.top, AppTheme.Space.sm)
         }
-        .buttonStyle(.plain)
-        .guidePressable()
-        .disabled(auth.isWorking)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Create an account or sign in")
-        .accessibilityHint("Keep your intentions and history safe across devices")
-        .accessibilityAddTraits(.isButton)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, AppTheme.Space.lg)
+        .padding(.vertical, AppTheme.Space.xl)
+        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
         .confirmationDialog("Create an account or sign in", isPresented: $showSignInChoice, titleVisibility: .visible) {
             Button("Continue with Apple") { auth.signInWithApple() }
             Button("Continue with Google") { auth.signInWithGoogle() }
