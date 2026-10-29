@@ -559,12 +559,12 @@ struct MysteryFruitLine: View {
             Hairline()
             HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
                 Text("Fruit")
-                    .font(AppTheme.TypeRole.prayerFruitLabel(isMystery: isMystery))
+                    .font(AppTheme.TypeRole.body(weight: .medium))
                     .tracking(isMystery ? AppTheme.RosaryFlow.fruitTracking : 0)
                     .foregroundStyle(palette.textSecondary)
-                // Same point size as the "Fruit" label; ink keeps it primary.
+                // Normal body size (Dynamic Type), same as the "Fruit" label; ink keeps it primary.
                 Text(fruit)
-                    .font(AppTheme.TypeRole.prayerFruitLabel(isMystery: isMystery))
+                    .font(AppTheme.TypeRole.body)
                     .foregroundStyle(palette.ink)
             }
         }
