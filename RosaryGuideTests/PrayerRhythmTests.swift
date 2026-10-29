@@ -793,3 +793,29 @@ final class SignInMessageTests: XCTestCase {
         XCTAssertFalse(message.hasSuffix("."))
     }
 }
+
+final class RosaryHapticsTests: XCTestCase {
+    private let steps = RosarySequenceBuilder.build(set: .joyful)
+
+    func testBeadRhythm() {
+        for step in steps {
+            switch step.kind {
+            case .hailMary: XCTAssertEqual(step.haptic, .soft)
+            case .mysteryAnnouncement: XCTAssertEqual(step.haptic, .medium)
+            default: XCTAssertEqual(step.haptic, .light, "\(step.kind)")
+            }
+        }
+        XCTAssertFalse(steps.contains { $0.haptic == .heavy || $0.haptic == .success })
+    }
+
+    func testDecadeCompletionIsTheOnlySuccess() throws {
+        let closing = try XCTUnwrap(steps.firstIndex { $0.closesDecade })
+        let next = steps[closing + 1]
+        XCTAssertEqual(RosaryHaptics.arrival(at: next, from: steps[closing]), .success)
+        // Stepping back onto a decade's closing prayer is not a completion.
+        XCTAssertEqual(RosaryHaptics.arrival(at: steps[closing], from: next), steps[closing].haptic)
+        let hail = try XCTUnwrap(steps.firstIndex { $0.kind == .hailMary && $0.decadeNumber == 1 })
+        XCTAssertEqual(RosaryHaptics.arrival(at: steps[hail + 1], from: steps[hail]), .soft)
+        XCTAssertEqual(RosaryHaptics.arrival(at: steps[hail + 1], from: steps[hail], viaCompleteDecade: true), .success)
+    }
+}

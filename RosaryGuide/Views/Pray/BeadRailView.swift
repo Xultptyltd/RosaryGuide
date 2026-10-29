@@ -28,6 +28,13 @@ struct RosaryBeadMapView: View {
     }()
 
     private let layout = RosaryGeometry.shared
+    /// Last bead before the current one, and when the move happened: beads in between
+    /// fade from accent to prayed one after another, and the new bead settles with a
+    /// small spring. Reduce Motion pauses the timeline, so the change is instant.
+    @State private var previousLocus: BeadLocus?
+    @State private var locusChangedAt: Date = .distantPast
+    private static let settleDuration: TimeInterval = 0.45
+    private static let fillStagger: TimeInterval = 0.035
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || animationPaused)) { timeline in
@@ -37,8 +44,12 @@ struct RosaryBeadMapView: View {
                 let oy = (size.height - layout.viewH * s) / 2
                 context.translateBy(x: ox, y: oy)
                 context.scaleBy(x: s, y: s)
-                paint(&context, phase: pulsePhase(at: timeline.date))
+                paint(&context, phase: pulsePhase(at: timeline.date), now: timeline.date)
             }
+        }
+        .onChange(of: locus) { old, _ in
+            previousLocus = old
+            locusChangedAt = reduceMotion ? .distantPast : Date()
         }
         .frame(height: 118)
         .accessibilityLabel("Rosary beads")
@@ -55,7 +66,7 @@ struct RosaryBeadMapView: View {
         return CGFloat(cycle)
     }
 
-    private func paint(_ context: inout GraphicsContext, phase: CGFloat) {
+    private func paint(_ context: inout GraphicsContext, phase: CGFloat, now: Date) {
         let cord = mix(palette.dim, onto: palette.prayBg, amount: colorScheme == .light ? 0.55 : 0.40)
         // Draw cord only between beads (website pearls sit on top of an opaque cord gap).
         paintCordSegments(&context, color: cord)
@@ -66,7 +77,7 @@ struct RosaryBeadMapView: View {
             if bead.isSpace {
                 paintSpace(&context, bead: bead, state: state)
             } else {
-                paintPearl(&context, at: bead.point, large: bead.large, state: state)
+                paintPearl(&context, at: bead.point, large: bead.large, state: state, motion: motion(of: bead.locus, state: state, now: now))
             }
         }
         paintMedal(&context, at: layout.medal, state: state(of: .closing))
@@ -163,12 +174,41 @@ struct RosaryBeadMapView: View {
         }
     }
 
-    private func paintPearl(_ context: inout GraphicsContext, at p: CGPoint, large: Bool, state: State) {
-        let r: CGFloat = large ? 3.45 : 2.25
+    /// Settle motion for one bead: `fill` 0→1 blends a just-prayed bead from accent to
+    /// prayed; `scale` gives the new current bead a small spring.
+    private struct BeadMotion { var fill: CGFloat = 1; var scale: CGFloat = 1 }
+
+    private func motion(of candidate: BeadLocus, state: State, now: Date) -> BeadMotion {
+        guard !reduceMotion, let previousLocus, let locus else { return BeadMotion() }
+        let elapsed = now.timeIntervalSince(locusChangedAt)
+        guard elapsed >= 0, elapsed < Self.settleDuration + Self.fillStagger * 14 else { return BeadMotion() }
+        switch state {
+        case .now:
+            let t = CGFloat(min(1, elapsed / Self.settleDuration))
+            // Damped spring: a little larger, then settles at rest size.
+            return BeadMotion(scale: 1 + 0.22 * exp(-5 * t) * cos(2.4 * .pi * t) * (1 - t))
+        case .done:
+            let from = order(previousLocus), to = order(locus)
+            let o = order(candidate)
+            guard o >= from, o < to else { return BeadMotion() }
+            let rank = Double(min(o - from, 13))
+            let t = (elapsed - rank * Self.fillStagger) / Self.settleDuration
+            let clamped = CGFloat(min(max(t, 0), 1))
+            return BeadMotion(fill: 1 - pow(1 - clamped, 3))
+        case .future:
+            return BeadMotion()
+        }
+    }
+
+    private func paintPearl(_ context: inout GraphicsContext, at p: CGPoint, large: Bool, state: State, motion: BeadMotion = BeadMotion()) {
+        let r: CGFloat = (large ? 3.45 : 2.25) * motion.scale
         let disk = CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2)
         // Opaque underlay so the cord never shows through (website pearls are color-mix solids).
         context.fill(Path(ellipseIn: disk), with: .color(palette.prayBg))
-        let fill = pearlColor(state)
+        var fill = pearlColor(state)
+        if state == .done, motion.fill < 1 {
+            fill = mix(palette.accent, onto: fill, amount: 1 - motion.fill)
+        }
         context.fill(Path(ellipseIn: disk), with: .color(fill))
         let sr = max(0.38, r * 0.19)
         let shine = CGRect(x: p.x - r * 0.40 - sr, y: p.y - r * 0.44 - sr, width: sr * 2, height: sr * 2)

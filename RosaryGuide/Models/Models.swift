@@ -467,11 +467,34 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
 }
 
 enum HapticKind: Equatable {
+    /// Softest tap: one per Hail Mary bead.
+    case soft
     case light
     case medium
     case heavy
     case success
     case warning
+}
+
+/// One calm rhythm for the Rosary: a soft tap per Hail Mary, a slightly firmer tap on the
+/// larger beads and prayers, a medium tap as each mystery is announced, and a gentle
+/// success only when a decade is completed. One haptic per step, never stacked.
+enum RosaryHaptics {
+    static func kind(for step: RosaryStepKind) -> HapticKind {
+        switch step {
+        case .hailMary: return .soft
+        case .mysteryAnnouncement: return .medium
+        default: return .light
+        }
+    }
+
+    /// Haptic for arriving on a step. Finishing a decade (by Complete decade, or by moving
+    /// on from its closing prayer) is the one success moment.
+    static func arrival(at step: RosaryStep, from previous: RosaryStep?, viaCompleteDecade: Bool = false) -> HapticKind {
+        if viaCompleteDecade { return .success }
+        if let previous, previous.closesDecade, step.id > previous.id { return .success }
+        return step.haptic
+    }
 }
 
 struct HowToPrayStep: Identifiable, Hashable {

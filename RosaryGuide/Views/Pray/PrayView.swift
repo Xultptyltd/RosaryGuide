@@ -202,6 +202,7 @@ struct PrayView: View {
             }
             startActivePrayerTimerIfNeeded()
             startPrayerAutosave()
+            HapticService.prepare(enabled: settings.hapticsEnabled)
             #if canImport(UIKit)
             UIApplication.shared.isIdleTimerDisabled = true
             #endif
@@ -643,7 +644,11 @@ struct PrayView: View {
                                 font: AppTheme.TypeRole.prayerText(scale: settings.textSize.scale),
                                 pointSize: AppTheme.TypeRole.prayerLineHeightReference(scale: settings.textSize.scale)
                             )
+                            // English / Latin / Both cross-fade in place; Reduce Motion swaps at once.
+                            .id(language)
+                            .transition(.opacity)
                         }
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: language)
                         .padding(.horizontal, AppTheme.gutter)
                         // At least 48pt from the close button to this title.
                         // The in-flow stage track already covers most of that;
@@ -710,7 +715,8 @@ struct PrayView: View {
                 }
                 // Fresh scroll view per step: starts at the top, measures again.
                 .id(step.id)
-                .onChange(of: settings.language) { resetPrayerScrollState() }
+                // Language keeps the reader where it is; only measurements start again.
+                .onChange(of: settings.language) { resetPrayerScrollState(keepPosition: true) }
                 .onChange(of: settings.textSize) { resetPrayerScrollState() }
             }
             .onPreferenceChange(PrayerTextHeightKey.self) { height in
@@ -1213,6 +1219,7 @@ struct PrayView: View {
                 // is updating the footer. Writing the session then invalidates
                 // the same update and the main thread never comes back.
                 guard newValue != settings.language else { return }
+                HapticService.selection(enabled: settings.hapticsEnabled)
                 settings.language = newValue
                 if var current = sessionStore.session {
                     current.language = newValue
@@ -1505,14 +1512,16 @@ struct PrayView: View {
     /// The measured text height is kept: the next step re-measures it, and a
     /// zero here left the template off (a full-width button) when the height
     /// came back unchanged.
-    private func resetPrayerScrollState() {
-        topBarScrolled = false
+    private func resetPrayerScrollState(keepPosition: Bool = false) {
         prayerActionLocked = false
         prayerArrowArmed = false
         prayerContentHeight = 0
-        prayerScrollY = 0
         prayerLastDrag = .distantPast
-        prayerScrollPosition = ScrollPosition(edge: .top)
+        if !keepPosition {
+            topBarScrolled = false
+            prayerScrollY = 0
+            prayerScrollPosition = ScrollPosition(edge: .top)
+        }
         resetPairChoreography()
     }
 
@@ -1915,7 +1924,8 @@ struct PrayView: View {
         )
     }
 
-    private func move(to next: Int) {
+    private func move(to next: Int, viaCompleteDecade: Bool = false) {
+        let previous = current
         checkpointActivePrayerTime()
         prayerClock.touch(at: Date())
         if let set = freshSetPending, next > 0 {
@@ -1930,7 +1940,7 @@ struct PrayView: View {
         if next > 0 {
             sessionStore.updateStep(next)
         }
-        playHaptic()
+        playHaptic(from: previous, viaCompleteDecade: viaCompleteDecade)
     }
 
     private func jump(to stage: PrayTrackStage) {
@@ -1942,13 +1952,14 @@ struct PrayView: View {
     private func skipDecadeHailMarys() {
         guard let step = current, let decade = step.decadeNumber else { return }
         if let target = steps.firstIndex(where: { $0.decadeNumber == decade && $0.kind == .gloryBe && $0.id > step.id }) {
-            move(to: target)
+            move(to: target, viaCompleteDecade: true)
         }
     }
 
-    private func playHaptic() {
+    private func playHaptic(from previous: RosaryStep? = nil, viaCompleteDecade: Bool = false) {
         if let current {
-            HapticService.play(current.haptic, enabled: settings.hapticsEnabled)
+            let kind = RosaryHaptics.arrival(at: current, from: previous, viaCompleteDecade: viaCompleteDecade)
+            HapticService.play(kind, enabled: settings.hapticsEnabled)
         }
     }
 }

@@ -49,7 +49,6 @@ enum RosarySequenceBuilder {
             decade: Int? = nil,
             hailMary: Int? = nil,
             intention: BilingualText? = nil,
-            haptic: HapticKind,
             stage: PrayTrackStage,
             bead: BeadLocus? = nil,
             scriptureReference: String? = nil
@@ -66,7 +65,7 @@ enum RosarySequenceBuilder {
                     decadeNumber: decade,
                     hailMaryNumber: hailMary,
                     intention: intention,
-                    haptic: haptic,
+                    haptic: RosaryHaptics.kind(for: kind),
                     stage: stage,
                     bead: bead,
                     scriptureReference: scriptureReference
@@ -79,24 +78,22 @@ enum RosarySequenceBuilder {
             .signOfTheCross,
             // No Latin version: Latin and Both show the English once.
             intention: BilingualText(english: "Offer this Rosary for your intention", latin: ""),
-            haptic: .medium,
             stage: .opening,
             bead: .crucifix
         )
-        append(.creed, haptic: .medium, stage: .opening, bead: .crucifix)
-        append(.ourFather, haptic: .medium, stage: .opening, bead: .openingOurFather)
+        append(.creed, stage: .opening, bead: .crucifix)
+        append(.ourFather, stage: .opening, bead: .openingOurFather)
         for (index, intention) in PrayerCatalog.openingIntentions.enumerated() {
             append(
                 .hailMary,
                 subtitle: intention,
                 hailMary: index + 1,
                 intention: intention,
-                haptic: .light,
                 stage: .opening,
                 bead: .openingHail(index + 1)
             )
         }
-        append(.gloryBe, haptic: .medium, stage: .opening, bead: .openingGlory)
+        append(.gloryBe, stage: .opening, bead: .openingGlory)
 
         for mystery in MysteryCatalog.mysteries(for: set) {
             let decade = mystery.number
@@ -111,47 +108,45 @@ enum RosarySequenceBuilder {
                 subtitle: mystery.fruit,
                 mystery: mystery,
                 decade: decade,
-                haptic: .heavy,
                 stage: stage,
                 bead: .decadeOurFather(decade),
                 scriptureReference: mystery.scriptureReference
             )
-            append(.ourFather, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeOurFather(decade))
+            append(.ourFather, mystery: mystery, decade: decade, stage: stage, bead: .decadeOurFather(decade))
             for bead in 1...10 {
                 append(
                     .hailMary,
                     mystery: mystery,
                     decade: decade,
                     hailMary: bead,
-                    haptic: .light,
                     stage: stage,
                     bead: .decadeHail(decade, bead)
                 )
             }
-            append(.gloryBe, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeGlory(decade))
+            append(.gloryBe, mystery: mystery, decade: decade, stage: stage, bead: .decadeGlory(decade))
             if config.fatimaPrayer {
-                append(.fatima, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeFatima(decade))
+                append(.fatima, mystery: mystery, decade: decade, stage: stage, bead: .decadeFatima(decade))
             }
             if config.oSacrament {
-                append(.oSacrament, mystery: mystery, decade: decade, haptic: .medium, stage: stage, bead: .decadeFatima(decade))
+                append(.oSacrament, mystery: mystery, decade: decade, stage: stage, bead: .decadeFatima(decade))
             }
             steps[steps.count - 1].closesDecade = true
         }
 
         // Extra closing prayers share the closing medal on the bead map.
         if config.closingPrayers {
-            append(.hailHolyQueen, haptic: .medium, stage: .closing, bead: .closing)
-            append(.versicle, haptic: .medium, stage: .closing, bead: .closing)
-            append(.concludingPrayer, haptic: .medium, stage: .closing, bead: .closing)
+            append(.hailHolyQueen, stage: .closing, bead: .closing)
+            append(.versicle, stage: .closing, bead: .closing)
+            append(.concludingPrayer, stage: .closing, bead: .closing)
         }
         if config.memorare {
-            append(.memorare, haptic: .medium, stage: .closing, bead: .closing)
+            append(.memorare, stage: .closing, bead: .closing)
         }
         if config.saintMichael {
-            append(.saintMichael, haptic: .medium, stage: .closing, bead: .closing)
+            append(.saintMichael, stage: .closing, bead: .closing)
         }
         // The Rosary ends as it began, with the Sign of the Cross.
-        append(.signOfTheCross, haptic: .medium, stage: .closing, bead: .closing)
+        append(.signOfTheCross, stage: .closing, bead: .closing)
         steps[steps.count - 1].isLastPrayer = true
 
         // The finis screen picks its own quote. Do not call freshCompletionQuote
@@ -162,7 +157,6 @@ enum RosarySequenceBuilder {
             title: BilingualText(english: "Rosary complete", latin: "Rosarium completum est."),
             body: BilingualText(english: "", latin: ""),
             subtitle: nil,
-            haptic: .success,
             stage: .closing
         )
 
