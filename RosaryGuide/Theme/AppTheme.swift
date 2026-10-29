@@ -2101,3 +2101,34 @@ extension View {
         modifier(HomeEntranceStep(shown: shown, step: step))
     }
 }
+
+
+// MARK: - Counts and sign-in feedback
+
+/// Digits roll to a new count only when the value changes (not on appear).
+private struct GuideCountRoll: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var value: Int
+
+    func body(content: Content) -> some View {
+        content
+            .contentTransition(reduceMotion ? .opacity : .numericText(value: Double(value)))
+            .animation(reduceMotion ? .easeOut(duration: 0.15) : .smooth(duration: 0.45), value: value)
+    }
+}
+
+/// A gentle side-to-side shake, driven by an increasing trigger count.
+struct GuideShakeEffect: GeometryEffect {
+    var travel: CGFloat = 6
+    var animatableData: CGFloat
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(CGAffineTransform(translationX: travel * sin(animatableData * .pi * 3), y: 0))
+    }
+}
+
+extension View {
+    func guideCountRoll(_ value: Int) -> some View {
+        modifier(GuideCountRoll(value: value))
+    }
+}

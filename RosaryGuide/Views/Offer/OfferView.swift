@@ -3375,6 +3375,7 @@ private struct PrayerJourneyView: View {
                 Text(rhythmTitle)
                     .font(AppTheme.TypeRole.body(weight: .regular))
                     .foregroundStyle(palette.ink)
+                    .guideCountRoll(rhythm.bigNumber)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -3457,9 +3458,9 @@ private struct PrayerJourneyView: View {
                 .padding(.top, AppTheme.Space.xs)
 
             HStack(spacing: 0) {
-                JourneyInlineStat(value: "\(monthRosaries)", label: monthRosaries == 1 ? "Rosary" : "Rosaries")
+                JourneyInlineStat(value: "\(monthRosaries)", count: monthRosaries, label: monthRosaries == 1 ? "Rosary" : "Rosaries")
                 JourneyMetricDivider(height: AppTheme.Accessibility.minHitTarget + AppTheme.Space.xs)
-                JourneyInlineStat(value: "\(monthDecadeCount)", label: monthDecadeCount == 1 ? "Decade" : "Decades")
+                JourneyInlineStat(value: "\(monthDecadeCount)", count: monthDecadeCount, label: monthDecadeCount == 1 ? "Decade" : "Decades")
                 JourneyMetricDivider(height: AppTheme.Accessibility.minHitTarget + AppTheme.Space.xs)
                 JourneyInlineStat(value: Self.durationText(monthDuration), label: "Prayer time")
             }
@@ -3773,6 +3774,8 @@ private struct JourneyLegendDot: View {
 private struct JourneyInlineStat: View {
     @Environment(\.palette) private var palette
     var value: String
+    /// When set, the digits roll to a new count.
+    var count: Int? = nil
     var label: String
 
     var body: some View {
@@ -3782,6 +3785,7 @@ private struct JourneyInlineStat: View {
                 .foregroundStyle(palette.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
+                .guideCountRoll(count ?? 0)
 
             Text(label)
                 .font(AppTheme.TypeRole.caption)
