@@ -285,8 +285,6 @@ struct OfferView: View {
             Button("Continue with Apple") { auth.signInWithApple() }
             Button("Continue with Google") { auth.signInWithGoogle() }
             Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("New here? Either option creates your account")
         }
     }
 
