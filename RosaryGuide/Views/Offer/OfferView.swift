@@ -17,8 +17,8 @@ struct OfferView: View {
     @State private var popeStore = PopeIntentionStore.shared
     @State private var intentionDetail: OfferIntention?
     @State private var showingJourney = false
-    /// Rhythm screen tab (calendar or milestones) the next push opens on.
-    @State private var journeyTab: JourneyTab = .rhythm
+    /// Journey screen tab (milestones or history) the next push opens on.
+    @State private var journeyTab: JourneyTab = .milestones
     /// Pushes the All intentions screen from "See all".
     @State private var showingAllIntentions = false
     /// Banking-style privacy: when true, mask personal intention titles on the list surface.
@@ -212,19 +212,6 @@ struct OfferView: View {
                     GuideSectionLabel(text: "Holy Father’s intention", prominence: .strong)
                     PapalMonthCard(item: papal, isAdded: hasAdoptedSuggestion(papal),
                         onOpen: { papalDetail = papal }, onAdd: { adoptSuggestion(papal) }, onPin: { pinPapalSuggestion(papal) })
-                }
-                GuideSectionBoundary(verticalSpacing: 0)
-
-                GuideSectionLabel(text: "Rhythm", prominence: .strong)
-                    .accessibilityAddTraits(.isHeader)
-
-                MyPrayerJourneySummaryCard(
-                    rhythm: PrayerRhythm(prayedDayStarts: rhythmPrayerDays),
-                    prayedDayStarts: rhythmPrayerDays,
-                    rosariesThisWeek: weeklyCompletedRosaryCount
-                )
-                PillButton(title: "View history", filled: false, tertiary: true) {
-                    openJourney()
                 }
             }
             .padding(.horizontal, AppTheme.gutter)
@@ -509,8 +496,8 @@ struct OfferView: View {
         return sessionStore.completedSessions.filter { week.contains($0.completedAt) }.count
     }
 
-    /// Opens the Rhythm screen; milestones are a tab there, not a separate screen.
-    private func openJourney(_ tab: JourneyTab = .rhythm) {
+    /// Opens the journey screen on Milestones; History is the second tab.
+    private func openJourney(_ tab: JourneyTab = .milestones) {
         journeyTab = tab
         showingJourney = true
     }
@@ -540,7 +527,7 @@ struct OfferView: View {
                 VStack(alignment: .leading, spacing: 0) {
 
                     Button {
-                        openJourney()
+                        openJourney(.history)
                     } label: {
                         MyPrayerJourneySummaryCard(
                             rhythm: PrayerRhythm(prayedDayStarts: rhythmPrayerDays),
@@ -3200,16 +3187,16 @@ private struct JourneyCardButtonStyle: ButtonStyle {
     }
 }
 
-/// The two tabs of the Rhythm screen.
+/// The two tabs of the journey screen, in segmented-control order.
 private enum JourneyTab: String, CaseIterable, Identifiable {
-    case rhythm
     case milestones
+    case history
 
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .rhythm: "Rhythm"
         case .milestones: "Milestones"
+        case .history: "History"
         }
     }
 }
@@ -3292,7 +3279,7 @@ private struct PrayerJourneyView: View {
                 .padding(.bottom, AppTheme.Space.xl)
 
                 switch tab {
-                case .rhythm:
+                case .history:
                     monthCalendar
                     history
                         .padding(.top, AppTheme.sectionGap)
@@ -3306,7 +3293,7 @@ private struct PrayerJourneyView: View {
         }
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
-        .guideDetailChrome("Rhythm")
+        .guideDetailChrome(tab.title)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedDay) { day in
             JourneyDayDetailSheet(

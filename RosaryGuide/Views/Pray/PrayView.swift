@@ -931,16 +931,11 @@ struct PrayView: View {
                     VStack(spacing: 0) {
                         // Space.xxl: subtitle to the first intention.
                         VStack(alignment: .leading, spacing: AppTheme.Space.xxl) {
-                            VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                                Text("Offer this Rosary for")
-                                    .font(AppTheme.TypeRole.modalTitle)
-                                    .foregroundStyle(palette.ink)
-                                    .tracking(-0.2)
-                                Text("Choose up to \(PrayerSession.maxIntentions), or continue without one")
-                                    .font(AppTheme.TypeRole.bodySmall)
-                                    .foregroundStyle(palette.dim)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
+                            Text("Offer this Rosary for")
+                                .font(AppTheme.TypeRole.modalTitle)
+                                .foregroundStyle(palette.ink)
+                                .tracking(-0.2)
+                                .accessibilityAddTraits(.isHeader)
 
                             IntentionMultiSelectList(
                                 selectedIds: intentionSelection,

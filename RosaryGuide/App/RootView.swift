@@ -58,6 +58,11 @@ private enum AppTab: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
+    /// SF Symbol (outline; ".fill" when selected) used instead of an asset.
+    var systemSymbol: String? {
+        self == .intentions ? "person.crop.circle" : nil
+    }
+
     var selectedIconAsset: String {
         switch self {
         case .today: "TabTodayFilled"
@@ -125,8 +130,12 @@ struct RootView: View {
         Label {
             Text(item.title)
         } icon: {
-            Image(tab == item ? item.selectedIconAsset : item.iconAsset)
-                .renderingMode(.template)
+            if let symbol = item.systemSymbol {
+                Image(systemName: tab == item ? "\(symbol).fill" : symbol)
+            } else {
+                Image(tab == item ? item.selectedIconAsset : item.iconAsset)
+                    .renderingMode(.template)
+            }
         }
     }
 }
