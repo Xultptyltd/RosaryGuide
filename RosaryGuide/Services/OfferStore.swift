@@ -120,6 +120,14 @@ final class OfferStore {
         startListening(uid: uid)
     }
 
+    /// Pull to refresh: restart the intentions listener. Signed out does nothing.
+    func refresh() {
+        guard let uid = userID else { return }
+        listener?.remove()
+        listener = nil
+        startListening(uid: uid)
+    }
+
     func deleteCloudDataForCurrentUser() async throws {
         guard let userID else { return }
         listener?.remove()

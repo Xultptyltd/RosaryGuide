@@ -2132,3 +2132,57 @@ extension View {
         modifier(GuideCountRoll(value: value))
     }
 }
+
+
+// MARK: - Pull to refresh and card zoom
+
+enum GuideRefresh {
+    /// Re-syncs intentions and account data. Quiet when signed out or offline: the
+    /// stores keep showing the device copy and nothing is reported.
+    @MainActor
+    static func resync(offer: OfferStore, sync: AccountSyncStore) async {
+        offer.refresh()
+        sync.refresh()
+        // Give the listeners a moment so the spinner reads as a real refresh.
+        try? await Task.sleep(for: .milliseconds(700))
+    }
+}
+
+/// Zoom from a card into its screen (iOS 18+), a plain system transition with Reduce Motion.
+private struct GuideZoomDestination<ID: Hashable>: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var sourceID: ID
+    var namespace: Namespace.ID
+
+    func body(content: Content) -> some View {
+        if reduceMotion {
+            content
+        } else {
+            content.navigationTransition(.zoom(sourceID: sourceID, in: namespace))
+        }
+    }
+}
+
+private struct GuideZoomSource<ID: Hashable>: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var id: ID
+    var namespace: Namespace.ID
+
+    func body(content: Content) -> some View {
+        if reduceMotion {
+            content
+        } else {
+            content.matchedTransitionSource(id: id, in: namespace)
+        }
+    }
+}
+
+extension View {
+    func guideZoomDestination<ID: Hashable>(_ sourceID: ID, in namespace: Namespace.ID) -> some View {
+        modifier(GuideZoomDestination(sourceID: sourceID, namespace: namespace))
+    }
+
+    func guideZoomSource<ID: Hashable>(_ id: ID, in namespace: Namespace.ID) -> some View {
+        modifier(GuideZoomSource(id: id, namespace: namespace))
+    }
+}

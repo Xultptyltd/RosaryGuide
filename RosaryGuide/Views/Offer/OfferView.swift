@@ -4,6 +4,7 @@ import UIKit
 
 struct OfferView: View {
     @Environment(OfferStore.self) private var offer
+    @Environment(AccountSyncStore.self) private var sync
     @Environment(AppIconService.self) private var appIcon
     @State private var showSettingsDrawer = false
     @Environment(SettingsStore.self) private var settings
@@ -35,6 +36,7 @@ struct OfferView: View {
             Group {
                 profileContent
             }
+            .refreshable { await GuideRefresh.resync(offer: offer, sync: sync) }
             .background(palette.bg)
             .guidePageChrome()
             .navigationTitle("Profile")
