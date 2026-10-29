@@ -205,7 +205,9 @@ struct OfferView: View {
                         }
                     }
                     // Cancels the last row's 8pt inset plus 4pt, so the divider sits 12pt below the last row (16pt below the divider).
-                    .padding(.bottom, endsOnIntentionRow ? -(AppTheme.Space.sm + AppTheme.Space.xs) : 0)
+                    // Featured card alone: 4pt tighter to the divider.
+                    .padding(.bottom, endsOnIntentionRow ? -(AppTheme.Space.sm + AppTheme.Space.xs)
+                        : (showsOnlyFeaturedIntention ? -AppTheme.Space.xs : 0))
                 }
 
 
@@ -468,6 +470,10 @@ struct OfferView: View {
     /// user's list. Per month: the suggestion id is "pope-<yearMonth>", so October's
     /// adopted intention ("pope-2026-10") does not hide November's card.
     /// Removing it brings the card back.
+    private var showsOnlyFeaturedIntention: Bool {
+        currentIntention != nil && visibleSecondaryIntentions.isEmpty && !showsSeeAllIntentions
+    }
+
     private var endsOnIntentionRow: Bool {
         !offer.sortedIntentions.isEmpty && !visibleSecondaryIntentions.isEmpty && !showsSeeAllIntentions
     }
