@@ -54,7 +54,7 @@ final class AuthStore: NSObject {
 
     func signInWithApple() {
         guard FirebaseApp.app() != nil else {
-            errorMessage = "Firebase is not configured yet. Add GoogleService-Info.plist to finish account setup."
+            errorMessage = "Accounts are not set up in this build yet"
             return
         }
 
@@ -75,15 +75,15 @@ final class AuthStore: NSObject {
 
     func signInWithGoogle() {
         guard FirebaseApp.app() != nil else {
-            errorMessage = "Firebase is not configured yet. Add GoogleService-Info.plist to finish account setup."
+            errorMessage = "Accounts are not set up in this build yet"
             return
         }
         guard let clientID = FirebaseApp.app()?.options.clientID else {
-            errorMessage = "Google Sign-In needs CLIENT_ID in GoogleService-Info.plist."
+            errorMessage = "Google sign-in is not set up in this build yet"
             return
         }
         guard let root = Self.rootViewController() else {
-            errorMessage = "Could not find a window to present Google Sign-In."
+            errorMessage = "Google sign-in could not open, please try again"
             return
         }
 
@@ -93,7 +93,7 @@ final class AuthStore: NSObject {
             Task { @MainActor in
                 guard let self else { return }
                 if let error {
-                    self.finishWith(error.localizedDescription)
+                    self.finishWith(Self.isCancellation(error) ? nil : Self.signInMessage(for: error))
                     return
                 }
                 guard
@@ -130,7 +130,7 @@ final class AuthStore: NSObject {
     /// then revoke the Google grant and sign out of Google locally.
     func deleteAccount(completion: @escaping @MainActor @Sendable (Bool) -> Void) {
         guard let user = Auth.auth().currentUser else {
-            errorMessage = "No account is signed in."
+            errorMessage = "No account is signed in"
             completion(false)
             return
         }
@@ -188,12 +188,12 @@ final class AuthStore: NSObject {
 
     func reauthenticateForSensitiveOperation(completion: @escaping @MainActor @Sendable (Bool) -> Void) {
         guard FirebaseApp.app() != nil else {
-            errorMessage = "Firebase is not configured yet."
+            errorMessage = "Accounts are not set up in this build yet"
             completion(false)
             return
         }
         guard Auth.auth().currentUser != nil else {
-            errorMessage = "No account is signed in."
+            errorMessage = "No account is signed in"
             completion(false)
             return
         }
@@ -204,7 +204,7 @@ final class AuthStore: NSObject {
         case .google:
             reauthenticateWithGoogle(completion: completion)
         case .anonymous:
-            errorMessage = "No account is signed in."
+            errorMessage = "No account is signed in"
             completion(false)
         }
     }
@@ -240,7 +240,7 @@ final class AuthStore: NSObject {
             Task { @MainActor in
                 guard let self else { return }
                 if let error {
-                    self.finishWith(error.localizedDescription)
+                    self.finishWith(Self.isCancellation(error) ? nil : Self.signInMessage(for: error))
                     return
                 }
                 self.apply(user: result?.user)
@@ -268,12 +268,12 @@ final class AuthStore: NSObject {
 
     private func reauthenticateWithGoogle(completion: @escaping @MainActor @Sendable (Bool) -> Void) {
         guard let clientID = FirebaseApp.app()?.options.clientID else {
-            errorMessage = "Google Sign-In needs CLIENT_ID in GoogleService-Info.plist."
+            errorMessage = "Google sign-in is not set up in this build yet"
             completion(false)
             return
         }
         guard let root = Self.rootViewController() else {
-            errorMessage = "Could not find a window to present Google Sign-In."
+            errorMessage = "Google sign-in could not open, please try again"
             completion(false)
             return
         }
@@ -284,7 +284,7 @@ final class AuthStore: NSObject {
             Task { @MainActor in
                 guard let self else { return }
                 if let error {
-                    self.finishWith(Self.isCancellation(error) ? nil : error.localizedDescription)
+                    self.finishWith(Self.isCancellation(error) ? nil : Self.signInMessage(for: error))
                     completion(false)
                     return
                 }
@@ -399,11 +399,11 @@ final class AuthStore: NSObject {
         guard nsError.domain == AuthErrorDomain else { return error.localizedDescription }
         switch AuthErrorCode(rawValue: nsError.code) {
         case .requiresRecentLogin, .userTokenExpired, .invalidUserToken:
-            return "For your security, please confirm your sign-in again, then try Delete account once more."
+            return "For your security, confirm your sign-in again, then try Delete account once more"
         case .networkError:
-            return "You appear to be offline. Connect to the internet and try again."
+            return "You appear to be offline, connect to the internet and try again"
         case .tooManyRequests:
-            return "Too many attempts. Wait a few minutes and try again."
+            return "Too many attempts, wait a few minutes and try again"
         default:
             return error.localizedDescription
         }
@@ -414,14 +414,39 @@ final class AuthStore: NSObject {
         if nsError.domain == AuthErrorDomain {
             switch AuthErrorCode(rawValue: nsError.code) {
             case .userMismatch:
-                return "That sign-in belongs to a different account. Choose the account you're signed in with."
+                return "That sign-in belongs to a different account, choose the account you’re signed in with"
             case .networkError:
-                return "You appear to be offline. Connect to the internet and try again."
+                return "You appear to be offline, connect to the internet and try again"
             default:
                 break
             }
         }
         return error.localizedDescription
+    }
+
+    /// Friendly sign-in failure text (sentence case, no full stop). Offline and rate limits get
+    /// their own line; anything else asks to try again rather than showing SDK wording.
+    static func signInMessage(for error: Error) -> String {
+        let nsError = error as NSError
+        let networkCodes: Set<Int> = [NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost,
+                                      NSURLErrorTimedOut, NSURLErrorCannotConnectToHost, NSURLErrorDataNotAllowed]
+        if nsError.domain == NSURLErrorDomain, networkCodes.contains(nsError.code) {
+            return "You appear to be offline, connect to the internet and try again"
+        }
+        if nsError.domain == AuthErrorDomain {
+            switch AuthErrorCode(rawValue: nsError.code) {
+            case .networkError:
+                return "You appear to be offline, connect to the internet and try again"
+            case .tooManyRequests:
+                return "Too many attempts, wait a few minutes and try again"
+            default:
+                break
+            }
+        }
+        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError, underlying.domain == NSURLErrorDomain {
+            return signInMessage(for: underlying)
+        }
+        return "Sign-in did not finish, please try again"
     }
 
     /// The user closed the Apple or Google sheet; not an error worth showing.
@@ -480,7 +505,7 @@ extension AuthStore: ASAuthorizationControllerDelegate {
             case .reauthenticate(let completion):
                 guard let user = Auth.auth().currentUser else {
                     appleAuthPurpose = nil
-                    finishWith("No account is signed in.")
+                    finishWith("No account is signed in")
                     completion(false)
                     return
                 }
@@ -507,7 +532,7 @@ extension AuthStore: ASAuthorizationControllerDelegate {
 
     nonisolated func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
         Task { @MainActor in
-            let message = Self.isCancellation(error) ? nil : error.localizedDescription
+            let message = Self.isCancellation(error) ? nil : Self.signInMessage(for: error)
             if case .reauthenticate(let completion) = appleAuthPurpose {
                 appleAuthPurpose = nil
                 finishWith(message)

@@ -772,3 +772,24 @@ final class JourneyDayDetailTests: XCTestCase {
         XCTAssertTrue(JourneyDayDetail.entries(dayKey: "2026-10-22", sessions: [], decades: [], prayedDayKeys: [], calendar: calendar).isEmpty)
     }
 }
+
+@MainActor
+final class SignInMessageTests: XCTestCase {
+    func testOfflineIsFriendly() {
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
+        XCTAssertEqual(AuthStore.signInMessage(for: error), "You appear to be offline, connect to the internet and try again")
+    }
+
+    func testWrappedOfflineIsFriendly() {
+        let inner = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
+        let error = NSError(domain: "com.example.sdk", code: 1, userInfo: [NSUnderlyingErrorKey: inner])
+        XCTAssertEqual(AuthStore.signInMessage(for: error), "You appear to be offline, connect to the internet and try again")
+    }
+
+    func testUnknownErrorHasNoFullStopOrSDKText() {
+        let error = NSError(domain: "com.example.sdk", code: 42, userInfo: [NSLocalizedDescriptionKey: "Internal SDK failure."])
+        let message = AuthStore.signInMessage(for: error)
+        XCTAssertEqual(message, "Sign-in did not finish, please try again")
+        XCTAssertFalse(message.hasSuffix("."))
+    }
+}
