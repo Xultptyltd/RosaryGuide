@@ -4,6 +4,9 @@ import UIKit
 
 struct OfferView: View {
     @Environment(OfferStore.self) private var offer
+    @Environment(AuthStore.self) private var auth
+    /// Apple or Google, the same two sign-in routes as Settings and onboarding.
+    @State private var showSignInChoice = false
     @Environment(AppIconService.self) private var appIcon
     @State private var showSettingsDrawer = false
     @Environment(SettingsStore.self) private var settings
@@ -137,6 +140,9 @@ struct OfferView: View {
     private var profileContent: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                if !auth.isSignedIn {
+                    signInBanner
+                }
                 Button {
                     openJourney(.milestones)
                 } label: {
@@ -246,6 +252,45 @@ struct OfferView: View {
             Text("\(count)").font(AppTheme.TypeRole.headingPrimary).foregroundStyle(palette.ink)
             Text(caption).font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim)
         }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Guests only: invites them to make an account so intentions and history sync.
+    private var signInBanner: some View {
+        Button {
+            showSignInChoice = true
+        } label: {
+            HStack(spacing: AppTheme.Space.md) {
+                Image(systemName: "person.crop.circle.badge.plus").guideSymbol(size: 22, weight: .regular)
+                    .foregroundStyle(palette.accentText)
+                    .frame(width: 44, height: 44).background(palette.accentTint, in: Circle())
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                    Text(auth.isWorking ? "Signing in..." : "Create an account or sign in")
+                        .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.ink)
+                    Text(auth.errorMessage ?? "Keep your intentions and history safe across devices")
+                        .font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right").guideSymbol(size: 12, weight: .regular).foregroundStyle(palette.dim)
+            }
+            .padding(AppTheme.Space.md)
+            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .guidePressable()
+        .disabled(auth.isWorking)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Create an account or sign in")
+        .accessibilityHint("Keep your intentions and history safe across devices")
+        .accessibilityAddTraits(.isButton)
+        .confirmationDialog("Create an account or sign in", isPresented: $showSignInChoice, titleVisibility: .visible) {
+            Button("Continue with Apple") { auth.signInWithApple() }
+            Button("Continue with Google") { auth.signInWithGoogle() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("New here? Either option creates your account")
+        }
     }
 
     private func profileRow(title: String, detail: String, symbol: String, eyebrow: String? = nil) -> some View {
