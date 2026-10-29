@@ -225,9 +225,9 @@ struct SyncedProgress: Codable, Equatable {
         if var session = copy.session {
             session.startedAt = session.startedAt.syncRounded
             session.updatedAt = session.updatedAt.syncRounded
-            session.intentionIds = Array(session.intentionIds.prefix(PrayerSession.maxIntentions))
+            session.intentionIds = Array(session.intentionIds.prefix(PrayerSession.maxSyncedIntentions))
             session.intentionTitles = session.intentionTitles
-                .prefix(PrayerSession.maxIntentions)
+                .prefix(PrayerSession.maxSyncedIntentions)
                 .map { $0.count > 160 ? String($0.prefix(160)) : $0 }
             copy.session = session
         }
@@ -247,8 +247,8 @@ struct SyncedProgress: Codable, Equatable {
             record.completedAt = record.completedAt.syncRounded
             record.duration = max(0, (record.duration * 1000).rounded() / 1000)
             record.intentionTitle = record.intentionTitle.map { String($0.prefix(160)) }
-            record.intentionIds = record.intentionIds.map { Array($0.prefix(PrayerSession.maxIntentions)) }
-            record.intentionTitles = record.intentionTitles.map { Array($0.prefix(PrayerSession.maxIntentions).map { String($0.prefix(160)) }) }
+            record.intentionIds = record.intentionIds.map { Array($0.prefix(PrayerSession.maxSyncedIntentions)) }
+            record.intentionTitles = record.intentionTitles.map { Array($0.prefix(PrayerSession.maxSyncedIntentions).map { String($0.prefix(160)) }) }
             result.append(record)
         }
         result.sort { $0.completedAt != $1.completedAt ? $0.completedAt > $1.completedAt : $0.id.uuidString < $1.id.uuidString }

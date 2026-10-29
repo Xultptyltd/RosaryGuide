@@ -324,6 +324,11 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
     var intentionSourceId: String?
     /// Steps this Rosary was built with; older sessions decode as `.default`.
     var rosaryConfig: RosaryConfig
+    /// Wall-clock timing anchors for the running Rosary clock (see `ActivePrayerClock`).
+    /// Persisted so screen lock, backgrounding or a relaunch never loses prayer time.
+    /// Nil when the clock is paused (outside the flow) or on older sessions.
+    var timingRunningSince: Date? = nil
+    var timingLastInteraction: Date? = nil
 
 
     enum CodingKeys: String, CodingKey {
@@ -344,9 +349,14 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
         case intentionCategory
         case intentionSourceId
         case rosaryConfig
+        case timingRunningSince
+        case timingLastInteraction
     }
 
-    static let maxIntentions = 4
+    static let maxIntentions = 5
+    /// The deployed Firestore rules accept at most 4 offered intentions per record, so the
+    /// account copy keeps the first 4; the full list stays on this device.
+    static let maxSyncedIntentions = 4
 
     /// First offered intention. Kept for older call sites and the legacy single-value schema.
     var intentionId: UUID? {
@@ -418,6 +428,8 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
         intentionCategory = try container.decodeIfPresent(IntentionCategory.self, forKey: .intentionCategory)
         intentionSourceId = try container.decodeIfPresent(String.self, forKey: .intentionSourceId)
         rosaryConfig = (try? container.decodeIfPresent(RosaryConfig.self, forKey: .rosaryConfig)) ?? .default
+        timingRunningSince = try container.decodeIfPresent(Date.self, forKey: .timingRunningSince)
+        timingLastInteraction = try container.decodeIfPresent(Date.self, forKey: .timingLastInteraction)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -440,6 +452,8 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
         try container.encodeIfPresent(intentionCategory, forKey: .intentionCategory)
         try container.encodeIfPresent(intentionSourceId, forKey: .intentionSourceId)
         try container.encode(rosaryConfig, forKey: .rosaryConfig)
+        try container.encodeIfPresent(timingRunningSince, forKey: .timingRunningSince)
+        try container.encodeIfPresent(timingLastInteraction, forKey: .timingLastInteraction)
     }
 
     var continueCTATitle: String {

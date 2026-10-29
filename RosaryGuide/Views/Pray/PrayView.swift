@@ -222,11 +222,13 @@ struct PrayView: View {
                 startActivePrayerTimerIfNeeded()
                 startPrayerAutosave()
             case .inactive, .background:
+                // Lock or leaving the app mid-Rosary keeps the clock running: bank what has
+                // counted so far and persist the anchors so a relaunch carries on timing.
                 stopPrayerAutosave()
-                saveActivePrayerTime(continueTiming: false)
+                saveActivePrayerTime(continueTiming: true)
             @unknown default:
                 stopPrayerAutosave()
-                saveActivePrayerTime(continueTiming: false)
+                saveActivePrayerTime(continueTiming: true)
             }
         }
         .gesture(
@@ -1691,6 +1693,7 @@ struct PrayView: View {
         guard !showingCompletion, current?.isFinis != true else { return }
         guard scenePhase == .active else { return }
         prayerClock.resume(at: Date())
+        sessionStore.updateTimingClock(prayerClock)
     }
 
     private func checkpointActivePrayerTime() {
@@ -1706,6 +1709,7 @@ struct PrayView: View {
         } else {
             pendingActivePrayerTime += duration
         }
+        sessionStore.updateTimingClock(prayerClock)
     }
 
     private func startPrayerAutosave() {
@@ -1788,6 +1792,8 @@ struct PrayView: View {
             finishBlack = 0
             showingCompletion = false
             pendingActivePrayerTime = 0
+            // Carry on the persisted clock (lock, background or a relaunch mid-Rosary).
+            prayerClock = sessionStore.savedTimingClock
         }
         playHaptic()
         startActivePrayerTimerIfNeeded()
@@ -1933,6 +1939,9 @@ struct PrayView: View {
         if let set = freshSetPending, next > 0 {
             startSession(set: set)
             flushPendingActivePrayerTimeIfNeeded()
+        }
+        sessionStore.updateTimingClock(prayerClock)
+        if freshSetPending != nil, next > 0 {
             freshSetPending = nil
         }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {

@@ -381,12 +381,12 @@ final class MilestonePersistenceTests: XCTestCase {
         XCTAssertEqual(decoded.intentionTitles, ["A", "B", "C"])
     }
 
-    func testIntentionsAreCappedAtFour() {
+    func testIntentionsAreCappedAtFive() {
         let session = PrayerSession(mysterySet: .glorious, stepIndex: 0, startedAt: Date(), updatedAt: Date(),
                                     includeSaintMichael: false, language: .english,
                                     intentionId: nil, intentionTitle: nil,
                                     intentionIds: (0..<6).map { _ in UUID() }, intentionTitles: nil)
-        XCTAssertEqual(session.intentionIds.count, PrayerSession.maxIntentions)
+        XCTAssertEqual(session.intentionIds.count, 5)
     }
 
     func testCompletedRosaryKeepsAllIntentionsAndOldRecordsFallBack() {
@@ -624,15 +624,71 @@ final class RosaryConfigSyncTests: XCTestCase {
 final class ActivePrayerClockTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_800_000_000)
 
-    func testBackgroundTimeIsExcluded() {
+    func testLockAndBackgroundKeepCounting() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        // Decade 1 prayed, then the screen locks (background checkpoint keeps running).
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(240), keepRunning: true), 240)
+        XCTAssertTrue(clock.isRunning, "Lock or background must not pause the clock")
+        // Four more minutes praying with the screen locked, then the next bead tap.
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(480), keepRunning: true), 240)
+    }
+
+    func testTwentyFiveMinuteRosaryWithLocksBetweenDecades() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        var total: TimeInterval = 0
+        // Five decades of five minutes each; the phone locks mid-decade every time.
+        for decade in 0..<5 {
+            let base = TimeInterval(decade) * 300
+            total += clock.take(at: t0.addingTimeInterval(base + 30), keepRunning: true) // lock
+            total += clock.take(at: t0.addingTimeInterval(base + 300), keepRunning: true) // tap
+            clock.touch(at: t0.addingTimeInterval(base + 300))
+        }
+        total += clock.take(at: t0.addingTimeInterval(1_500), keepRunning: false)
+        XCTAssertEqual(total, 1_500)
+    }
+
+    func testRelaunchRestoresTheClockFromStoredTimestamps() throws {
+        let suite = "RosaryTimingTests.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let store = SessionStore(defaults: defaults)
+        store.start(set: .sorrowful, language: .english)
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        clock.touch(at: t0.addingTimeInterval(120))
+        store.addActivePrayerTime(clock.take(at: t0.addingTimeInterval(120), keepRunning: true))
+        store.updateTimingClock(clock)
+        // App killed; a fresh store reads the saved session.
+        let relaunched = SessionStore(defaults: defaults)
+        var restored = relaunched.savedTimingClock
+        XCTAssertTrue(restored.isRunning)
+        XCTAssertEqual(restored.take(at: t0.addingTimeInterval(420), keepRunning: true), 300)
+        XCTAssertEqual(relaunched.session?.activeDuration, 120)
+    }
+
+    func testAbandonedGapIsCappedAtTenMinutes() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        // Autosaves and a lock during a two-hour gap still credit only the cap.
+        var total: TimeInterval = 0
+        total += clock.take(at: t0.addingTimeInterval(60), keepRunning: true)
+        total += clock.take(at: t0.addingTimeInterval(3_000), keepRunning: true)
+        total += clock.take(at: t0.addingTimeInterval(7_200), keepRunning: true)
+        XCTAssertEqual(total, ActivePrayerClock.idleLimit)
+        XCTAssertEqual(ActivePrayerClock.idleLimit, 600)
+        // The next tap starts a fresh allowance.
+        clock.touch(at: t0.addingTimeInterval(7_200))
+        clock = ActivePrayerClock(runningSince: t0.addingTimeInterval(7_200), lastInteraction: t0.addingTimeInterval(7_200))
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(7_260), keepRunning: false), 60)
+    }
+
+    func testLeavingTheFlowPauses() {
         var clock = ActivePrayerClock()
         clock.resume(at: t0)
         XCTAssertEqual(clock.take(at: t0.addingTimeInterval(300), keepRunning: false), 300)
-        XCTAssertFalse(clock.isRunning, "Backgrounding pauses the clock")
-        // Two hours locked; nothing counts until the prayer is on screen again.
+        XCTAssertFalse(clock.isRunning)
         XCTAssertEqual(clock.take(at: t0.addingTimeInterval(7_500), keepRunning: false), 0)
-        clock.resume(at: t0.addingTimeInterval(7_500))
-        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(7_740), keepRunning: false), 240)
     }
 
     func testCheckpointsDoNotDoubleCount() {
@@ -661,8 +717,8 @@ final class ActivePrayerClockTests: XCTestCase {
     func testInteractionExtendsTheAllowance() {
         var clock = ActivePrayerClock()
         clock.resume(at: t0)
-        clock.touch(at: t0.addingTimeInterval(15 * 60))
-        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(30 * 60), keepRunning: false), 30 * 60)
+        clock.touch(at: t0.addingTimeInterval(8 * 60))
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(16 * 60), keepRunning: false), 16 * 60)
     }
 
     func testClockMovingBackwardsCreditsNothing() {

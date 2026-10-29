@@ -266,6 +266,22 @@ final class SessionStore {
         session = current
     }
 
+    /// Persists the running clock's anchors so timing survives lock, background and relaunch.
+    func updateTimingClock(_ clock: ActivePrayerClock) {
+        guard var current = session else { return }
+        guard current.timingRunningSince != clock.runningSince
+            || current.timingLastInteraction != clock.lastInteraction else { return }
+        current.timingRunningSince = clock.runningSince
+        current.timingLastInteraction = clock.lastInteraction
+        session = current
+    }
+
+    /// The persisted clock of the in-progress Rosary (paused when none).
+    var savedTimingClock: ActivePrayerClock {
+        ActivePrayerClock(runningSince: session?.timingRunningSince,
+                          lastInteraction: session?.timingLastInteraction)
+    }
+
     func addActivePrayerTime(_ duration: TimeInterval) {
         let clamped = max(0, duration)
         guard clamped > 0, var current = session else { return }
@@ -649,6 +665,14 @@ final class SessionStore {
                 incoming.completedDecades.formUnion(local.completedDecades)
                 incoming.lastCompletedDecadeActiveDuration = max(incoming.lastCompletedDecadeActiveDuration,
                                                                   local.lastCompletedDecadeActiveDuration)
+                // The account keeps only the first `maxSyncedIntentions`; don't drop a local fifth.
+                if local.intentionIds.count > incoming.intentionIds.count,
+                   Array(local.intentionIds.prefix(incoming.intentionIds.count)) == incoming.intentionIds {
+                    incoming.intentionIds = local.intentionIds
+                    incoming.intentionTitles = local.intentionTitles
+                }
+                incoming.timingRunningSince = incoming.timingRunningSince ?? local.timingRunningSince
+                incoming.timingLastInteraction = incoming.timingLastInteraction ?? local.timingLastInteraction
                 incoming.intentionCategory = incoming.intentionCategory ?? local.intentionCategory
                 incoming.intentionSourceId = incoming.intentionSourceId ?? local.intentionSourceId
             }
@@ -694,16 +718,22 @@ final class SessionStore {
     }
 }
 
-/// Active time inside the Rosary flow. The view resumes it when the prayer is on screen and
-/// the app is active, and takes the elapsed time when it pauses (background, screen lock,
-/// leaving the flow) or checkpoints (step changes, periodic autosave). A step left open with
-/// the screen awake credits at most `idleLimit` after the last interaction, so a phone left
-/// on a table does not count hours of prayer.
+/// Active time inside the Rosary flow, worked out from wall-clock timestamps rather than a
+/// ticking counter. The clock keeps running through screen lock, backgrounding and a relaunch
+/// (its anchors are persisted on the session); time is credited from those timestamps whenever
+/// the view checkpoints (step changes, autosave, finishing). Rule: each gap after the last
+/// step tap counts in full up to `idleLimit` (10 minutes); anything beyond that is treated as
+/// an abandoned or paused Rosary and not counted. Leaving the Rosary flow pauses the clock.
 struct ActivePrayerClock: Equatable {
-    static let idleLimit: TimeInterval = 20 * 60
+    static let idleLimit: TimeInterval = 10 * 60
 
     private(set) var runningSince: Date?
     private(set) var lastInteraction: Date?
+
+    init(runningSince: Date? = nil, lastInteraction: Date? = nil) {
+        self.runningSince = runningSince
+        self.lastInteraction = runningSince == nil ? nil : (lastInteraction ?? runningSince)
+    }
 
     var isRunning: Bool { runningSince != nil }
 
@@ -716,6 +746,7 @@ struct ActivePrayerClock: Equatable {
 
     /// A step change or other deliberate action: the idle allowance starts again.
     mutating func touch(at now: Date) {
+        guard runningSince != nil else { return }
         lastInteraction = now
     }
 
@@ -723,10 +754,16 @@ struct ActivePrayerClock: Equatable {
     /// otherwise pauses. Never negative, even if the clock moved backwards.
     mutating func take(at now: Date, keepRunning: Bool) -> TimeInterval {
         guard let start = runningSince else { return 0 }
-        let idleEnd = max(lastInteraction ?? start, start).addingTimeInterval(Self.idleLimit)
+        let idleEnd = (lastInteraction ?? start).addingTimeInterval(Self.idleLimit)
         let end = min(now, idleEnd)
         let credited = max(0, end.timeIntervalSince(start))
-        runningSince = keepRunning ? max(now, start) : nil
+        if keepRunning {
+            // Never move the anchor past the idle allowance, so an abandoned gap stays capped.
+            runningSince = max(min(now, idleEnd), start)
+        } else {
+            runningSince = nil
+            lastInteraction = nil
+        }
         return credited.isFinite ? credited : 0
     }
 }
