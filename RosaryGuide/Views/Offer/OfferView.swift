@@ -6,7 +6,7 @@ struct OfferView: View {
     @Environment(OfferStore.self) private var offer
     @Environment(AuthStore.self) private var auth
     /// Apple or Google, the same two sign-in routes as Settings and onboarding.
-    @State private var showSignInChoice = false
+    @State private var showSignIn = false
     @Environment(AppIconService.self) private var appIcon
     @State private var showSettingsDrawer = false
     @Environment(SettingsStore.self) private var settings
@@ -287,8 +287,8 @@ struct OfferView: View {
             }
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
-            PillButton(title: auth.isWorking ? "Signing in..." : "Sign in to back up") {
-                showSignInChoice = true
+            PillButton(title: auth.isWorking ? "Signing in..." : "Create account") {
+                showSignIn = true
             }
             .disabled(auth.isWorking)
             .padding(.top, AppTheme.Space.sm)
@@ -297,10 +297,9 @@ struct OfferView: View {
         .padding(.horizontal, AppTheme.Space.lg)
         .padding(.vertical, AppTheme.Space.xl)
         .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
-        .confirmationDialog("Create an account or sign in", isPresented: $showSignInChoice, titleVisibility: .visible) {
-            Button("Continue with Apple") { auth.signInWithApple() }
-            Button("Continue with Google") { auth.signInWithGoogle() }
-            Button("Cancel", role: .cancel) {}
+        // Reuses the onboarding sign-in step; continue without or a successful sign-in both dismiss.
+        .fullScreenCover(isPresented: $showSignIn) {
+            OnboardingView(startsAtSignIn: true) { showSignIn = false }
         }
     }
 
