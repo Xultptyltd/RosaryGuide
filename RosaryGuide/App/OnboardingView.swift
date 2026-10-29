@@ -175,6 +175,17 @@ private struct OnboardingSignInView: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var imageDrift = false
+    /// Which button last started a sign-in, so only that one shows progress.
+    @State private var lastProvider: OnboardingAuthButton.Provider?
+    @State private var succeeded = false
+    @State private var shakes: CGFloat = 0
+
+    private func buttonState(_ provider: OnboardingAuthButton.Provider) -> OnboardingAuthButton.Status {
+        guard lastProvider == provider else { return .idle }
+        if succeeded { return .done }
+        let working = provider == .apple ? auth.isSigningInWithApple : auth.isSigningInWithGoogle
+        return working ? .working : .idle
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -232,22 +243,25 @@ private struct OnboardingSignInView: View {
                             .padding(.horizontal, AppTheme.Space.lg)
                     }
                     .accessibilityElement(children: .combine)
+                    .guideReveal(delay: 0.05)
 
                     Spacer(minLength: 0)
 
                     VStack(spacing: AppTheme.Space.md) {
-                        OnboardingAuthButton(title: auth.isSigningInWithApple ? "Signing in..." : "Continue with Apple", systemImage: "apple.logo", filled: true) {
-                            HapticService.play(.medium, enabled: settings.hapticsEnabled)
+                        OnboardingAuthButton(title: auth.isSigningInWithApple ? "Signing in" : "Continue with Apple", systemImage: "apple.logo", filled: true, status: buttonState(.apple)) {
+                            lastProvider = .apple
                             auth.signInWithApple()
                         }
-                        .disabled(auth.isWorking)
+                        .modifier(GuideShakeEffect(animatableData: lastProvider == .apple ? shakes : 0))
+                        .disabled(auth.isWorking || succeeded)
                         .accessibilityLabel(auth.isSigningInWithApple ? "Signing in with Apple" : "Continue with Apple")
 
-                        OnboardingAuthButton(title: auth.isSigningInWithGoogle ? "Signing in..." : "Continue with Google", letter: "G", filled: false) {
-                            HapticService.play(.medium, enabled: settings.hapticsEnabled)
+                        OnboardingAuthButton(title: auth.isSigningInWithGoogle ? "Signing in" : "Continue with Google", letter: "G", filled: false, status: buttonState(.google)) {
+                            lastProvider = .google
                             auth.signInWithGoogle()
                         }
-                        .disabled(auth.isWorking)
+                        .modifier(GuideShakeEffect(animatableData: lastProvider == .google ? shakes : 0))
+                        .disabled(auth.isWorking || succeeded)
                         .accessibilityLabel(auth.isSigningInWithGoogle ? "Signing in with Google" : "Continue with Google")
 
                         if let message = auth.errorMessage {
@@ -257,6 +271,7 @@ private struct OnboardingSignInView: View {
                                 .multilineTextAlignment(.center)
                                 .lineSpacing(4)
                                 .padding(.top, AppTheme.Space.xs)
+                                .transition(.opacity)
                         }
 
                         // Sign-in is optional: everything works on this device without an account.
@@ -277,13 +292,23 @@ private struct OnboardingSignInView: View {
                     .padding(.horizontal, AppTheme.gutter)
                     .padding(.bottom, AppTheme.Space.xl)
                     .safeAreaPadding(.bottom)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: auth.errorMessage)
+                    .guideReveal(delay: 0.14)
                 }
             }
         }
         .onChange(of: auth.isSignedIn) { _, isSignedIn in
             if isSignedIn {
-                completeIfSignedIn()
+                completeAfterSuccess()
             }
+        }
+        .onChange(of: auth.isWorking) { was, working in
+            // A finished attempt with a message is an error. Cancel finishes with no
+            // message, so it just resets quietly.
+            guard was, !working, !auth.isSignedIn, auth.errorMessage != nil else { return }
+            HapticService.play(.warning, enabled: settings.hapticsEnabled)
+            guard !reduceMotion else { return }
+            withAnimation(.easeOut(duration: 0.42)) { shakes += 1 }
         }
         .onAppear {
             completeIfSignedIn()
@@ -299,8 +324,15 @@ private struct OnboardingSignInView: View {
 
     private func completeIfSignedIn() {
         guard auth.isSignedIn else { return }
-        HapticService.play(.medium, enabled: settings.hapticsEnabled)
         onComplete()
+    }
+
+    /// One success haptic, a brief tick on the button, then on into the app.
+    private func completeAfterSuccess() {
+        guard !succeeded else { return }
+        HapticService.play(.success, enabled: settings.hapticsEnabled)
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { succeeded = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { onComplete() }
     }
 }
 
@@ -313,12 +345,24 @@ private struct OnboardingAuthButton: View {
     var systemImage: String?
     var letter: String?
     var filled: Bool
+    var status: Status = .idle
     var action: () -> Void
+
+    enum Provider { case apple, google }
+    enum Status { case idle, working, done }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: AppTheme.Space.md) {
-                if let systemImage {
+                if status == .working {
+                    ProgressView()
+                        .tint(filled ? Color.black : Color.white)
+                        .transition(.opacity)
+                } else if status == .done {
+                    Image(systemName: "checkmark")
+                        .guideSymbol(size: 18, weight: .semibold)
+                        .transition(.opacity)
+                } else if let systemImage {
                     Image(systemName: systemImage)
                         .guideSymbol(size: 18, weight: .semibold)
                 } else if let letter {
@@ -341,6 +385,7 @@ private struct OnboardingAuthButton: View {
                 }
             }
             .contentShape(Capsule())
+            .animation(.easeOut(duration: 0.2), value: status)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(.isButton)
