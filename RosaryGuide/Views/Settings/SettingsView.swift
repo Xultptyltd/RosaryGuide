@@ -31,6 +31,8 @@ struct SettingsView: View {
     @State private var didClearAppHistory = false
     @State private var confirmDeleteAccount = false
     @State private var didDeleteAccount = false
+    /// The whole delete flow (confirm sign-in, cloud data, account), not only the Auth step.
+    @State private var isDeletingAccount = false
     @State private var accountDeletionError: String?
     @State private var mailUnavailableMessage: String?
     @State private var showOnboardingPreview = false
@@ -228,15 +230,17 @@ struct SettingsView: View {
                         SettingsActionRow(title: "Clear app history", icon: "trash", destructive: true) {
                             confirmClearAppHistory = true
                         }
+                        // Greyed out until there is something on this device to clear.
+                        .disabled(!hasAppHistory)
                         if auth.isSignedIn {
                             SettingsActionRow(
-                                title: auth.isWorking ? "Deleting..." : "Delete account",
+                                title: (auth.isWorking || isDeletingAccount) ? "Deleting..." : "Delete account",
                                 icon: "person.crop.circle.badge.xmark",
                                 destructive: true
                             ) {
                                 confirmDeleteAccount = true
                             }
-                            .disabled(auth.isWorking)
+                            .disabled(auth.isWorking || isDeletingAccount)
                         }
                     }
                 }
@@ -331,9 +335,15 @@ struct SettingsView: View {
         }
     }
 
+    private var hasAppHistory: Bool {
+        session.hasLocalHistory || !offer.intentions.isEmpty
+    }
+
     private func deleteAccount() {
+        isDeletingAccount = true
         auth.reauthenticateForSensitiveOperation { reauthenticated in
             guard reauthenticated else {
+                isDeletingAccount = false
                 // A cancelled Apple/Google sheet leaves no message, so nothing is shown.
                 if let message = auth.errorMessage {
                     accountDeletionError = message
@@ -344,9 +354,14 @@ struct SettingsView: View {
             let deletingUID = auth.userID
             Task {
                 do {
-                    try await sync.deleteCloudDataForCurrentUser()
-                    try await offer.deleteCloudDataForCurrentUser()
+                    // A Firestore delete waits for the server; without a limit an unreachable
+                    // backend left the flow hanging silently after the Apple sheet.
+                    try await AccountDeletion.withTimeout(seconds: 20) {
+                        try await sync.deleteCloudDataForCurrentUser()
+                        try await offer.deleteCloudDataForCurrentUser()
+                    }
                 } catch {
+                    isDeletingAccount = false
                     auth.cancelPendingAccountDeletion()
                     sync.restoreCloudDataAfterFailedDeletion()
                     offer.restoreCloudDataAfterFailedDeletion()
@@ -354,6 +369,7 @@ struct SettingsView: View {
                     return
                 }
                 auth.deleteAccount { success in
+                    isDeletingAccount = false
                     if success {
                         offer.finishAccountDeletion(uid: deletingUID)
                         sync.finishAccountDeletion(uid: deletingUID)
@@ -1684,5 +1700,24 @@ private struct SettingsLegalDocumentScreen: View {
     private func attributed(_ text: String) -> AttributedString {
         (try? AttributedString(markdown: text,
             options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
+    }
+}
+
+
+enum AccountDeletion {
+    struct TimedOut: Error {}
+
+    /// Runs `work`, throwing `TimedOut` if it has not finished in time.
+    @MainActor
+    static func withTimeout(seconds: Double, _ work: @escaping @MainActor () async throws -> Void) async throws {
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask { @MainActor in try await work() }
+            group.addTask {
+                try await Task.sleep(for: .seconds(seconds))
+                throw TimedOut()
+            }
+            try await group.next()
+            group.cancelAll()
+        }
     }
 }

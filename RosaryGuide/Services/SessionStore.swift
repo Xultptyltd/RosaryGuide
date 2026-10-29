@@ -469,6 +469,12 @@ final class SessionStore {
 
     /// Clears the in-progress rosary and prayer history (Settings wipe). When signed in,
     /// the reset also reaches the account so other devices don't merge old days back.
+    /// Anything "Clear app history" would remove: prayed days, records, milestones or a rosary in progress.
+    var hasLocalHistory: Bool {
+        !completedDayKeys.isEmpty || !completedSessions.isEmpty || !completedDecades.isEmpty
+            || !prayerTimeByDay.isEmpty || !earnedMilestones.isEmpty || session != nil
+    }
+
     func clearHistoryAndData() {
         clearMilestones()
         completedDayKeys = []

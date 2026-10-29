@@ -292,6 +292,32 @@ final class LaunchGateTests: XCTestCase {
         XCTAssertFalse(LaunchGate.showsApp(didCompleteOnboarding: false, isSignedIn: false))
     }
 
+    func testLeavingAnAccountReturnsToOnboarding() {
+        XCTAssertTrue(LaunchGate.returnsToOnboarding(previousUserID: "abc", userID: nil), "Sign out and delete account")
+        XCTAssertFalse(LaunchGate.returnsToOnboarding(previousUserID: nil, userID: nil), "Guests stay in the app")
+        XCTAssertFalse(LaunchGate.returnsToOnboarding(previousUserID: nil, userID: "abc"))
+        XCTAssertFalse(LaunchGate.returnsToOnboarding(previousUserID: "abc", userID: "def"))
+    }
+
+    @MainActor
+    func testAccountDeletionTimesOutInsteadOfHanging() async {
+        do {
+            try await AccountDeletion.withTimeout(seconds: 0.1) {
+                try await Task.sleep(for: .seconds(5))
+            }
+            XCTFail("Expected a timeout")
+        } catch {
+            XCTAssertTrue(error is AccountDeletion.TimedOut)
+        }
+    }
+
+    @MainActor
+    func testAccountDeletionPassesThroughFastWork() async throws {
+        var ran = false
+        try await AccountDeletion.withTimeout(seconds: 5) { ran = true }
+        XCTAssertTrue(ran)
+    }
+
     func testGuestButtonCopyIsSentenceCase() {
         XCTAssertEqual(OnboardingCopy.continueWithoutSigningUp, "Continue without signing up")
         XCTAssertFalse(OnboardingCopy.continueWithoutSigningUp.hasSuffix("."))

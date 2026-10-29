@@ -362,6 +362,17 @@ final class AuthStore: NSObject {
             .flatMap(\.windows)
             .first { $0.isKeyWindow }?
             .rootViewController
+            .map(topmost(from:))
+    }
+
+    /// Google presents from the top of the stack; from the root it silently fails when
+    /// Settings (a sheet) is already showing, so re-authentication never finished.
+    private static func topmost(from controller: UIViewController) -> UIViewController {
+        var top = controller
+        while let presented = top.presentedViewController, !presented.isBeingDismissed {
+            top = presented
+        }
+        return top
     }
 
     private static func randomNonceString(length: Int = 32) -> String {

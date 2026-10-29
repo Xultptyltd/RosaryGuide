@@ -107,7 +107,7 @@ struct RosaryGuideApp: App {
                 guard !plan.isEmpty else { return }
                 Task { await NotificationService.reschedule(plan) }
             }
-            .onChange(of: auth.userID) { _, userID in
+            .onChange(of: auth.userID) { previous, userID in
                 // Signing out keeps data: intentions, preferences and prayer progress stay in the
                 // account and on this device, and the app carries on as a guest (no sync). Another
                 // account gets its own copy, so accounts never mix. Delete account clears everything.
@@ -115,6 +115,11 @@ struct RosaryGuideApp: App {
                 sync.configureSync(for: userID)
                 if userID != nil {
                     didCompleteOnboarding = true
+                } else if LaunchGate.returnsToOnboarding(previousUserID: previous, userID: userID) {
+                    // Signing out or deleting the account goes back to the sign-in screen.
+                    withAnimation(.easeOut(duration: 0.28)) {
+                        didCompleteOnboarding = false
+                    }
                 }
             }
         }
@@ -124,6 +129,11 @@ struct RosaryGuideApp: App {
 /// Which screen the app opens on. Onboarding shows once; after that the app is always open,
 /// signed in or not. Signing in (from onboarding or Settings) only turns on sync.
 enum LaunchGate {
+    /// Leaving an account (sign out or delete) shows onboarding again.
+    static func returnsToOnboarding(previousUserID: String?, userID: String?) -> Bool {
+        previousUserID != nil && userID == nil
+    }
+
     static func showsApp(didCompleteOnboarding: Bool, isSignedIn: Bool) -> Bool {
         didCompleteOnboarding || isSignedIn
     }
