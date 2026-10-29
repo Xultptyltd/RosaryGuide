@@ -697,14 +697,6 @@ final class AccountSyncStore {
         startListening(uid: uid)
     }
 
-    /// Pull to refresh: restart the account listeners so the latest copy is fetched.
-    /// Signed out does nothing; offline serves the cache and retries on the next foreground.
-    func refresh() {
-        guard let uid = userID else { return }
-        stopListening()
-        startListening(uid: uid)
-    }
-
     private func activateLocalData(for uid: String) {
         session.activateMilestoneOwner(uid)
         switch activeOwner {

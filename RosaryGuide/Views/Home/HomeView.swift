@@ -34,10 +34,6 @@ struct HomeView: View {
     @State private var mysteryScrollID: String?
     /// Visible page in the opened mystery sheet; swiping moves through the set in order.
     @State private var mysteryDetailPageID: String?
-    @Namespace private var cardZoom
-    @Environment(AccountSyncStore.self) private var sync
-    /// True once the large title has scrolled under the top edge.
-    @State private var homeScrolled = false
     @State private var selectedLiturgicalVerse: LiturgicalVerse?
     @State private var navigationPath = NavigationPath()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -135,13 +131,6 @@ struct HomeView: View {
                     .padding(.bottom, AppTheme.tabBarContentClearance)
                 }
                 .scrollBounceBehavior(.basedOnSize, axes: .vertical)
-                .refreshable { await GuideRefresh.resync(offer: offer, sync: sync) }
-                .onScrollGeometryChange(for: Bool.self) { geo in
-                    geo.contentOffset.y + geo.contentInsets.top > homeCompactThreshold
-                } action: { _, scrolled in
-                    homeScrolled = scrolled
-                }
-                .overlay(alignment: .top) { homeCompactHeader }
                 .onPreferenceChange(HomeCTABottomPreferenceKey.self) { value in
                     measuredCTABottom = value
                     updateHeroTopBandIfNeeded()
@@ -184,13 +173,6 @@ struct HomeView: View {
         .onChange(of: currentSet) { _, _ in
             mysteryScrollID = mysteries.first?.id
         }
-        .onChange(of: mysteryDetailPageID) { _, page in
-            // Keep the rail under the sheet on the page being read, so the zoom
-            // shrinks back to a card that is on screen.
-            guard selectedMysteryDetail != nil, let page, mysteries.contains(where: { $0.id == page }) else { return }
-            var t = Transaction(); t.disablesAnimations = true
-            withTransaction(t) { mysteryScrollID = page }
-        }
         .onChange(of: chosenIntentionId) { _, _ in
             intentionSelectionExplicit = true
         }
@@ -231,8 +213,6 @@ struct HomeView: View {
             }
         }) { mystery in
             mysteryDetailPager(startingAt: mystery)
-                // Shrinks back to the card of the page being read (the rail follows the pager).
-                .guideZoomDestination(mysteryDetailPageID ?? mystery.id, in: cardZoom)
                 .presentationDetents([.height(mysteryDetailSheetHeight(for: mystery)), .large])
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(AppTheme.containerRadius)
@@ -244,28 +224,6 @@ struct HomeView: View {
                 .presentationCornerRadius(AppTheme.containerRadius)
         }
 
-    }
-
-    /// Past the hero and the large display title.
-    private var homeCompactThreshold: CGFloat {
-        AppTheme.homeHeroHeight(viewport: viewport.height + topInset) + 24
-    }
-
-    /// The large title fades into a small centred title on the shared chrome bar.
-    private var homeCompactHeader: some View {
-        Text(homeMysteryTitle)
-            .font(AppTheme.TypeRole.body(weight: .semibold))
-            .foregroundStyle(palette.ink)
-            .lineLimit(1)
-            .padding(.horizontal, AppTheme.Space.xxl)
-            .frame(maxWidth: .infinity)
-            .frame(height: 44)
-            .padding(.top, topInset)
-            .opacity(homeScrolled ? 1 : 0)
-            .guideChromeBar(visible: homeScrolled)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: homeScrolled)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
     }
 
     private func captureMetrics(_ geo: GeometryProxy) {
@@ -605,7 +563,6 @@ struct HomeView: View {
         return VStack(spacing: 0) {
             NavigationLink {
                 FeastDetailView(prayLaunch: $prayLaunch, item: featured)
-                    .guideZoomDestination(featured.id, in: cardZoom)
             } label: {
                 VStack(alignment: .leading, spacing: 0) {
                     Group {
@@ -699,7 +656,6 @@ struct HomeView: View {
         }
         .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
-        .guideZoomSource(featured.id, in: cardZoom)
         .guideSoftShadow(elevated: colorScheme == .light)
     }
 
@@ -1008,7 +964,6 @@ struct HomeView: View {
                         ForEach(mysteries) { mystery in
                             mysteryCard(mystery)
                                 .frame(width: cardWidth)
-                                .guideZoomSource(mystery.id, in: cardZoom)
                                 .scrollTransition(.interactive, axis: .horizontal) { content, phase in
                                     content
                                         .scaleEffect(phase.isIdentity ? 1 : 0.965)
