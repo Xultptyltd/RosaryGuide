@@ -256,6 +256,16 @@ struct OfferView: View {
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// Counts completed Rosaries kept on this device only.
+    private var signInHeadline: String {
+        let count = sessionStore.completedSessions.count
+        switch count {
+        case 0: return "Your prayers are not backed up yet"
+        case 1: return "Your 1 Rosary is not backed up yet"
+        default: return "Your \(count) Rosaries are not backed up yet"
+        }
+    }
+
     /// Guests only, at the foot of Profile: invites them to make an account so intentions and history sync.
     private var signInBanner: some View {
         VStack(spacing: AppTheme.Space.md) {
@@ -263,18 +273,17 @@ struct OfferView: View {
                 .foregroundStyle(palette.ink)
                 .accessibilityHidden(true)
             VStack(spacing: AppTheme.Space.xs) {
-                Text("Create an account or sign in")
+                Text(signInHeadline)
                     .font(AppTheme.TypeRole.body(weight: .semibold)).foregroundStyle(palette.ink)
                     .accessibilityAddTraits(.isHeader)
-                Text(auth.errorMessage ?? "Keep your intentions and history safe across devices")
+                Text(auth.errorMessage ?? "Sign in or create an account to keep your intentions and history safe across devices")
                     .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
             }
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
-            PillButton(title: auth.isWorking ? "Signing in..." : "Sign in") {
+            PillButton(title: auth.isWorking ? "Signing in..." : "Sign in to back up") {
                 showSignInChoice = true
             }
-            .fixedSize()
             .disabled(auth.isWorking)
             .padding(.top, AppTheme.Space.sm)
         }
