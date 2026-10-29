@@ -176,7 +176,7 @@ struct OfferView: View {
                     }
                     VStack(spacing: 0) {
                         if offer.sortedIntentions.isEmpty {
-                            Text("Keep the people you pray for here")
+                            Text("Keep the people and things you pray for here")
                                 .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.bottom, AppTheme.Space.lg)
@@ -217,8 +217,12 @@ struct OfferView: View {
                 }
 
                 if !auth.isSignedIn {
+                    // Once this month's papal intention is added its card is gone, so divide the list from the backup card.
+                    if showsBackupDivider {
+                        GuideSectionBoundary(verticalSpacing: 0)
+                    }
                     signInBanner
-                        .padding(.top, AppTheme.Space.lg)
+                        .padding(.top, showsBackupDivider ? 0 : AppTheme.Space.lg)
                 }
             }
             .padding(.horizontal, AppTheme.gutter)
@@ -462,6 +466,11 @@ struct OfferView: View {
     /// user's list. Per month: the suggestion id is "pope-<yearMonth>", so October's
     /// adopted intention ("pope-2026-10") does not hide November's card.
     /// Removing it brings the card back.
+    private var showsBackupDivider: Bool {
+        guard let papalSuggestion else { return false }
+        return hasAdoptedThisMonthsPapal(papalSuggestion)
+    }
+
     private var visiblePapalSuggestion: SuggestedIntention? {
         guard let papalSuggestion, !hasAdoptedThisMonthsPapal(papalSuggestion) else { return nil }
         return papalSuggestion
