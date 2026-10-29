@@ -990,10 +990,6 @@ struct HomeView: View {
                     WordSafeText(mystery.title.primary(for: settings.language), font: AppTheme.TypeRole.headingSecondaryUIFont)
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
-
-                    GuideTextButtonLabel(title: "Read more")
-                        .padding(.top, AppTheme.Space.sm)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                 }
                 .padding(.horizontal, AppTheme.Space.xl)
                 .padding(.top, AppTheme.Space.lg)
@@ -1001,7 +997,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : 366, alignment: .top)
+            .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : 340, alignment: .top)
             .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
             .guideSoftShadow(elevated: colorScheme == .light)
