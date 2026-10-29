@@ -572,7 +572,7 @@ struct HomeView: View {
             }
             .buttonStyle(.plain)
 
-            ForEach(remaining) { item in
+            ForEach(Array(remaining.enumerated()), id: \.element.id) { index, item in
                 Hairline()
                     .padding(.horizontal, AppTheme.Space.xl)
                 NavigationLink {
@@ -605,7 +605,9 @@ struct HomeView: View {
                         }
                     }
                     .padding(.horizontal, AppTheme.Space.xl)
-                    .padding(.vertical, AppTheme.Space.md)
+                    .padding(.top, AppTheme.Space.md)
+                    // Last row sits on the card edge, not a hairline: give it the card's xl inset.
+                    .padding(.bottom, index == remaining.count - 1 ? AppTheme.Space.xl : AppTheme.Space.md)
                 }
                 .buttonStyle(.plain)
             }
