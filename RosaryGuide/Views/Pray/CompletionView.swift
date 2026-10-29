@@ -24,6 +24,9 @@ struct CompletionView: View {
     @State private var settled = false
     /// Icon slot in the finish coordinate space. Written only when it actually moves.
     @State private var slot: CGRect = .zero
+    /// A moment of stillness before the tick starts drawing.
+    @State private var tickStarted = false
+    private static let stillness: Duration = .milliseconds(500)
 
     /// Resting icon. The ring is about half the 1024 canvas, so 88pt
     /// leaves a drawn tick about the size of the old emblem.
@@ -90,11 +93,19 @@ struct CompletionView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .animation(Self.morph, value: resting)
 
-            if !reduceMotion {
+            if !reduceMotion && tickStarted {
                 tickJourney
             }
         }
         .coordinateSpace(name: "finis")
+        .task {
+            guard !reduceMotion else { return }
+            try? await Task.sleep(for: Self.stillness)
+            tickStarted = true
+            // Failsafe: if the tick never reports back, never leave the page blank.
+            try? await Task.sleep(for: .seconds(4))
+            morphIn()
+        }
         .background(pageBg.ignoresSafeArea())
         .onPreferenceChange(SlotFrameKey.self) { rect in
             guard rect.width > 1, rect.height > 1 else { return }
