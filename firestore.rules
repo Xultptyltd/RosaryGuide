@@ -232,18 +232,19 @@ service cloud.firestore {
         && (!('rosaryConfig' in session) || validRosaryConfig(session.rosaryConfig));
     }
 
-    // Up to 4 offered intentions per Rosary; entries match the single-field limits.
+    // Up to 5 offered intentions per Rosary; entries match the single-field limits.
     function validIntentionIdAt(ids, i) {
       return ids.size() <= i || (ids[i] is string && validIntentionId(ids[i]));
     }
 
     function validIntentionIdList(ids) {
       return ids is list
-        && ids.size() <= 4
+        && ids.size() <= 5
         && validIntentionIdAt(ids, 0)
         && validIntentionIdAt(ids, 1)
         && validIntentionIdAt(ids, 2)
-        && validIntentionIdAt(ids, 3);
+        && validIntentionIdAt(ids, 3)
+        && validIntentionIdAt(ids, 4);
     }
 
     function validIntentionTitleAt(titles, i) {
@@ -252,11 +253,12 @@ service cloud.firestore {
 
     function validIntentionTitleList(titles) {
       return titles is list
-        && titles.size() <= 4
+        && titles.size() <= 5
         && validIntentionTitleAt(titles, 0)
         && validIntentionTitleAt(titles, 1)
         && validIntentionTitleAt(titles, 2)
-        && validIntentionTitleAt(titles, 3);
+        && validIntentionTitleAt(titles, 3)
+        && validIntentionTitleAt(titles, 4);
     }
 
     // Finished Rosaries keyed by their UUID, so a Rosary is never counted twice. Optional:

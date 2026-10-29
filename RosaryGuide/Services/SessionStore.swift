@@ -665,7 +665,7 @@ final class SessionStore {
                 incoming.completedDecades.formUnion(local.completedDecades)
                 incoming.lastCompletedDecadeActiveDuration = max(incoming.lastCompletedDecadeActiveDuration,
                                                                   local.lastCompletedDecadeActiveDuration)
-                // The account keeps only the first `maxSyncedIntentions`; don't drop a local fifth.
+                // Never let a shorter account copy drop local intentions.
                 if local.intentionIds.count > incoming.intentionIds.count,
                    Array(local.intentionIds.prefix(incoming.intentionIds.count)) == incoming.intentionIds {
                     incoming.intentionIds = local.intentionIds

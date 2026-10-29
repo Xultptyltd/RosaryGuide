@@ -354,9 +354,9 @@ struct PrayerSession: Codable, Equatable, Hashable, Sendable {
     }
 
     static let maxIntentions = 5
-    /// The deployed Firestore rules accept at most 4 offered intentions per record, so the
-    /// account copy keeps the first 4; the full list stays on this device.
-    static let maxSyncedIntentions = 4
+    /// The Firestore rules accept up to 5 offered intentions per record, so the account
+    /// copy keeps every intention the user picked.
+    static let maxSyncedIntentions = maxIntentions
 
     /// First offered intention. Kept for older call sites and the legacy single-value schema.
     var intentionId: UUID? {

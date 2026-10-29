@@ -766,13 +766,24 @@ final class SessionSyncPayloadTests: XCTestCase {
         XCTAssertEqual(filled.session?.rosaryConfig, .default)
     }
 
-    func testCappedAtFourIntentions() throws {
+    func testSyncsAllFiveIntentions() throws {
+        var five = progress()
+        five.session?.intentionIds = ids + [UUID()]
+        five.session?.intentionTitles = titles + [String(repeating: "x", count: 200)]
+        let session = try XCTUnwrap(five.firestoreData()["session"] as? [String: Any])
+        XCTAssertEqual((session["intentionIds"] as? [String])?.count, 5)
+        let syncedTitles = try XCTUnwrap(session["intentionTitles"] as? [String])
+        XCTAssertEqual(syncedTitles.count, 5)
+        XCTAssertEqual(syncedTitles.last?.count, 160)
+    }
+
+    func testCappedAtFiveIntentions() throws {
         var long = progress()
-        long.session?.intentionIds = ids + [UUID()]
-        long.session?.intentionTitles = titles + [String(repeating: "x", count: 200)]
+        long.session?.intentionIds = ids + [UUID(), UUID()]
+        long.session?.intentionTitles = titles + ["Fifth", "Sixth"]
         let session = try XCTUnwrap(long.firestoreData()["session"] as? [String: Any])
-        XCTAssertEqual((session["intentionIds"] as? [String])?.count, 4)
-        XCTAssertEqual((session["intentionTitles"] as? [String])?.count, 4)
+        XCTAssertEqual((session["intentionIds"] as? [String])?.count, 5)
+        XCTAssertEqual((session["intentionTitles"] as? [String])?.count, 5)
     }
 }
 
