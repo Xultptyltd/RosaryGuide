@@ -256,13 +256,19 @@ struct OfferView: View {
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Counts completed Rosaries kept on this device only.
+    /// Days since the earliest local activity (session, decade, milestone or intention); guests have never synced.
     private var signInHeadline: String {
-        let count = sessionStore.completedSessions.count
-        switch count {
-        case 0: return "Your prayers are not backed up yet"
-        case 1: return "Your 1 Rosary is not backed up yet"
-        default: return "Your \(count) Rosaries are not backed up yet"
+        let dates = sessionStore.completedSessions.map(\.startedAt)
+            + sessionStore.completedDecades.map(\.completedAt)
+            + sessionStore.earnedMilestones.values.map(\.date)
+            + offer.intentions.map(\.createdAt)
+        guard let earliest = dates.min() else { return "Your prayers are not backed up yet" }
+        let cal = Calendar.current
+        let days = cal.dateComponents([.day], from: cal.startOfDay(for: earliest), to: cal.startOfDay(for: .now)).day ?? 0
+        switch days {
+        case ..<1: return "Your prayers are not backed up yet"
+        case 1: return "Your prayers have not been backed up for 1 day"
+        default: return "Your prayers have not been backed up for \(days) days"
         }
     }
 
