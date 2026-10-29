@@ -562,8 +562,9 @@ struct MysteryFruitLine: View {
                     .font(AppTheme.TypeRole.prayerFruitLabel(isMystery: isMystery))
                     .tracking(isMystery ? AppTheme.RosaryFlow.fruitTracking : 0)
                     .foregroundStyle(palette.textSecondary)
+                // Same point size as the "Fruit" label; ink keeps it primary.
                 Text(fruit)
-                    .font(AppTheme.TypeRole.bodySmall(weight: .medium))
+                    .font(AppTheme.TypeRole.prayerFruitLabel(isMystery: isMystery))
                     .foregroundStyle(palette.ink)
             }
         }

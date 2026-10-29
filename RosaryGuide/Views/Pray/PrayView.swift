@@ -1120,7 +1120,8 @@ struct PrayView: View {
             }
             if let fruit = step.subtitle {
                 MysteryFruitLine(fruit: fruit.primary(for: .english), isMystery: step.isPlate)
-                .padding(.top, step.isPlate ? AppTheme.Space.sm : AppTheme.Space.lg)
+                // Mystery: 8 stack + 16 = 24 above the hairline, the same gap as the Home mystery screen.
+                .padding(.top, AppTheme.Space.lg)
             }
         }
     }
