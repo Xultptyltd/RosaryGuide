@@ -496,6 +496,8 @@ struct GuidePageDots: View {
     var current: Int
     var count: Int
     var alignment: Alignment = .leading
+    /// False until the current dot should fill in (Home first load).
+    var currentFilled: Bool = true
     @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -503,12 +505,13 @@ struct GuidePageDots: View {
         HStack(spacing: AppTheme.Space.sm) {
             ForEach(0..<count, id: \.self) { index in
                 Capsule()
-                    .fill(index == current ? palette.accent : palette.accent.opacity(0.28))
+                    .fill(index == current && currentFilled ? palette.accent : palette.accent.opacity(0.28))
                     .frame(width: index == current ? 18 : 6, height: 6)
             }
         }
         .frame(maxWidth: .infinity, alignment: alignment)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: current)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.24).delay(0.32), value: currentFilled)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Screen \(current + 1) of \(count)")
     }

@@ -53,6 +53,7 @@ struct RosaryGuideApp: App {
                             withAnimation(.easeOut(duration: 0.28)) {
                                 isShowingSplash = false
                             }
+                            HomeEntrance.shared.splashDone = true
                         }
                         .transition(.opacity)
                         .zIndex(1)

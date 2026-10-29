@@ -2060,3 +2060,44 @@ private struct LongestWordWidth: Layout {
     }
 }
 #endif
+
+
+// MARK: - Home first-load entrance
+
+/// Home's staggered settle plays once per launch, after the launch splash has gone.
+/// Starts visible-safe: anything that misses the signal is shown by a failsafe.
+@MainActor @Observable
+final class HomeEntrance {
+    static let shared = HomeEntrance()
+    /// Set by the app when the launch splash finishes.
+    var splashDone = false
+    /// True once the settle has started (or been skipped); never goes back.
+    private(set) var hasPlayed = false
+
+    func play() { hasPlayed = true }
+}
+
+/// Stagger step on Home's first load: 0 greeting, 1 mystery card, 2 feast, 3 scripture.
+private struct HomeEntranceStep: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var shown: Bool
+    var step: Int
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown || reduceMotion ? 0 : 10)
+            .animation(
+                reduceMotion
+                    ? .easeOut(duration: 0.2)
+                    : .easeOut(duration: 0.26).delay(Double(step) * 0.08),
+                value: shown
+            )
+    }
+}
+
+extension View {
+    func homeEntrance(_ shown: Bool, step: Int) -> some View {
+        modifier(HomeEntranceStep(shown: shown, step: step))
+    }
+}

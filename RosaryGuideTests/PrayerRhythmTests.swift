@@ -831,3 +831,15 @@ final class RosaryHapticsTests: XCTestCase {
         XCTAssertNil(leave.celebratedDecade)
     }
 }
+
+@MainActor
+final class HomeEntranceTests: XCTestCase {
+    func testEntranceOnlyPlaysOnce() {
+        let entrance = HomeEntrance()
+        XCTAssertFalse(entrance.hasPlayed)
+        entrance.play()
+        XCTAssertTrue(entrance.hasPlayed)
+        entrance.play()
+        XCTAssertTrue(entrance.hasPlayed)
+    }
+}

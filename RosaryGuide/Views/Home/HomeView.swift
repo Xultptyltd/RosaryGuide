@@ -103,6 +103,10 @@ struct HomeView: View {
         }
     }
 
+    /// Home's first-load settle. Starts shown if it has already played this launch.
+    @State private var entranceShown = HomeEntrance.shared.hasPlayed
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var viewport = CGSize(width: 390, height: 720)
     @State private var topInset: CGFloat = 47
     @State private var bottomInset: CGFloat = 83
@@ -150,6 +154,17 @@ struct HomeView: View {
         }
         .onAppear {
             syncCurrentIntentionIfNeeded()
+            startEntranceIfReady()
+        }
+        .onChange(of: HomeEntrance.shared.splashDone) { _, _ in startEntranceIfReady() }
+        .onChange(of: scenePhase) { _, phase in
+            // Never leave Home hidden after a trip to the background.
+            if phase != .active { showEntranceNow() }
+        }
+        .task {
+            // Failsafe: if the splash signal is ever missed, show Home anyway.
+            try? await Task.sleep(for: .seconds(4))
+            showEntranceNow()
         }
         .onChange(of: dayClock.today) { _, _ in
             // A new day starts on its own default set.
@@ -319,11 +334,11 @@ struct HomeView: View {
 
     private func sheet(width: CGFloat, gutter: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
             Text(today.formatted(.dateTime.weekday(.wide).month(.wide).day()))
                 .font(AppTheme.TypeRole.label)
                 .foregroundStyle(palette.dim)
                 .padding(.bottom, AppTheme.Space.md)
-                .guideReveal(delay: 0.02)
 
             GuideDisplayTitle(
                 text: homeMysteryTitle,
@@ -337,19 +352,16 @@ struct HomeView: View {
             if let feast = assignment.feast, showsFeastLine {
                 feastOffer(feast)
                     .padding(.top, AppTheme.Space.md)
-                    .guideReveal(delay: 0.08)
             } else {
                 Text(currentSet.themeSummary)
                     .guideThemeSummaryStyle()
                     .padding(.top, AppTheme.Space.md)
                     .contentTransition(reduceMotion ? .identity : .opacity)
                     .animation(reduceMotion ? nil : MotionTokens.selection, value: currentSet)
-                    .guideReveal(delay: 0.08)
             }
 
             setPicker
                 .padding(.top, AppTheme.Space.xl)
-                .guideReveal(delay: 0.1)
 
             primaryTodayCTA
                 .padding(.top, AppTheme.Space.lg)
@@ -361,40 +373,70 @@ struct HomeView: View {
                         )
                     }
                 }
-                .guideReveal(delay: 0.14)
+            }
+            .homeEntrance(entranceShown, step: 0)
 
-            GuideSectionBoundary(gutter: gutter)
+            Group {
+                GuideSectionBoundary(gutter: gutter)
 
-            mysteryRail(gutter: gutter)
+                mysteryRail(gutter: gutter)
+            }
+            .homeEntrance(entranceShown, step: 1)
 
             if Self.showDailyScriptureOnHome {
                 liturgicalVerseSection
                     .padding(.top, AppTheme.sectionGap)
+                    .homeEntrance(entranceShown, step: 3)
             }
 
-            GuideSectionBoundary(gutter: gutter)
+            Group {
+                GuideSectionBoundary(gutter: gutter)
 
-            VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-                GuideSectionLabel(text: "Upcoming feast days", prominence: .strong)
-                comingUpSection
+                VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+                    GuideSectionLabel(text: "Upcoming feast days", prominence: .strong)
+                    comingUpSection
+                }
             }
+            .homeEntrance(entranceShown, step: 2)
 
-            GuideSectionBoundary(gutter: gutter)
+            Group {
+                GuideSectionBoundary(gutter: gutter)
 
-            VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-                GuideSectionLabel(text: "This week", prominence: .strong)
-                weekGlance
+                VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+                    GuideSectionLabel(text: "This week", prominence: .strong)
+                    weekGlance
+                }
+
+                shareAppButton
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, AppTheme.sectionGap)
             }
-
-            shareAppButton
-                .frame(maxWidth: .infinity)
-                .padding(.top, AppTheme.sectionGap)
+            .homeEntrance(entranceShown, step: 3)
         }
         .padding(.horizontal, gutter)
         .padding(.top, AppTheme.Space.sm)
         .padding(.bottom, AppTheme.Space.xxl)
         .frame(maxWidth: 576, alignment: .leading)
         .frame(maxWidth: .infinity)
+    }
+
+    private func startEntranceIfReady() {
+        guard !entranceShown else { return }
+        if UIAccessibility.isVoiceOverRunning {
+            showEntranceNow()
+            return
+        }
+        guard HomeEntrance.shared.splashDone else { return }
+        HomeEntrance.shared.play()
+        // Let the splash's own fade clear before Home settles.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { entranceShown = true }
+    }
+
+    private func showEntranceNow() {
+        HomeEntrance.shared.play()
+        guard !entranceShown else { return }
+        var t = Transaction(); t.disablesAnimations = true
+        withTransaction(t) { entranceShown = true }
     }
 
     private func syncCurrentIntentionIfNeeded() {
@@ -948,7 +990,8 @@ struct HomeView: View {
     }
 
     private var mysteryPageDots: some View {
-        GuidePageDots(current: currentMysteryIndex, count: mysteries.count)
+        // Today's dot fills in last on first load.
+        GuidePageDots(current: currentMysteryIndex, count: mysteries.count, currentFilled: entranceShown)
             .accessibilityLabel("Mystery card \(currentMysteryIndex + 1) of \(mysteries.count)")
     }
 
@@ -983,6 +1026,8 @@ struct HomeView: View {
                 // (which is maxHeight .infinity) claims the rest. Without it the fixed card height
                 // was split first and the art shrank, leaving a bare strip on the card's right.
                 MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false, cardFraming: true)
+                    .scaleEffect(entranceShown || reduceMotion ? 1 : 1.05)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.7).delay(0.08), value: entranceShown)
                     .aspectRatio(1.5, contentMode: .fit)
                     .frame(maxWidth: .infinity)
                     .clipped()
