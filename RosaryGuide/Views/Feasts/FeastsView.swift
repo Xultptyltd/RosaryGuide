@@ -361,7 +361,7 @@ struct FeastsView: View {
                         FeastTimelineRow(item: item, topPadding: index == 0 ? 0 : 14,
                                          bottomPadding: index == section.items.count - 1 ? 0 : 14)
                     }
-                    .buttonStyle(.plain)
+                    .guidePressable()
                     if index < section.items.count - 1 { Hairline().padding(.leading, 76) }
                 }
             }

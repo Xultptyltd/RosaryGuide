@@ -570,7 +570,7 @@ struct HomeView: View {
 
                 }
             }
-            .buttonStyle(.plain)
+            .guidePressable()
 
             ForEach(Array(remaining.enumerated()), id: \.element.id) { index, item in
                 Hairline()
@@ -609,7 +609,7 @@ struct HomeView: View {
                     // Last row sits on the card edge, not a hairline: give it the card's xl inset.
                     .padding(.bottom, index == remaining.count - 1 ? AppTheme.Space.xl : AppTheme.Space.md)
                 }
-                .buttonStyle(.plain)
+                .guidePressable()
             }
         }
         .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))

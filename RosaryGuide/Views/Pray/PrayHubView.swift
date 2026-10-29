@@ -238,12 +238,12 @@ struct PrayHubView: View {
             ForEach(sets, id: \.self) { set in
                 NavigationLink { LearnMysteryDetailView(set: set, prayLaunch: $prayLaunch) } label: {
                     hubRow("\(set.shortName) Mysteries", detail: set.weekdayNames, symbol: "sparkles")
-                }.buttonStyle(.plain)
+                }.guidePressable()
             }
             ForEach(devotions) { devotion in
                 NavigationLink { DevotionDetailView(devotion: devotion, prayLaunch: $prayLaunch) } label: {
                     hubRow(devotion.title, detail: devotion.eyebrow, symbol: "book.closed")
-                }.buttonStyle(.plain)
+                }.guidePressable()
             }
         }
     }
@@ -479,7 +479,7 @@ struct PrayHubView: View {
                     } label: {
                         learnRow(row)
                     }
-                    .buttonStyle(.plain)
+                    .guidePressable()
                     .learnLastRowTrim(index == rows.count - 1)
 
                     if index < rows.count - 1 {
@@ -1284,7 +1284,7 @@ private struct DevotionDetailView: View {
                     } label: {
                         linkRow("\(set.shortName) Mysteries", detail: set.weekdayNames)
                     }
-                    .buttonStyle(.plain)
+                    .guidePressable()
                     if set != MysterySetKind.displayOrder.last { Hairline() }
                 }
             }
@@ -1301,7 +1301,7 @@ private struct DevotionDetailView: View {
                     } label: {
                         linkRow(prayer.title.english, detail: nil)
                     }
-                    .buttonStyle(.plain)
+                    .guidePressable()
                     if prayer.id != prayers.last?.id { Hairline() }
                 }
             }

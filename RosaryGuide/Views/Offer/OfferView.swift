@@ -107,7 +107,7 @@ struct OfferView: View {
                     hideText: hideIntentionText,
                     onPin: { offer.togglePin(id: item.id) },
                     onEdit: { editor = .edit(item) },
-                    onDelete: { offer.delete(id: item.id) },
+                    onDelete: { animateIntentionChange { offer.delete(id: item.id) } },
                     onPray: { prayWith(item) }
                 )
             }
@@ -166,7 +166,7 @@ struct OfferView: View {
                             onPray: { prayWith(currentIntention) },
                             onPin: { offer.togglePin(id: currentIntention.id) },
                             onEdit: { editor = .edit(currentIntention) },
-                            onDelete: { offer.delete(id: currentIntention.id) },
+                            onDelete: { animateIntentionChange { offer.delete(id: currentIntention.id) } },
                             allowsPin: true
                         )
                     }
@@ -184,7 +184,7 @@ struct OfferView: View {
                                     intention: item, hideText: hideIntentionText, allowsPin: true,
                                     onPin: { offer.togglePin(id: item.id) },
                                     onEdit: { editor = .edit(item) },
-                                    onDelete: { offer.delete(id: item.id) },
+                                    onDelete: { animateIntentionChange { offer.delete(id: item.id) } },
                                     onPray: { prayWith(item) }
                                 )
                                 if item.id != visibleSecondaryIntentions.last?.id || showsSeeAllIntentions {
@@ -557,7 +557,7 @@ struct OfferView: View {
                             onPray: { prayWith(currentIntention) },
                             onPin: { offer.togglePin(id: currentIntention.id) },
                             onEdit: { editor = .edit(currentIntention) },
-                            onDelete: { offer.delete(id: currentIntention.id) },
+                            onDelete: { animateIntentionChange { offer.delete(id: currentIntention.id) } },
                             allowsPin: true
                         )
                         .guideNavList(pageGutter: AppTheme.gutter)
@@ -572,7 +572,7 @@ struct OfferView: View {
                                 allowsPin: true,
                                 onPin: { offer.togglePin(id: item.id) },
                                 onEdit: { editor = .edit(item) },
-                                onDelete: { offer.delete(id: item.id) },
+                                onDelete: { animateIntentionChange { offer.delete(id: item.id) } },
                                 onPray: { prayWith(item) }
                             )
                             .padding(.bottom, item.id == visibleSecondaryIntentions.last?.id && !hasMoreIntentionRows
@@ -851,12 +851,51 @@ private struct NextRosaryIntentionCard: View {
                 .padding(.horizontal, AppTheme.Space.lg)
                 .padding(.bottom, AppTheme.Space.lg)
         }
+        .deleteWarningHaptic(isPresented: showingDeleteAlert)
         .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
         } message: {
             Text("This will delete “\(displayTitle)” from your intentions.")
         }
+    }
+}
+
+/// Intention list changes: rows fade and settle in where they land, and collapse away on
+/// delete. Reduce Motion applies the change at once.
+@MainActor
+func animateIntentionChange(_ body: () -> Void) {
+    if UIAccessibility.isReduceMotionEnabled {
+        body()
+    } else {
+        withAnimation(MotionTokens.selection, body)
+    }
+}
+
+extension AnyTransition {
+    static var intentionRow: AnyTransition {
+        .asymmetric(
+            insertion: .opacity.combined(with: .offset(y: -6)),
+            removal: .opacity.combined(with: .scale(scale: 0.98, anchor: .top))
+        )
+    }
+}
+
+/// One soft warning tap as a delete confirmation appears.
+private struct DeleteWarningHaptic: ViewModifier {
+    let isPresented: Bool
+    @Environment(SettingsStore.self) private var settings
+
+    func body(content: Content) -> some View {
+        content.onChange(of: isPresented) { _, shown in
+            if shown { HapticService.play(.warning, enabled: settings.hapticsEnabled) }
+        }
+    }
+}
+
+extension View {
+    fileprivate func deleteWarningHaptic(isPresented: Bool) -> some View {
+        modifier(DeleteWarningHaptic(isPresented: isPresented))
     }
 }
 
@@ -898,12 +937,14 @@ private struct MyPrayerIntentionRow: View {
                 onDelete: { showingDeleteAlert = true }
             )
         }
+        .deleteWarningHaptic(isPresented: showingDeleteAlert)
         .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
         } message: {
             Text("This will delete “\(displayTitle)” from your intentions.")
         }
+        .transition(.intentionRow)
     }
 }
 
@@ -1041,6 +1082,7 @@ private struct CurrentIntentionHero: View {
             .padding(.horizontal, AppTheme.Space.lg)
             .padding(.bottom, AppTheme.Space.lg)
         }
+        .deleteWarningHaptic(isPresented: showingDeleteAlert)
         .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
@@ -1386,7 +1428,7 @@ private struct AllIntentionsView: View {
                         onPray: { onPray(featured) },
                         onPin: { offer.togglePin(id: featured.id) },
                         onEdit: { onEdit(featured) },
-                        onDelete: { offer.delete(id: featured.id) },
+                        onDelete: { animateIntentionChange { offer.delete(id: featured.id) } },
                         allowsPin: true
                     )
                 }
@@ -1399,7 +1441,7 @@ private struct AllIntentionsView: View {
                             allowsPin: true,
                             onPin: { offer.togglePin(id: item.id) },
                             onEdit: { onEdit(item) },
-                            onDelete: { offer.delete(id: item.id) },
+                            onDelete: { animateIntentionChange { offer.delete(id: item.id) } },
                             onPray: { onPray(item) }
                         )
 
@@ -1440,7 +1482,7 @@ private struct AllIntentionsView: View {
                 hideText: hideText,
                 onPin: { offer.togglePin(id: item.id) },
                 onEdit: { onEdit(item); detail = nil },
-                onDelete: { offer.delete(id: item.id); detail = nil },
+                onDelete: { animateIntentionChange { offer.delete(id: item.id) }; detail = nil },
                 onPray: { onPray(item) }
             )
         }
@@ -1488,6 +1530,7 @@ private struct IntentionSecondaryRow: View {
                 onDelete: { showingDeleteAlert = true }
             )
         }
+        .deleteWarningHaptic(isPresented: showingDeleteAlert)
         .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
@@ -1640,6 +1683,7 @@ private struct IntentionDetailView: View {
             }
         }
         .guideDetailChrome(detailNavigationTitle)
+        .deleteWarningHaptic(isPresented: showingDeleteAlert)
         .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
@@ -1992,6 +2036,7 @@ private struct IntentionRow: View {
         .accessibilityAction(named: "Delete intention") {
             showingDeleteAlert = true
         }
+        .deleteWarningHaptic(isPresented: showingDeleteAlert)
         .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: onDelete)
@@ -2311,6 +2356,7 @@ enum IntentionListRules {
 }
 
 struct IntentionEditorSheet: View {
+    @Environment(SettingsStore.self) private var settings
     @Environment(OfferStore.self) private var offer
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
@@ -2484,6 +2530,7 @@ struct IntentionEditorSheet: View {
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
                 keyboardVisible = false
             }
+            .deleteWarningHaptic(isPresented: showingDeleteAlert)
             .alert("Delete intention?", isPresented: $showingDeleteAlert) {
                 Button("Cancel", role: .cancel) {}
                 Button("Delete", role: .destructive) {
@@ -2784,7 +2831,9 @@ struct IntentionEditorSheet: View {
             let priorCurrentId: UUID? = makeCurrent
                 ? nil
                 : offer.sortedIntentions.first(where: \.isPinned)?.id
-            let created = offer.add(
+            HapticService.play(.light, enabled: settings.hapticsEnabled)
+            var created: OfferIntention!
+            animateIntentionChange { created = offer.add(
                 title: title,
                 note: note,
                 pin: makeCurrent,
@@ -2793,7 +2842,7 @@ struct IntentionEditorSheet: View {
                 accent: accent,
                 emoji: resolvedEmoji,
                 suggestOn: Array(suggestOn).filter { MysterySetKind.displayOrder.contains($0) }
-            )
+            ) }
             if let priorCurrentId {
                 offer.setCurrent(id: priorCurrentId)
             }
@@ -2810,7 +2859,8 @@ struct IntentionEditorSheet: View {
             item.emoji = resolvedEmoji
             item.suggestOn = Array(suggestOn).filter { MysterySetKind.displayOrder.contains($0) }
             item.isPinned = makeCurrent
-            offer.update(item)
+            HapticService.play(.light, enabled: settings.hapticsEnabled)
+            animateIntentionChange { offer.update(item) }
             if makeCurrent {
                 offer.setCurrent(id: item.id)
             }
@@ -2821,7 +2871,7 @@ struct IntentionEditorSheet: View {
 
     private func deleteEditingItem() {
         guard let item = editingItem else { return }
-        offer.delete(id: item.id)
+        animateIntentionChange { offer.delete(id: item.id) }
         onDeleted?(item)
         dismiss()
     }

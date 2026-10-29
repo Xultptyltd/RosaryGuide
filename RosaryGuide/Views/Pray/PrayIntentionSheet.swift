@@ -164,6 +164,7 @@ struct PrayIntentionSheet: View {
                     .guideSymbol(size: 22, weight: .regular)
                     .foregroundStyle(selected ? palette.accentText : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
+                    .guideSymbolSwap(value: selected)
 
                 IntentionIconView(
                     accent: .purple,
@@ -217,6 +218,7 @@ struct PrayIntentionSheet: View {
                     .guideSymbol(size: 22, weight: .regular)
                     .foregroundStyle(selected ? palette.accentText : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
+                    .guideSymbolSwap(value: selected)
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     Text(title)
@@ -351,6 +353,7 @@ private struct IntentionRadioRow: View {
                     .guideSymbol(size: 22, weight: .regular)
                     .foregroundStyle(selected ? palette.accentText : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
+                    .guideSymbolSwap(value: selected)
 
                 IntentionIconView(
                     accent: item.accent,
@@ -582,6 +585,7 @@ struct IntentionMultiSelectList: View {
                     .guideSymbol(size: 22, weight: .regular)
                     .foregroundStyle(selected ? palette.accentText : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
+                    .guideSymbolSwap(value: selected)
 
                 if showsPope {
                     IntentionIconView(accent: .purple, emoji: "✝️", size: 44, usesPopePortrait: true)

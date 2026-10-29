@@ -1212,6 +1212,25 @@ extension View {
     }
 }
 
+/// SF Symbol swaps (radio and check marks) use the system replace effect; Reduce Motion
+/// swaps instantly.
+struct GuideSymbolSwap<Value: Equatable>: ViewModifier {
+    var value: Value
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace.downUp))
+            .animation(reduceMotion ? nil : MotionTokens.selection, value: value)
+    }
+}
+
+extension View {
+    func guideSymbolSwap<Value: Equatable>(value: Value) -> some View {
+        modifier(GuideSymbolSwap(value: value))
+    }
+}
+
 struct GuidePressStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
