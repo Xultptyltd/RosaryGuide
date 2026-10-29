@@ -205,10 +205,8 @@ struct OfferView: View {
 
 
                 if let papal = visiblePapalSuggestion {
-                    // Separates the listed intentions from the card; skipped when the list is empty.
-                    if !offer.sortedIntentions.isEmpty {
-                        GuideSectionBoundary(verticalSpacing: 0)
-                    }
+                    // Separates the intentions (or the add-first button) from the card.
+                    GuideSectionBoundary(verticalSpacing: 0)
                     GuideSectionLabel(text: "Holy Father’s intention", prominence: .strong)
                     PapalMonthCard(item: papal, isAdded: hasAdoptedSuggestion(papal),
                         onOpen: { papalDetail = papal }, onAdd: { adoptSuggestion(papal) }, onPin: { pinPapalSuggestion(papal) })
