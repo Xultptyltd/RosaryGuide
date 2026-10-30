@@ -397,13 +397,15 @@ private struct OnboardingDots: View {
 
 
 /// Hero animation on the sign-in screen. The composition (600×680 after tools/lottie/extend_rosary_beads.py, 60 fps, frames 0–1584)
-/// feeds the chain down from above the frame one bead at a time until it settles around
-/// frame 1494, then a small sway eases to rest by 1584. It has no idle loop, so it plays
-/// once and holds the settled last frame. With Reduce Motion it shows that frame only.
+/// feeds the chain down from above the frame one bead at a time, a decade (11 beads) per
+/// cycle, then a small sway eases to rest by 1584. The script makes the last frame
+/// identical to frame 0, so it loops forever with no visible seam. With Reduce Motion it
+/// shows that settled frame only.
 struct RosaryBeadsFallPlayer: UIViewRepresentable {
     /// Composition is 600×680 after tools/lottie/extend_rosary_beads.py lengthened the strands.
     static let aspectRatio: CGFloat = 600.0 / 680.0
     static let lastFrame: AnimationFrameTime = 1584
+    static let loopMode: LottieLoopMode = .loop
 
     var plays: Bool
 
@@ -418,7 +420,7 @@ struct RosaryBeadsFallPlayer: UIViewRepresentable {
         animationView.contentMode = .scaleAspectFit
         animationView.backgroundColor = .clear
         animationView.backgroundBehavior = .pauseAndRestore
-        animationView.loopMode = .playOnce
+        animationView.loopMode = Self.loopMode
         animationView.translatesAutoresizingMaskIntoConstraints = false
         for axis in [NSLayoutConstraint.Axis.horizontal, .vertical] {
             animationView.setContentCompressionResistancePriority(.defaultLow, for: axis)
@@ -432,9 +434,7 @@ struct RosaryBeadsFallPlayer: UIViewRepresentable {
             animationView.bottomAnchor.constraint(equalTo: container.bottomAnchor)
         ])
         if plays {
-            animationView.play(fromFrame: 0, toFrame: Self.lastFrame, loopMode: .playOnce) { _ in
-                animationView.currentFrame = Self.lastFrame
-            }
+            animationView.play(fromFrame: 0, toFrame: Self.lastFrame, loopMode: Self.loopMode)
         } else {
             animationView.currentFrame = Self.lastFrame
         }

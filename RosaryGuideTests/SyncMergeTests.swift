@@ -942,5 +942,33 @@ final class RosaryBeadsLottieTests: XCTestCase {
         XCTAssertEqual(json["w"] as? Int, 600)
         XCTAssertEqual(json["h"] as? Int, 680)
         XCTAssertEqual(RosaryBeadsFallPlayer.aspectRatio, 600.0 / 680.0, accuracy: 0.0001)
+        XCTAssertEqual(RosaryBeadsFallPlayer.loopMode, .loop)
+    }
+
+    /// The strand-top copies make the last frame equal frame 0 (one decade fed per cycle),
+    /// so looping has no jump: bead k at the end sits where bead k-11 sat at the start.
+    func testLastFrameMatchesFirstFrameForSeamlessLoop() throws {
+        let url = try XCTUnwrap(Bundle.main.url(forResource: "RosaryBeadsFall", withExtension: "json", subdirectory: "Animations"))
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let layers = try XCTUnwrap(json["layers"] as? [[String: Any]])
+        func keyframes(_ name: String) throws -> [[String: Any]] {
+            let layer = try XCTUnwrap(layers.first { $0["nm"] as? String == name }, name)
+            let ks = try XCTUnwrap(layer["ks"] as? [String: Any])
+            let p = try XCTUnwrap(ks["p"] as? [String: Any])
+            return try XCTUnwrap(p["k"] as? [[String: Any]])
+        }
+        func start(_ name: String) throws -> [Double] { try XCTUnwrap(keyframes(name).first?["s"] as? [Double]) }
+        func end(_ name: String) throws -> [Double] { try XCTUnwrap(keyframes(name).last?["s"] as? [Double]) }
+        let parkedY = -235.0
+        for k in -12...28 {
+            let before = k - 11
+            guard layers.contains(where: { $0["nm"] as? String == "bead \(before)" }) else { continue }
+            let a = try end("bead \(k)"), b = try start("bead \(before)")
+            if a[1] <= parkedY + 5 && b[1] <= parkedY + 5 { continue } // hidden at the feed point
+            XCTAssertEqual(a[0], b[0], accuracy: 1.5, "bead \(k)")
+            XCTAssertEqual(a[1], b[1], accuracy: 1.5, "bead \(k)")
+        }
+        XCTAssertNotNil(layers.first { $0["nm"] as? String == "bead -18" })
+        XCTAssertNotNil(layers.first { $0["nm"] as? String == "bead 29" })
     }
 }
