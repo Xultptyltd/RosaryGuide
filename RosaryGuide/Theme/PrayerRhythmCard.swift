@@ -290,7 +290,8 @@ struct PrayerRhythmCard: View {
     private var sideBySide: some View {
         HStack(alignment: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
-                icon
+                // The month header carries the calendar; the top-left only shows a milestone flame.
+                if rhythm.isMilestone { icon }
                 Spacer(minLength: Metric.iconToText)
                 summaryText
             }
@@ -318,9 +319,10 @@ struct PrayerRhythmCard: View {
     /// Larger text: the month sits under the summary so nothing truncates.
     private var stacked: some View {
         VStack(alignment: .leading, spacing: 0) {
-            icon
+            if rhythm.isMilestone {
+                icon.padding(.bottom, Metric.iconToText)
+            }
             summaryText
-                .padding(.top, Metric.iconToText)
             monthHeader
                 .padding(.top, AppTheme.Space.xl)
             dotGrid
@@ -339,19 +341,11 @@ struct PrayerRhythmCard: View {
     // MARK: Left column
 
     private var icon: some View {
-        Group {
-            if rhythm.isMilestone {
-                // Accent flame for daily/week milestone captions.
-                Image(systemName: "flame.fill")
-                    .guideSymbol(size: 22, weight: .semibold)
-                    .foregroundStyle(palette.accentText)
-                    .symbolRenderingMode(.hierarchical)
-            } else {
-                CalendarCheckGlyph(showsCheck: rhythm.hasPrayed)
-                    .stroke(palette.ink.opacity(isDark ? 0.88 : 0.82),
-                            style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
-            }
-        }
+        // Accent flame for daily/week milestone captions.
+        Image(systemName: "flame.fill")
+            .guideSymbol(size: 22, weight: .semibold)
+            .foregroundStyle(palette.accentText)
+            .symbolRenderingMode(.hierarchical)
         .frame(width: Metric.iconSize.width, height: Metric.iconSize.height)
         .accessibilityHidden(true)
     }
@@ -392,11 +386,34 @@ struct PrayerRhythmCard: View {
                 .font(AppTheme.TypeRole.supportingLabel)
                 .foregroundStyle(palette.textSecondary)
                 .lineLimit(1)
+            Spacer(minLength: AppTheme.Space.sm)
+            // Reads as tappable: the card opens the journey screen.
+            Image(systemName: "chevron.right")
+                .guideSymbol(size: 12, weight: .regular)
+                .foregroundStyle(palette.dim)
+                .accessibilityHidden(true)
         }
+    }
+
+    /// Weekday initials in the grid's order (the user's first weekday leads).
+    private var weekdayInitials: [String] {
+        let calendar = Calendar.current
+        let symbols = calendar.veryShortStandaloneWeekdaySymbols
+        return (0..<7).map { symbols[(calendar.firstWeekday - 1 + $0) % 7] }
     }
 
     private var dotGrid: some View {
         Grid(horizontalSpacing: Metric.dotColumnSpacing, verticalSpacing: Metric.dotRowSpacing) {
+            GridRow {
+                ForEach(0..<7, id: \.self) { column in
+                    Text(weekdayInitials[column])
+                        .font(AppTheme.TypeRole.calendarCaption)
+                        .foregroundStyle(palette.dim)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+            }
+            .accessibilityHidden(true)
             ForEach(rhythm.weeks.indices, id: \.self) { row in
                 GridRow {
                     ForEach(0..<7, id: \.self) { column in
@@ -412,27 +429,12 @@ struct PrayerRhythmCard: View {
         let size = Metric.dotSize
         if let day {
             ZStack {
-                if day.prayed {
-                    // Soft halo, then a bright core fading out to the accent rim.
-                    Circle()
-                        .fill(palette.accent.opacity(isDark ? 0.45 : 0.30))
-                        .frame(width: size + 6, height: size + 6)
-                        .blur(radius: 2.5)
-                    Circle()
-                        .fill(RadialGradient(
-                            colors: [Color.white.opacity(0.95), palette.accent.opacity(0.9), palette.accent],
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: size / 2
-                        ))
-                        .frame(width: size, height: size)
-                } else {
-                    Circle()
-                        .fill(day.isFuture
-                              ? palette.ink.opacity(isDark ? 0.13 : 0.08)
-                              : palette.ink.opacity(isDark ? 0.30 : 0.20))
-                        .frame(width: size, height: size)
-                }
+                // Prayed: calm solid accent. Empty days stay quiet so prayed ones stand out.
+                Circle()
+                    .fill(day.prayed
+                          ? palette.accent
+                          : palette.ink.opacity(day.isFuture ? (isDark ? 0.08 : 0.05) : (isDark ? 0.18 : 0.12)))
+                    .frame(width: size, height: size)
                 if day.isToday {
                     Circle()
                         .strokeBorder(day.prayed ? palette.accent.opacity(0.7) : palette.ink.opacity(0.5), lineWidth: 1)
@@ -443,30 +445,6 @@ struct PrayerRhythmCard: View {
         } else {
             Color.clear.frame(width: size, height: size)
         }
-    }
-}
-
-/// Outline calendar: rounded body, header rule, two ring tabs, and a centred check
-/// when `showsCheck`. Drawn on a 24 x 26 design box and scaled to the frame.
-private struct CalendarCheckGlyph: Shape {
-    var showsCheck = true
-
-    func path(in rect: CGRect) -> Path {
-        let sx = rect.width / 24, sy = rect.height / 26
-        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * sx, y: rect.minY + y * sy) }
-        var path = Path()
-        path.addRoundedRect(
-            in: CGRect(origin: p(0.8, 3.2), size: CGSize(width: 22.4 * sx, height: 22 * sy)),
-            cornerSize: CGSize(width: 5 * sx, height: 5 * sy),
-            style: .continuous
-        )
-        path.move(to: p(0.8, 9.2)); path.addLine(to: p(23.2, 9.2))
-        path.move(to: p(7, 0.8)); path.addLine(to: p(7, 5.4))
-        path.move(to: p(17, 0.8)); path.addLine(to: p(17, 5.4))
-        if showsCheck {
-            path.move(to: p(7.6, 17.2)); path.addLine(to: p(10.6, 20.2)); path.addLine(to: p(16.4, 14.2))
-        }
-        return path
     }
 }
 

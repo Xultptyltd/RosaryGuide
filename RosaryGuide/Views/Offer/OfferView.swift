@@ -175,7 +175,7 @@ struct OfferView: View {
                 Button {
                     openJourney(.milestones)
                 } label: {
-                    PrayerRhythmCard(rhythm: PrayerRhythm(prayedDayStarts: rhythmPrayerDays))
+                    PrayerRhythmCard(rhythm: PrayerRhythm(prayedDayStarts: profileRhythmDays))
                 }
                 .buttonStyle(JourneyCardButtonStyle())
                 .accessibilityHint("Opens your prayer journey")
@@ -531,6 +531,22 @@ struct OfferView: View {
                 }
                 }
             }
+    }
+
+    /// Profile card days. DEBUG `-RGDebugSampleRhythm` adds sample days for screenshots,
+    /// rendering only: nothing is stored or synced.
+    private var profileRhythmDays: Set<TimeInterval> {
+        #if DEBUG
+        if DebugHooks.has("-RGDebugSampleRhythm") {
+            let calendar = Calendar.current
+            let today = calendar.startOfDay(for: Date())
+            let sample = [0, 1, 2, 4, 5, 8, 9, 12, 15, 16, 19, 22].compactMap {
+                calendar.date(byAdding: .day, value: -$0, to: today)?.timeIntervalSince1970
+            }
+            return rhythmPrayerDays.union(sample)
+        }
+        #endif
+        return rhythmPrayerDays
     }
 
     private var rhythmPrayerDays: Set<TimeInterval> {
