@@ -922,3 +922,13 @@ final class SignInLandingTests: XCTestCase {
         XCTAssertNil(AppLanding.still.animation)
     }
 }
+
+final class SignOutAlertTests: XCTestCase {
+    func testWording() {
+        XCTAssertEqual(SignOutAlert.title, "Sign out")
+        XCTAssertEqual(SignOutAlert.message, "Are you sure you want to sign out")
+        XCTAssertEqual(SignOutAlert.cancel, "Cancel")
+        XCTAssertEqual(SignOutAlert.confirm, "Sign out")
+        XCTAssertFalse(SignOutAlert.message.hasSuffix("."))
+    }
+}

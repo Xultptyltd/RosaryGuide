@@ -28,6 +28,7 @@ struct SettingsView: View {
     /// Combined MetricKit export for the share sheet; nil hides the row.
     @State private var diagnosticsExport: URL?
     @State private var confirmClearAppHistory = false
+    @State private var confirmSignOut = false
     @State private var didClearAppHistory = false
     @State private var confirmDeleteAccount = false
     @State private var didDeleteAccount = false
@@ -61,6 +62,18 @@ struct SettingsView: View {
             Button("Bug") { composeSupportEmail(.bug) }
             Button("Translation") { composeSupportEmail(.translation) }
             Button("Cancel", role: .cancel) {}
+        }
+        .alert(SignOutAlert.title, isPresented: $confirmSignOut) {
+            Button(SignOutAlert.cancel, role: .cancel) {}
+            Button(SignOutAlert.confirm, role: .destructive) {
+                // Let the alert finish closing, then take the instant path: the app closes
+                // Settings without animation and returns to onboarding.
+                DispatchQueue.main.asyncAfter(deadline: .now() + SignOutAlert.settle) {
+                    auth.signOut()
+                }
+            }
+        } message: {
+            Text(SignOutAlert.message)
         }
         .alert("Clear app history?", isPresented: $confirmClearAppHistory) {
             Button("Cancel", role: .cancel) {}
@@ -223,8 +236,7 @@ struct SettingsView: View {
                         // Account-only rows appear only while signed in.
                         if auth.isSignedIn {
                             SettingsActionRow(title: "Sign out", icon: "rectangle.portrait.and.arrow.right") {
-                                // The app closes Settings instantly and returns to onboarding.
-                                auth.signOut()
+                                confirmSignOut = true
                             }
                             #if DEBUG
                             .task {
@@ -1771,4 +1783,14 @@ enum AccountDeletion {
             group.cancelAll()
         }
     }
+}
+
+/// The native confirmation shown before signing out.
+enum SignOutAlert {
+    static let title = "Sign out"
+    static let message = "Are you sure you want to sign out"
+    static let cancel = "Cancel"
+    static let confirm = "Sign out"
+    /// Time for the alert to close before the app swaps to onboarding.
+    static let settle: Double = 0.35
 }
