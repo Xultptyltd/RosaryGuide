@@ -235,6 +235,17 @@ private struct OnboardingSignInView: View {
                             .frame(width: SignInLayout.beadsWidth(panelHeight: panelHeight))
                             .padding(.bottom, SignInLayout.loopBottomPadding)
                     }
+                    // Marian blue fade under the status bar: the time, Dynamic Island and battery
+                    // sit on clean blue and the strands emerge softly just below them.
+                    .overlay(alignment: .top) {
+                        LinearGradient(
+                            stops: [.init(color: AppTheme.marianBlue, location: 0),
+                                    .init(color: AppTheme.marianBlue, location: 0.4),
+                                    .init(color: AppTheme.marianBlue.opacity(0), location: 1)],
+                            startPoint: .top, endPoint: .bottom)
+                            .frame(height: geo.safeAreaInsets.top + AppTheme.Space.xl)
+                            .allowsHitTesting(false)
+                    }
                 .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: AppTheme.panelRadius,
                                                   bottomTrailingRadius: AppTheme.panelRadius,
                                                   style: .continuous))
