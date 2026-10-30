@@ -45,11 +45,16 @@ struct MysteryAssignment: Equatable {
     var reason: String
     var season: LiturgicalSeason
     var feast: DatedFeast?
+    /// Advent and Lent Sundays: the seasonal set, offered the same way as a feast's.
+    var seasonalSunday: SeasonalSundaySuggestion? = nil
 
+    /// A major feast's set wins; otherwise an Advent or Lent Sunday's set.
     var feastSuggestion: MysterySetKind? {
-        guard let feast = feast?.feast, feast.recommendsOnHome,
-              let suggested = feast.suggestedMysterySet, suggested != set else { return nil }
-        return suggested
+        if let feast = feast?.feast, feast.recommendsOnHome, let suggested = feast.suggestedMysterySet {
+            return suggested != set ? suggested : nil
+        }
+        guard let seasonalSunday, seasonalSunday.set != set else { return nil }
+        return seasonalSunday.set
     }
 
     /// The set Home and the Pray hub offer by default: the feast's recommended set when it
@@ -69,10 +74,34 @@ struct MysteryAssignment: Equatable {
     /// Home's feast line, split so the set name can be an inline link:
     /// "<today> Many pray the <setName> <occasion>."
     var feastLine: FeastLine? {
-        guard let suggested = feastSuggestion, let celebration = feast?.feast.celebration else { return nil }
-        return FeastLine(lead: "\(celebration.today) Many pray the ",
+        guard let suggested = feastSuggestion else { return nil }
+        if let feast = feast?.feast, feast.recommendsOnHome {
+            guard let celebration = feast.celebration else { return nil }
+            return FeastLine(lead: "\(celebration.today) Many pray the ",
+                             setName: "\(suggested.shortName) Mysteries",
+                             tail: " \(celebration.occasion).")
+        }
+        guard let seasonalSunday else { return nil }
+        return FeastLine(lead: "Many pray the ",
                          setName: "\(suggested.shortName) Mysteries",
-                         tail: " \(celebration.occasion).")
+                         tail: " \(seasonalSunday.occasion)")
+    }
+}
+
+/// Some pray the Joyful Mysteries on Advent Sundays and the Sorrowful on Lent Sundays
+/// (Palm Sunday included). The weekday set stays Glorious; this is only a suggestion.
+struct SeasonalSundaySuggestion: Equatable {
+    var set: MysterySetKind
+    /// Ends the line, e.g. "on Sundays of Advent".
+    var occasion: String
+
+    static func on(_ date: Date, season: LiturgicalSeason, calendar: Calendar = LiturgicalCalendar.gregorian) -> SeasonalSundaySuggestion? {
+        guard calendar.component(.weekday, from: date) == 1 else { return nil }
+        switch season {
+        case .advent: return SeasonalSundaySuggestion(set: .joyful, occasion: "on Sundays of Advent")
+        case .lent: return SeasonalSundaySuggestion(set: .sorrowful, occasion: "on Sundays of Lent")
+        default: return nil
+        }
     }
 }
 
@@ -113,7 +142,8 @@ enum MysteryCalendar {
             set = .joyful
         }
 
-        return MysteryAssignment(set: set, reason: set.themeSummary, season: season, feast: feast)
+        return MysteryAssignment(set: set, reason: set.themeSummary, season: season, feast: feast,
+                                 seasonalSunday: SeasonalSundaySuggestion.on(date, season: season, calendar: calendar))
     }
 
     /// Week strip starting on the user's first weekday (Monday in Australia), the same

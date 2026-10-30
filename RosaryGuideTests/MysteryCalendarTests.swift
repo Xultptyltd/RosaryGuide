@@ -528,3 +528,71 @@ final class LearnAndHistoryDetailTests: XCTestCase {
         XCTAssertTrue(decade.facts.first { $0.label == "Decade" }?.value.hasPrefix("III") == true)
     }
 }
+
+final class SeasonalSundaySuggestionTests: XCTestCase {
+    private func on(_ y: Int, _ m: Int, _ d: Int) -> MysteryAssignment {
+        MysteryCalendar.assignment(on: LiturgicalCalendar.date(year: y, month: m, day: d)!)
+    }
+
+    private func assertSuggests(_ expected: MysterySetKind?, _ y: Int, _ m: Int, _ d: Int, line: UInt = #line) {
+        let a = on(y, m, d)
+        XCTAssertEqual(LiturgicalCalendar.gregorian.component(.weekday, from: LiturgicalCalendar.date(year: y, month: m, day: d)!), 1, "not a Sunday", line: line)
+        XCTAssertEqual(a.set, .glorious, "Sunday default stays Glorious", line: line)
+        XCTAssertEqual(a.feastSuggestion, expected, "\(y)-\(m)-\(d)", line: line)
+        XCTAssertEqual(a.defaultSet(prefersWeekday: false), expected ?? .glorious, line: line)
+        XCTAssertEqual(a.defaultSet(prefersWeekday: true), .glorious, line: line)
+    }
+
+    func testAdventSundaysSuggestJoyful() {
+        assertSuggests(.joyful, 2026, 11, 29)  // 1st Sunday of Advent 2026
+        assertSuggests(.joyful, 2026, 12, 20)  // 4th Sunday of Advent 2026
+        assertSuggests(nil, 2026, 11, 22)      // Christ the King, Sunday before Advent
+        assertSuggests(.joyful, 2025, 11, 30)  // 1st Sunday of Advent 2025
+        assertSuggests(.joyful, 2025, 12, 21)  // 4th Sunday of Advent 2025
+        assertSuggests(nil, 2025, 11, 23)
+        assertSuggests(.joyful, 2027, 11, 28)  // 1st Sunday of Advent 2027
+        assertSuggests(.joyful, 2027, 12, 19)  // 4th Sunday of Advent 2027
+        assertSuggests(.joyful, 2028, 12, 3)   // 1st Sunday of Advent 2028
+        assertSuggests(.joyful, 2028, 12, 24)  // 4th Sunday is Christmas Eve
+    }
+
+    func testLentSundaysSuggestSorrowfulThroughPalmSunday() {
+        assertSuggests(.sorrowful, 2026, 2, 22) // 1st Sunday of Lent 2026
+        assertSuggests(.sorrowful, 2026, 3, 29) // Palm Sunday 2026
+        assertSuggests(nil, 2026, 4, 5)         // Easter Sunday 2026
+        assertSuggests(nil, 2026, 2, 15)        // Sunday before Ash Wednesday
+        assertSuggests(.sorrowful, 2025, 3, 9)  // 1st Sunday of Lent 2025
+        assertSuggests(.sorrowful, 2025, 4, 13) // Palm Sunday 2025
+        assertSuggests(nil, 2025, 4, 20)        // Easter Sunday 2025
+        assertSuggests(.sorrowful, 2027, 2, 14) // 1st Sunday of Lent 2027
+        assertSuggests(.sorrowful, 2027, 3, 21) // Palm Sunday 2027
+        assertSuggests(nil, 2027, 3, 28)        // Easter Sunday 2027
+    }
+
+    func testWeekdaysInAdventAndLentAreUnchanged() {
+        XCTAssertNil(on(2026, 12, 1).feastSuggestion) // Advent Tuesday
+        XCTAssertNil(on(2026, 3, 4).feastSuggestion)  // Lent Wednesday
+    }
+
+    func testSeasonalLineCopy() throws {
+        let advent = try XCTUnwrap(on(2026, 11, 29).feastLine)
+        XCTAssertEqual(advent.text, "Many pray the Joyful Mysteries on Sundays of Advent")
+        XCTAssertEqual(advent.setName, "Joyful Mysteries")
+        let lent = try XCTUnwrap(on(2026, 3, 29).feastLine)
+        XCTAssertEqual(lent.text, "Many pray the Sorrowful Mysteries on Sundays of Lent")
+        XCTAssertFalse(advent.text.contains("."))
+    }
+
+    /// A major feast keeps its own set and line on a seasonal Sunday.
+    func testFeastTakesPrecedenceOverSeasonalSunday() {
+        var a = on(2026, 11, 29)
+        let christmas = FeastCatalog.dated(in: 2026, calendar: LiturgicalCalendar.gregorian).first { $0.feast.id == "christmas" }
+        a.feast = christmas
+        XCTAssertEqual(a.feastSuggestion, .joyful)
+        XCTAssertEqual(a.feastLine?.text.hasPrefix("Today we celebrate the birth of our Lord."), true)
+        let easter = FeastCatalog.dated(in: 2026, calendar: LiturgicalCalendar.gregorian).first { $0.feast.id == "easter" }
+        var lent = on(2026, 3, 29)
+        lent.feast = easter
+        XCTAssertNil(lent.feastSuggestion) // the feast's own set (Glorious) is already the Sunday set
+    }
+}

@@ -349,8 +349,9 @@ struct HomeView: View {
             .animation(reduceMotion ? nil : MotionTokens.selection, value: currentSet)
 
             // On a feast with its own set, the feast paragraph takes the subtitle's place.
-            if let feast = assignment.feast, showsFeastLine {
-                feastOffer(feast)
+            // Advent and Lent Sundays use the same paragraph.
+            if showsFeastLine {
+                feastOffer()
                     .padding(.top, AppTheme.Space.md)
             } else {
                 Text(currentSet.themeSummary)
@@ -848,7 +849,7 @@ struct HomeView: View {
     }
 
     @ViewBuilder
-    private func feastOffer(_ feast: DatedFeast) -> some View {
+    private func feastOffer() -> some View {
         if let line = assignment.feastLine, let suggested = assignment.feastSuggestion, showsFeastLine {
             let showingFeastSet = currentSet == suggested
             Text(feastLineText(line, showingFeastSet: showingFeastSet))
