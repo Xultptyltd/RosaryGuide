@@ -80,7 +80,7 @@ struct RootView: View {
     @Environment(AuthStore.self) private var auth
     @Environment(\.palette) private var palette
     @State private var prayLaunch: PrayLaunch?
-    @State private var tab: AppTab = .today
+    @State private var tab: AppTab = DebugHooks.once("-RGDebugProfileTab") ? .intentions : .today
 
     var body: some View {
         rootTabs
@@ -149,4 +149,29 @@ struct RootView: View {
     .environment(OfferStore())
     .environment(AuthStore())
     .environment(DayClock())
+}
+
+/// Launch-argument hooks for reproducing transitions in the simulator. Always false in release.
+enum DebugHooks {
+    static func has(_ flag: String) -> Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains(flag)
+        #else
+        false
+        #endif
+    }
+
+    #if DEBUG
+    nonisolated(unsafe) private static var used: Set<String> = []
+    #endif
+    /// True only the first time it's asked, so a rebuilt view starts from its real default.
+    static func once(_ flag: String) -> Bool {
+        #if DEBUG
+        guard has(flag), !used.contains(flag) else { return false }
+        used.insert(flag)
+        return true
+        #else
+        false
+        #endif
+    }
 }

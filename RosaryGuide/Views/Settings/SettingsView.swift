@@ -223,9 +223,16 @@ struct SettingsView: View {
                         // Account-only rows appear only while signed in.
                         if auth.isSignedIn {
                             SettingsActionRow(title: "Sign out", icon: "rectangle.portrait.and.arrow.right") {
+                                // The app closes Settings instantly and returns to onboarding.
                                 auth.signOut()
-                                dismiss()
                             }
+                            #if DEBUG
+                            .task {
+                                guard DebugHooks.has("-RGDebugSignOut") else { return }
+                                try? await Task.sleep(for: .seconds(3))
+                                auth.debugSetSignedIn(false, interactive: false)
+                            }
+                            #endif
                         }
                         SettingsActionRow(title: "Clear app history", icon: "trash", destructive: true) {
                             confirmClearAppHistory = true

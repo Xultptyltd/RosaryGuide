@@ -339,6 +339,14 @@ final class AuthStore: NSObject {
         endWork()
     }
 
+    #if DEBUG
+    /// Debug builds only: flips the signed-in state without Firebase, to reproduce transitions.
+    func debugSetSignedIn(_ signedIn: Bool, interactive: Bool) {
+        if signedIn && interactive { interactiveSignIns += 1 }
+        userID = signedIn ? "debug-user" : nil
+    }
+    #endif
+
     private func apply(user: User?) {
         userID = user?.uid
         // Guests never call Firebase, so App Check stays idle for them (Info.plist turns

@@ -83,18 +83,23 @@ struct RosaryGuideApp: App {
                 guard !plan.isEmpty else { return }
                 Task { await NotificationService.reschedule(plan) }
             }
-            .onChange(of: auth.interactiveSignIns) { previous, count in
-                guard SignInLanding.landsOnHome(previous: previous, count: count) else { return }
-                // After the sign-in screen's tick, from any entry point: Home, nothing on top.
-                DispatchQueue.main.asyncAfter(deadline: .now() + SignInLanding.hold) {
-                    // Instant: no fade, scale or slide into Home.
-                    var still = Transaction(animation: nil)
-                    still.disablesAnimations = true
-                    withTransaction(still) {
-                        didCompleteOnboarding = true
-                        rootGeneration += 1
-                    }
+            #if DEBUG
+            .task {
+                if DebugHooks.has("-RGDebugSignedIn") {
+                    try? await Task.sleep(for: .seconds(1))
+                    auth.debugSetSignedIn(true, interactive: false)
                 }
+                if DebugHooks.has("-RGDebugSignIn") {
+                    try? await Task.sleep(for: .seconds(8))
+                    auth.debugSetSignedIn(true, interactive: true)
+                }
+            }
+            #endif
+            .onChange(of: AppLanding.shared.homeRequests) { _, _ in
+                // Profile's sign-in: Home with nothing on top. Covers go first, without
+                // animation, so none is left behind when the tabs are rebuilt.
+                AppLanding.dismissPresentedInstantly()
+                withTransaction(AppLanding.still) { rootGeneration += 1 }
             }
             .onOpenURL { url in
                 _ = auth.handleOpenURL(url)
@@ -133,9 +138,11 @@ struct RosaryGuideApp: App {
                     // Signing out or deleting the account goes back to the sign-in screen, in
                     // place: no cross-fade (it overlapped the tab content fading out and read
                     // as a glitch).
-                    var still = Transaction(animation: nil)
-                    still.disablesAnimations = true
-                    withTransaction(still) { didCompleteOnboarding = false }
+                    // Close Settings (or any cover) first, without animation. Swapping the
+                    // tabs out from under an open cover left it orphaned, and UIKit shrank
+                    // it into the bottom-left corner.
+                    AppLanding.dismissPresentedInstantly()
+                    withTransaction(AppLanding.still) { didCompleteOnboarding = false }
                 }
             }
         }
@@ -157,9 +164,27 @@ enum LaunchGate {
     }
 }
 
-/// After any sign-in or new account the app returns to Home with nothing on top.
-enum SignInLanding {
-    /// Long enough for the sign-in button's tick (shown for 0.6s) to be seen.
-    static let hold: Double = 0.7
-    static func landsOnHome(previous: Int, count: Int) -> Bool { count > previous }
+/// A sign-in or new account from Profile lands on Home with nothing on top. Sign-ins
+/// from Settings stay on Settings; onboarding opens the app on Home anyway.
+@MainActor @Observable
+final class AppLanding {
+    static let shared = AppLanding()
+    private(set) var homeRequests = 0
+    func requestHome() { homeRequests += 1 }
+
+    static var still: Transaction {
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        return transaction
+    }
+
+    /// Closes every sheet and full-screen cover at once, with no animation.
+    static func dismissPresentedInstantly() {
+        let windows = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+        for window in windows where window.rootViewController?.presentedViewController != nil {
+            window.rootViewController?.dismiss(animated: false)
+        }
+    }
 }

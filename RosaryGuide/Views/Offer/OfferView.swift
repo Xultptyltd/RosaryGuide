@@ -75,6 +75,15 @@ struct OfferView: View {
                 }
                 .sharedBackgroundVisibility(.hidden)
             }
+            .task {
+                if DebugHooks.has("-RGDebugOpenSignIn") {
+                    try? await Task.sleep(for: .seconds(5))
+                    showSignIn = true
+                }
+                guard DebugHooks.has("-RGDebugOpenSettings") else { return }
+                try? await Task.sleep(for: .seconds(5))
+                showSettingsDrawer = true
+            }
             .fullScreenCover(isPresented: $showSettingsDrawer) {
                 HomeSettingsDrawer(isPresented: $showSettingsDrawer)
                     .environment(settings)
@@ -235,9 +244,11 @@ struct OfferView: View {
             // Reuses the onboarding sign-in step. Held here, not on the backup card: the card
             // goes the moment the account exists, which used to close this before its tick.
             .fullScreenCover(isPresented: $showSignIn) {
-                // After a sign-in the app's Home landing removes this instantly; dismissing
-                // here would slide the cover down first.
-                OnboardingView(startsAtSignIn: true) { if !auth.isSignedIn { showSignIn = false } }
+                // Signed in (after the tick): Home, with this closed instantly by the landing.
+                // Continue without: just close.
+                OnboardingView(startsAtSignIn: true) {
+                    if auth.isSignedIn { AppLanding.shared.requestHome() } else { showSignIn = false }
+                }
             }
         }
     }

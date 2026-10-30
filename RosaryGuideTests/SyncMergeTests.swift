@@ -908,14 +908,17 @@ final class SignInLandingTests: XCTestCase {
         XCTAssertTrue(LaunchGate.showsApp(didCompleteOnboarding: false, isSignedIn: true, signedInThisLaunch: false))
     }
 
-    func testEverySignInLandsOnHome() {
-        XCTAssertTrue(SignInLanding.landsOnHome(previous: 0, count: 1))
-        XCTAssertTrue(SignInLanding.landsOnHome(previous: 1, count: 2))
-        XCTAssertFalse(SignInLanding.landsOnHome(previous: 1, count: 1))
+    @MainActor
+    func testEachHomeRequestCounts() {
+        let landing = AppLanding()
+        landing.requestHome()
+        landing.requestHome()
+        XCTAssertEqual(landing.homeRequests, 2)
     }
 
-    func testHoldShowsTheTick() {
-        XCTAssertGreaterThanOrEqual(SignInLanding.hold, 0.6)
-        XCTAssertLessThan(SignInLanding.hold, 1.2)
+    @MainActor
+    func testLandingIsInstant() {
+        XCTAssertTrue(AppLanding.still.disablesAnimations)
+        XCTAssertNil(AppLanding.still.animation)
     }
 }
