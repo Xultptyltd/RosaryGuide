@@ -179,9 +179,11 @@ private struct OnboardingPageView: View {
 enum SignInLayout {
     /// How far the beads are raised beyond the top edge, so the loop sits higher and the
     /// quote has room. Only strand (already full of beads) moves off screen.
-    static func beadsLift(height: CGFloat) -> CGFloat { (height * 0.09).rounded() }
-    /// Home's title size on compact widths (AppTheme.homeTitleSize step for ≤376pt).
-    static let quoteSize: CGFloat = AppTheme.homeTitleSize(width: 375)
+    static func beadsLift(height: CGFloat) -> CGFloat { (height * 0.055).rounded() }
+    /// One design-system step below Home's compact title (38.4): the headingPrimary size (32).
+    static let quoteSize: CGFloat = 32
+    /// How far below the status bar the top fade reaches full opacity.
+    static let topFadeExtra: CGFloat = 50
 }
 
 private struct OnboardingSignInView: View {
@@ -216,6 +218,15 @@ private struct OnboardingSignInView: View {
                     .padding(.horizontal, AppTheme.Space.lg)
                     // Pull the player up under the status bar in layout too (not just drawing),
                     // so the quote block centres in the space under the loop.
+                    // Fade the strands out under the status bar so they don't compete with its icons.
+                    .mask(
+                        VStack(spacing: 0) {
+                            Color.clear.frame(height: SignInLayout.beadsLift(height: geo.size.height))
+                            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                                .frame(height: geo.safeAreaInsets.top + SignInLayout.topFadeExtra)
+                            Color.black
+                        }
+                    )
                     .padding(.top, -geo.safeAreaInsets.top - SignInLayout.beadsLift(height: geo.size.height))
                     .accessibilityHidden(true)
 
@@ -252,7 +263,7 @@ private struct OnboardingSignInView: View {
                         .disabled(auth.isWorking || succeeded)
                         .accessibilityLabel(auth.isSigningInWithApple ? "Signing in with Apple" : "Continue with Apple")
 
-                        OnboardingAuthButton(title: auth.isSigningInWithGoogle ? "Signing in" : "Continue with Google", letter: "G", filled: false, status: buttonState(.google)) {
+                        OnboardingAuthButton(title: auth.isSigningInWithGoogle ? "Signing in" : "Continue with Google", assetImage: "GoogleG", filled: false, status: buttonState(.google)) {
                             lastProvider = .google
                             auth.signInWithGoogle()
                         }
@@ -340,6 +351,8 @@ private struct OnboardingAuthButton: View {
     var title: String
     var systemImage: String?
     var letter: String?
+    /// Full-colour vector asset (rendered as original, not tinted).
+    var assetImage: String?
     var filled: Bool
     var status: Status = .idle
     var action: () -> Void
@@ -361,6 +374,13 @@ private struct OnboardingAuthButton: View {
                 } else if let systemImage {
                     Image(systemName: systemImage)
                         .guideSymbol(size: 18, weight: .semibold)
+                } else if let assetImage {
+                    Image(assetImage)
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 18, height: 18)
+                        .accessibilityHidden(true)
                 } else if let letter {
                     Text(letter)
                         .font(AppTheme.TypeRole.body(weight: .semibold))
