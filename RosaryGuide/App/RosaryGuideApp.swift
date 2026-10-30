@@ -131,10 +131,12 @@ struct RosaryGuideApp: App {
                     // screen finishes there, after its tick.
                     if auth.interactiveSignIns == 0 { didCompleteOnboarding = true }
                 } else if LaunchGate.returnsToOnboarding(previousUserID: previous, userID: userID) {
-                    // Signing out or deleting the account goes back to the sign-in screen.
-                    withAnimation(.easeOut(duration: 0.28)) {
-                        didCompleteOnboarding = false
-                    }
+                    // Signing out or deleting the account goes back to the sign-in screen, in
+                    // place: no cross-fade (it overlapped the tab content fading out and read
+                    // as a glitch).
+                    var still = Transaction(animation: nil)
+                    still.disablesAnimations = true
+                    withTransaction(still) { didCompleteOnboarding = false }
                 }
             }
         }
