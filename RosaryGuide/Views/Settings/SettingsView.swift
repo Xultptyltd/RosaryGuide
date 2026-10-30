@@ -1272,6 +1272,7 @@ private struct RosarySettingsRows: View {
         VStack(alignment: .leading, spacing: 0) {
             DividedRows {
                 SettingsToggleRow(title: "Choose intentions", isOn: $settings.rosaryConfig.intentionsStep)
+                SettingsToggleRow(title: "Show rosary beads", isOn: $settings.rosaryConfig.showBeads)
             }
 
             GuideSectionBoundary()

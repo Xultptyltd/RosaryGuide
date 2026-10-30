@@ -409,6 +409,7 @@ extension RosaryConfig {
         memorare = map["memorare"] as? Bool ?? memorare
         saintMichael = map["saintMichael"] as? Bool ?? saintMichael
         intentionsStep = map["intentionsStep"] as? Bool ?? intentionsStep
+        showBeads = map["showBeads"] as? Bool ?? showBeads
     }
 
     func firestoreData() -> [String: Any] {
@@ -419,7 +420,8 @@ extension RosaryConfig {
             "closingPrayers": closingPrayers,
             "memorare": memorare,
             "saintMichael": saintMichael,
-            "intentionsStep": intentionsStep
+            "intentionsStep": intentionsStep,
+            "showBeads": showBeads
         ]
     }
 }

@@ -193,6 +193,8 @@ struct PrayView: View {
             }
         }
         .foregroundStyle(palette.ink)
+        // Beads toggled live (in-Rosary sheet): a calm fade, not a jump.
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: settings.currentRosaryConfig.showBeads)
         .onChange(of: settings.currentRosaryConfig) { _, config in
             applyLiveConfig(config)
         }
@@ -200,6 +202,9 @@ struct PrayView: View {
             guard !didConfigure else { return }
             didConfigure = true
             if DebugHooks.has("-RGDebugRosaryFlowSettings") { showingRosarySettings = true }
+            // DEBUG-only (DebugHooks.has is false in Release): screenshot the beads on / off.
+            if DebugHooks.has("-RGDebugHideBeads") { settings.rosaryConfig.showBeads = false }
+            if DebugHooks.has("-RGDebugShowBeads") { settings.rosaryConfig.showBeads = true }
             if case .fresh(let set, _, _) = launch, sessionStore.resumableSession != nil {
                 freshSetPending = set
                 confirmReplace = true
@@ -781,6 +786,7 @@ struct PrayView: View {
             } action: { height in
                 if height > 1 { prayerBeadShelfHeight = height }
             }
+            .transition(.opacity)
     }
 
     /// Outer ~15% of the pray column steps back / forward (was 25%; narrowed so body stays tappable).
@@ -1246,7 +1252,9 @@ struct PrayView: View {
     }
 
     private func shouldShowBeads(_ step: RosaryStep) -> Bool {
-        language != .bilingual && !step.isPlate && !step.isFinis && step.kind != .completion
+        // "Show rosary beads" off: the shelf drops out and the column rebalances around the text.
+        settings.currentRosaryConfig.showBeads
+            && language != .bilingual && !step.isPlate && !step.isFinis && step.kind != .completion
     }
 
     // MARK: - Finis

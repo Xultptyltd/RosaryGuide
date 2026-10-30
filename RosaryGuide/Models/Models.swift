@@ -658,6 +658,8 @@ struct RosaryConfig: Codable, Equatable, Hashable, Sendable {
     var saintMichael = false
     /// The "Offer this Rosary for" step after the Sign of the Cross.
     var intentionsStep = true
+    /// The virtual bead strand in the prayer flow. Display only; doesn't change the steps.
+    var showBeads = true
 
     /// Matches the fixed sequence from before this setting existed.
     static let `default` = RosaryConfig()
@@ -667,7 +669,7 @@ struct RosaryConfig: Codable, Equatable, Hashable, Sendable {
     enum CodingKeys: String, CodingKey {
         // A stored `showScripture` from 2c2662c is ignored; scripture is always shown.
         case translation, fatimaPrayer, oSacrament, closingPrayers
-        case memorare, saintMichael, intentionsStep
+        case memorare, saintMichael, intentionsStep, showBeads
         // A stored `openingIntentionLines` is ignored; the lines are always shown.
     }
 
@@ -684,6 +686,7 @@ struct RosaryConfig: Codable, Equatable, Hashable, Sendable {
         memorare = bool(.memorare, d.memorare)
         saintMichael = bool(.saintMichael, d.saintMichael)
         intentionsStep = bool(.intentionsStep, d.intentionsStep)
+        showBeads = bool(.showBeads, d.showBeads)
     }
 }
 

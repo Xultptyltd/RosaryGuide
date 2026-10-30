@@ -910,6 +910,39 @@ final class RosarySettingsSheetTests: XCTestCase {
         XCTAssertTrue(settings.currentRosaryConfig.saintMichael)
     }
 
+    func testShowBeadsDefaultsOnIncludingOldSavedData() throws {
+        XCTAssertTrue(RosaryConfig.default.showBeads)
+        let old = try JSONDecoder().decode(RosaryConfig.self, from: Data(#"{"memorare":true}"#.utf8))
+        XCTAssertTrue(old.showBeads)
+        XCTAssertTrue(old.memorare)
+        XCTAssertTrue(RosaryConfig(firestore: ["memorare": true]).showBeads)
+    }
+
+    func testShowBeadsEncodeDecodeAndFirestoreRoundTrip() throws {
+        var config = RosaryConfig()
+        config.showBeads = false
+        let json = try JSONDecoder().decode(RosaryConfig.self, from: JSONEncoder().encode(config))
+        XCTAssertFalse(json.showBeads)
+        XCTAssertEqual(config.firestoreData()["showBeads"] as? Bool, false)
+        XCTAssertEqual(RosaryConfig(firestore: config.firestoreData()), config)
+    }
+
+    func testShowBeadsPersistsAndResetTurnsItBackOn() {
+        let defaults = freshDefaults()
+        let settings = SettingsStore(defaults: defaults)
+        settings.rosaryConfig.showBeads = false
+        XCTAssertFalse(SettingsStore(defaults: defaults).currentRosaryConfig.showBeads)
+        settings.rosaryConfig = .default
+        XCTAssertTrue(settings.currentRosaryConfig.showBeads)
+    }
+
+    func testShowBeadsDoesNotChangeTheSteps() {
+        var config = RosaryConfig()
+        config.showBeads = false
+        XCTAssertEqual(RosarySequenceBuilder.build(set: .joyful, config: config).map(\.kind),
+                       RosarySequenceBuilder.build(set: .joyful, config: RosaryConfig()).map(\.kind))
+    }
+
     func testSaintMichaelSitsAfterClosingPrayersBeforeFinalSignOfTheCross() {
         var config = RosaryConfig()
         config.saintMichael = true

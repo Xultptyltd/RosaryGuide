@@ -21,6 +21,7 @@
       "memorare": true,
       "oSacrament": true,
       "saintMichael": false,
+      "showBeads": true,
       "translation": "douayRheims"
     },
     "startedAt": { "__timestamp": true },
