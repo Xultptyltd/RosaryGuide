@@ -954,8 +954,8 @@ final class RosarySettingsSheetTests: XCTestCase {
         XCTAssertTrue(clock.isRunning)
     }
 
-    /// End rosary in the sheet uses the close path: bank the time and pause.
-    func testEndingFromSheetPausesLikeClose() {
+    /// Closing the Rosary (header ✕) banks the time and pauses.
+    func testClosingPausesAndBanksTime() {
         var clock = ActivePrayerClock()
         clock.resume(at: t0)
         XCTAssertEqual(clock.take(at: t0.addingTimeInterval(300), keepRunning: false), 300)

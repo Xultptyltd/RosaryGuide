@@ -69,7 +69,6 @@ struct PrayView: View {
     @State private var didConfigure = false
     @State private var showingMichael = false
     @State private var showingRosarySettings = false
-    @State private var endAfterSettingsSheet = false
     /// Saint Michael after the Rosary keeps its own English / Latin / Both choice.
     @State private var michaelLanguage: PrayerLanguage?
     @State private var michaelContentHeight: CGFloat = 0
@@ -242,15 +241,9 @@ struct PrayView: View {
                 if value.translation.width > 40 { retreat() }
             }
         )
-        .sheet(isPresented: $showingRosarySettings, onDismiss: {
-            // Leave only once the sheet is gone, so the two dismissals don't collide.
-            if endAfterSettingsSheet {
-                endAfterSettingsSheet = false
-                closePrayerFlow()
-            }
-        }) {
+        .sheet(isPresented: $showingRosarySettings) {
             // Timing keeps running underneath: the Rosary is still open.
-            RosarySettingsSheet(onEndRosary: { endAfterSettingsSheet = true })
+            RosarySettingsSheet()
         }
         .alert("Start a new rosary?", isPresented: $confirmReplace) {
             Button("Replace saved place", role: .destructive) {

@@ -1301,20 +1301,13 @@ private struct RosarySettingsRows: View {
 struct RosarySettingsSheet: View {
     @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
-    /// Leaves the Rosary the same way as the close button.
-    let onEndRosary: () -> Void
 
     var body: some View {
         NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
+                    // Leaving the Rosary is the header's close button, not a row here.
                     RosarySettingsRows()
-                    GuideSectionBoundary()
-                    PillButton(title: "End rosary", filled: false) {
-                        dismiss()
-                        onEndRosary()
-                    }
-                    .accessibilityHint("Saves your place and leaves the Rosary")
                 }
                 .padding(.horizontal, AppTheme.gutter)
                 .padding(.top, AppTheme.Space.lg)
@@ -1329,7 +1322,7 @@ struct RosarySettingsSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
 }
