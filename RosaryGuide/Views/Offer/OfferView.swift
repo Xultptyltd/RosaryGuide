@@ -97,6 +97,10 @@ struct OfferView: View {
                     try? await Task.sleep(for: .seconds(5))
                     showSignIn = true
                 }
+                if DebugHooks.has("-RGDebugOpenJourney") {
+                    try? await Task.sleep(for: .seconds(5))
+                    openJourney(.milestones)
+                }
                 guard DebugHooks.has("-RGDebugOpenSettings") else { return }
                 try? await Task.sleep(for: .seconds(5))
                 showSettingsDrawer = true
@@ -166,20 +170,15 @@ struct OfferView: View {
     private var profileContent: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                // Rhythm at a glance; the journey screen opens on Milestones, where the
+                // stage card ("Growing in prayer") now sits at the top.
                 Button {
                     openJourney(.milestones)
                 } label: {
-                    let progress = sessionStore.journeyMilestones
-                    VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                        profileRow(title: milestoneStage.title, detail: "\(progress.earnedCount) of \(progress.items.count) milestones", symbol: "leaf")
-                        ProgressView(value: Double(progress.earnedCount), total: Double(max(1, progress.items.count)))
-                            .tint(palette.accent)
-                            .accessibilityLabel("Milestones earned")
-                    }
-                    .padding(AppTheme.Space.lg)
-                    .guideCard(fill: palette.surface)
+                    PrayerRhythmCard(rhythm: PrayerRhythm(prayedDayStarts: rhythmPrayerDays))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(JourneyCardButtonStyle())
+                .accessibilityHint("Opens your prayer journey")
 
                 GuideSectionBoundary(verticalSpacing: 0)
 
@@ -298,20 +297,6 @@ struct OfferView: View {
             Text("\(count)").font(AppTheme.TypeRole.headingPrimary).foregroundStyle(palette.ink)
             Text(caption).font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim)
         }.frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func profileRow(title: String, detail: String, symbol: String, eyebrow: String? = nil) -> some View {
-        HStack(spacing: AppTheme.Space.md) {
-            Image(systemName: symbol).guideSymbol(size: 25, weight: .regular)
-                .foregroundStyle(palette.accentText)
-                .frame(width: 56, height: 56).background(palette.accentTint, in: Circle())
-            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                if let eyebrow { Text(eyebrow).font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim) }
-                Text(title).font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.ink)
-                Text(detail).font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            Image(systemName: "chevron.right").guideSymbol(size: 12, weight: .regular).foregroundStyle(palette.dim)
-        }.contentShape(Rectangle())
     }
 
     private var emptyState: some View {
