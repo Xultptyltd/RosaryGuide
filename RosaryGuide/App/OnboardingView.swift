@@ -23,6 +23,12 @@ struct OnboardingView: View {
         _selection = State(initialValue: startsAtSignIn && includesSignIn ? OnboardingPage.pages.count : 0)
         #if DEBUG
         if includesSignIn && DebugHooks.has("-RGDebugSignInScreen") { _selection = State(initialValue: OnboardingPage.pages.count) }
+        #if DEBUG
+        // Screenshot hook: -RGDebugOnboardingPage <n> opens content page n (0-based).
+        if let n = Int(UserDefaults.standard.string(forKey: "RGDebugOnboardingPage") ?? ""), OnboardingPage.pages.indices.contains(n) {
+            _selection = State(initialValue: n)
+        }
+        #endif
         #endif
     }
 
@@ -91,18 +97,18 @@ private struct OnboardingPage: Identifiable {
 
     static let pages: [OnboardingPage] = [
         OnboardingPage(
-            title: "The Rosary,\nwith you each day.",
-            body: "Pray the mysteries of the day,\none bead at a time.",
+            title: "Make room\nfor prayer.",
+            body: "Slow down and draw closer to God\nthrough the Rosary.",
             imageName: "OnboardingRosaryDaily"
         ),
         OnboardingPage(
-            title: "Simply follow\nthe beads.",
-            body: "Every prayer and mystery is here,\nfrom beginning to end.",
+            title: "Every prayer,\ngently guided.",
+            body: "New to the Rosary? Follow along,\none bead at a time.",
             imageName: "OnboardingBeads"
         ),
         OnboardingPage(
-            title: "Bring your\nintentions to prayer.",
-            body: "Offer your Rosary for the people\nand intentions closest to your heart.",
+            title: "Bring what’s\non your heart.",
+            body: "Pray for the people you love\nand the intentions you carry.",
             imageName: "OnboardingIntentions"
         )
     ]
@@ -146,11 +152,11 @@ private struct OnboardingPageView: View {
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
 
-                VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                VStack(alignment: .center, spacing: AppTheme.Space.lg) {
                     Text(page.title)
                         .font(AppTheme.TypeRole.title.weight(.regular))
                         .foregroundStyle(Color.white)
-                        .multilineTextAlignment(.leading)
+                        .multilineTextAlignment(.center)
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
@@ -158,10 +164,11 @@ private struct OnboardingPageView: View {
                     Text(page.body)
                         .font(AppTheme.TypeRole.body)
                         .foregroundStyle(Color.white.opacity(0.72))
+                        .multilineTextAlignment(.center)
                         .lineSpacing(5)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.horizontal, AppTheme.gutter)
                 .padding(.bottom, max(188, geo.safeAreaInsets.bottom + 164))
             }
