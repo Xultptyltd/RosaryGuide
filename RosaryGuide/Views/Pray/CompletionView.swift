@@ -16,9 +16,7 @@ struct CompletionIntention: Identifiable, Equatable {
 
 /// Copy rules for the Offered for carousel, kept out of the view so they are testable.
 enum CompletionCopy {
-    static func offeredLabel(_ count: Int) -> String {
-        "Offered for \(count) \(count == 1 ? "intention" : "intentions")"
-    }
+    static let offeredLabel = "Offered for"
     static func cardLabel(index: Int, count: Int, title: String) -> String {
         count > 1 ? "Intention \(index + 1) of \(count): \(title)" : "Offered for \(title)"
     }
@@ -257,34 +255,40 @@ struct CompletionView: View {
             if !shownIntentions.isEmpty {
                 offeredCarousel
                     .padding(.top, 32)
+                // Quote stays, under the cards, at the carousel's own spacing.
+                quoteCard
+                    .padding(.top, AppTheme.Space.md)
             } else {
-            Color.clear.frame(height: 40)
-
-            VStack(spacing: AppTheme.Space.sm) {
-                Text(quote.text)
-                    .font(AppTheme.TypeRole.completionQuote)
-                    .foregroundStyle(palette.completionTitle.opacity(0.88))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(2)
-                    // Longest quote (106 chars) needs 4 lines on narrow phones.
-                    .lineLimit(4)
-                    .minimumScaleFactor(0.9)
-                    .padding(.horizontal, AppTheme.Space.sm)
-
-                Text(quote.attribution.uppercased())
-                    .font(AppTheme.TypeRole.quoteAttribution)
-                    .tracking(0.8)
-                    .foregroundStyle(palette.completionLabel)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, AppTheme.Space.lg)
-            .padding(.vertical, 14)
-            .guideCard(fill: palette.surface)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(quote.text), \(quote.attribution)")
+                Color.clear.frame(height: 40)
+                quoteCard
             }
         }
+    }
+
+    private var quoteCard: some View {
+        VStack(spacing: AppTheme.Space.sm) {
+            Text(quote.text)
+                .font(AppTheme.TypeRole.completionQuote)
+                .foregroundStyle(palette.completionTitle.opacity(0.88))
+                .multilineTextAlignment(.center)
+                .lineSpacing(2)
+                // Longest quote (106 chars) needs 4 lines on narrow phones.
+                .lineLimit(4)
+                .minimumScaleFactor(0.9)
+                .padding(.horizontal, AppTheme.Space.sm)
+
+            Text(quote.attribution.uppercased())
+                .font(AppTheme.TypeRole.quoteAttribution)
+                .tracking(0.8)
+                .foregroundStyle(palette.completionLabel)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, AppTheme.Space.lg)
+        .padding(.vertical, 14)
+        .guideCard(fill: palette.surface)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(quote.text), \(quote.attribution)")
     }
 
     /// Offered for: one card per intention, swiped sideways. The next card peeks in and
@@ -294,12 +298,14 @@ struct CompletionView: View {
         let many = rows.count > 1
         let peek: CGFloat = many ? 28 : 0
         return VStack(spacing: AppTheme.Space.sm) {
-            Text(CompletionCopy.offeredLabel(rows.count).uppercased())
+            Text(CompletionCopy.offeredLabel.uppercased())
                 .font(AppTheme.TypeRole.caption(weight: .regular))
                 .tracking(1.2)
                 .foregroundStyle(palette.completionMeta)
+                // Starts on the card's leading edge.
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
-                .accessibilityLabel(CompletionCopy.offeredLabel(rows.count))
+                .accessibilityLabel(CompletionCopy.offeredLabel)
 
             ScrollView(.horizontal) {
                 LazyHStack(spacing: AppTheme.Space.sm) {
@@ -345,18 +351,13 @@ struct CompletionView: View {
                 IntentionIconView(accent: face.accent, emoji: face.emoji, size: 36, usesPopePortrait: face.isPapal)
                     .accessibilityHidden(true)
             }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(AppTheme.TypeRole.bodySmall(weight: .medium))
-                    .foregroundStyle(hidden ? palette.completionMeta : palette.completionMetaValue)
-                    .multilineTextAlignment(.leading)
-                    // Same line count reserved on every card, so heights match.
-                    .lineLimit(CompletionCopy.titleLineLimit, reservesSpace: count > 1)
-                if let category {
-                    Text(category)
-                        .font(AppTheme.TypeRole.caption(weight: .regular))
-                        .foregroundStyle(palette.completionMeta)
+            // A hidden full-height copy fixes every card at the same height; the real
+            // text block centres inside it, level with the icon.
+            ZStack(alignment: .leading) {
+                if count > 1 {
+                    intentionText(title, category: category, hidden: hidden, reserve: true).hidden()
                 }
+                intentionText(title, category: category, hidden: hidden, reserve: false)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -366,6 +367,21 @@ struct CompletionView: View {
         .guideCard(radius: AppTheme.nestedRadius, fill: palette.surface)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(CompletionCopy.cardLabel(index: index, count: count, title: title))
+    }
+
+    private func intentionText(_ title: String, category: String?, hidden: Bool, reserve: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(AppTheme.TypeRole.bodySmall(weight: .medium))
+                .foregroundStyle(hidden ? palette.completionMeta : palette.completionMetaValue)
+                .multilineTextAlignment(.leading)
+                .lineLimit(CompletionCopy.titleLineLimit, reservesSpace: reserve)
+            if let category {
+                Text(category)
+                    .font(AppTheme.TypeRole.caption(weight: .regular))
+                    .foregroundStyle(palette.completionMeta)
+            }
+        }
     }
 
     private func actions() -> some View {

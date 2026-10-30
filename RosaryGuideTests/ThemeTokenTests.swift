@@ -393,8 +393,7 @@ final class CompletionScreenTests: XCTestCase {
     }
 
     func testOfferedLabelAndVoiceOver() {
-        XCTAssertEqual(CompletionCopy.offeredLabel(1), "Offered for 1 intention")
-        XCTAssertEqual(CompletionCopy.offeredLabel(3), "Offered for 3 intentions")
+        XCTAssertEqual(CompletionCopy.offeredLabel, "Offered for")
         XCTAssertEqual(CompletionCopy.cardLabel(index: 1, count: 3, title: "Mum"), "Intention 2 of 3: Mum")
         XCTAssertEqual(CompletionCopy.cardLabel(index: 0, count: 1, title: "Mum"), "Offered for Mum")
     }
