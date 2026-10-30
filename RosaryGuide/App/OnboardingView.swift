@@ -224,8 +224,7 @@ private struct OnboardingSignInView: View {
                 }
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                // Measure chosen so the quote breaks into balanced lines.
-                .frame(maxWidth: 270)
+                .frame(maxWidth: 320)
                 .padding(.horizontal, AppTheme.gutter)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(OnboardingCopy.signInQuoteAccessibilityLabel)
@@ -318,10 +317,12 @@ private struct OnboardingSignInView: View {
 enum OnboardingCopy {
     static let continueAsGuest = "Continue as guest"
     /// Rosarium Virginis Mariae §39 heading (Vatican English text).
-    static let signInQuote = "\u{201C}Blessed Rosary of Mary, sweet chain linking us to God\u{201D}"
+    static let signInQuoteText = "Sweet chain linking us to God"
+    /// Displayed with a fixed break so it sits on two balanced lines.
+    static let signInQuote = "\u{201C}Sweet chain\nlinking us to God\u{201D}"
     static let signInQuoteAuthor = "St John Paul II"
     static let signInQuoteAttribution = "\u{2014} " + signInQuoteAuthor
-    static let signInQuoteAccessibilityLabel = "Blessed Rosary of Mary, sweet chain linking us to God, " + signInQuoteAuthor
+    static let signInQuoteAccessibilityLabel = signInQuoteText + ", " + signInQuoteAuthor
 }
 
 private struct OnboardingAuthButton: View {
