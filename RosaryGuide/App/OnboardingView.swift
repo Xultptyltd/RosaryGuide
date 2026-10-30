@@ -177,13 +177,21 @@ private struct OnboardingPageView: View {
 
 /// Layout of the sign-in hero.
 enum SignInLayout {
-    /// How far the beads are raised beyond the top edge, so the loop sits higher and the
-    /// quote has room. Only strand (already full of beads) moves off screen.
-    static func beadsLift(height: CGFloat) -> CGFloat { (height * 0.055).rounded() }
+    /// Max width of the beads animation inside the panel.
+    static let beadsWidth: CGFloat = 300
+    /// Space between the bottom of the loop and the panel's bottom edge.
+    static let loopBottomPadding: CGFloat = 32
+    /// How far the strands' start sits above the screen's top edge, so they run off screen.
+    static let strandOverflow: CGFloat = 36
+    /// Outer inset of the panel from the screen edges.
+    static let panelInset: CGFloat = 24
+    /// Panel height measured from the screen's top edge: sized to the beads so the strands
+    /// always run off the top and the loop keeps the same padding above the bottom edge.
+    static func panelHeight(beadsWidth: CGFloat) -> CGFloat {
+        (beadsWidth / RosaryBeadsFallPlayer.aspectRatio + loopBottomPadding - strandOverflow).rounded()
+    }
     /// One design-system step below Home's compact title (38.4): the headingPrimary size (32).
     static let quoteSize: CGFloat = 32
-    /// How far below the status bar the top fade reaches full opacity.
-    static let topFadeExtra: CGFloat = 50
 }
 
 private struct OnboardingSignInView: View {
@@ -210,25 +218,23 @@ private struct OnboardingSignInView: View {
             Color.black.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // The strands start at the composition's top edge, which sits on the screen's
-                // top edge (through the status bar), so the rosary hangs from above the screen.
-                RosaryBeadsFallPlayer(plays: !reduceMotion)
-                    .aspectRatio(RosaryBeadsFallPlayer.aspectRatio, contentMode: .fit)
-                    .frame(maxWidth: 380)
-                    .padding(.horizontal, AppTheme.Space.lg)
-                    // Pull the player up under the status bar in layout too (not just drawing),
-                    // so the quote block centres in the space under the loop.
-                    // Fade the strands out under the status bar so they don't compete with its icons.
-                    .mask(
-                        VStack(spacing: 0) {
-                            Color.clear.frame(height: SignInLayout.beadsLift(height: geo.size.height))
-                            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
-                                .frame(height: geo.safeAreaInsets.top + SignInLayout.topFadeExtra)
-                            Color.black
-                        }
-                    )
-                    .padding(.top, -geo.safeAreaInsets.top - SignInLayout.beadsLift(height: geo.size.height))
-                    .accessibilityHidden(true)
+                // Marian blue panel behind the beads. It bleeds off the top of the screen and
+                // the strands start above the top edge, so the rosary hangs from off screen.
+                ZStack(alignment: .bottom) {
+                    AppTheme.marianBlue
+                    RosaryBeadsFallPlayer(plays: !reduceMotion)
+                        .aspectRatio(RosaryBeadsFallPlayer.aspectRatio, contentMode: .fit)
+                        .frame(width: SignInLayout.beadsWidth)
+                        .padding(.bottom, SignInLayout.loopBottomPadding)
+                }
+                .frame(height: SignInLayout.panelHeight(beadsWidth: SignInLayout.beadsWidth))
+                .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: AppTheme.panelRadius,
+                                                  bottomTrailingRadius: AppTheme.panelRadius,
+                                                  style: .continuous))
+                .padding(.horizontal, SignInLayout.panelInset)
+                // Pull it up under the status bar in layout too, so the quote centres below it.
+                .padding(.top, -geo.safeAreaInsets.top)
+                .accessibilityHidden(true)
 
                 Spacer(minLength: AppTheme.Space.lg)
 
