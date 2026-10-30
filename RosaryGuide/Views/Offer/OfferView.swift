@@ -251,7 +251,7 @@ struct OfferView: View {
                     if showsBackupDivider {
                         GuideSectionBoundary(verticalSpacing: 0)
                     }
-                    signInBanner
+                    GuestBackupCard { showSignIn = true }
                         .padding(.top, showsBackupDivider ? 0 : AppTheme.Space.lg)
                 }
             }
@@ -298,49 +298,6 @@ struct OfferView: View {
             Text("\(count)").font(AppTheme.TypeRole.headingPrimary).foregroundStyle(palette.ink)
             Text(caption).font(AppTheme.TypeRole.caption).foregroundStyle(palette.dim)
         }.frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    /// Days since the earliest local activity (session, decade, milestone or intention); guests have never synced.
-    private var signInHeadline: String {
-        let dates = sessionStore.completedSessions.map(\.startedAt)
-            + sessionStore.completedDecades.map(\.completedAt)
-            + sessionStore.earnedMilestones.values.map(\.date)
-            + offer.intentions.map(\.createdAt)
-        guard let earliest = dates.min() else { return "Your prayers are not backed up yet" }
-        let cal = Calendar.current
-        let days = cal.dateComponents([.day], from: cal.startOfDay(for: earliest), to: cal.startOfDay(for: .now)).day ?? 0
-        switch days {
-        case ..<1: return "Your prayers are not backed up yet"
-        case 1: return "Your prayers have not been backed up for 1 day"
-        default: return "Your prayers have not been backed up for \(days) days"
-        }
-    }
-
-    /// Guests only, at the foot of Profile: invites them to make an account so intentions and history sync.
-    private var signInBanner: some View {
-        VStack(spacing: AppTheme.Space.md) {
-            Image(systemName: "icloud.and.arrow.up").guideSymbol(size: 34, weight: .regular)
-                .foregroundStyle(palette.ink)
-                .accessibilityHidden(true)
-            VStack(spacing: AppTheme.Space.xs) {
-                Text(signInHeadline)
-                    .font(AppTheme.TypeRole.body(weight: .semibold)).foregroundStyle(palette.ink)
-                    .accessibilityAddTraits(.isHeader)
-                Text(auth.errorMessage ?? "Sign in or create an account to keep your intentions and history safe across devices")
-                    .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
-            }
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            PillButton(title: auth.isWorking ? "Signing in..." : "Create account") {
-                showSignIn = true
-            }
-            .disabled(auth.isWorking)
-            .padding(.top, AppTheme.Space.sm)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, AppTheme.Space.lg)
-        .padding(.vertical, AppTheme.Space.xl)
-        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
     }
 
     private func profileRow(title: String, detail: String, symbol: String, eyebrow: String? = nil) -> some View {
@@ -4428,4 +4385,58 @@ private struct JourneyDayEntryRow: View {
             .accessibilityHidden(true)
         }
     }
+}
+
+/// Guests only: invites them to make an account so intentions and history sync.
+/// Shown at the foot of Profile and in Settings' account area.
+struct GuestBackupCard: View {
+    var onCreateAccount: () -> Void
+
+    @Environment(\.palette) private var palette
+    @Environment(OfferStore.self) private var offer
+    @Environment(AuthStore.self) private var auth
+    @Environment(SessionStore.self) private var sessionStore
+
+    /// Days since the earliest local activity (session, decade, milestone or intention); guests have never synced.
+    private var signInHeadline: String {
+        let dates = sessionStore.completedSessions.map(\.startedAt)
+            + sessionStore.completedDecades.map(\.completedAt)
+            + sessionStore.earnedMilestones.values.map(\.date)
+            + offer.intentions.map(\.createdAt)
+        guard let earliest = dates.min() else { return "Your prayers are not backed up yet" }
+        let cal = Calendar.current
+        let days = cal.dateComponents([.day], from: cal.startOfDay(for: earliest), to: cal.startOfDay(for: .now)).day ?? 0
+        switch days {
+        case ..<1: return "Your prayers are not backed up yet"
+        case 1: return "Your prayers have not been backed up for 1 day"
+        default: return "Your prayers have not been backed up for \(days) days"
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: AppTheme.Space.md) {
+            Image(systemName: "icloud.and.arrow.up").guideSymbol(size: 34, weight: .regular)
+                .foregroundStyle(palette.ink)
+                .accessibilityHidden(true)
+            VStack(spacing: AppTheme.Space.xs) {
+                Text(signInHeadline)
+                    .font(AppTheme.TypeRole.body(weight: .semibold)).foregroundStyle(palette.ink)
+                    .accessibilityAddTraits(.isHeader)
+                Text(auth.errorMessage ?? "Sign in or create an account to keep your intentions and history safe across devices")
+                    .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
+            }
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            PillButton(title: auth.isWorking ? "Signing in..." : "Create account") {
+                onCreateAccount()
+            }
+            .disabled(auth.isWorking)
+            .padding(.top, AppTheme.Space.sm)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, AppTheme.Space.lg)
+        .padding(.vertical, AppTheme.Space.xl)
+        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
+    }
+
 }

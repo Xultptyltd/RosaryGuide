@@ -37,6 +37,8 @@ struct SettingsView: View {
     @State private var accountDeletionError: String?
     @State private var mailUnavailableMessage: String?
     @State private var showOnboardingPreview = false
+    /// Guest card sign-in; signing in here stays on Settings.
+    @State private var showSignIn = false
     @State private var mailDraft: SettingsMailDraft?
     @State private var showReportChoice = false
 
@@ -49,6 +51,9 @@ struct SettingsView: View {
         .toolbar { backToolbarItem }
         .navigationDestination(for: SettingsDestination.self) { destination in
             destinationView(destination)
+        }
+        .fullScreenCover(isPresented: $showSignIn) {
+            OnboardingView(startsAtSignIn: true) { showSignIn = false }
         }
         .fullScreenCover(isPresented: $showOnboardingPreview) {
             OnboardingView(includesSignIn: false) {
@@ -161,36 +166,18 @@ struct SettingsView: View {
                     GuideSectionBoundary()
 
                     // Signing in is optional and only adds sync; guests keep everything on this device.
-                    SettingsSection(title: auth.isSignedIn ? "Account" : "Sign in to sync") {
-                        if auth.isSignedIn {
+                    if auth.isSignedIn {
+                        SettingsSection(title: "Account") {
                             SettingsValueOnlyRow(
                                 title: "Signed in with",
                                 icon: "person.badge.key",
                                 value: auth.provider.rawValue
                             )
-                        } else {
-                            SettingsActionRow(
-                                title: auth.isSigningInWithApple ? "Signing in" : "Sign in with Apple",
-                                icon: "apple.logo",
-                                accessory: auth.isSigningInWithApple ? .progress : .none
-                            ) {
-                                HapticService.play(.medium, enabled: settings.hapticsEnabled)
-                                auth.signInWithApple()
-                            }
-                            .disabled(auth.isWorking)
-
-                            SettingsActionRow(title: auth.isSigningInWithGoogle ? "Signing in" : "Sign in with Google", icon: "g.circle", accessory: auth.isSigningInWithGoogle ? .progress : .none) {
-                                HapticService.play(.medium, enabled: settings.hapticsEnabled)
-                                auth.signInWithGoogle()
-                            }
-                            .disabled(auth.isWorking)
                         }
-                    }
-
-                    if !auth.isSignedIn {
-                        SettingsFootnote(auth.errorMessage ?? "Your intentions, prayer history and settings are kept on this device. Sign in to back them up and sync them across your devices.")
-                            // The footnote pulls itself up by sectionGap; this leaves an lg gap under the rows.
-                            .padding(.top, AppTheme.sectionGap)
+                    } else {
+                        // The same card as Profile; it replaces the separate Apple/Google rows
+                        // and footnote, its Create account button opening both routes.
+                        GuestBackupCard { showSignIn = true }
                     }
 
                     if auth.isSignedIn, let message = sync.syncErrorMessage {
