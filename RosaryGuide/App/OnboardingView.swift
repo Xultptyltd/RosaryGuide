@@ -198,18 +198,13 @@ private struct OnboardingSignInView: View {
             Color.black.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                Text("Rosary Guide")
-                    .font(AppTheme.TypeRole.body(weight: .semibold))
-                    .foregroundStyle(Color.white.opacity(0.86))
-                    .padding(.top, AppTheme.Space.md)
-                    .accessibilityAddTraits(.isHeader)
-
-                Spacer(minLength: AppTheme.Space.lg)
-
+                // The strands start at the composition's top edge, which sits on the screen's
+                // top edge (through the status bar), so the rosary hangs from above the screen.
                 RosaryBeadsFallPlayer(plays: !reduceMotion)
                     .aspectRatio(RosaryBeadsFallPlayer.aspectRatio, contentMode: .fit)
-                    .frame(maxWidth: 360)
-                    .padding(.horizontal, AppTheme.gutter)
+                    .frame(maxWidth: 380)
+                    .padding(.horizontal, AppTheme.Space.lg)
+                    .ignoresSafeArea(edges: .top)
                     .accessibilityHidden(true)
 
                 VStack(spacing: AppTheme.Space.md) {
@@ -226,7 +221,7 @@ private struct OnboardingSignInView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, AppTheme.gutter)
-                .padding(.top, AppTheme.Space.xl)
+                .padding(.top, AppTheme.Space.xl + 48)
                 .accessibilityElement(children: .combine)
                 .guideReveal(delay: 0.05)
 
@@ -316,7 +311,7 @@ private struct OnboardingSignInView: View {
 enum OnboardingCopy {
     static let continueAsGuest = "Continue as guest"
     static let signInHeadline = "Make room for prayer"
-    static let signInSupporting = "The Rosary each day, one bead at a time."
+    static let signInSupporting = "The Rosary each day, one bead at a time"
 }
 
 private struct OnboardingAuthButton: View {
