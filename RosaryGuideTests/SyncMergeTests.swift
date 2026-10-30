@@ -320,7 +320,6 @@ final class LaunchGateTests: XCTestCase {
 
     func testGuestButtonCopyIsSentenceCase() {
         XCTAssertEqual(OnboardingCopy.continueAsGuest, "Continue as guest")
-        XCTAssertEqual(OnboardingCopy.signInHeadline, "Make room for prayer")
         XCTAssertEqual(RosaryBeadsFallPlayer.lastFrame, 1584)
         XCTAssertFalse(OnboardingCopy.continueAsGuest.hasSuffix("."))
     }

@@ -206,35 +206,29 @@ private struct OnboardingSignInView: View {
                     .frame(maxWidth: 380)
                     .padding(.horizontal, AppTheme.Space.lg)
                     // Pull the player up under the status bar in layout too (not just drawing),
-                    // so the headline sits right under the loop.
+                    // so the quote block centres in the space under the loop.
                     .padding(.top, -geo.safeAreaInsets.top)
                     .accessibilityHidden(true)
 
-                VStack(spacing: AppTheme.Space.md) {
-                    Text(OnboardingCopy.signInHeadline)
-                        .font(AppTheme.TypeRole.serifDisplay)
-                        .foregroundStyle(Color.white)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: AppTheme.Space.lg)
 
-                    VStack(spacing: AppTheme.Space.sm) {
-                        Text(OnboardingCopy.signInQuote)
-                            .font(.system(.body, design: .serif).italic())
-                            .foregroundStyle(Color.white.opacity(0.62))
-                        Text(OnboardingCopy.signInQuoteAttribution)
-                            .font(.footnote)
-                            .foregroundStyle(Color.white.opacity(0.42))
-                    }
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    // Narrower measure so the quote breaks into two balanced lines.
-                    .frame(maxWidth: 280)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(OnboardingCopy.signInQuoteAccessibilityLabel)
+                // Hero text: the quote alone, centred between the beads and the buttons.
+                VStack(spacing: AppTheme.Space.md) {
+                    Text(OnboardingCopy.signInQuote)
+                        .font(AppTheme.serif(28, opticalSize: 32, relativeTo: .title, maxPointSize: 36))
+                        .foregroundStyle(Color.white.opacity(0.94))
+                        .lineSpacing(2)
+                    Text(OnboardingCopy.signInQuoteAttribution)
+                        .font(AppTheme.TypeRole.body)
+                        .foregroundStyle(Color.white.opacity(0.5))
                 }
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                // Measure chosen so the quote breaks into balanced lines.
+                .frame(maxWidth: 270)
                 .padding(.horizontal, AppTheme.gutter)
-                .padding(.top, AppTheme.Space.xl)
-                .accessibilityElement(children: .combine)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(OnboardingCopy.signInQuoteAccessibilityLabel)
                 .guideReveal(delay: 0.05)
 
                 Spacer(minLength: AppTheme.Space.xl)
@@ -323,7 +317,6 @@ private struct OnboardingSignInView: View {
 
 enum OnboardingCopy {
     static let continueAsGuest = "Continue as guest"
-    static let signInHeadline = "Make room for prayer"
     /// Rosarium Virginis Mariae §39 heading (Vatican English text).
     static let signInQuote = "\u{201C}Blessed Rosary of Mary, sweet chain linking us to God\u{201D}"
     static let signInQuoteAuthor = "St John Paul II"
