@@ -43,14 +43,10 @@ struct RosaryGuideApp: App {
                                            signedInThisLaunch: auth.interactiveSignIns > 0) {
                         RootView()
                             .id(rootGeneration)
-                            .transition(.opacity)
                     } else {
                         OnboardingView {
-                            withAnimation(.easeOut(duration: 0.28)) {
-                                didCompleteOnboarding = true
-                            }
+                            didCompleteOnboarding = true
                         }
-                        .transition(.opacity)
                     }
 
                     if isShowingSplash {
@@ -58,13 +54,11 @@ struct RosaryGuideApp: App {
                             withAnimation(.easeOut(duration: 0.28)) {
                                 isShowingSplash = false
                             }
-                            HomeEntrance.shared.splashDone = true
                         }
                         .transition(.opacity)
                         .zIndex(1)
                     }
                 }
-                .animation(.easeInOut(duration: 0.32), value: didCompleteOnboarding)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .environment(settings)
@@ -93,8 +87,13 @@ struct RosaryGuideApp: App {
                 guard SignInLanding.landsOnHome(previous: previous, count: count) else { return }
                 // After the sign-in screen's tick, from any entry point: Home, nothing on top.
                 DispatchQueue.main.asyncAfter(deadline: .now() + SignInLanding.hold) {
-                    didCompleteOnboarding = true
-                    withAnimation(.easeOut(duration: 0.28)) { rootGeneration += 1 }
+                    // Instant: no fade, scale or slide into Home.
+                    var still = Transaction(animation: nil)
+                    still.disablesAnimations = true
+                    withTransaction(still) {
+                        didCompleteOnboarding = true
+                        rootGeneration += 1
+                    }
                 }
             }
             .onOpenURL { url in

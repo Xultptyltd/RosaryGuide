@@ -118,6 +118,9 @@ private struct OnboardingPageView: View {
                     .frame(width: geo.size.width, height: geo.size.height)
                     .scaleEffect(reduceMotion ? 1 : 1.018)
                     .offset(y: reduceMotion ? 0 : (imageDrift ? -5 : 5))
+                    // Scoped to the drift value: a withAnimation(repeatForever) here used to
+                    // capture the page's own layout as it appeared, so the screen shrank and slid.
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 7.5).repeatForever(autoreverses: true), value: imageDrift)
                     .clipped()
                     .ignoresSafeArea(edges: .top)
                     .accessibilityHidden(true)
@@ -159,9 +162,7 @@ private struct OnboardingPageView: View {
         .background(Color.black)
         .task {
             guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 7.5).repeatForever(autoreverses: true)) {
-                imageDrift = true
-            }
+            imageDrift = true
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(page.title.replacingOccurrences(of: "\n", with: " ")). \(page.body.replacingOccurrences(of: "\n", with: " ")). Page \(index + 1) of \(pageCount).")
@@ -198,6 +199,7 @@ private struct OnboardingSignInView: View {
                     .frame(width: geo.size.width, height: geo.size.height)
                     .scaleEffect(reduceMotion ? 1 : 1.018)
                     .offset(y: geo.size.height * 0.10 + (reduceMotion ? 0 : (imageDrift ? -5 : 5)))
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 8).repeatForever(autoreverses: true), value: imageDrift)
                     .clipped()
                     .ignoresSafeArea()
                     .accessibilityHidden(true)
@@ -315,9 +317,7 @@ private struct OnboardingSignInView: View {
         }
         .task {
             guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 8).repeatForever(autoreverses: true)) {
-                imageDrift = true
-            }
+            imageDrift = true
         }
         .accessibilityElement(children: .contain)
     }

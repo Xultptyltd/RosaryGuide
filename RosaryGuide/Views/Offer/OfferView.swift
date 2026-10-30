@@ -235,7 +235,9 @@ struct OfferView: View {
             // Reuses the onboarding sign-in step. Held here, not on the backup card: the card
             // goes the moment the account exists, which used to close this before its tick.
             .fullScreenCover(isPresented: $showSignIn) {
-                OnboardingView(startsAtSignIn: true) { showSignIn = false }
+                // After a sign-in the app's Home landing removes this instantly; dismissing
+                // here would slide the cover down first.
+                OnboardingView(startsAtSignIn: true) { if !auth.isSignedIn { showSignIn = false } }
             }
         }
     }
