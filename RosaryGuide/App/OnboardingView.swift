@@ -194,6 +194,7 @@ private struct OnboardingSignInView: View {
     }
 
     var body: some View {
+        GeometryReader { geo in
         ZStack {
             Color.black.ignoresSafeArea()
 
@@ -204,7 +205,9 @@ private struct OnboardingSignInView: View {
                     .aspectRatio(RosaryBeadsFallPlayer.aspectRatio, contentMode: .fit)
                     .frame(maxWidth: 380)
                     .padding(.horizontal, AppTheme.Space.lg)
-                    .ignoresSafeArea(edges: .top)
+                    // Pull the player up under the status bar in layout too (not just drawing),
+                    // so the headline sits right under the loop.
+                    .padding(.top, -geo.safeAreaInsets.top)
                     .accessibilityHidden(true)
 
                 VStack(spacing: AppTheme.Space.md) {
@@ -221,7 +224,7 @@ private struct OnboardingSignInView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, AppTheme.gutter)
-                .padding(.top, AppTheme.Space.xl + 48)
+                .padding(.top, AppTheme.Space.xl)
                 .accessibilityElement(children: .combine)
                 .guideReveal(delay: 0.05)
 
@@ -274,6 +277,7 @@ private struct OnboardingSignInView: View {
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: auth.errorMessage)
                     .guideReveal(delay: 0.14)
             }
+        }
         }
         .onChange(of: auth.isSignedIn) { _, isSignedIn in
             if isSignedIn {
@@ -392,12 +396,13 @@ private struct OnboardingDots: View {
 }
 
 
-/// Hero animation on the sign-in screen. The composition (600×500, 60 fps, frames 0–1584)
+/// Hero animation on the sign-in screen. The composition (600×680 after tools/lottie/extend_rosary_beads.py, 60 fps, frames 0–1584)
 /// feeds the chain down from above the frame one bead at a time until it settles around
 /// frame 1494, then a small sway eases to rest by 1584. It has no idle loop, so it plays
 /// once and holds the settled last frame. With Reduce Motion it shows that frame only.
 struct RosaryBeadsFallPlayer: UIViewRepresentable {
-    static let aspectRatio: CGFloat = 600.0 / 500.0
+    /// Composition is 600×680 after tools/lottie/extend_rosary_beads.py lengthened the strands.
+    static let aspectRatio: CGFloat = 600.0 / 680.0
     static let lastFrame: AnimationFrameTime = 1584
 
     var plays: Bool

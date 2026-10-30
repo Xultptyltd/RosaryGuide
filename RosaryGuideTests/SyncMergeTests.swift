@@ -934,3 +934,13 @@ final class SignOutAlertTests: XCTestCase {
         XCTAssertTrue(SignOutAlert.message.hasSuffix("?"))
     }
 }
+
+final class RosaryBeadsLottieTests: XCTestCase {
+    func testBundledBeadsAreExtended() throws {
+        let url = try XCTUnwrap(Bundle.main.url(forResource: "RosaryBeadsFall", withExtension: "json", subdirectory: "Animations"))
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        XCTAssertEqual(json["w"] as? Int, 600)
+        XCTAssertEqual(json["h"] as? Int, 680)
+        XCTAssertEqual(RosaryBeadsFallPlayer.aspectRatio, 600.0 / 680.0, accuracy: 0.0001)
+    }
+}
