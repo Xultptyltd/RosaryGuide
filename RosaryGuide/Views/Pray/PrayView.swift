@@ -148,6 +148,8 @@ struct PrayView: View {
     @State private var didRecordCarry = false
     /// Chosen before the finis screen exists so its first update does not write UserDefaults.
     @State private var completionQuote: CompletionQuote?
+    /// Locked when entering finis so Offered for survives session.complete() / store churn.
+    @State private var completionIntentions: [CompletionIntention]?
     /// Stops the bead TimelineView before the finis screen is inserted.
     @State private var beadTimelinePaused = false
     /// Black veil over the closing prayer. Beads keep running underneath until this covers them.
@@ -1258,6 +1260,7 @@ struct PrayView: View {
     private var finisLayer: some View {
         CompletionView(
             mysterySet: launch.mysterySet,
+            intentions: completionIntentions ?? resolvedIntentionsForCompletion(),
             quote: completionQuote ?? QuoteCatalog.quote(),
             onDone: { finishRosary() },
             // Always offered, even when Saint Michael was already prayed as a step.
@@ -1281,6 +1284,36 @@ struct PrayView: View {
             await ReviewPrompter.requestAfterCompletion(
                 completedRosaries: sessionStore.completedSessions.count,
                 isStillSettled: { !showingMichael }
+            )
+        }
+    }
+
+    private var completionIntentionIds: [UUID] {
+        if !chosenIntentionIds.isEmpty { return chosenIntentionIds }
+        if let ids = sessionStore.session?.intentionIds, !ids.isEmpty { return ids }
+        return launch.intentionId.map { [$0] } ?? []
+    }
+
+    /// Offered intentions from live state, session, or OfferStore, one per card.
+    private func resolvedIntentionsForCompletion() -> [CompletionIntention] {
+        let ids = completionIntentionIds
+        let titles: [String]
+        if !OfferedIntentions.titles(chosenIntentionTitles, legacy: nil).isEmpty {
+            titles = chosenIntentionTitles
+        } else if let stored = sessionStore.session?.intentionTitles,
+                  !OfferedIntentions.titles(stored, legacy: nil).isEmpty {
+            titles = stored
+        } else {
+            titles = ids.map { offer.intention(id: $0)?.title ?? "" }
+        }
+        return titles.enumerated().compactMap { offset, raw in
+            let title = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !title.isEmpty else { return nil }
+            let found = ids.indices.contains(offset) ? offer.intention(id: ids[offset]) : nil
+            return CompletionIntention(
+                id: offset,
+                title: title,
+                face: found.map { CompletionIntentionFace(accent: $0.accent, emoji: $0.displayEmoji, isPapal: $0.isPapal) }
             )
         }
     }
@@ -1763,6 +1796,7 @@ struct PrayView: View {
             sessionStore.updateStep(index)
             didRecordCarry = false
             completionQuote = nil
+            completionIntentions = nil
             beadTimelinePaused = false
             finishBlack = 0
             showingCompletion = false
@@ -1799,6 +1833,7 @@ struct PrayView: View {
             showingIntentionStep = false
             didRecordCarry = false
             completionQuote = nil
+            completionIntentions = nil
             beadTimelinePaused = false
             finishBlack = 0
             showingCompletion = false
@@ -1890,6 +1925,7 @@ struct PrayView: View {
         // Beads keep running until the fade below actually starts.
         DispatchQueue.main.async {
             let quote = QuoteCatalog.selectCompletionQuote()
+            let intentions = resolvedIntentionsForCompletion()
             RosaryTickLibrary.preload()
             let fade = reduceMotion ? 0.01 : 0.62
             withAnimation(.easeInOut(duration: fade)) {
@@ -1899,6 +1935,7 @@ struct PrayView: View {
                 var transaction = Transaction()
                 transaction.disablesAnimations = true
                 withTransaction(transaction) {
+                    if completionIntentions == nil { completionIntentions = intentions }
                     completionQuote = quote
                     showingCompletion = true
                     finishBlack = 0

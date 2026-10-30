@@ -71,6 +71,31 @@ enum ArtCatalog {
         }
     }
 
+    /// Scene slugs per set, in mystery order. Matches the files under `Art/{theme}/{set}`.
+    static func plateSlugs(set: MysterySetKind) -> [String] {
+        switch set {
+        case .joyful: return ["01-annunciation", "02-visitation", "03-birth-of-jesus",
+                              "04-presentation-of-the-baby-jesus", "05-finding-of-the-child-jesus-in-the-temple"]
+        case .luminous: return ["01-baptism-of-jesus-in-the-jordan", "02-miracle-at-the-wedding-at-cana",
+                                "03-proclamation-of-the-kingdom-of-god", "04-transfiguration",
+                                "05-institution-of-the-holy-eucharist"]
+        case .sorrowful: return ["01-agony-in-the-garden", "02-scourging-at-the-pillar", "03-crowning-with-thorns",
+                                 "04-carrying-of-the-cross", "05-crucifixion"]
+        case .glorious: return ["01-resurrection", "02-ascension", "03-descent-of-the-holy-spirit",
+                                "04-assumption", "05-coronation"]
+        }
+    }
+
+    /// Complete-screen art. Home always shows the set's hero file (`Art/hero`), so the
+    /// Complete screen uses one of the set's five scene plates instead, rotating by day of year.
+    /// A plate never lives in `Art/hero`, so it can never be the image Home showed.
+    static func completionPlate(set: MysterySetKind, date: Date = .now, calendar: Calendar = .current) -> (number: Int, slug: String) {
+        let slugs = plateSlugs(set: set)
+        let day = calendar.ordinality(of: .day, in: .year, for: date) ?? 1
+        let index = (day - 1) % slugs.count
+        return (index + 1, slugs[index])
+    }
+
     static var crucifix: (directory: String, name: String, ext: String) {
         ("Art", "crucifix", "png")
     }

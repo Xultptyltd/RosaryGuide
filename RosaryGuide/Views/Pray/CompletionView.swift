@@ -1,10 +1,38 @@
 import SwiftUI
 
+/// Category colour, glyph, and papal portrait locked with the finish intention.
+struct CompletionIntentionFace: Equatable {
+    var accent: IntentionAccent
+    var emoji: String
+    var isPapal: Bool
+}
+
+/// One intention offered with the Rosary, frozen when the finish screen opens.
+struct CompletionIntention: Identifiable, Equatable {
+    var id: Int
+    var title: String
+    var face: CompletionIntentionFace?
+}
+
+/// Copy rules for the Offered for carousel, kept out of the view so they are testable.
+enum CompletionCopy {
+    static func offeredLabel(_ count: Int) -> String {
+        "Offered for \(count) \(count == 1 ? "intention" : "intentions")"
+    }
+    static func cardLabel(index: Int, count: Int, title: String) -> String {
+        count > 1 ? "Intention \(index + 1) of \(count): \(title)" : "Offered for \(title)"
+    }
+    /// Three lines fits the longest five-intention titles without the cards growing.
+    static let titleLineLimit = 3
+}
+
 /// Ceremonial end-of-rosary screen: art → symbol → label → mystery title →
 /// quote → calm space → Done → optional St Michael prayer.
 /// No stats, X, or confetti — stillness as the emotional endpoint.
 struct CompletionView: View {
     var mysterySet: MysterySetKind
+    /// Every intention the Rosary was offered for, in the order chosen.
+    var intentions: [CompletionIntention] = []
     var quote: CompletionQuote
     var onDone: () -> Void
     var onMichael: (() -> Void)?
@@ -27,6 +55,20 @@ struct CompletionView: View {
     /// A moment of stillness before the tick starts drawing.
     @State private var tickStarted = false
     private static let stillness: Duration = .milliseconds(500)
+    @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
+    /// Card in view in the Offered for carousel.
+    @State private var cardID: Int?
+    /// Complete-screen scene, fixed when the screen opens. Never the Home hero file.
+    @State private var plate: (number: Int, slug: String)?
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var shownIntentions: [CompletionIntention] {
+        intentions.filter { !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
+
+    private func isHidden(_ intention: CompletionIntention) -> Bool {
+        hideIntentionText && !(intention.face?.isPapal ?? false)
+    }
 
     /// Resting icon. The ring is about half the 1024 canvas, so 88pt
     /// leaves a drawn tick about the size of the old emblem.
@@ -57,12 +99,7 @@ struct CompletionView: View {
                 // The spare room above the tick is the artwork. It fades to
                 // black at the bottom edge, so the statue reads down to just
                 // above the check instead of stopping in a short top band.
-                MysteryArtworkView(
-                    set: mysterySet,
-                    mysteryNumber: nil,
-                    slug: nil,
-                    kind: .heroTall
-                )
+                completionArt
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .overlay { heroFade }
                 .clipped()
@@ -114,6 +151,18 @@ struct CompletionView: View {
                     || abs(rect.width - slot.width) > 0.5 else { return }
             slot = rect
         }
+    }
+
+    /// A scene plate from the same set, not the hero Home shows.
+    private var completionArt: some View {
+        let chosen = plate ?? ArtCatalog.completionPlate(set: mysterySet)
+        let path = ArtCatalog.platePath(set: mysterySet, slug: chosen.slug, scheme: .dark, wide: false)
+        return FocusedRasterImage(
+            directory: path.directory,
+            name: path.name,
+            focus: ArtCatalog.focus(set: mysterySet, number: chosen.number)
+        )
+        .onAppear { if plate == nil { plate = chosen } }
     }
 
     /// Fixed hole where the drawn emblem used to be. The same Lottie view
@@ -205,6 +254,10 @@ struct CompletionView: View {
                 .accessibilityLabel(mysterySet.name.english)
                 .padding(.top, 6)
 
+            if !shownIntentions.isEmpty {
+                offeredCarousel
+                    .padding(.top, 32)
+            } else {
             Color.clear.frame(height: 40)
 
             VStack(spacing: AppTheme.Space.sm) {
@@ -230,7 +283,89 @@ struct CompletionView: View {
             .guideCard(fill: palette.surface)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(quote.text), \(quote.attribution)")
+            }
         }
+    }
+
+    /// Offered for: one card per intention, swiped sideways. The next card peeks in and
+    /// dots sit underneath; a single intention fills the width with no dots.
+    private var offeredCarousel: some View {
+        let rows = shownIntentions
+        let many = rows.count > 1
+        let peek: CGFloat = many ? 28 : 0
+        return VStack(spacing: AppTheme.Space.sm) {
+            Text(CompletionCopy.offeredLabel(rows.count).uppercased())
+                .font(AppTheme.TypeRole.caption(weight: .regular))
+                .tracking(1.2)
+                .foregroundStyle(palette.completionMeta)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityLabel(CompletionCopy.offeredLabel(rows.count))
+
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: AppTheme.Space.sm) {
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, intention in
+                        intentionCard(intention, index: index, count: rows.count)
+                            .containerRelativeFrame(.horizontal) { width, _ in width - peek }
+                            .id(intention.id)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.viewAligned)
+            .scrollPosition(id: $cardID)
+            .scrollIndicators(.hidden)
+            .scrollDisabled(!many)
+            .scrollClipDisabled()
+            .fixedSize(horizontal: false, vertical: true)
+
+            if many {
+                HStack(spacing: 7) {
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, intention in
+                        Circle()
+                            .fill((cardID ?? rows[0].id) == intention.id
+                                  ? palette.completionTitle : palette.completionMeta.opacity(0.4))
+                            .frame(width: 6, height: 6)
+                    }
+                }
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: cardID)
+                .accessibilityElement()
+                .accessibilityLabel("Page \((rows.firstIndex { $0.id == (cardID ?? rows[0].id) } ?? 0) + 1) of \(rows.count)")
+            }
+        }
+    }
+
+    private func intentionCard(_ intention: CompletionIntention, index: Int, count: Int) -> some View {
+        let hidden = isHidden(intention)
+        let title = hidden ? "Hidden intention" : intention.title
+        let category = intention.face.map {
+            IntentionCategory.inferred(sourceId: $0.isPapal ? PapalIntention.prefix : nil, accent: $0.accent, emoji: $0.emoji).title
+        }
+        return HStack(alignment: .center, spacing: AppTheme.Space.md) {
+            if let face = intention.face {
+                IntentionIconView(accent: face.accent, emoji: face.emoji, size: 36, usesPopePortrait: face.isPapal)
+                    .accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(AppTheme.TypeRole.bodySmall(weight: .medium))
+                    .foregroundStyle(hidden ? palette.completionMeta : palette.completionMetaValue)
+                    .multilineTextAlignment(.leading)
+                    // Same line count reserved on every card, so heights match.
+                    .lineLimit(CompletionCopy.titleLineLimit, reservesSpace: count > 1)
+                if let category {
+                    Text(category)
+                        .font(AppTheme.TypeRole.caption(weight: .regular))
+                        .foregroundStyle(palette.completionMeta)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .guideCard(radius: AppTheme.nestedRadius, fill: palette.surface)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(CompletionCopy.cardLabel(index: index, count: count, title: title))
     }
 
     private func actions() -> some View {

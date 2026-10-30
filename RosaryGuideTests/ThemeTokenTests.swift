@@ -361,3 +361,41 @@ final class LicenseTextTests: XCTestCase {
         XCTAssertTrue(LicenseCatalog.all.allSatisfy { !$0.license.isEmpty })
     }
 }
+
+final class CompletionScreenTests: XCTestCase {
+    /// The Complete screen never repeats Home's hero: every day of the year, every set,
+    /// both themes, the plate path differs from the hero path and the file exists in the set.
+    func testCompletionArtNeverMatchesHomeHero() {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Australia/Perth")!
+        let start = cal.date(from: DateComponents(year: 2028, month: 1, day: 1))!
+        for offset in 0..<366 {
+            let date = cal.date(byAdding: .day, value: offset, to: start)!
+            for set in MysterySetKind.allCases {
+                let plate = ArtCatalog.completionPlate(set: set, date: date, calendar: cal)
+                XCTAssertTrue(ArtCatalog.plateSlugs(set: set).contains(plate.slug))
+                for scheme in [ColorScheme.light, .dark] {
+                    let hero = ArtCatalog.heroPath(set: set, scheme: scheme, tall: true)
+                    let art = ArtCatalog.platePath(set: set, slug: plate.slug, scheme: scheme, wide: false)
+                    XCTAssertNotEqual("\(hero.directory)/\(hero.name)", "\(art.directory)/\(art.name)")
+                }
+            }
+        }
+    }
+
+    func testCompletionPlatesExistInBundle() {
+        for set in MysterySetKind.allCases {
+            for slug in ArtCatalog.plateSlugs(set: set) {
+                let path = ArtCatalog.platePath(set: set, slug: slug, scheme: .dark, wide: false)
+                XCTAssertNotNil(BundleRasterImage.load(directory: path.directory, name: path.name, ext: "jpg"), slug)
+            }
+        }
+    }
+
+    func testOfferedLabelAndVoiceOver() {
+        XCTAssertEqual(CompletionCopy.offeredLabel(1), "Offered for 1 intention")
+        XCTAssertEqual(CompletionCopy.offeredLabel(3), "Offered for 3 intentions")
+        XCTAssertEqual(CompletionCopy.cardLabel(index: 1, count: 3, title: "Mum"), "Intention 2 of 3: Mum")
+        XCTAssertEqual(CompletionCopy.cardLabel(index: 0, count: 1, title: "Mum"), "Offered for Mum")
+    }
+}
