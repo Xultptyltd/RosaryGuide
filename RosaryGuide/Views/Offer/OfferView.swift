@@ -3341,6 +3341,7 @@ private struct PrayerJourneyView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var visibleMonth: Date = Date()
     @State private var selectedDay: JourneySelectedDay?
+    @State private var selectedHistoryRow: JourneyHistoryRow.Model?
 
     var prayedDayStarts: Set<TimeInterval>
     var completedSessions: [CompletedPrayerSession]
@@ -3423,6 +3424,12 @@ private struct PrayerJourneyView: View {
         .background(palette.bg.ignoresSafeArea())
         .guideDetailChrome(tab.title)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $selectedHistoryRow) { row in
+            JourneyPrayerDetailSheet(row: row)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(AppTheme.containerRadius)
+        }
         .sheet(item: $selectedDay) { day in
             JourneyDayDetailSheet(
                 date: day.date,
@@ -3572,7 +3579,12 @@ private struct PrayerJourneyView: View {
 
                         VStack(spacing: AppTheme.Space.sm) {
                             ForEach(group.rows) { row in
-                                JourneyHistoryRow(row: row)
+                                Button { selectedHistoryRow = row } label: {
+                                    JourneyHistoryRow(row: row)
+                                }
+                                .buttonStyle(.plain)
+                                .guidePressable()
+                                .accessibilityHint("Shows details")
                             }
                         }
                     }
@@ -3594,10 +3606,10 @@ private struct PrayerJourneyView: View {
 
     private var historyRows: [JourneyHistoryRow.Model] {
         let recorded = completedSessions.map { session in
-            JourneyHistoryRow.Model(date: session.completedAt, mystery: session.mysterySet, duration: session.duration, intentionTitle: OfferedIntentions.summary(session.allIntentionTitles), kind: .rosary)
+            JourneyHistoryRow.Model(date: session.completedAt, mystery: session.mysterySet, duration: session.duration, intentionTitle: OfferedIntentions.summary(session.allIntentionTitles), kind: .rosary, startedAt: session.startedAt, intentionIds: session.intentionIds ?? session.intentionId.map { [$0] } ?? [], intentionTitles: session.allIntentionTitles)
         }
         let decades = completedDecades.map { decade in
-            JourneyHistoryRow.Model(date: decade.completedAt, mystery: decade.mysterySet, duration: decade.duration, intentionTitle: OfferedIntentions.summary(decade.allIntentionTitles), kind: .decade(decade.decadeNumber))
+            JourneyHistoryRow.Model(date: decade.completedAt, mystery: decade.mysterySet, duration: decade.duration, intentionTitle: OfferedIntentions.summary(decade.allIntentionTitles), kind: .decade(decade.decadeNumber), intentionIds: decade.intentionIds ?? decade.intentionId.map { [$0] } ?? [], intentionTitles: decade.allIntentionTitles)
         }
         let recordedDays = Set(recorded.map { Calendar.current.startOfDay(for: $0.date).timeIntervalSince1970 })
         let legacy = prayedDayStarts
@@ -4019,6 +4031,9 @@ private struct JourneyHistoryRow: View {
         var duration: TimeInterval?
         var intentionTitle: String?
         var kind: Kind
+        var startedAt: Date? = nil
+        var intentionIds: [UUID] = []
+        var intentionTitles: [String] = []
 
         var id: String {
             let mysteryId = mystery?.rawValue ?? "legacy"
@@ -4085,7 +4100,7 @@ private struct JourneyHistoryRow: View {
     @ViewBuilder
     private var historyIcon: some View {
         if let mystery = row.mystery {
-            MysterySetIcon(set: mystery)
+            JourneyMysteryThumb(set: mystery, kind: row.kind)
         } else {
             ZStack {
                 Circle().fill(palette.accentTint)
@@ -4133,6 +4148,128 @@ private extension JourneyHistoryRow.Model.Kind {
     }
 }
 
+
+/// Mystery-set art in a circle, as on the Learn rows. A decade shows its own mystery's scene.
+private struct JourneyMysteryThumb: View {
+    let set: MysterySetKind
+    var kind: JourneyHistoryRow.Model.Kind = .rosary
+    var size: CGFloat = 56
+
+    var body: some View {
+        let number: Int = { if case .decade(let n) = kind { return min(max(n, 1), 5) }; return 1 }()
+        let slug = MysteryCatalog.mysteries(for: set).first { $0.number == number }?.artSlug
+        MysteryArtworkView(set: set, mysteryNumber: number, slug: slug, kind: .plate)
+            .frame(width: size, height: size)
+            .clipShape(Circle())
+            .accessibilityHidden(true)
+    }
+}
+
+/// Everything recorded for one Rosary or decade: when, how long, which mysteries,
+/// and its intentions in the same cards as the start-of-Rosary picker (read-only).
+struct JourneyPrayerDetailFacts: Equatable {
+    struct Fact: Equatable { let label: String; let value: String }
+    let title: String
+    let facts: [Fact]
+
+    init(mystery: MysterySetKind?, decade: Int?, completedAt: Date, startedAt: Date?, duration: TimeInterval?) {
+        title = mystery.map { "\($0.shortName) Mysteries" } ?? "Rosary prayed"
+        var facts = [Fact(label: "Date", value: completedAt.formatted(.dateTime.weekday(.wide).day().month(.wide).year()))]
+        let start = startedAt ?? (duration.flatMap { JourneyDuration.reliable($0) }.map { completedAt.addingTimeInterval(-$0) })
+        facts.append(Fact(label: "Started", value: start.map { $0.formatted(date: .omitted, time: .shortened) } ?? "Not recorded"))
+        facts.append(Fact(label: "Duration", value: JourneyDuration.reliable(duration).map { JourneyDuration.text($0) } ?? "Not recorded"))
+        if let mystery { facts.append(Fact(label: "Mysteries", value: mystery.shortName)) }
+        if let decade {
+            let name = mystery.flatMap { set in MysteryCatalog.mysteries(for: set).first { $0.number == decade } }
+            facts.append(Fact(label: "Decade", value: "\(OrdinalWord.roman(decade))" + (name.map { " · \($0.title.english)" } ?? "")))
+        }
+        self.facts = facts
+    }
+}
+
+private struct JourneyPrayerDetailSheet: View {
+    @Environment(\.palette) private var palette
+    @Environment(OfferStore.self) private var offer
+    @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
+    let row: JourneyHistoryRow.Model
+
+    private var decade: Int? { if case .decade(let n) = row.kind { return n }; return nil }
+
+    private var facts: JourneyPrayerDetailFacts {
+        JourneyPrayerDetailFacts(mystery: row.mystery, decade: decade, completedAt: row.date,
+                                 startedAt: row.startedAt, duration: row.duration)
+    }
+
+    /// Saved intention when it still exists; otherwise a plain card from the frozen title.
+    private var intentions: [OfferIntention] {
+        let titles = OfferedIntentions.titles(row.intentionTitles, legacy: row.intentionTitle)
+        return titles.enumerated().map { offset, title in
+            if row.intentionIds.indices.contains(offset), let found = offer.intention(id: row.intentionIds[offset]) {
+                return found
+            }
+            return OfferIntention(title: title)
+        }
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                HStack(spacing: AppTheme.Space.md) {
+                    if let set = row.mystery { JourneyMysteryThumb(set: set, kind: row.kind) }
+                    VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                        Text(facts.title)
+                            .font(AppTheme.TypeRole.headingPrimary)
+                            .foregroundStyle(palette.textPrimary)
+                            .accessibilityAddTraits(.isHeader)
+                        Text(decade == nil ? "Rosary completed" : "Single decade")
+                            .font(AppTheme.TypeRole.caption)
+                            .foregroundStyle(palette.textSecondary)
+                    }
+                }
+
+                VStack(spacing: 0) {
+                    ForEach(Array(facts.facts.enumerated()), id: \.offset) { index, fact in
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(fact.label).foregroundStyle(palette.textSecondary)
+                            Spacer(minLength: AppTheme.Space.md)
+                            Text(fact.value)
+                                .foregroundStyle(fact.value == "Not recorded" ? palette.dim : palette.ink)
+                                .multilineTextAlignment(.trailing)
+                        }
+                        .font(AppTheme.TypeRole.bodySmall)
+                        .padding(.vertical, 12)
+                        .accessibilityElement(children: .combine)
+                        if index < facts.facts.count - 1 { Hairline() }
+                    }
+                }
+                .padding(.horizontal, AppTheme.Space.lg)
+                .guideCard(fill: palette.surface)
+
+                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                    GuideSectionLabel(text: "Offered for", prominence: .strong)
+                        .accessibilityAddTraits(.isHeader)
+                    if intentions.isEmpty {
+                        Text(row.mystery == nil ? "Not recorded" : "No specific intention")
+                            .font(AppTheme.TypeRole.bodySmall)
+                            .foregroundStyle(palette.dim)
+                    } else {
+                        ForEach(Array(intentions.enumerated()), id: \.offset) { _, item in
+                            IntentionRadioRow(item: item, hideText: hideIntentionText, selected: false,
+                                              allowsPin: false, cardMinHeight: 64,
+                                              onChoose: {}, onPin: {}, onEdit: {}, onDelete: {},
+                                              multiSelect: true, readOnly: true)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding(.horizontal, AppTheme.gutter)
+            .padding(.top, AppTheme.Space.xxl)
+            .padding(.bottom, AppTheme.Space.xl)
+        }
+        .background(palette.bg)
+    }
+}
 
 /// What was prayed on one calendar day: each Rosary or decade with its mystery set, time,
 /// intentions and how long it took.

@@ -317,7 +317,7 @@ struct PrayIntentionSheet: View {
 
 /// Intention radio row with trailing overflow outside the select Button so menu taps
 /// do not also select the radio (same overlay pattern as CurrentIntentionHero).
-private struct IntentionRadioRow: View {
+struct IntentionRadioRow: View {
     @Environment(\.palette) private var palette
 
     let item: OfferIntention
@@ -331,6 +331,8 @@ private struct IntentionRadioRow: View {
     let onDelete: () -> Void
     /// Checkbox style for the multi-select intention step; radio otherwise.
     var multiSelect = false
+    /// History detail: same card, no check mark, menu or tap.
+    var readOnly = false
 
     @State private var showingDeleteAlert = false
 
@@ -349,11 +351,13 @@ private struct IntentionRadioRow: View {
     var body: some View {
         Button(action: onChoose) {
             HStack(alignment: .center, spacing: AppTheme.Space.md) {
+                if !readOnly {
                 Image(systemName: selected ? (multiSelect ? "checkmark.circle.fill" : "circle.inset.filled") : "circle")
                     .guideSymbol(size: 22, weight: .regular)
                     .foregroundStyle(selected ? palette.accentText : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
                     .guideSymbolSwap(value: selected)
+                }
 
                 IntentionIconView(
                     accent: item.accent,
@@ -385,9 +389,11 @@ private struct IntentionRadioRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Reserve trailing space so the overlaid overflow sits clear of the title.
+                if !readOnly {
                 Color.clear
                     .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
                     .accessibilityHidden(true)
+                }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 14)
@@ -406,10 +412,12 @@ private struct IntentionRadioRow: View {
             .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+        .disabled(readOnly)
+        .accessibilityAddTraits(selected && !readOnly ? .isSelected : [])
         .accessibilityLabel(hidesText ? IntentionPrivacy.maskedText : item.title)
         .overlay(alignment: .trailing) {
             // Outside the row Button so menu taps do not also select the radio.
+            if !readOnly {
             OverflowMenuButton(
                 isPinned: item.isPinned,
                 allowsPin: allowsPin,
@@ -419,6 +427,7 @@ private struct IntentionRadioRow: View {
                 onDelete: { showingDeleteAlert = true }
             )
             .padding(.trailing, 14)
+            }
         }
         .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}

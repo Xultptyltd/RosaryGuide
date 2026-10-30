@@ -173,6 +173,16 @@ enum MysterySetKind: String, CaseIterable, Codable, Identifiable {
 
     var weekdayNames: String { days(in: .ordinary) }
 
+    /// Learn caption: "Monday · Saturday". Same weekly pattern as `MysteryCalendar` in every season.
+    var weekdayCaption: String {
+        switch self {
+        case .joyful: "Monday · Saturday"
+        case .luminous: "Thursday"
+        case .sorrowful: "Tuesday · Friday"
+        case .glorious: "Wednesday · Sunday"
+        }
+    }
+
     func days(in season: LiturgicalSeason) -> String {
         // The weekly pattern is the same in every season; Sundays are always Glorious.
         switch self {

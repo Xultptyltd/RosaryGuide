@@ -495,3 +495,36 @@ final class WebCatholicScriptureTests: XCTestCase {
         }
     }
 }
+
+final class LearnAndHistoryDetailTests: XCTestCase {
+    /// Learn captions name exactly the weekdays the calendar assigns, in ordinary time,
+    /// Advent and Lent (the app keeps one weekly pattern; Sundays are always Glorious).
+    func testWeekdayCaptionsMatchCalendar() {
+        let weeks = [(2026, 9, 14), (2026, 11, 30), (2026, 3, 2)] // ordinary, Advent, Lent (Mondays)
+        let names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        for (y, m, d) in weeks {
+            var days: [MysterySetKind: [String]] = [:]
+            for offset in 0..<7 {
+                let date = LiturgicalCalendar.date(year: y, month: m, day: d + offset)!
+                let weekday = LiturgicalCalendar.gregorian.component(.weekday, from: date)
+                days[MysteryCalendar.assignment(on: date).set, default: []].append(names[weekday - 1])
+            }
+            for set in MysterySetKind.allCases {
+                XCTAssertEqual(Set(set.weekdayCaption.components(separatedBy: " · ")), Set(days[set] ?? []), "\(set) \(y)-\(m)")
+            }
+        }
+    }
+
+    func testDetailFactsHandleOldRecords() {
+        let end = Date(timeIntervalSince1970: 1_800_000_000)
+        let legacy = JourneyPrayerDetailFacts(mystery: nil, decade: nil, completedAt: end, startedAt: nil, duration: nil)
+        XCTAssertEqual(legacy.title, "Rosary prayed")
+        XCTAssertEqual(legacy.facts.first { $0.label == "Duration" }?.value, "Not recorded")
+        XCTAssertEqual(legacy.facts.first { $0.label == "Started" }?.value, "Not recorded")
+
+        let decade = JourneyPrayerDetailFacts(mystery: .sorrowful, decade: 3, completedAt: end, startedAt: nil, duration: 240)
+        XCTAssertEqual(decade.title, "Sorrowful Mysteries")
+        XCTAssertNotEqual(decade.facts.first { $0.label == "Duration" }?.value, "Not recorded")
+        XCTAssertTrue(decade.facts.first { $0.label == "Decade" }?.value.hasPrefix("III") == true)
+    }
+}

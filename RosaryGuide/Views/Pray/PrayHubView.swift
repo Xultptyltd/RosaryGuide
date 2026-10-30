@@ -166,7 +166,7 @@ struct PrayHubView: View {
                     NavigationLink {
                         LearnMysteryDetailView(set: set, prayLaunch: $prayLaunch)
                     } label: {
-                        learnTile(eyebrow: set.weekdayNames, title: "\(set.shortName) Mysteries", set: set, mysteryNumber: 1)
+                        learnTile(caption: set.weekdayCaption, title: "\(set.shortName) Mysteries", set: set, mysteryNumber: 1)
                     }
                     .buttonStyle(.plain)
                     .guidePressable()
@@ -184,7 +184,7 @@ struct PrayHubView: View {
                     NavigationLink {
                         DevotionDetailView(devotion: devotion, prayLaunch: $prayLaunch)
                     } label: {
-                        learnTile(eyebrow: devotion.eyebrow, title: devotion.title, set: devotion.artSet, mysteryNumber: devotion.artMystery)
+                        learnTile(caption: devotion.eyebrow, title: devotion.title, set: devotion.artSet, mysteryNumber: devotion.artMystery)
                     }
                     .buttonStyle(.plain)
                     .guidePressable()
@@ -193,7 +193,7 @@ struct PrayHubView: View {
         }
     }
 
-    private func learnTile(eyebrow: String, title: String, set: MysterySetKind, mysteryNumber: Int) -> some View {
+    private func learnTile(caption: String, title: String, set: MysterySetKind, mysteryNumber: Int) -> some View {
         let slug = MysteryCatalog.mysteries(for: set).first { $0.number == mysteryNumber }?.artSlug
         return HStack(alignment: .center, spacing: AppTheme.Space.md) {
             MysteryArtworkView(set: set, mysteryNumber: mysteryNumber, slug: slug, kind: .plate)
@@ -202,11 +202,13 @@ struct PrayHubView: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                GuideSectionLabel(text: eyebrow, prominence: .strong)
                 Text(title)
                     .font(AppTheme.TypeRole.body(weight: .semibold))
                     .foregroundStyle(palette.ink)
                     .fixedSize(horizontal: false, vertical: true)
+                Text(caption)
+                    .font(AppTheme.TypeRole.caption)
+                    .foregroundStyle(palette.dim)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
