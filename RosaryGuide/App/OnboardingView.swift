@@ -175,6 +175,15 @@ private struct OnboardingPageView: View {
     }
 }
 
+/// Layout of the sign-in hero.
+enum SignInLayout {
+    /// How far the beads are raised beyond the top edge, so the loop sits higher and the
+    /// quote has room. Only strand (already full of beads) moves off screen.
+    static func beadsLift(height: CGFloat) -> CGFloat { (height * 0.09).rounded() }
+    /// Home's title size on compact widths (AppTheme.homeTitleSize step for ≤376pt).
+    static let quoteSize: CGFloat = AppTheme.homeTitleSize(width: 375)
+}
+
 private struct OnboardingSignInView: View {
     var onComplete: () -> Void
 
@@ -207,24 +216,26 @@ private struct OnboardingSignInView: View {
                     .padding(.horizontal, AppTheme.Space.lg)
                     // Pull the player up under the status bar in layout too (not just drawing),
                     // so the quote block centres in the space under the loop.
-                    .padding(.top, -geo.safeAreaInsets.top)
+                    .padding(.top, -geo.safeAreaInsets.top - SignInLayout.beadsLift(height: geo.size.height))
                     .accessibilityHidden(true)
 
                 Spacer(minLength: AppTheme.Space.lg)
 
                 // Hero text: the quote alone, centred between the beads and the buttons.
                 VStack(spacing: AppTheme.Space.md) {
-                    Text(OnboardingCopy.signInQuote)
-                        .font(AppTheme.serif(28, opticalSize: 32, relativeTo: .title, maxPointSize: 36))
-                        .foregroundStyle(Color.white.opacity(0.94))
-                        .lineSpacing(2)
+                    // Same title style as Home's mystery-set title: H1 at the Home title size,
+                    // using its compact step so the quote stays on two lines on every width.
+                    GuideDisplayTitle(
+                        text: OnboardingCopy.signInQuote,
+                        size: SignInLayout.quoteSize,
+                        color: .white
+                    )
                     Text(OnboardingCopy.signInQuoteAttribution)
                         .font(AppTheme.TypeRole.body)
                         .foregroundStyle(Color.white.opacity(0.5))
                 }
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: 320)
                 .padding(.horizontal, AppTheme.gutter)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(OnboardingCopy.signInQuoteAccessibilityLabel)
