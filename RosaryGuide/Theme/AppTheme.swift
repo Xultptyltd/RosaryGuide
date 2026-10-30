@@ -1710,8 +1710,8 @@ extension AppTheme {
     enum MysteryIcon {
         static let circleSize: CGFloat = 44
         static let glyphSize: CGFloat = circleSize * LineIcon.glyphRatio
-        /// Filled asset icons read larger than line glyphs; this keeps them balanced in the circle.
-        static let assetRatio: CGFloat = 0.6
+        /// Asset frame vs circle. The SVG art fills ~86% of its frame, so 0.8 gives ~69% of the diameter.
+        static let assetRatio: CGFloat = 0.8
         static let pathGridSize = LineIcon.pathGridSize
         static var strokeStyle: StrokeStyle { LineIcon.strokeStyle }
 
