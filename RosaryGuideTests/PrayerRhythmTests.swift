@@ -888,18 +888,6 @@ final class RosaryHapticsTests: XCTestCase {
     }
 }
 
-@MainActor
-final class HomeEntranceTests: XCTestCase {
-    func testEntranceOnlyPlaysOnce() {
-        let entrance = HomeEntrance()
-        XCTAssertFalse(entrance.hasPlayed)
-        entrance.play()
-        XCTAssertTrue(entrance.hasPlayed)
-        entrance.play()
-        XCTAssertTrue(entrance.hasPlayed)
-    }
-}
-
 /// Chunk 2: the in-Rosary settings sheet and the Saint Michael step.
 final class RosarySettingsSheetTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_800_000_000)

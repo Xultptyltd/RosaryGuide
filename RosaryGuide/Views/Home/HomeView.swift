@@ -104,8 +104,6 @@ struct HomeView: View {
     }
 
     /// Home's first-load settle. Starts shown if it has already played this launch.
-    @State private var entranceShown = HomeEntrance.shared.hasPlayed
-    @Environment(\.scenePhase) private var scenePhase
 
     @State private var viewport = CGSize(width: 390, height: 720)
     @State private var topInset: CGFloat = 47
@@ -154,19 +152,6 @@ struct HomeView: View {
         }
         .onAppear {
             syncCurrentIntentionIfNeeded()
-            startEntranceIfReady()
-        }
-        .onChange(of: HomeEntrance.shared.splashDone) { _, _ in startEntranceIfReady() }
-        .onChange(of: scenePhase) { _, phase in
-            // Never leave Home hidden after a trip to the background. Only .background:
-            // launch passes through .inactive while the splash is up, which used to show
-            // Home instantly and skip the settle.
-            if phase == .background { showEntranceNow() }
-        }
-        .task {
-            // Failsafe: if the splash signal is ever missed, show Home anyway.
-            try? await Task.sleep(for: .seconds(HomeEntrance.failsafe))
-            showEntranceNow()
         }
         .onChange(of: dayClock.today) { _, _ in
             // A new day starts on its own default set.
@@ -377,19 +362,16 @@ struct HomeView: View {
                     }
                 }
             }
-            .homeEntrance(entranceShown, step: 0)
 
             Group {
                 GuideSectionBoundary(gutter: gutter)
 
                 mysteryRail(gutter: gutter)
             }
-            .homeEntrance(entranceShown, step: 1)
 
             if Self.showDailyScriptureOnHome {
                 liturgicalVerseSection
                     .padding(.top, AppTheme.sectionGap)
-                    .homeEntrance(entranceShown, step: 3)
             }
 
             Group {
@@ -400,7 +382,6 @@ struct HomeView: View {
                     comingUpSection
                 }
             }
-            .homeEntrance(entranceShown, step: 2)
 
             Group {
                 GuideSectionBoundary(gutter: gutter)
@@ -414,32 +395,12 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.top, AppTheme.sectionGap)
             }
-            .homeEntrance(entranceShown, step: 3)
         }
         .padding(.horizontal, gutter)
         .padding(.top, AppTheme.Space.sm)
         .padding(.bottom, AppTheme.Space.xxl)
         .frame(maxWidth: 576, alignment: .leading)
         .frame(maxWidth: .infinity)
-    }
-
-    private func startEntranceIfReady() {
-        guard !entranceShown else { return }
-        if UIAccessibility.isVoiceOverRunning {
-            showEntranceNow()
-            return
-        }
-        guard HomeEntrance.shared.splashDone else { return }
-        HomeEntrance.shared.play()
-        // Let the splash's own fade clear before Home settles.
-        DispatchQueue.main.asyncAfter(deadline: .now() + HomeEntrance.startDelay) { entranceShown = true }
-    }
-
-    private func showEntranceNow() {
-        HomeEntrance.shared.play()
-        guard !entranceShown else { return }
-        var t = Transaction(); t.disablesAnimations = true
-        withTransaction(t) { entranceShown = true }
     }
 
     private func syncCurrentIntentionIfNeeded() {
@@ -994,7 +955,7 @@ struct HomeView: View {
 
     private var mysteryPageDots: some View {
         // Today's dot fills in last on first load.
-        GuidePageDots(current: currentMysteryIndex, count: mysteries.count, currentFilled: entranceShown)
+        GuidePageDots(current: currentMysteryIndex, count: mysteries.count)
             .accessibilityLabel("Mystery card \(currentMysteryIndex + 1) of \(mysteries.count)")
     }
 
@@ -1029,8 +990,6 @@ struct HomeView: View {
                 // (which is maxHeight .infinity) claims the rest. Without it the fixed card height
                 // was split first and the art shrank, leaving a bare strip on the card's right.
                 MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false, cardFraming: true)
-                    .scaleEffect(entranceShown || reduceMotion ? 1 : 1.07)
-                    .animation(reduceMotion ? nil : .easeOut(duration: 0.9).delay(HomeEntrance.stepStagger), value: entranceShown)
                     .aspectRatio(1.5, contentMode: .fit)
                     .frame(maxWidth: .infinity)
                     .clipped()

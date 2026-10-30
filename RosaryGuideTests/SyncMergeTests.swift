@@ -918,9 +918,4 @@ final class SignInLandingTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(SignInLanding.hold, 0.6)
         XCTAssertLessThan(SignInLanding.hold, 1.2)
     }
-
-    func testHomeEntranceStartsAfterSplashFade() {
-        XCTAssertGreaterThan(HomeEntrance.startDelay, 0.28)
-        XCTAssertGreaterThan(HomeEntrance.dotDelay, HomeEntrance.stepDuration)
-    }
 }

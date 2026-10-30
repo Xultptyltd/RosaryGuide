@@ -2062,59 +2062,6 @@ private struct LongestWordWidth: Layout {
 #endif
 
 
-// MARK: - Home first-load entrance
-
-/// Home's staggered settle plays once per launch, after the launch splash has gone.
-/// Starts visible-safe: anything that misses the signal is shown by a failsafe.
-@MainActor @Observable
-final class HomeEntrance {
-    static let shared = HomeEntrance()
-    /// Set by the app when the launch splash finishes.
-    var splashDone = false
-    /// True once the settle has started (or been skipped); never goes back.
-    private(set) var hasPlayed = false
-
-    func play() { hasPlayed = true }
-
-    /// Waits for the splash's 0.28s fade to clear, so the settle is seen rather than
-    /// played underneath it.
-    static let startDelay: Double = 0.34
-    static let stepDuration: Double = 0.48
-    static let stepStagger: Double = 0.12
-    static let rise: CGFloat = 18
-    /// Today's dot fills once the last card has settled.
-    static let dotDelay: Double = 3 * stepStagger + stepDuration
-    /// Never leave Home hidden if the splash signal is missed (the splash itself can run ~3s).
-    static let failsafe: Double = 6
-}
-
-/// Stagger step on Home's first load: 0 greeting, 1 mystery card, 2 feast, 3 scripture.
-private struct HomeEntranceStep: ViewModifier {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    var shown: Bool
-    var step: Int
-
-    func body(content: Content) -> some View {
-        content
-            .opacity(shown ? 1 : 0)
-            .offset(y: shown || reduceMotion ? 0 : HomeEntrance.rise)
-            .animation(
-                // Reduce Motion: a plain short fade, no movement or stagger.
-                reduceMotion
-                    ? .easeOut(duration: 0.2)
-                    : .easeOut(duration: HomeEntrance.stepDuration).delay(Double(step) * HomeEntrance.stepStagger),
-                value: shown
-            )
-    }
-}
-
-extension View {
-    func homeEntrance(_ shown: Bool, step: Int) -> some View {
-        modifier(HomeEntranceStep(shown: shown, step: step))
-    }
-}
-
-
 // MARK: - Counts and sign-in feedback
 
 /// Digits roll to a new count only when the value changes (not on appear).
