@@ -1787,8 +1787,8 @@ enum AccountDeletion {
 
 /// The native confirmation shown before signing out.
 enum SignOutAlert {
-    static let title = "Sign out"
-    static let message = "Are you sure you want to sign out"
+    static let title = "Sign Out"
+    static let message = "Are you sure you want to sign out?"
     static let cancel = "Cancel"
     static let confirm = "Sign out"
     /// Time for the alert to close before the app swaps to onboarding.
