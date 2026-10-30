@@ -80,7 +80,7 @@ struct RootView: View {
     @Environment(AuthStore.self) private var auth
     @Environment(\.palette) private var palette
     @State private var prayLaunch: PrayLaunch?
-    @State private var tab: AppTab = DebugHooks.once("-RGDebugProfileTab") ? .intentions : .today
+    @State private var tab: AppTab = DebugHooks.once("-RGDebugProfileTab") ? .intentions : (DebugHooks.once("-RGDebugPrayTab") ? .pray : .today)
 
     var body: some View {
         rootTabs

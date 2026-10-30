@@ -194,12 +194,8 @@ struct PrayHubView: View {
     }
 
     private func learnTile(caption: String, title: String, set: MysterySetKind, mysteryNumber: Int) -> some View {
-        let slug = MysteryCatalog.mysteries(for: set).first { $0.number == mysteryNumber }?.artSlug
         return HStack(alignment: .center, spacing: AppTheme.Space.md) {
-            MysteryArtworkView(set: set, mysteryNumber: mysteryNumber, slug: slug, kind: .plate)
-                .frame(width: 56, height: 56)
-                .clipShape(Circle())
-                .accessibilityHidden(true)
+            MysterySetIcon(set: set, size: 56)
 
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 Text(title)

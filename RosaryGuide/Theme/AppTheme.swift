@@ -1710,6 +1710,8 @@ extension AppTheme {
     enum MysteryIcon {
         static let circleSize: CGFloat = 44
         static let glyphSize: CGFloat = circleSize * LineIcon.glyphRatio
+        /// Filled asset icons read larger than line glyphs; this keeps them balanced in the circle.
+        static let assetRatio: CGFloat = 0.6
         static let pathGridSize = LineIcon.pathGridSize
         static var strokeStyle: StrokeStyle { LineIcon.strokeStyle }
 
@@ -1799,6 +1801,17 @@ extension AppTheme {
     enum IntentionIcon {
         enum Glyph: CaseIterable {
             case hands, people, church, cross, heart, dove
+        }
+
+        /// Asset-catalog icon for a glyph; nil keeps the drawn line glyph.
+        static func assetName(for glyph: Glyph) -> String? {
+            switch glyph {
+            case .heart: "IntentionIconPersonal"
+            case .people: "IntentionIconSomeone"
+            case .church: "IntentionIconWorld"
+            case .dove: "MysteryIconGlorious"
+            case .hands, .cross: nil
+            }
         }
 
         static func glyph(for emoji: String, accent: IntentionAccent) -> Glyph {

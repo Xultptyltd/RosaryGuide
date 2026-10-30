@@ -2183,6 +2183,7 @@ struct OverflowMenuButton: View {
 
 struct IntentionIconView: View {
     @Environment(\.palette) private var palette
+    @Environment(\.colorScheme) private var colorScheme
     var accent: IntentionAccent
     var emoji: String
     var size: CGFloat = 40
@@ -2202,12 +2203,10 @@ struct IntentionIconView: View {
             } else {
                 ZStack {
                     Circle()
-                        .fill(accent.color)
+                        .fill(colorScheme == .dark ? accent.color.opacity(0.18) : accent.color)
                     if !emoji.isEmpty {
-                        IntentionLineGlyph(glyph: AppTheme.IntentionIcon.glyph(for: emoji, accent: accent))
-                            .stroke(style: AppTheme.LineIcon.strokeStyle)
-                            .frame(width: symbolSize, height: symbolSize)
-                            .foregroundStyle(accent.onColor)
+                        IntentionGlyphImage(glyph: AppTheme.IntentionIcon.glyph(for: emoji, accent: accent), size: size * AppTheme.MysteryIcon.assetRatio)
+                            .foregroundStyle(colorScheme == .dark ? accent.color : accent.onColor)
                     } else if let emptyPlaceholder, !emptyPlaceholder.isEmpty {
                         Image(systemName: "plus")
                             .guideSymbol(size: size * 0.26, weight: .regular)
@@ -2220,9 +2219,6 @@ struct IntentionIconView: View {
         .accessibilityHidden(true)
     }
 
-    private var symbolSize: CGFloat {
-        size * AppTheme.LineIcon.glyphRatio
-    }
 
 }
 
@@ -2745,9 +2741,7 @@ struct IntentionEditorSheet: View {
                         emoji = option.emoji
                     } label: {
                         VStack(spacing: AppTheme.Space.sm) {
-                            IntentionLineGlyph(glyph: option.glyph)
-                                .stroke(style: AppTheme.LineIcon.strokeStyle)
-                                .frame(width: 24, height: 24)
+                            IntentionGlyphImage(glyph: option.glyph, size: 24)
                             Text(option.title)
                                 .font(AppTheme.TypeRole.caption(weight: .medium))
                                 .multilineTextAlignment(.center)
@@ -4145,12 +4139,7 @@ private struct JourneyMysteryThumb: View {
     var size: CGFloat = 56
 
     var body: some View {
-        let number: Int = { if case .decade(let n) = kind { return min(max(n, 1), 5) }; return 1 }()
-        let slug = MysteryCatalog.mysteries(for: set).first { $0.number == number }?.artSlug
-        MysteryArtworkView(set: set, mysteryNumber: number, slug: slug, kind: .plate)
-            .frame(width: size, height: size)
-            .clipShape(Circle())
-            .accessibilityHidden(true)
+        MysterySetIcon(set: set, size: size)
     }
 }
 

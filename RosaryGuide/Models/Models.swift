@@ -152,6 +152,15 @@ enum MysterySetKind: String, CaseIterable, Codable, Identifiable {
     /// Glyph colour on `letterFill`: one dark navy, readable on all four fills in both modes.
     var letterOn: Color { AppTheme.mysteryOn }
 
+    var iconAssetName: String {
+        switch self {
+        case .joyful: "MysteryIconJoyful"
+        case .luminous: "MysteryIconLuminous"
+        case .sorrowful: "MysteryIconSorrowful"
+        case .glorious: "MysteryIconGlorious"
+        }
+    }
+
     /// One-line theme for Home (and similar) under today's mystery set.
     var themeSummary: String {
         switch self {

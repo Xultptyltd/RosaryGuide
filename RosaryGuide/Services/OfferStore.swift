@@ -63,9 +63,31 @@ final class OfferStore {
     }
 
     /// Active intentions only. Pinned first, then ones suggested for today's mystery, then recent.
+    /// DEBUG `-RGDebugSampleIntentions`: one row per category for screenshots. Render-only, never saved.
+    private static let debugSampleIntentions: [OfferIntention] = {
+        #if DEBUG
+        guard DebugHooks.has("-RGDebugSampleIntentions") else { return [] }
+        return IntentionCategory.allCases.map { category in
+            let accent: IntentionAccent = switch category {
+            case .personal: .mintGreen
+            case .someone: .skyBlue
+            case .world: .purple
+            }
+            let title = switch category {
+            case .personal: "Patience with my family"
+            case .someone: "For Grandma’s recovery"
+            case .world: "Peace in the world"
+            }
+            return OfferIntention(title: title, category: category, accent: accent, emoji: category == .personal ? "🙏" : (category == .someone ? "👥" : "🌍"))
+        }
+        #else
+        return []
+        #endif
+    }()
+
     var sortedIntentions: [OfferIntention] {
         let todaySet = MysteryCalendar.assignment(on: Date()).set
-        return intentions
+        return (intentions + Self.debugSampleIntentions)
             .filter { !$0.isExpired }
             .sorted { a, b in
                 if a.isPinned != b.isPinned { return a.isPinned && !b.isPinned }

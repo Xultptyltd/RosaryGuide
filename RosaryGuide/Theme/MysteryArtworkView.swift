@@ -5,18 +5,44 @@ import UIKit
 
 /// Shared mystery avatar for Learn and Journey History.
 struct MysterySetIcon: View {
+    @Environment(\.colorScheme) private var colorScheme
     let set: MysterySetKind
+    var size: CGFloat = AppTheme.MysteryIcon.circleSize
 
     var body: some View {
+        let dark = colorScheme == .dark
         ZStack {
-            Circle().fill(set.letterFill)
-            MysterySetLineGlyph(set: set)
-                .stroke(style: AppTheme.MysteryIcon.strokeStyle)
-                .frame(width: AppTheme.MysteryIcon.glyphSize, height: AppTheme.MysteryIcon.glyphSize)
-                .foregroundStyle(set.letterOn)
+            Circle().fill(dark ? set.letterFill.opacity(0.18) : set.letterFill)
+            Image(set.iconAssetName)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: size * AppTheme.MysteryIcon.assetRatio, height: size * AppTheme.MysteryIcon.assetRatio)
+                .foregroundStyle(dark ? set.letterFill : set.letterOn)
         }
-        .frame(width: AppTheme.MysteryIcon.circleSize, height: AppTheme.MysteryIcon.circleSize)
+        .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+}
+
+/// Filled intention glyph from the asset catalog, or the line glyph where no asset exists.
+struct IntentionGlyphImage: View {
+    let glyph: AppTheme.IntentionIcon.Glyph
+    let size: CGFloat
+
+    var body: some View {
+        if let name = AppTheme.IntentionIcon.assetName(for: glyph) {
+            Image(name)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+        } else {
+            IntentionLineGlyph(glyph: glyph)
+                .stroke(style: AppTheme.LineIcon.strokeStyle)
+                .frame(width: size * AppTheme.LineIcon.glyphRatio / AppTheme.MysteryIcon.assetRatio,
+                       height: size * AppTheme.LineIcon.glyphRatio / AppTheme.MysteryIcon.assetRatio)
+        }
     }
 }
 
