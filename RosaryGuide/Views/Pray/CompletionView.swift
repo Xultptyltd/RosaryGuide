@@ -17,6 +17,8 @@ struct CompletionIntention: Identifiable, Equatable {
 /// Copy rules for the Offered for carousel, kept out of the view so they are testable.
 enum CompletionCopy {
     static let offeredLabel = "Offered for"
+    /// The quote is only the fallback for a Rosary offered without intentions.
+    static func showsQuote(intentionCount: Int) -> Bool { intentionCount == 0 }
     static func cardLabel(index: Int, count: Int, title: String) -> String {
         count > 1 ? "Intention \(index + 1) of \(count): \(title)" : "Offered for \(title)"
     }
@@ -252,12 +254,9 @@ struct CompletionView: View {
                 .accessibilityLabel(mysterySet.name.english)
                 .padding(.top, 6)
 
-            if !shownIntentions.isEmpty {
+            if !CompletionCopy.showsQuote(intentionCount: shownIntentions.count) {
                 offeredCarousel
                     .padding(.top, 32)
-                // Quote stays, under the cards, at the carousel's own spacing.
-                quoteCard
-                    .padding(.top, AppTheme.Space.md)
             } else {
                 Color.clear.frame(height: 40)
                 quoteCard

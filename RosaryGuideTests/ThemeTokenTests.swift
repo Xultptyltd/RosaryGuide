@@ -394,6 +394,9 @@ final class CompletionScreenTests: XCTestCase {
 
     func testOfferedLabelAndVoiceOver() {
         XCTAssertEqual(CompletionCopy.offeredLabel, "Offered for")
+        XCTAssertTrue(CompletionCopy.showsQuote(intentionCount: 0))
+        XCTAssertFalse(CompletionCopy.showsQuote(intentionCount: 1))
+        XCTAssertFalse(CompletionCopy.showsQuote(intentionCount: 5))
         XCTAssertEqual(CompletionCopy.cardLabel(index: 1, count: 3, title: "Mum"), "Intention 2 of 3: Mum")
         XCTAssertEqual(CompletionCopy.cardLabel(index: 0, count: 1, title: "Mum"), "Offered for Mum")
     }
