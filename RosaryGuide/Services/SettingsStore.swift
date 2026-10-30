@@ -72,9 +72,7 @@ final class SettingsStore {
 
     /// The config a new Rosary is built with.
     var currentRosaryConfig: RosaryConfig {
-        var config = rosaryConfig
-        config.saintMichael = false
-        return config
+        rosaryConfig
     }
 
     /// Haptics are always on; there is no longer a setting to turn them off.

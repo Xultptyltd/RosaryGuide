@@ -68,6 +68,8 @@ struct PrayView: View {
     @State private var confirmReplace = false
     @State private var didConfigure = false
     @State private var showingMichael = false
+    @State private var showingRosarySettings = false
+    @State private var endAfterSettingsSheet = false
     /// Saint Michael after the Rosary keeps its own English / Latin / Both choice.
     @State private var michaelLanguage: PrayerLanguage?
     @State private var michaelContentHeight: CGFloat = 0
@@ -238,6 +240,16 @@ struct PrayView: View {
                 if value.translation.width > 40 { retreat() }
             }
         )
+        .sheet(isPresented: $showingRosarySettings, onDismiss: {
+            // Leave only once the sheet is gone, so the two dismissals don't collide.
+            if endAfterSettingsSheet {
+                endAfterSettingsSheet = false
+                closePrayerFlow()
+            }
+        }) {
+            // Timing keeps running underneath: the Rosary is still open.
+            RosarySettingsSheet(onEndRosary: { endAfterSettingsSheet = true })
+        }
         .alert("Start a new rosary?", isPresented: $confirmReplace) {
             Button("Replace saved place", role: .destructive) {
                 configure()
@@ -813,10 +825,9 @@ struct PrayView: View {
     private func header(_ step: RosaryStep) -> some View {
         ZStack {
             HStack {
-                if index > 0 || showingIntentionStep {
-                    roundControl(system: "chevron.left") { retreat() }
-                        .accessibilityLabel("Previous prayer")
-                }
+                // Swipe right still steps back; this opens Customise rosary.
+                roundControl(system: "gearshape") { showingRosarySettings = true }
+                    .accessibilityLabel("Rosary settings")
                 Spacer()
                 roundControl(system: "xmark") { closePrayerFlow() }
                     .accessibilityLabel("Close")
@@ -1249,8 +1260,8 @@ struct PrayView: View {
             mysterySet: launch.mysterySet,
             quote: completionQuote ?? QuoteCatalog.quote(),
             onDone: { finishRosary() },
-            // Saint Michael switched on in Rosary settings is already a step; no extra offer.
-            onMichael: activeConfig.saintMichael ? nil : {
+            // Always offered, even when Saint Michael was already prayed as a step.
+            onMichael: {
                 // Rosary is already marked complete on entering finis; Michael is optional continuation.
                 showingMichael = true
                 HapticService.play(.medium, enabled: settings.hapticsEnabled)

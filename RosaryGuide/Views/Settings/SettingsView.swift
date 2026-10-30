@@ -1239,54 +1239,99 @@ private struct SettingsTimeRow: View {
 /// Rosary settings: prayer text, scripture, optional prayers and intentions.
 /// Changes also apply live to a Rosary in progress (see `RosarySequenceBuilder.remap`).
 private struct SettingsRosaryScreen: View {
+    var body: some View {
+        SettingsDetailScaffold(title: "Customise rosary") {
+            RosarySettingsRows()
+        }
+    }
+}
+
+/// The Customise rosary rows, shared by Settings and the in-Rosary sheet.
+/// Both write the same store, so an open Rosary remaps live.
+private struct RosarySettingsRows: View {
     @Environment(SettingsStore.self) private var settings
     @State private var confirmReset = false
 
     var body: some View {
         @Bindable var settings = settings
-        SettingsDetailScaffold(title: "Customise rosary") {
-            VStack(alignment: .leading, spacing: 0) {
-                DividedRows {
-                    SettingsToggleRow(title: "Choose intentions", isOn: $settings.rosaryConfig.intentionsStep)
-                }
+        VStack(alignment: .leading, spacing: 0) {
+            DividedRows {
+                SettingsToggleRow(title: "Choose intentions", isOn: $settings.rosaryConfig.intentionsStep)
+            }
 
-                GuideSectionBoundary()
+            GuideSectionBoundary()
 
-                SettingsSection(title: "Each decade", icon: "repeat") {
-                    SettingsMenuRow(title: "Bible translation", value: settings.rosaryConfig.translation.title) {
-                        Picker("Bible translation", selection: $settings.rosaryConfig.translation) {
-                            ForEach(BibleTranslation.allCases) { translation in
-                                Text(translation.title).tag(translation)
-                            }
+            SettingsSection(title: "Each decade", icon: "repeat") {
+                SettingsMenuRow(title: "Bible translation", value: settings.rosaryConfig.translation.title) {
+                    Picker("Bible translation", selection: $settings.rosaryConfig.translation) {
+                        ForEach(BibleTranslation.allCases) { translation in
+                            Text(translation.title).tag(translation)
                         }
                     }
-                    SettingsToggleRow(title: "Fatima prayer", isOn: $settings.rosaryConfig.fatimaPrayer)
-                    SettingsToggleRow(title: "O Sacrament most holy", isOn: $settings.rosaryConfig.oSacrament)
                 }
-
-                GuideSectionBoundary()
-
-                SettingsSection(title: "Closing prayers", icon: "moon.stars") {
-                    SettingsToggleRow(title: "Hail, holy Queen", isOn: $settings.rosaryConfig.closingPrayers)
-                    SettingsToggleRow(title: "Memorare", isOn: $settings.rosaryConfig.memorare)
-                }
-
-                // Same grey tertiary pill as "Complete decade" in the prayer flow.
-                PillButton(title: "Reset to default", filled: false, tertiary: true) {
-                    confirmReset = true
-                }
-                .padding(.top, AppTheme.Space.xl)
+                SettingsToggleRow(title: "Fatima prayer", isOn: $settings.rosaryConfig.fatimaPrayer)
+                SettingsToggleRow(title: "O Sacrament most holy", isOn: $settings.rosaryConfig.oSacrament)
             }
+
+            GuideSectionBoundary()
+
+            SettingsSection(title: "Closing prayers", icon: "moon.stars") {
+                SettingsToggleRow(title: "Hail, holy Queen", isOn: $settings.rosaryConfig.closingPrayers)
+                SettingsToggleRow(title: "Memorare", isOn: $settings.rosaryConfig.memorare)
+                // Prayed after the closing prayers, before the final Sign of the Cross.
+                SettingsToggleRow(title: "Saint Michael", isOn: $settings.rosaryConfig.saintMichael)
+            }
+
+            // Same grey tertiary pill as "Complete decade" in the prayer flow.
+            PillButton(title: "Reset to default", filled: false, tertiary: true) {
+                confirmReset = true
+            }
+            .padding(.top, AppTheme.Space.xl)
         }
         .alert("Reset to default?", isPresented: $confirmReset) {
             Button("Reset", role: .destructive) {
-                // Same store as the toggles, so an open Rosary remaps live.
                 settings.rosaryConfig = .default
             }
             Button("Cancel", role: .cancel) {}
         }
     }
+}
 
+/// Bottom sheet opened from the settings button inside the Rosary.
+struct RosarySettingsSheet: View {
+    @Environment(\.palette) private var palette
+    @Environment(\.dismiss) private var dismiss
+    /// Leaves the Rosary the same way as the close button.
+    let onEndRosary: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    RosarySettingsRows()
+                    GuideSectionBoundary()
+                    PillButton(title: "End rosary", filled: false) {
+                        dismiss()
+                        onEndRosary()
+                    }
+                    .accessibilityHint("Saves your place and leaves the Rosary")
+                }
+                .padding(.horizontal, AppTheme.gutter)
+                .padding(.top, AppTheme.Space.lg)
+                .padding(.bottom, AppTheme.Space.xxl)
+            }
+            .background(palette.bg.ignoresSafeArea())
+            .navigationTitle("Customise rosary")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
 }
 
 private struct SettingsAcknowledgementsScreen: View {

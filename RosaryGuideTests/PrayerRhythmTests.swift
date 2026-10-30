@@ -899,3 +899,74 @@ final class HomeEntranceTests: XCTestCase {
         XCTAssertTrue(entrance.hasPlayed)
     }
 }
+
+/// Chunk 2: the in-Rosary settings sheet and the Saint Michael step.
+final class RosarySettingsSheetTests: XCTestCase {
+    private let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+
+    private func freshDefaults() -> UserDefaults {
+        let name = "RosarySettingsSheetTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        return defaults
+    }
+
+    func testSaintMichaelDefaultsOff() {
+        XCTAssertFalse(RosaryConfig.default.saintMichael)
+        XCTAssertFalse(SettingsStore(defaults: freshDefaults()).currentRosaryConfig.saintMichael)
+    }
+
+    func testSaintMichaelToggleReachesNewRosary() {
+        let settings = SettingsStore(defaults: freshDefaults())
+        settings.rosaryConfig.saintMichael = true
+        XCTAssertTrue(settings.currentRosaryConfig.saintMichael)
+    }
+
+    func testSaintMichaelSitsAfterClosingPrayersBeforeFinalSignOfTheCross() {
+        var config = RosaryConfig()
+        config.saintMichael = true
+        let kinds = RosarySequenceBuilder.build(set: .joyful, config: config).map(\.kind)
+        let michael = try! XCTUnwrap(kinds.lastIndex(of: .saintMichael))
+        XCTAssertEqual(kinds[michael - 1], .concludingPrayer)
+        XCTAssertEqual(kinds[michael + 1], .signOfTheCross)
+        XCTAssertEqual(kinds[michael + 2], .completion)
+    }
+
+    func testTogglingSaintMichaelMidRosaryKeepsPlace() {
+        let off = RosarySequenceBuilder.build(set: .joyful, config: RosaryConfig())
+        var config = RosaryConfig()
+        config.saintMichael = true
+        let on = RosarySequenceBuilder.build(set: .joyful, config: config)
+        let place = 20
+        let mapped = RosarySequenceBuilder.remap(index: place, from: off, to: on)
+        XCTAssertEqual(on[mapped].kind, off[place].kind)
+        XCTAssertEqual(on[mapped].decadeNumber, off[place].decadeNumber)
+        XCTAssertEqual(on[mapped].hailMaryNumber, off[place].hailMaryNumber)
+    }
+
+    /// The sheet sits over the Rosary while the app stays active, so time keeps counting.
+    func testOpeningSettingsSheetKeepsTiming() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        clock.touch(at: t0.addingTimeInterval(60))
+        // Two minutes in the sheet, then back to praying (no pause, no reset).
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(180), keepRunning: true), 180)
+        XCTAssertTrue(clock.isRunning)
+    }
+
+    /// End rosary in the sheet uses the close path: bank the time and pause.
+    func testEndingFromSheetPausesLikeClose() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(300), keepRunning: false), 300)
+        XCTAssertFalse(clock.isRunning)
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(900), keepRunning: false), 0)
+    }
+
+    /// A sheet left open past the idle allowance only credits up to the 10-minute cap.
+    func testSheetLeftOpenIsCapped() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        XCTAssertEqual(clock.take(at: t0.addingTimeInterval(3_600), keepRunning: true), ActivePrayerClock.idleLimit)
+    }
+}
