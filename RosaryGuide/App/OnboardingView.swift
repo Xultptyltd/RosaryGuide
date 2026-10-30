@@ -94,6 +94,8 @@ private struct OnboardingPage: Identifiable {
     var title: String
     var body: String
     var imageName: String
+    /// Which part of the image stays in view when the panel crops it.
+    var imageAlignment: Alignment = .top
 
     static let pages: [OnboardingPage] = [
         OnboardingPage(
@@ -104,7 +106,8 @@ private struct OnboardingPage: Identifiable {
         OnboardingPage(
             title: "Every prayer,\ngently guided.",
             body: "New to the Rosary? Follow along,\none bead at a time.",
-            imageName: "OnboardingBeads"
+            imageName: "OnboardingBeads",
+            imageAlignment: .center
         ),
         OnboardingPage(
             title: "Bring what’s\non your heart.",
@@ -124,33 +127,24 @@ private struct OnboardingPageView: View {
 
     var body: some View {
         GeometryReader { geo in
-            ZStack(alignment: .bottomLeading) {
-                Image(page.imageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .scaleEffect(reduceMotion ? 1 : 1.018)
-                    .offset(y: reduceMotion ? 0 : (imageDrift ? -5 : 5))
-                    // Scoped to the drift value: a withAnimation(repeatForever) here used to
-                    // capture the page's own layout as it appeared, so the screen shrank and slid.
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 7.5).repeatForever(autoreverses: true), value: imageDrift)
-                    .clipped()
-                    .ignoresSafeArea(edges: .top)
-                    .accessibilityHidden(true)
+            VStack(spacing: 0) {
+                // Same panel as the sign-in screen, filled black, with the page's image inside.
+                OnboardingPanel(fill: .black, geo: geo) { _ in
+                    Color.clear
+                        .overlay(alignment: page.imageAlignment) {
+                            Image(page.imageName)
+                                .resizable()
+                                .scaledToFill()
+                                .scaleEffect(reduceMotion ? 1 : 1.018)
+                                .offset(y: reduceMotion ? 0 : (imageDrift ? -5 : 5))
+                                // Scoped to the drift value: a withAnimation(repeatForever) here
+                                // used to capture the page's own layout, so the screen slid.
+                                .animation(reduceMotion ? nil : .easeInOut(duration: 7.5).repeatForever(autoreverses: true), value: imageDrift)
+                        }
+                        .clipped()
+                }
 
-                LinearGradient(
-                    stops: [
-                        .init(color: Color.black.opacity(0.18), location: 0),
-                        .init(color: Color.black.opacity(0.10), location: 0.36),
-                        .init(color: Color.black.opacity(0.68), location: 0.66),
-                        .init(color: Color.black.opacity(0.96), location: 0.86),
-                        .init(color: Color.black, location: 1)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+                Spacer(minLength: AppTheme.Space.lg)
 
                 VStack(alignment: .center, spacing: AppTheme.Space.lg) {
                     Text(page.title)
@@ -170,7 +164,11 @@ private struct OnboardingPageView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.horizontal, AppTheme.gutter)
-                .padding(.bottom, max(188, geo.safeAreaInsets.bottom + 164))
+
+                Spacer(minLength: AppTheme.Space.lg)
+
+                // Room for the dots and Continue button, which OnboardingView draws on top.
+                Color.clear.frame(height: OnboardingLayout.controlsHeight)
             }
         }
         .background(Color.black)
@@ -180,6 +178,45 @@ private struct OnboardingPageView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(page.title.replacingOccurrences(of: "\n", with: " ")). \(page.body.replacingOccurrences(of: "\n", with: " ")). Page \(index + 1) of \(pageCount).")
+    }
+}
+
+/// Layout of the onboarding content pages.
+enum OnboardingLayout {
+    /// Height below the text kept clear for the page dots and the Continue button.
+    static let controlsHeight: CGFloat = 132
+}
+
+/// The hero panel shared by the onboarding pages and the sign-in screen: inset from the sides,
+/// running off the top of the screen under the status bar, with rounded bottom corners and a
+/// fade in its fill colour behind the status bar icons.
+struct OnboardingPanel<Content: View>: View {
+    var fill: Color
+    var geo: GeometryProxy
+    @ViewBuilder var content: (_ panelHeight: CGFloat) -> Content
+
+    var body: some View {
+        let panelHeight = SignInLayout.panelHeight(
+            screenHeight: geo.size.height + geo.safeAreaInsets.top + geo.safeAreaInsets.bottom)
+        fill
+            .frame(height: panelHeight)
+            .overlay { content(panelHeight) }
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    stops: [.init(color: fill, location: 0),
+                            .init(color: fill, location: 0.4),
+                            .init(color: fill.opacity(0), location: 1)],
+                    startPoint: .top, endPoint: .bottom)
+                    .frame(height: geo.safeAreaInsets.top + AppTheme.Space.xl)
+                    .allowsHitTesting(false)
+            }
+            .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: AppTheme.panelRadius,
+                                              bottomTrailingRadius: AppTheme.panelRadius,
+                                              style: .continuous))
+            .padding(.horizontal, SignInLayout.panelInset)
+            // Pull it up under the status bar in layout too, so the text centres below it.
+            .padding(.top, -geo.safeAreaInsets.top)
+            .accessibilityHidden(true)
     }
 }
 
@@ -231,36 +268,15 @@ private struct OnboardingSignInView: View {
             VStack(spacing: 0) {
                 // Marian blue panel behind the beads. It bleeds off the top of the screen and
                 // the strands start above the top edge, so the rosary hangs from off screen.
-                let panelHeight = SignInLayout.panelHeight(
-                    screenHeight: geo.size.height + geo.safeAreaInsets.top + geo.safeAreaInsets.bottom)
-                // The beads sit in an overlay so their width (which can exceed the panel's, the
-                // sides being empty) doesn't widen the layout; the panel clips them.
-                AppTheme.marianBlue
-                    .frame(height: panelHeight)
-                    .overlay(alignment: .bottom) {
-                        RosaryBeadsFallPlayer(plays: !reduceMotion)
-                            .aspectRatio(RosaryBeadsFallPlayer.aspectRatio, contentMode: .fit)
-                            .frame(width: SignInLayout.beadsWidth(panelHeight: panelHeight))
-                            .padding(.bottom, SignInLayout.loopBottomPadding)
-                    }
-                    // Marian blue fade under the status bar: the time, Dynamic Island and battery
-                    // sit on clean blue and the strands emerge softly just below them.
-                    .overlay(alignment: .top) {
-                        LinearGradient(
-                            stops: [.init(color: AppTheme.marianBlue, location: 0),
-                                    .init(color: AppTheme.marianBlue, location: 0.4),
-                                    .init(color: AppTheme.marianBlue.opacity(0), location: 1)],
-                            startPoint: .top, endPoint: .bottom)
-                            .frame(height: geo.safeAreaInsets.top + AppTheme.Space.xl)
-                            .allowsHitTesting(false)
-                    }
-                .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: AppTheme.panelRadius,
-                                                  bottomTrailingRadius: AppTheme.panelRadius,
-                                                  style: .continuous))
-                .padding(.horizontal, SignInLayout.panelInset)
-                // Pull it up under the status bar in layout too, so the quote centres below it.
-                .padding(.top, -geo.safeAreaInsets.top)
-                .accessibilityHidden(true)
+                OnboardingPanel(fill: AppTheme.marianBlue, geo: geo) { panelHeight in
+                    // The beads sit in an overlay so their width (which can exceed the panel's,
+                    // the sides being empty) doesn't widen the layout; the panel clips them.
+                    RosaryBeadsFallPlayer(plays: !reduceMotion)
+                        .aspectRatio(RosaryBeadsFallPlayer.aspectRatio, contentMode: .fit)
+                        .frame(width: SignInLayout.beadsWidth(panelHeight: panelHeight))
+                        .padding(.bottom, SignInLayout.loopBottomPadding)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                }
 
                 Spacer(minLength: AppTheme.Space.lg)
 
