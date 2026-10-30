@@ -199,6 +199,7 @@ struct PrayView: View {
         .onAppear {
             guard !didConfigure else { return }
             didConfigure = true
+            if DebugHooks.has("-RGDebugRosaryFlowSettings") { showingRosarySettings = true }
             if case .fresh(let set, _, _) = launch, sessionStore.resumableSession != nil {
                 freshSetPending = set
                 confirmReplace = true

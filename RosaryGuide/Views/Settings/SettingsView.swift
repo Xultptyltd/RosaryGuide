@@ -37,6 +37,7 @@ struct SettingsView: View {
     @State private var accountDeletionError: String?
     @State private var mailUnavailableMessage: String?
     @State private var showOnboardingPreview = false
+    @State private var debugCustomiseRosary = DebugHooks.has("-RGDebugCustomiseRosary")
     /// Guest card sign-in; signing in here stays on Settings.
     @State private var showSignIn = false
     @State private var mailDraft: SettingsMailDraft?
@@ -52,6 +53,8 @@ struct SettingsView: View {
         .navigationDestination(for: SettingsDestination.self) { destination in
             destinationView(destination)
         }
+        // Screenshot hook (DebugHooks is DEBUG-only): opens Customise rosary.
+        .navigationDestination(isPresented: $debugCustomiseRosary) { SettingsRosaryScreen() }
         .fullScreenCover(isPresented: $showSignIn) {
             OnboardingView(startsAtSignIn: true) { showSignIn = false }
         }
@@ -1255,6 +1258,7 @@ private struct SettingsRosaryScreen: View {
         SettingsDetailScaffold(title: "Customise rosary") {
             RosarySettingsRows()
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) { RosaryResetFooter() }
     }
 }
 
@@ -1262,7 +1266,6 @@ private struct SettingsRosaryScreen: View {
 /// Both write the same store, so an open Rosary remaps live.
 private struct RosarySettingsRows: View {
     @Environment(SettingsStore.self) private var settings
-    @State private var confirmReset = false
 
     var body: some View {
         @Bindable var settings = settings
@@ -1293,13 +1296,25 @@ private struct RosarySettingsRows: View {
                 // Prayed after the closing prayers, before the final Sign of the Cross.
                 SettingsToggleRow(title: "Saint Michael", isOn: $settings.rosaryConfig.saintMichael)
             }
-
-            // Same grey tertiary pill as "Complete decade" in the prayer flow.
-            PillButton(title: "Reset to default", filled: false, tertiary: true) {
-                confirmReset = true
-            }
-            .padding(.top, AppTheme.Space.xl)
         }
+    }
+}
+
+/// "Reset to default", pinned to the bottom of both Customise rosary screens;
+/// the rows scroll under it.
+private struct RosaryResetFooter: View {
+    @Environment(SettingsStore.self) private var settings
+    @State private var confirmReset = false
+
+    var body: some View {
+        // Same grey tertiary pill as "Complete decade" in the prayer flow.
+        PillButton(title: "Reset to default", filled: false, tertiary: true) {
+            confirmReset = true
+        }
+        .padding(.horizontal, AppTheme.gutter)
+        .padding(.top, AppTheme.Space.md)
+        .padding(.bottom, AppTheme.Space.md)
+        .guideFooterBackdrop()
         .alert("Reset to default?", isPresented: $confirmReset) {
             Button("Reset", role: .destructive) {
                 settings.rosaryConfig = .default
@@ -1325,6 +1340,7 @@ struct RosarySettingsSheet: View {
                 .padding(.top, AppTheme.Space.lg)
                 .padding(.bottom, AppTheme.Space.xxl)
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) { RosaryResetFooter() }
             .background(palette.bg.ignoresSafeArea())
             .navigationTitle("Customise rosary")
             .navigationBarTitleDisplayMode(.inline)

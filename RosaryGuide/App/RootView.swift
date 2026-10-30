@@ -84,6 +84,12 @@ struct RootView: View {
 
     var body: some View {
         rootTabs
+            .task {
+                // Screenshot hook (DebugHooks is DEBUG-only): opens the Rosary's settings sheet.
+                guard DebugHooks.has("-RGDebugRosaryFlowSettings") else { return }
+                try? await Task.sleep(for: .seconds(3))
+                prayLaunch = .fresh(.joyful)
+            }
             .fullScreenCover(item: $prayLaunch) { launch in
                 ThemedRoot {
                     PrayView(launch: launch)
