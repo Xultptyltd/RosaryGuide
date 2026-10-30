@@ -157,16 +157,16 @@ struct SettingsView: View {
                             )
                         } else {
                             SettingsActionRow(
-                                title: auth.isSigningInWithApple ? "Signing in..." : "Sign in with Apple",
+                                title: auth.isSigningInWithApple ? "Signing in" : "Sign in with Apple",
                                 icon: "apple.logo",
-                                accessory: .none
+                                accessory: auth.isSigningInWithApple ? .progress : .none
                             ) {
                                 HapticService.play(.medium, enabled: settings.hapticsEnabled)
                                 auth.signInWithApple()
                             }
                             .disabled(auth.isWorking)
 
-                            SettingsActionRow(title: auth.isSigningInWithGoogle ? "Signing in..." : "Sign in with Google", icon: "g.circle", accessory: .none) {
+                            SettingsActionRow(title: auth.isSigningInWithGoogle ? "Signing in" : "Sign in with Google", icon: "g.circle", accessory: auth.isSigningInWithGoogle ? .progress : .none) {
                                 HapticService.play(.medium, enabled: settings.hapticsEnabled)
                                 auth.signInWithGoogle()
                             }
@@ -676,6 +676,8 @@ private enum SettingsRowAccessory {
     case externalLink
     /// Row pushes another page: always draws a trailing chevron.
     case navigation
+    /// Sign-in in progress.
+    case progress
 }
 
 /// Leading line icon in a fixed-width column so every row label lines up.
@@ -765,6 +767,8 @@ private struct SettingsRowChrome: View {
                 .guideSymbol(size: 12, weight: .regular)
                 .foregroundStyle(palette.secondaryText)
                 .accessibilityHidden(true)
+        case .progress:
+            ProgressView().controlSize(.small).accessibilityHidden(true)
         }
     }
 
@@ -806,6 +810,8 @@ private struct SettingsRowChrome: View {
             switch accessory {
             case .none:
                 EmptyView()
+            case .progress:
+                ProgressView().controlSize(.small).transition(.opacity).accessibilityHidden(true)
             case .chevron:
                 EmptyView()
             case .externalLink:

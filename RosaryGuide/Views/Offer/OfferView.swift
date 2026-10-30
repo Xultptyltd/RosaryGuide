@@ -232,6 +232,11 @@ struct OfferView: View {
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideRootChrome.contentTop)
             .padding(.bottom, AppTheme.tabBarContentClearance)
+            // Reuses the onboarding sign-in step. Held here, not on the backup card: the card
+            // goes the moment the account exists, which used to close this before its tick.
+            .fullScreenCover(isPresented: $showSignIn) {
+                OnboardingView(startsAtSignIn: true) { showSignIn = false }
+            }
         }
     }
 
@@ -306,10 +311,6 @@ struct OfferView: View {
         .padding(.horizontal, AppTheme.Space.lg)
         .padding(.vertical, AppTheme.Space.xl)
         .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
-        // Reuses the onboarding sign-in step; continue without or a successful sign-in both dismiss.
-        .fullScreenCover(isPresented: $showSignIn) {
-            OnboardingView(startsAtSignIn: true) { showSignIn = false }
-        }
     }
 
     private func profileRow(title: String, detail: String, symbol: String, eyebrow: String? = nil) -> some View {

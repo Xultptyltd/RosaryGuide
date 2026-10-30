@@ -897,3 +897,30 @@ final class DevotionCatalogTests: XCTestCase {
         XCTAssertFalse(DevotionCatalog.matchesSearch(DevotionCatalog.novena, query: "  "))
     }
 }
+
+final class SignInLandingTests: XCTestCase {
+    func testOnboardingSignInWaitsForTick() {
+        XCTAssertFalse(LaunchGate.showsApp(didCompleteOnboarding: false, isSignedIn: true, signedInThisLaunch: true))
+        XCTAssertTrue(LaunchGate.showsApp(didCompleteOnboarding: true, isSignedIn: true, signedInThisLaunch: true))
+    }
+
+    func testRestoredSessionSkipsOnboarding() {
+        XCTAssertTrue(LaunchGate.showsApp(didCompleteOnboarding: false, isSignedIn: true, signedInThisLaunch: false))
+    }
+
+    func testEverySignInLandsOnHome() {
+        XCTAssertTrue(SignInLanding.landsOnHome(previous: 0, count: 1))
+        XCTAssertTrue(SignInLanding.landsOnHome(previous: 1, count: 2))
+        XCTAssertFalse(SignInLanding.landsOnHome(previous: 1, count: 1))
+    }
+
+    func testHoldShowsTheTick() {
+        XCTAssertGreaterThanOrEqual(SignInLanding.hold, 0.6)
+        XCTAssertLessThan(SignInLanding.hold, 1.2)
+    }
+
+    func testHomeEntranceStartsAfterSplashFade() {
+        XCTAssertGreaterThan(HomeEntrance.startDelay, 0.28)
+        XCTAssertGreaterThan(HomeEntrance.dotDelay, HomeEntrance.stepDuration)
+    }
+}

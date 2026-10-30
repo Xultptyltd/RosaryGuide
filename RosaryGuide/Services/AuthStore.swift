@@ -26,6 +26,9 @@ final class AuthStore: NSObject {
     private(set) var isWorking = false
     private(set) var activeSignInProvider: Provider?
     var errorMessage: String?
+    /// Sign-ins (or new accounts) completed by tapping a button this launch. A session
+    /// restored at launch does not count. The app lands on Home after each one.
+    private(set) var interactiveSignIns = 0
 
     var isSigningInWithApple: Bool { activeSignInProvider == .apple }
     var isSigningInWithGoogle: Bool { activeSignInProvider == .google }
@@ -243,6 +246,7 @@ final class AuthStore: NSObject {
                     self.finishWith(Self.isCancellation(error) ? nil : Self.signInMessage(for: error))
                     return
                 }
+                if result?.user != nil { self.interactiveSignIns += 1 }
                 self.apply(user: result?.user)
                 self.endWork()
             }

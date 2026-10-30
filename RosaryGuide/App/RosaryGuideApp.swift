@@ -10,6 +10,9 @@ struct RosaryGuideApp: App {
     @State private var sync: AccountSyncStore
     @State private var dayClock = DayClock()
     @State private var isShowingSplash = true
+    /// Bumped after a sign-in: rebuilding the tabs closes every sheet and pushed page and
+    /// starts on Home.
+    @State private var rootGeneration = 0
     @AppStorage("onboarding.completed") private var didCompleteOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -36,8 +39,10 @@ struct RosaryGuideApp: App {
                 ZStack {
                     // Signing in is optional (App Review 5.1.1(v)): guests use everything on this
                     // device, and an account only adds sync.
-                    if LaunchGate.showsApp(didCompleteOnboarding: didCompleteOnboarding, isSignedIn: auth.isSignedIn) {
+                    if LaunchGate.showsApp(didCompleteOnboarding: didCompleteOnboarding, isSignedIn: auth.isSignedIn,
+                                           signedInThisLaunch: auth.interactiveSignIns > 0) {
                         RootView()
+                            .id(rootGeneration)
                             .transition(.opacity)
                     } else {
                         OnboardingView {
@@ -84,6 +89,14 @@ struct RosaryGuideApp: App {
                 guard !plan.isEmpty else { return }
                 Task { await NotificationService.reschedule(plan) }
             }
+            .onChange(of: auth.interactiveSignIns) { previous, count in
+                guard SignInLanding.landsOnHome(previous: previous, count: count) else { return }
+                // After the sign-in screen's tick, from any entry point: Home, nothing on top.
+                DispatchQueue.main.asyncAfter(deadline: .now() + SignInLanding.hold) {
+                    didCompleteOnboarding = true
+                    withAnimation(.easeOut(duration: 0.28)) { rootGeneration += 1 }
+                }
+            }
             .onOpenURL { url in
                 _ = auth.handleOpenURL(url)
             }
@@ -114,7 +127,9 @@ struct RosaryGuideApp: App {
                 offer.configureSync(for: userID)
                 sync.configureSync(for: userID)
                 if userID != nil {
-                    didCompleteOnboarding = true
+                    // A restored session skips onboarding. A sign-in from the onboarding
+                    // screen finishes there, after its tick.
+                    if auth.interactiveSignIns == 0 { didCompleteOnboarding = true }
                 } else if LaunchGate.returnsToOnboarding(previousUserID: previous, userID: userID) {
                     // Signing out or deleting the account goes back to the sign-in screen.
                     withAnimation(.easeOut(duration: 0.28)) {
@@ -134,7 +149,16 @@ enum LaunchGate {
         previousUserID != nil && userID == nil
     }
 
-    static func showsApp(didCompleteOnboarding: Bool, isSignedIn: Bool) -> Bool {
-        didCompleteOnboarding || isSignedIn
+    /// A sign-in made on the onboarding screen keeps that screen up for its tick; the
+    /// app opens when onboarding completes.
+    static func showsApp(didCompleteOnboarding: Bool, isSignedIn: Bool, signedInThisLaunch: Bool = false) -> Bool {
+        didCompleteOnboarding || (isSignedIn && !signedInThisLaunch)
     }
+}
+
+/// After any sign-in or new account the app returns to Home with nothing on top.
+enum SignInLanding {
+    /// Long enough for the sign-in button's tick (shown for 0.6s) to be seen.
+    static let hold: Double = 0.7
+    static func landsOnHome(previous: Int, count: Int) -> Bool { count > previous }
 }
