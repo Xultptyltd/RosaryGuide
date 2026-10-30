@@ -75,8 +75,6 @@ enum AppTheme {
     static let containerRadius: CGFloat = 20
     /// Site `--r-feature` — Home mystery rail cards.
     static let featureRadius: CGFloat = 24
-    /// Hero panels that bleed off a screen edge (e.g. the sign-in beads panel).
-    static let panelRadius: CGFloat = 32
     static let nestedRadius: CGFloat = 12
     static var capsule: Capsule { Capsule(style: .continuous) }
     static let controlSize: CGFloat = 40
