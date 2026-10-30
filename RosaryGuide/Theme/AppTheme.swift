@@ -2075,6 +2075,17 @@ final class HomeEntrance {
     private(set) var hasPlayed = false
 
     func play() { hasPlayed = true }
+
+    /// Waits for the splash's 0.28s fade to clear, so the settle is seen rather than
+    /// played underneath it.
+    static let startDelay: Double = 0.34
+    static let stepDuration: Double = 0.48
+    static let stepStagger: Double = 0.12
+    static let rise: CGFloat = 18
+    /// Today's dot fills once the last card has settled.
+    static let dotDelay: Double = 3 * stepStagger + stepDuration
+    /// Never leave Home hidden if the splash signal is missed (the splash itself can run ~3s).
+    static let failsafe: Double = 6
 }
 
 /// Stagger step on Home's first load: 0 greeting, 1 mystery card, 2 feast, 3 scripture.
@@ -2086,11 +2097,12 @@ private struct HomeEntranceStep: ViewModifier {
     func body(content: Content) -> some View {
         content
             .opacity(shown ? 1 : 0)
-            .offset(y: shown || reduceMotion ? 0 : 10)
+            .offset(y: shown || reduceMotion ? 0 : HomeEntrance.rise)
             .animation(
+                // Reduce Motion: a plain short fade, no movement or stagger.
                 reduceMotion
                     ? .easeOut(duration: 0.2)
-                    : .easeOut(duration: 0.26).delay(Double(step) * 0.08),
+                    : .easeOut(duration: HomeEntrance.stepDuration).delay(Double(step) * HomeEntrance.stepStagger),
                 value: shown
             )
     }

@@ -511,7 +511,7 @@ struct GuidePageDots: View {
         }
         .frame(maxWidth: .infinity, alignment: alignment)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: current)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.24).delay(0.32), value: currentFilled)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.3).delay(HomeEntrance.dotDelay), value: currentFilled)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Screen \(current + 1) of \(count)")
     }

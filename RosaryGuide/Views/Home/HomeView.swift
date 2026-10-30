@@ -158,12 +158,14 @@ struct HomeView: View {
         }
         .onChange(of: HomeEntrance.shared.splashDone) { _, _ in startEntranceIfReady() }
         .onChange(of: scenePhase) { _, phase in
-            // Never leave Home hidden after a trip to the background.
-            if phase != .active { showEntranceNow() }
+            // Never leave Home hidden after a trip to the background. Only .background:
+            // launch passes through .inactive while the splash is up, which used to show
+            // Home instantly and skip the settle.
+            if phase == .background { showEntranceNow() }
         }
         .task {
             // Failsafe: if the splash signal is ever missed, show Home anyway.
-            try? await Task.sleep(for: .seconds(4))
+            try? await Task.sleep(for: .seconds(HomeEntrance.failsafe))
             showEntranceNow()
         }
         .onChange(of: dayClock.today) { _, _ in
@@ -430,7 +432,7 @@ struct HomeView: View {
         guard HomeEntrance.shared.splashDone else { return }
         HomeEntrance.shared.play()
         // Let the splash's own fade clear before Home settles.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { entranceShown = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + HomeEntrance.startDelay) { entranceShown = true }
     }
 
     private func showEntranceNow() {
@@ -1027,8 +1029,8 @@ struct HomeView: View {
                 // (which is maxHeight .infinity) claims the rest. Without it the fixed card height
                 // was split first and the art shrank, leaving a bare strip on the card's right.
                 MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false, cardFraming: true)
-                    .scaleEffect(entranceShown || reduceMotion ? 1 : 1.05)
-                    .animation(reduceMotion ? nil : .easeOut(duration: 0.7).delay(0.08), value: entranceShown)
+                    .scaleEffect(entranceShown || reduceMotion ? 1 : 1.07)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.9).delay(HomeEntrance.stepStagger), value: entranceShown)
                     .aspectRatio(1.5, contentMode: .fit)
                     .frame(maxWidth: .infinity)
                     .clipped()
