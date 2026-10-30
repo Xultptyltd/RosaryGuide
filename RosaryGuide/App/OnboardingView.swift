@@ -1,4 +1,8 @@
 import SwiftUI
+import Lottie
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct OnboardingView: View {
     var startsAtSignIn = false
@@ -17,6 +21,9 @@ struct OnboardingView: View {
         self.includesSignIn = includesSignIn
         self.onComplete = onComplete
         _selection = State(initialValue: startsAtSignIn && includesSignIn ? OnboardingPage.pages.count : 0)
+        #if DEBUG
+        if includesSignIn && DebugHooks.has("-RGDebugSignInScreen") { _selection = State(initialValue: OnboardingPage.pages.count) }
+        #endif
     }
 
     var body: some View {
@@ -35,7 +42,6 @@ struct OnboardingView: View {
                 .transition(.opacity)
             } else if includesSignIn {
                 OnboardingSignInView(onComplete: onComplete)
-                    .ignoresSafeArea()
                     .transition(.opacity)
             }
 
@@ -175,7 +181,6 @@ private struct OnboardingSignInView: View {
     @Environment(AuthStore.self) private var auth
     @Environment(SettingsStore.self) private var settings
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var imageDrift = false
     /// Which button last started a sign-in, so only that one shows progress.
     @State private var lastProvider: OnboardingAuthButton.Provider?
     @State private var succeeded = false
@@ -189,65 +194,43 @@ private struct OnboardingSignInView: View {
     }
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                Color.black.ignoresSafeArea()
+        ZStack {
+            Color.black.ignoresSafeArea()
 
-                Image("OnboardingSignIn")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .scaleEffect(reduceMotion ? 1 : 1.018)
-                    .offset(y: geo.size.height * 0.10 + (reduceMotion ? 0 : (imageDrift ? -5 : 5)))
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 8).repeatForever(autoreverses: true), value: imageDrift)
-                    .clipped()
-                    .ignoresSafeArea()
+            VStack(spacing: 0) {
+                Text("Rosary Guide")
+                    .font(AppTheme.TypeRole.body(weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.86))
+                    .padding(.top, AppTheme.Space.md)
+                    .accessibilityAddTraits(.isHeader)
+
+                Spacer(minLength: AppTheme.Space.lg)
+
+                RosaryBeadsFallPlayer(plays: !reduceMotion)
+                    .aspectRatio(RosaryBeadsFallPlayer.aspectRatio, contentMode: .fit)
+                    .frame(maxWidth: 360)
+                    .padding(.horizontal, AppTheme.gutter)
                     .accessibilityHidden(true)
 
-                LinearGradient(
-                    stops: [
-                        .init(color: Color.black.opacity(0.96), location: 0),
-                        .init(color: Color.black.opacity(0.72), location: 0.26),
-                        .init(color: Color.black.opacity(0.40), location: 0.54),
-                        .init(color: Color.black.opacity(0.78), location: 0.70),
-                        .init(color: Color.black.opacity(0.96), location: 0.86),
-                        .init(color: Color.black, location: 0.95)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+                VStack(spacing: AppTheme.Space.md) {
+                    Text(OnboardingCopy.signInHeadline)
+                        .font(AppTheme.TypeRole.serifDisplay)
+                        .foregroundStyle(Color.white)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                VStack(spacing: 0) {
-                    Spacer(minLength: geo.size.height * 0.095)
+                    Text(OnboardingCopy.signInSupporting)
+                        .font(AppTheme.TypeRole.body)
+                        .foregroundStyle(Color.white.opacity(0.62))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, AppTheme.gutter)
+                .padding(.top, AppTheme.Space.xl)
+                .accessibilityElement(children: .combine)
+                .guideReveal(delay: 0.05)
 
-                    VStack(spacing: AppTheme.Space.lg) {
-                        Image("IconPreviewWhite")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 64, height: 64)
-                            .clipShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-                            .accessibilityHidden(true)
-
-                        Text("Begin with\nRosary Guide.")
-                            .font(AppTheme.TypeRole.title.weight(.regular))
-                            .foregroundStyle(Color.white)
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(2)
-                            .accessibilityAddTraits(.isHeader)
-
-                        Text("Sign in to sync your prayers and\nintentions across your devices.")
-                            .font(AppTheme.TypeRole.body)
-                            .foregroundStyle(Color.white.opacity(0.72))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(5)
-                            .padding(.horizontal, AppTheme.Space.lg)
-                    }
-                    .accessibilityElement(children: .combine)
-                    .guideReveal(delay: 0.05)
-
-                    Spacer(minLength: 0)
+                Spacer(minLength: AppTheme.Space.xl)
 
                     VStack(spacing: AppTheme.Space.md) {
                         OnboardingAuthButton(title: auth.isSigningInWithApple ? "Signing in" : "Continue with Apple", systemImage: "apple.logo", filled: true, status: buttonState(.apple)) {
@@ -279,8 +262,8 @@ private struct OnboardingSignInView: View {
                         // Sign-in is optional: everything works on this device without an account.
                         // Always the last action, an underlined text button under the sign-in pills.
                         GuideTextButton(
-                            title: OnboardingCopy.continueWithoutSigningUp,
-                            accessibilityLabel: "Continue without signing up. You can sign in later in Settings",
+                            title: OnboardingCopy.continueAsGuest,
+                            accessibilityLabel: "Continue as guest. You can sign in later in Settings",
                             alignment: .center
                         ) {
                             HapticService.play(.light, enabled: settings.hapticsEnabled)
@@ -293,10 +276,8 @@ private struct OnboardingSignInView: View {
                     }
                     .padding(.horizontal, AppTheme.gutter)
                     .padding(.bottom, AppTheme.Space.xl)
-                    .safeAreaPadding(.bottom)
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: auth.errorMessage)
                     .guideReveal(delay: 0.14)
-                }
             }
         }
         .onChange(of: auth.isSignedIn) { _, isSignedIn in
@@ -314,10 +295,6 @@ private struct OnboardingSignInView: View {
         }
         .onAppear {
             completeIfSignedIn()
-        }
-        .task {
-            guard !reduceMotion else { return }
-            imageDrift = true
         }
         .accessibilityElement(children: .contain)
     }
@@ -337,7 +314,9 @@ private struct OnboardingSignInView: View {
 }
 
 enum OnboardingCopy {
-    static let continueWithoutSigningUp = "Continue without signing up"
+    static let continueAsGuest = "Continue as guest"
+    static let signInHeadline = "Make room for prayer"
+    static let signInSupporting = "The Rosary each day, one bead at a time."
 }
 
 private struct OnboardingAuthButton: View {
@@ -415,4 +394,52 @@ private struct OnboardingDots: View {
         .environment(SessionStore())
         .environment(OfferStore())
         .environment(AuthStore())
+}
+
+
+/// Hero animation on the sign-in screen. The composition (600×500, 60 fps, frames 0–1584)
+/// feeds the chain down from above the frame one bead at a time until it settles around
+/// frame 1494, then a small sway eases to rest by 1584. It has no idle loop, so it plays
+/// once and holds the settled last frame. With Reduce Motion it shows that frame only.
+struct RosaryBeadsFallPlayer: UIViewRepresentable {
+    static let aspectRatio: CGFloat = 600.0 / 500.0
+    static let lastFrame: AnimationFrameTime = 1584
+
+    var plays: Bool
+
+    func makeUIView(context: Context) -> UIView {
+        let container = UIView()
+        container.backgroundColor = .clear
+        container.isUserInteractionEnabled = false
+        container.clipsToBounds = true
+        let animationView = LottieAnimationView(
+            animation: LottieAnimation.named("RosaryBeadsFall", bundle: .main, subdirectory: "Animations")
+        )
+        animationView.contentMode = .scaleAspectFit
+        animationView.backgroundColor = .clear
+        animationView.backgroundBehavior = .pauseAndRestore
+        animationView.loopMode = .playOnce
+        animationView.translatesAutoresizingMaskIntoConstraints = false
+        for axis in [NSLayoutConstraint.Axis.horizontal, .vertical] {
+            animationView.setContentCompressionResistancePriority(.defaultLow, for: axis)
+            animationView.setContentHuggingPriority(.defaultLow, for: axis)
+        }
+        container.addSubview(animationView)
+        NSLayoutConstraint.activate([
+            animationView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            animationView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            animationView.topAnchor.constraint(equalTo: container.topAnchor),
+            animationView.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+        if plays {
+            animationView.play(fromFrame: 0, toFrame: Self.lastFrame, loopMode: .playOnce) { _ in
+                animationView.currentFrame = Self.lastFrame
+            }
+        } else {
+            animationView.currentFrame = Self.lastFrame
+        }
+        return container
+    }
+
+    func updateUIView(_ view: UIView, context: Context) {}
 }
