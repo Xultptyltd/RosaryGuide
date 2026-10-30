@@ -177,18 +177,21 @@ private struct OnboardingPageView: View {
 
 /// Layout of the sign-in hero.
 enum SignInLayout {
-    /// Max width of the beads animation inside the panel.
-    static let beadsWidth: CGFloat = 300
     /// Space between the bottom of the loop and the panel's bottom edge.
-    static let loopBottomPadding: CGFloat = 32
+    static let loopBottomPadding: CGFloat = 40
     /// How far the strands' start sits above the screen's top edge, so they run off screen.
     static let strandOverflow: CGFloat = 36
     /// Outer inset of the panel from the screen edges.
     static let panelInset: CGFloat = 24
-    /// Panel height measured from the screen's top edge: sized to the beads so the strands
-    /// always run off the top and the loop keeps the same padding above the bottom edge.
-    static func panelHeight(beadsWidth: CGFloat) -> CGFloat {
-        (beadsWidth / RosaryBeadsFallPlayer.aspectRatio + loopBottomPadding - strandOverflow).rounded()
+    /// Panel height measured from the screen's top edge: half the screen, or a little less on
+    /// short phones (SE/mini) so the quote and buttons below don't crowd.
+    static func panelHeight(screenHeight: CGFloat) -> CGFloat {
+        (screenHeight * (screenHeight < 820 ? 0.45 : 0.5)).rounded()
+    }
+    /// Beads width that fills the panel: the strands start `strandOverflow` above the screen's
+    /// top edge and the loop sits `loopBottomPadding` above the panel's bottom edge.
+    static func beadsWidth(panelHeight: CGFloat) -> CGFloat {
+        ((panelHeight - loopBottomPadding + strandOverflow) * RosaryBeadsFallPlayer.aspectRatio).rounded()
     }
     /// One design-system step below Home's compact title (38.4): the headingPrimary size (32).
     static let quoteSize: CGFloat = 32
@@ -220,14 +223,18 @@ private struct OnboardingSignInView: View {
             VStack(spacing: 0) {
                 // Marian blue panel behind the beads. It bleeds off the top of the screen and
                 // the strands start above the top edge, so the rosary hangs from off screen.
-                ZStack(alignment: .bottom) {
-                    AppTheme.marianBlue
-                    RosaryBeadsFallPlayer(plays: !reduceMotion)
-                        .aspectRatio(RosaryBeadsFallPlayer.aspectRatio, contentMode: .fit)
-                        .frame(width: SignInLayout.beadsWidth)
-                        .padding(.bottom, SignInLayout.loopBottomPadding)
-                }
-                .frame(height: SignInLayout.panelHeight(beadsWidth: SignInLayout.beadsWidth))
+                let panelHeight = SignInLayout.panelHeight(
+                    screenHeight: geo.size.height + geo.safeAreaInsets.top + geo.safeAreaInsets.bottom)
+                // The beads sit in an overlay so their width (which can exceed the panel's, the
+                // sides being empty) doesn't widen the layout; the panel clips them.
+                AppTheme.marianBlue
+                    .frame(height: panelHeight)
+                    .overlay(alignment: .bottom) {
+                        RosaryBeadsFallPlayer(plays: !reduceMotion)
+                            .aspectRatio(RosaryBeadsFallPlayer.aspectRatio, contentMode: .fit)
+                            .frame(width: SignInLayout.beadsWidth(panelHeight: panelHeight))
+                            .padding(.bottom, SignInLayout.loopBottomPadding)
+                    }
                 .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: AppTheme.panelRadius,
                                                   bottomTrailingRadius: AppTheme.panelRadius,
                                                   style: .continuous))
