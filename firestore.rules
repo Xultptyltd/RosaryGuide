@@ -242,6 +242,8 @@ service cloud.firestore {
     function validIntentionIdList(ids) {
       return ids is list
         && ids.size() <= 5
+        // No repeated IDs: the app only ever offers each intention once.
+        && ids.toSet().size() == ids.size()
         && validIntentionIdAt(ids, 0)
         && validIntentionIdAt(ids, 1)
         && validIntentionIdAt(ids, 2)
