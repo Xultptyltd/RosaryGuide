@@ -78,7 +78,8 @@ struct OnboardingView: View {
     }
 
     private var pageCount: Int {
-        pages.count + (includesSignIn ? 1 : 0)
+        // The sign-in screen isn't a content page, so it isn't counted in the dots.
+        pages.count
     }
 }
 
@@ -367,8 +368,8 @@ enum OnboardingCopy {
     /// Displayed with a fixed break so it sits on two balanced lines.
     static let signInQuote = "\u{201C}A chain that links\nheaven and earth\u{201D}"
     static let signInQuoteAuthor = "St Thérèse of Lisieux"
-    static let signInQuoteAttribution = "\u{2014} " + signInQuoteAuthor
-    static let signInQuoteAccessibilityLabel = signInQuoteText + ", " + signInQuoteAuthor
+    static let signInQuoteAttribution = "Attributed to " + signInQuoteAuthor
+    static let signInQuoteAccessibilityLabel = signInQuoteText + ", attributed to " + signInQuoteAuthor
 }
 
 private struct OnboardingAuthButton: View {
