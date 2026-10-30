@@ -217,11 +217,20 @@ private struct OnboardingSignInView: View {
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text(OnboardingCopy.signInSupporting)
-                        .font(AppTheme.TypeRole.body)
-                        .foregroundStyle(Color.white.opacity(0.62))
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
+                    VStack(spacing: AppTheme.Space.sm) {
+                        Text(OnboardingCopy.signInQuote)
+                            .font(.system(.body, design: .serif).italic())
+                            .foregroundStyle(Color.white.opacity(0.62))
+                        Text(OnboardingCopy.signInQuoteAttribution)
+                            .font(.footnote)
+                            .foregroundStyle(Color.white.opacity(0.42))
+                    }
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    // Narrower measure so the quote breaks into two balanced lines.
+                    .frame(maxWidth: 280)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(OnboardingCopy.signInQuoteAccessibilityLabel)
                 }
                 .padding(.horizontal, AppTheme.gutter)
                 .padding(.top, AppTheme.Space.xl)
@@ -315,7 +324,11 @@ private struct OnboardingSignInView: View {
 enum OnboardingCopy {
     static let continueAsGuest = "Continue as guest"
     static let signInHeadline = "Make room for prayer"
-    static let signInSupporting = "The Rosary each day, one bead at a time"
+    /// Rosarium Virginis Mariae §39 heading (Vatican English text).
+    static let signInQuote = "\u{201C}Blessed Rosary of Mary, sweet chain linking us to God\u{201D}"
+    static let signInQuoteAuthor = "St John Paul II"
+    static let signInQuoteAttribution = "\u{2014} " + signInQuoteAuthor
+    static let signInQuoteAccessibilityLabel = "Blessed Rosary of Mary, sweet chain linking us to God, " + signInQuoteAuthor
 }
 
 private struct OnboardingAuthButton: View {
