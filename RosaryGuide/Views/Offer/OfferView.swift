@@ -33,6 +33,31 @@ struct OfferView: View {
         MysteryCalendar.assignment(on: dayClock.today).set
     }
 
+    private func openSettings() {
+        HapticService.play(.light, enabled: settings.hapticsEnabled)
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { showSettingsDrawer = true }
+    }
+
+    private var settingsButton: some View {
+        Button(action: openSettings) {
+            Image(systemName: "gearshape")
+                .foregroundStyle(palette.ink)
+                .frame(width: AppTheme.Accessibility.minHitTarget,
+                       height: AppTheme.Accessibility.minHitTarget)
+                .background {
+                    Circle()
+                        .fill(.clear)
+                        .guideFloatingGlass(in: Circle(), palette: palette)
+                }
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .frame(width: AppTheme.Accessibility.minHitTarget,
+               height: AppTheme.Accessibility.minHitTarget)
+    }
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Group {
@@ -45,33 +70,25 @@ struct OfferView: View {
             .toolbar(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .largeTitle) {
-                    GuidePageTitle(text: "Profile")
-                }
-                // A regular bar item: content in the large-title slot is not exposed to
-                // VoiceOver, so the gear lives here to stay reachable.
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        HapticService.play(.light, enabled: settings.hapticsEnabled)
-                        var transaction = Transaction()
-                        transaction.disablesAnimations = true
-                        withTransaction(transaction) { showSettingsDrawer = true }
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .foregroundStyle(palette.ink)
-                            .frame(width: AppTheme.Accessibility.minHitTarget,
-                                   height: AppTheme.Accessibility.minHitTarget)
-                            .background {
-                                Circle()
-                                    .fill(.clear)
-                                    .guideFloatingGlass(in: Circle(), palette: palette)
-                            }
-                            .contentShape(Circle())
+                    // The gear sits in the title row, centred on the H1.
+                    HStack(alignment: .center, spacing: AppTheme.Space.md) {
+                        GuidePageTitle(text: "Profile")
+                        settingsButton
+                            // Content in the large-title slot isn't exposed to VoiceOver; the
+                            // bar item below carries the Settings button for it instead.
+                            .accessibilityHidden(true)
                     }
-                    .buttonStyle(.plain)
-                    .frame(width: AppTheme.Accessibility.minHitTarget,
-                           height: AppTheme.Accessibility.minHitTarget)
-                    .accessibilityLabel("Settings")
-                    .accessibilityHint("Opens settings")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Color.clear
+                        .frame(width: AppTheme.Accessibility.minHitTarget,
+                               height: AppTheme.Accessibility.minHitTarget)
+                        .allowsHitTesting(false)
+                        .accessibilityElement()
+                        .accessibilityLabel("Settings")
+                        .accessibilityHint("Opens settings")
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityAction { openSettings() }
                 }
                 .sharedBackgroundVisibility(.hidden)
             }
