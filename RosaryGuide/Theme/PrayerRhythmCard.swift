@@ -252,14 +252,13 @@ struct PrayerRhythmCard: View {
         static let radius: CGFloat = AppTheme.containerRadius
         static let horizontalPadding: CGFloat = 20
         static let trailingPadding: CGFloat = 12
-        static let topPadding: CGFloat = 16
-        static let bottomPadding: CGFloat = 16
+        static let topPadding: CGFloat = 12
+        static let bottomPadding: CGFloat = 12
         static let iconSize = CGSize(width: 24, height: 26)
-        static let iconToText: CGFloat = 14
         static let columnGap: CGFloat = 8
-        static let dotSize: CGFloat = 8
+        static let dotSize: CGFloat = 7
         static let dotColumnSpacing: CGFloat = 8
-        static let dotRowSpacing: CGFloat = 9
+        static let dotRowSpacing: CGFloat = 6
         static let headerGlyph = CGSize(width: 16, height: 18)
     }
 
@@ -289,21 +288,17 @@ struct PrayerRhythmCard: View {
     /// grid sets the card height and the streak's baseline block meets the grid bottom.
     private var sideBySide: some View {
         HStack(alignment: .top, spacing: 0) {
-            VStack(alignment: .leading, spacing: 0) {
-                // The month header carries the calendar; the top-left only shows a milestone flame.
-                if rhythm.isMilestone { icon }
-                Spacer(minLength: Metric.iconToText)
-                summaryText
-            }
-            .frame(maxHeight: .infinity, alignment: .leading)
+            // Streak centred against the grid; the month header carries the calendar,
+            // and a milestone flame sits inline before the streak.
+            summaryText
+                .frame(maxHeight: .infinity, alignment: .leading)
             .layoutPriority(1)
 
             Spacer(minLength: Metric.columnGap)
 
             VStack(alignment: .leading, spacing: 0) {
                 monthHeader
-                    .frame(height: Metric.iconSize.height)
-                Spacer(minLength: Metric.iconToText)
+                    .padding(.bottom, AppTheme.Space.sm)
                 dotGrid
                     .padding(.bottom, 3)
             }
@@ -319,9 +314,6 @@ struct PrayerRhythmCard: View {
     /// Larger text: the month sits under the summary so nothing truncates.
     private var stacked: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if rhythm.isMilestone {
-                icon.padding(.bottom, Metric.iconToText)
-            }
             summaryText
             monthHeader
                 .padding(.top, AppTheme.Space.xl)
@@ -353,11 +345,14 @@ struct PrayerRhythmCard: View {
     private var summaryText: some View {
         // No visible title: the streak leads (VoiceOver still says "Prayer rhythm").
         VStack(alignment: .leading, spacing: 0) {
-            Text(rhythm.streakText)
-                .font(AppTheme.TypeRole.rhythmSummary)
-                .foregroundStyle(palette.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            HStack(alignment: .center, spacing: AppTheme.Space.sm) {
+                if rhythm.isMilestone { icon }
+                Text(rhythm.streakText)
+                    .font(AppTheme.TypeRole.rhythmSummary)
+                    .foregroundStyle(palette.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
 
             // One line like the mockup; step down a point before wrapping.
             ViewThatFits(in: .horizontal) {
@@ -395,11 +390,11 @@ struct PrayerRhythmCard: View {
         }
     }
 
-    /// Weekday initials in the grid's order (the user's first weekday leads).
+    /// One-letter weekday initials in the grid's order (the user's first weekday leads).
     private var weekdayInitials: [String] {
         let calendar = Calendar.current
         let symbols = calendar.veryShortStandaloneWeekdaySymbols
-        return (0..<7).map { symbols[(calendar.firstWeekday - 1 + $0) % 7] }
+        return (0..<7).map { String(symbols[(calendar.firstWeekday - 1 + $0) % 7].prefix(1)) }
     }
 
     private var dotGrid: some View {
