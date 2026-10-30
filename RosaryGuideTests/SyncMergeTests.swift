@@ -325,10 +325,10 @@ final class LaunchGateTests: XCTestCase {
     }
 
     func testSignInQuoteCopy() {
-        XCTAssertEqual(OnboardingCopy.signInQuote, "\u{201C}Sweet chain\nlinking us to God\u{201D}")
-        XCTAssertEqual(OnboardingCopy.signInQuoteText, "Sweet chain linking us to God")
-        XCTAssertEqual(OnboardingCopy.signInQuoteAttribution, "\u{2014} St John Paul II")
-        XCTAssertEqual(OnboardingCopy.signInQuoteAccessibilityLabel, "Sweet chain linking us to God, St John Paul II")
+        XCTAssertEqual(OnboardingCopy.signInQuote, "\u{201C}A chain that links\nheaven and earth\u{201D}")
+        XCTAssertEqual(OnboardingCopy.signInQuoteText, "A chain that links heaven and earth")
+        XCTAssertEqual(OnboardingCopy.signInQuoteAttribution, "\u{2014} St Thérèse of Lisieux")
+        XCTAssertEqual(OnboardingCopy.signInQuoteAccessibilityLabel, "A chain that links heaven and earth, St Thérèse of Lisieux")
         for text in [OnboardingCopy.signInQuote, OnboardingCopy.signInQuoteAttribution, OnboardingCopy.signInQuoteAccessibilityLabel] {
             XCTAssertFalse(text.contains("."))
         }

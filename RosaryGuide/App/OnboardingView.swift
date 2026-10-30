@@ -363,10 +363,10 @@ private struct OnboardingSignInView: View {
 enum OnboardingCopy {
     static let continueAsGuest = "Continue as guest"
     /// Rosarium Virginis Mariae §39 heading (Vatican English text).
-    static let signInQuoteText = "Sweet chain linking us to God"
+    static let signInQuoteText = "A chain that links heaven and earth"
     /// Displayed with a fixed break so it sits on two balanced lines.
-    static let signInQuote = "\u{201C}Sweet chain\nlinking us to God\u{201D}"
-    static let signInQuoteAuthor = "St John Paul II"
+    static let signInQuote = "\u{201C}A chain that links\nheaven and earth\u{201D}"
+    static let signInQuoteAuthor = "St Thérèse of Lisieux"
     static let signInQuoteAttribution = "\u{2014} " + signInQuoteAuthor
     static let signInQuoteAccessibilityLabel = signInQuoteText + ", " + signInQuoteAuthor
 }
