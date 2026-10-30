@@ -1789,6 +1789,11 @@ struct PrayView: View {
             activeConfig = settings.currentRosaryConfig
             steps = RosarySequenceBuilder.build(set: set, config: activeConfig)
             index = launch.startIndex(in: steps)
+            #if DEBUG
+            // Screenshot hook: -RGDebugStep n opens the Rosary at step n.
+            let debugStep = UserDefaults.standard.integer(forKey: "RGDebugStep")
+            if debugStep > 0, debugStep < steps.count { index = debugStep }
+            #endif
             // A launch from an intention pre-selects it on the intention step.
             let resolvedId = intentionId.flatMap { offer.intention(id: $0) != nil ? $0 : nil }
             chosenIntentionIds = resolvedId.map { [$0] } ?? []

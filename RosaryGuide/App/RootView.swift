@@ -86,7 +86,7 @@ struct RootView: View {
         rootTabs
             .task {
                 // Screenshot hook (DebugHooks is DEBUG-only): opens the Rosary's settings sheet.
-                guard DebugHooks.has("-RGDebugRosaryFlowSettings") else { return }
+                guard DebugHooks.has("-RGDebugRosaryFlowSettings") || DebugHooks.has("-RGDebugRosaryFlow") else { return }
                 try? await Task.sleep(for: .seconds(3))
                 prayLaunch = .fresh(.joyful)
             }
