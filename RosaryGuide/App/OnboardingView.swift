@@ -1,8 +1,4 @@
 import SwiftUI
-import Lottie
-#if canImport(UIKit)
-import UIKit
-#endif
 
 struct OnboardingView: View {
     var startsAtSignIn = false
@@ -201,8 +197,8 @@ private struct OnboardingSignInView: View {
             VStack(spacing: 0) {
                 // The strands start at the composition's top edge, which sits on the screen's
                 // top edge (through the status bar), so the rosary hangs from above the screen.
-                RosaryBeadsFallPlayer(plays: !reduceMotion)
-                    .aspectRatio(RosaryBeadsFallPlayer.aspectRatio, contentMode: .fit)
+                RosaryBeadsChainView(animates: !reduceMotion)
+                    .aspectRatio(RosaryBeadsChainView.aspectRatio, contentMode: .fit)
                     .frame(maxWidth: 380)
                     .padding(.horizontal, AppTheme.Space.lg)
                     // Pull the player up under the status bar in layout too (not just drawing),
@@ -396,50 +392,141 @@ private struct OnboardingDots: View {
 }
 
 
-/// Hero animation on the sign-in screen. The composition (600×680 after tools/lottie/extend_rosary_beads.py, 60 fps, frames 0–1584)
-/// feeds the chain down from above the frame one bead at a time until it settles around
-/// frame 1494, then a small sway eases to rest by 1584. It has no idle loop, so it plays
-/// once and holds the settled last frame. With Reduce Motion it shows that frame only.
-struct RosaryBeadsFallPlayer: UIViewRepresentable {
-    /// Composition is 600×680 after tools/lottie/extend_rosary_beads.py lengthened the strands.
+/// Hero on the sign-in screen: a rosary hanging in a U from above the top edge, its chain
+/// flowing slowly down the left strand, round the loop and up the right one.
+///
+/// Drawn procedurally rather than with Lottie so it can loop forever with no seam: the
+/// bead pattern (10 Hail Mary beads, then 1 Our Father bead) repeats every `period` points
+/// of arc length, and the phase is time × speed modulo that period, so every frame is a
+/// shifted copy of the same endless chain and both strands are always full of beads.
+/// The shape, sizes and colours match the original Lottie (600-unit-wide space, loop
+/// bottom at y≈644 of 680). With Reduce Motion it draws one still frame.
+struct RosaryBeadsChainView: View {
+    var animates: Bool
+
     static let aspectRatio: CGFloat = 600.0 / 680.0
-    static let lastFrame: AnimationFrameTime = 1584
+    static let space = CGSize(width: 600, height: 680)
 
-    var plays: Bool
+    static let smallDiameter: CGFloat = 23
+    static let largeDiameter: CGFloat = 35.65
+    /// Clear string between neighbouring beads, so centre spacing is r1 + r2 + gap
+    /// (41 between Hail Marys, matching the original strands).
+    static let gap: CGFloat = 18
+    static let beadsPerDecade = 11
+    /// Units of arc length per second; the original fed about 17.
+    static let speed: Double = 20
 
-    func makeUIView(context: Context) -> UIView {
-        let container = UIView()
-        container.backgroundColor = .clear
-        container.isUserInteractionEnabled = false
-        container.clipsToBounds = true
-        let animationView = LottieAnimationView(
-            animation: LottieAnimation.named("RosaryBeadsFall", bundle: .main, subdirectory: "Animations")
-        )
-        animationView.contentMode = .scaleAspectFit
-        animationView.backgroundColor = .clear
-        animationView.backgroundBehavior = .pauseAndRestore
-        animationView.loopMode = .playOnce
-        animationView.translatesAutoresizingMaskIntoConstraints = false
-        for axis in [NSLayoutConstraint.Axis.horizontal, .vertical] {
-            animationView.setContentCompressionResistancePriority(.defaultLow, for: axis)
-            animationView.setContentHuggingPriority(.defaultLow, for: axis)
-        }
-        container.addSubview(animationView)
-        NSLayoutConstraint.activate([
-            animationView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            animationView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            animationView.topAnchor.constraint(equalTo: container.topAnchor),
-            animationView.bottomAnchor.constraint(equalTo: container.bottomAnchor)
-        ])
-        if plays {
-            animationView.play(fromFrame: 0, toFrame: Self.lastFrame, loopMode: .playOnce) { _ in
-                animationView.currentFrame = Self.lastFrame
-            }
-        } else {
-            animationView.currentFrame = Self.lastFrame
-        }
-        return container
+    /// Pattern index 0 is the Our Father bead, 1…10 the Hail Marys.
+    static func diameter(at index: Int) -> CGFloat {
+        index % beadsPerDecade == 0 ? largeDiameter : smallDiameter
     }
 
-    func updateUIView(_ view: UIView, context: Context) {}
+    static func spacing(after index: Int) -> CGFloat {
+        (diameter(at: index) + diameter(at: index + 1)) / 2 + gap
+    }
+
+    /// Arc length of one decade; the chain looks identical after moving this far.
+    static let period: CGFloat = (0..<beadsPerDecade).reduce(0) { $0 + spacing(after: $1) }
+
+    static func phase(at seconds: Double) -> CGFloat {
+        CGFloat((seconds * speed).truncatingRemainder(dividingBy: Double(period)))
+    }
+
+    /// Settled centre-line of the original chain (left half; the right is mirrored),
+    /// extended above the top edge so beads enter and leave off screen.
+    private static let leftHalf: [CGPoint] = [
+        CGPoint(x: 146, y: -90), CGPoint(x: 154, y: 201), CGPoint(x: 155, y: 247), CGPoint(x: 157, y: 294),
+        CGPoint(x: 161, y: 334), CGPoint(x: 166, y: 374), CGPoint(x: 172, y: 413), CGPoint(x: 179, y: 453),
+        CGPoint(x: 187, y: 493), CGPoint(x: 197, y: 532), CGPoint(x: 207, y: 570), CGPoint(x: 225, y: 606),
+        CGPoint(x: 255, y: 632), CGPoint(x: 300, y: 644)
+    ]
+
+    /// Dense, smoothed polyline (Catmull-Rom) with cumulative arc lengths.
+    static let track: (points: [CGPoint], lengths: [CGFloat]) = {
+        let half = leftHalf
+        let control = half + half.dropLast().reversed().map { CGPoint(x: 600 - $0.x, y: $0.y) }
+        var points: [CGPoint] = []
+        for i in 0..<(control.count - 1) {
+            let p0 = control[max(i - 1, 0)], p1 = control[i], p2 = control[i + 1], p3 = control[min(i + 2, control.count - 1)]
+            for step in 0..<12 {
+                let t = CGFloat(step) / 12, t2 = t * t, t3 = t2 * t
+                func c(_ a: CGFloat, _ b: CGFloat, _ cc: CGFloat, _ d: CGFloat) -> CGFloat {
+                    0.5 * (2 * b + (-a + cc) * t + (2 * a - 5 * b + 4 * cc - d) * t2 + (-a + 3 * b - 3 * cc + d) * t3)
+                }
+                points.append(CGPoint(x: c(p0.x, p1.x, p2.x, p3.x), y: c(p0.y, p1.y, p2.y, p3.y)))
+            }
+        }
+        points.append(control[control.count - 1])
+        var lengths: [CGFloat] = [0]
+        for i in 1..<points.count {
+            lengths.append(lengths[i - 1] + hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y))
+        }
+        return (points, lengths)
+    }()
+
+    static var trackLength: CGFloat { track.lengths.last ?? 0 }
+
+    static func point(atArcLength s: CGFloat) -> CGPoint {
+        let (points, lengths) = track
+        var lo = 0, hi = lengths.count - 1
+        while hi - lo > 1 {
+            let mid = (lo + hi) / 2
+            if lengths[mid] <= s { lo = mid } else { hi = mid }
+        }
+        let span = max(lengths[hi] - lengths[lo], 0.0001)
+        let f = min(max((s - lengths[lo]) / span, 0), 1)
+        return CGPoint(x: points[lo].x + (points[hi].x - points[lo].x) * f,
+                       y: points[lo].y + (points[hi].y - points[lo].y) * f)
+    }
+
+    /// Arc-length positions and pattern indices of every bead on the track at a phase.
+    static func beads(phase: CGFloat) -> [(s: CGFloat, index: Int)] {
+        var result: [(s: CGFloat, index: Int)] = []
+        let wrapped = phase.truncatingRemainder(dividingBy: period)
+        var s = (wrapped < 0 ? wrapped + period : wrapped) - period
+        var index = 0
+        let end = trackLength + largeDiameter
+        while s <= end {
+            if s >= -largeDiameter { result.append((s, index)) }
+            s += spacing(after: index)
+            index = (index + 1) % beadsPerDecade
+        }
+        return result
+    }
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: nil, paused: !animates)) { timeline in
+            let seconds = animates ? timeline.date.timeIntervalSinceReferenceDate : 0
+            Canvas { context, size in
+                Self.draw(in: &context, size: size, phase: Self.phase(at: seconds))
+            }
+        }
+    }
+
+    private static let shading = Gradient(stops: [
+        .init(color: Color(red: 1.0, green: 1.0, blue: 0.9882), location: 0),
+        .init(color: Color(red: 0.9608, green: 0.949, blue: 0.9098), location: 0.3),
+        .init(color: Color(red: 0.8392, green: 0.8157, blue: 0.7529), location: 0.7),
+        .init(color: Color(red: 0.5412, green: 0.5216, blue: 0.4627), location: 1)
+    ])
+
+    static func draw(in context: inout GraphicsContext, size: CGSize, phase: CGFloat) {
+        let scale = size.width / space.width
+        context.scaleBy(x: scale, y: scale)
+
+        var string = Path()
+        string.addLines(track.points)
+        context.stroke(string, with: .color(Color(red: 0.62, green: 0.65, blue: 0.72).opacity(0.85)), lineWidth: 1.5)
+
+        for bead in beads(phase: phase) {
+            let c = point(atArcLength: bead.s)
+            let d = diameter(at: bead.index), r = d / 2
+            let circle = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: d, height: d))
+            let light = CGPoint(x: c.x - r * 0.35, y: c.y - r * 0.4)
+            context.fill(circle, with: .radialGradient(shading, center: light, startRadius: 0, endRadius: r * 1.45))
+            context.stroke(circle, with: .color(Color(red: 0.42, green: 0.4, blue: 0.35).opacity(0.4)), lineWidth: 0.8)
+            let glint = CGRect(x: c.x - r * 0.38 - d * 0.125, y: c.y - r * 0.44 - d * 0.085, width: d * 0.25, height: d * 0.17)
+            context.fill(Path(ellipseIn: glint), with: .color(.white.opacity(0.8)))
+        }
+    }
 }

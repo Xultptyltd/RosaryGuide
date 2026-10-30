@@ -321,7 +321,6 @@ final class LaunchGateTests: XCTestCase {
     func testGuestButtonCopyIsSentenceCase() {
         XCTAssertEqual(OnboardingCopy.continueAsGuest, "Continue as guest")
         XCTAssertEqual(OnboardingCopy.signInHeadline, "Make room for prayer")
-        XCTAssertEqual(RosaryBeadsFallPlayer.lastFrame, 1584)
         XCTAssertFalse(OnboardingCopy.continueAsGuest.hasSuffix("."))
     }
 }
@@ -935,12 +934,48 @@ final class SignOutAlertTests: XCTestCase {
     }
 }
 
-final class RosaryBeadsLottieTests: XCTestCase {
-    func testBundledBeadsAreExtended() throws {
-        let url = try XCTUnwrap(Bundle.main.url(forResource: "RosaryBeadsFall", withExtension: "json", subdirectory: "Animations"))
-        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
-        XCTAssertEqual(json["w"] as? Int, 600)
-        XCTAssertEqual(json["h"] as? Int, 680)
-        XCTAssertEqual(RosaryBeadsFallPlayer.aspectRatio, 600.0 / 680.0, accuracy: 0.0001)
+final class RosaryBeadsChainTests: XCTestCase {
+    typealias Chain = RosaryBeadsChainView
+
+    func testOneOurFatherEveryElevenBeads() {
+        let indices = Chain.beads(phase: 0).map(\.index)
+        for (i, index) in indices.enumerated() where i + 11 < indices.count {
+            XCTAssertEqual(index, indices[i + 11])
+        }
+        XCTAssertEqual(indices.filter { $0 == 0 }.count * 11, indices.count, accuracy: 11)
+    }
+
+    func testLoopIsSeamless() {
+        let secondsPerCycle = Double(Chain.period) / Chain.speed
+        for t in stride(from: 0.0, to: 30, by: 0.7) {
+            XCTAssertEqual(Chain.phase(at: t), Chain.phase(at: t + secondsPerCycle), accuracy: 0.01)
+        }
+        // Arriving at the period is the same picture as phase 0.
+        let start = Chain.beads(phase: 5)
+        let end = Chain.beads(phase: 5 + Chain.period)
+        XCTAssertEqual(start.count, end.count)
+        for (a, b) in zip(start, end) {
+            XCTAssertEqual(a.s, b.s, accuracy: 0.01)
+            XCTAssertEqual(a.index, b.index)
+        }
+    }
+
+    func testStrandsAreNeverBare() {
+        for step in 0..<60 {
+            let phase = Chain.period * CGFloat(step) / 60
+            let positions = Chain.beads(phase: phase).map(\.s)
+            XCTAssertLessThanOrEqual(positions.first ?? .infinity, Chain.largeDiameter + Chain.gap)
+            XCTAssertGreaterThanOrEqual(positions.last ?? 0, Chain.trackLength - Chain.largeDiameter - Chain.gap)
+            for (a, b) in zip(positions, positions.dropFirst()) {
+                XCTAssertLessThanOrEqual(b - a, Chain.largeDiameter / 2 + Chain.smallDiameter / 2 + Chain.gap + 0.01)
+            }
+        }
+    }
+
+    func testTrackStartsAndEndsAboveTheTopEdge() {
+        let first = Chain.point(atArcLength: 0), last = Chain.point(atArcLength: Chain.trackLength)
+        XCTAssertLessThan(first.y, -Chain.largeDiameter)
+        XCTAssertLessThan(last.y, -Chain.largeDiameter)
+        XCTAssertEqual(Chain.point(atArcLength: Chain.trackLength / 2).y, 644, accuracy: 2)
     }
 }
