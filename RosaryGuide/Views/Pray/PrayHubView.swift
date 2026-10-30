@@ -33,19 +33,20 @@ struct PrayHubView: View {
                         GuideSectionBoundary(gutter: pageGutter)
                         mysteryTilesSection
                         GuideSectionBoundary(gutter: pageGutter)
-                        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-                            GuideSectionLabel(text: "Prayers", prominence: .strong)
-                            VStack(spacing: 0) {
-                                NavigationLink { rosaryPrayersPage } label: {
-                                    hubRow("Rosary prayers", detail: "The prayers at the heart of each decade", symbol: "hands.sparkles", showsIcon: false)
-                                }
-                                Hairline()
-                                NavigationLink { libraryPage } label: {
-                                    hubRow("All prayers", detail: "Rosary prayers, Memorare, Saint Michael and more", symbol: "heart", showsIcon: false, endsSection: true)
-                                }
+                        // No section title: the two rows sit straight under the boundary.
+                        VStack(spacing: 0) {
+                            NavigationLink { rosaryPrayersPage } label: {
+                                hubRow("Rosary prayers", detail: "The prayers at the heart of each decade", symbol: "hands.sparkles", showsIcon: false)
                             }
-                            .buttonStyle(.plain)
+                            Hairline()
+                            NavigationLink { libraryPage } label: {
+                                hubRow("All prayers", detail: "Rosary prayers, Memorare, Saint Michael and more", symbol: "heart", showsIcon: false, endsSection: true)
+                            }
                         }
+                        .buttonStyle(.plain)
+                        // The first row's own top pad would double the boundary gap,
+                        // so its title lines up where other section titles sit.
+                        .padding(.top, -AppTheme.Space.lg)
                         // Preserve the decorative ends; its frame already provides
                         // 16pt around the central band, so add no extra padding here.
                         GuideSectionBoundary(gutter: pageGutter, verticalSpacing: 0)
