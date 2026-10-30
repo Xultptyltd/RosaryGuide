@@ -92,7 +92,8 @@ service cloud.firestore {
         'memorare',
         'saintMichael',
         'intentionsStep',
-        'openingIntentionLines'
+        'openingIntentionLines',
+        'showBeads'
       ];
       return config is map
         && config.keys().hasOnly(flags.concat(['translation']))
@@ -104,7 +105,8 @@ service cloud.firestore {
         && (!('memorare' in config) || config.memorare is bool)
         && (!('saintMichael' in config) || config.saintMichael is bool)
         && (!('intentionsStep' in config) || config.intentionsStep is bool)
-        && (!('openingIntentionLines' in config) || config.openingIntentionLines is bool);
+        && (!('openingIntentionLines' in config) || config.openingIntentionLines is bool)
+        && (!('showBeads' in config) || config.showBeads is bool);
     }
 
     // Per-field change times for preferences. Optional, so documents and app versions from

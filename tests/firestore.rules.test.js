@@ -200,6 +200,8 @@ async function main() {
     await assertSucceeds(setDoc(progress, validProgress({ session: validSession({ rosaryConfig: {} }) })));
     await assertFails(setDoc(progress, validProgress({ session: validSession({ rosaryConfig: { ...sessionConfig, translation: "kjv" } }) })));
     await assertFails(setDoc(progress, validProgress({ session: validSession({ rosaryConfig: { ...sessionConfig, memorare: "yes" } }) })));
+    await assertSucceeds(setDoc(progress, validProgress({ session: validSession({ rosaryConfig: { ...sessionConfig, showBeads: false } }) })));
+    await assertFails(setDoc(progress, validProgress({ session: validSession({ rosaryConfig: { ...sessionConfig, showBeads: "no" } }) })));
     await assertFails(setDoc(progress, validProgress({ session: validSession({ rosaryConfig: { ...sessionConfig, isAdmin: true } }) })));
     await assertFails(setDoc(progress, validProgress({ session: validSession({ rosaryConfig: "default" }) })));
     // The exact payload the app writes (RosaryGuideTests SessionSyncPayloadTests checks it matches).
