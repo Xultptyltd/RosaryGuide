@@ -1,78 +1,94 @@
 import SwiftUI
 import UIKit
 
-/// A short, illustrated introduction before the detailed reference guide.
+/// A short, illustrated introduction before the detailed reference guide,
+/// built from the onboarding template (panel art, centred copy, dots, pill button).
 struct RosaryWalkthroughView: View {
     var onClose: () -> Void
     @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(SettingsStore.self) private var settings
-    @Environment(\.colorScheme) private var colorScheme
     @State private var page = 0
-    @State private var pageOpacity: Double = 1
-    @State private var isTransitioning = false
-    @State private var contentHeights: [Int: CGFloat] = [:]
-    @State private var mysteryImageHeight: CGFloat = 180
 
-    private let pageCount = 5
+    init(onClose: @escaping () -> Void) {
+        self.onClose = onClose
+        #if DEBUG
+        // Screenshot hook: -RGDebugIntroPage <n> opens introduction page n (0-based).
+        if let n = Int(UserDefaults.standard.string(forKey: "RGDebugIntroPage") ?? ""), Self.pages.indices.contains(n) {
+            _page = State(initialValue: n)
+        }
+        #endif
+    }
+
+    static let pages: [OnboardingPage] = [
+        OnboardingPage(
+            title: "What is the Rosary?",
+            body: "The Rosary is a prayer that helps you reflect on the life of Jesus with Mary. The beads help you keep your place as you pray.",
+            imageName: "WalkthroughRosaryIntro",
+            imageAlignment: .center
+        ),
+        OnboardingPage(
+            title: "Reflect on the life of Jesus",
+            body: "The Rosary’s “mysteries” are moments in the lives of Jesus and Mary. They’re grouped into four sets: Joyful, Luminous, Sorrowful and Glorious.",
+            imageName: "MysteryJoyful"
+        ),
+        OnboardingPage(
+            title: "One decade at a time",
+            body: "A decade is a group of ten Hail Marys, beginning with an Our Father and ending with a Glory Be. As you pray, reflect on one mystery.",
+            imageName: "WalkthroughRosaryDecade",
+            imageAlignment: .center
+        ),
+        OnboardingPage(
+            title: "A simple rhythm of prayer",
+            body: "Begin with the opening prayers, pray five decades, then finish with the closing prayers. We’ll guide you through each step.",
+            imageName: "WalkthroughRosaryStructure",
+            imageAlignment: .center
+        ),
+        OnboardingPage(
+            title: "Let’s pray together",
+            body: "You don’t need to memorise the prayers or have rosary beads. Rosary Guide will show you each prayer and mystery. Take your time and follow along.",
+            imageName: "WalkthroughMary"
+        )
+    ]
+
+    private var pages: [OnboardingPage] { Self.pages }
 
     var body: some View {
-        GeometryReader { geometry in
-            let viewportHeight = geometry.size.height + geometry.safeAreaInsets.bottom
-            ZStack(alignment: .top) {
-                // Keep each hero mounted so page changes fade complete artwork,
-                // rather than transitioning an Image above its exposed card fill.
-                ZStack(alignment: .top) {
-                    ForEach([0, 2, 3, 4], id: \.self) { index in
-                        walkthroughArtwork(
-                            for: index,
-                            height: heroHeight(for: index, viewportHeight: viewportHeight) + geometry.safeAreaInsets.top,
-                            topInset: geometry.safeAreaInsets.top
-                        )
-                        .transaction { $0.animation = nil }
-                        .opacity(page == index ? 1 : 0)
-                    }
-                }
-                .offset(y: -geometry.safeAreaInsets.top)
-                .allowsHitTesting(false)
-                .opacity(pageOpacity)
-                ZStack {
-                    ForEach(0..<pageCount, id: \.self) { index in
-                        GuideWalkthroughPage(
-                            index: index,
-                            isActive: page == index,
-                            contentOpacity: pageOpacity,
-                            isLast: index == pageCount - 1,
-                            isMysteryGrid: index == 1,
-                            heroHeight: heroHeight(for: index, viewportHeight: viewportHeight),
-                            width: geometry.size.width,
-                            viewportHeight: viewportHeight,
-                            allowsScrolling: (contentHeights[index] ?? estimatedContentHeight(for: index)) + GuideWalkthroughLayout.actionClearance > viewportHeight,
-                            onNext: advance,
-                            onPrevious: retreat,
-                            onContentHeight: { height in
-                                if abs(height - (contentHeights[index] ?? 0)) > 0.5 {
-                                    contentHeights[index] = height
-                                }
-                                if index == 1 {
-                                    // Let the grid extend behind the floating close control;
-                                    // reserve only the shared copy and footer space.
-                                    let available = viewportHeight - GuideWalkthroughLayout.actionClearance - AppTheme.Space.xs
-                                    let nextHeight = max(0, mysteryImageHeight + (available - height) / 2)
-                                    if abs(nextHeight - mysteryImageHeight) > 0.5 {
-                                        mysteryImageHeight = nextHeight
-                                    }
-                                }
-                            }
-                        ) { pageContent(index, topInset: geometry.safeAreaInsets.top) }
-                        .opacity(page == index ? 1 : 0)
-                        .allowsHitTesting(page == index)
-                        .accessibilityHidden(page != index)
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            TabView(selection: $page) {
+                ForEach(Array(pages.enumerated()), id: \.offset) { index, item in
+                    OnboardingPageView(page: item, index: index, pageCount: pages.count, scrollsText: true)
+                        .tag(index)
                         .accessibilityIdentifier("rosary-walkthrough-page-\(index + 1)")
-                    }
                 }
-                .ignoresSafeArea(edges: .bottom)
-                .allowsHitTesting(!isTransitioning)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .ignoresSafeArea()
+
+            VStack {
+                Spacer()
+                VStack(spacing: AppTheme.Space.lg) {
+                    OnboardingDots(current: page, count: pages.count, label: "Introduction page")
+                    PillButton(title: page == pages.count - 1 ? "Begin" : "Continue") {
+                        HapticService.play(.light, enabled: settings.hapticsEnabled)
+                        if page == pages.count - 1 {
+                            onClose()
+                        } else {
+                            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.24)) { page += 1 }
+                        }
+                    }
+                    .environment(\.palette, palette)
+                    .accessibilityLabel(page == pages.count - 1 ? "Begin, page \(page + 1) of \(pages.count)" : "Continue, page \(page + 1) of \(pages.count)")
+                }
+                .padding(.horizontal, AppTheme.gutter)
+                .padding(.bottom, AppTheme.Space.xl)
+                .safeAreaPadding(.bottom)
+            }
+
+            VStack {
                 HStack {
                     Spacer()
                     Button(action: onClose) {
@@ -87,254 +103,16 @@ struct RosaryWalkthroughView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Close guide")
                 }
-                .padding(.horizontal, AppTheme.gutter)
+                .padding(.horizontal, AppTheme.gutter + AppTheme.Space.sm)
                 .padding(.top, AppTheme.Space.xs)
-                .zIndex(10)
+                Spacer()
             }
         }
-
-        .background(palette.prayBg)
-        .guidePageChrome()
+        // Same as onboarding: the template is designed on black in both appearances.
+        .preferredColorScheme(.dark)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.28), value: page)
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
-    }
-
-    private func estimatedContentHeight(for index: Int) -> CGFloat {
-        index == 1 ? 650 : 200
-    }
-
-    private func heroHeight(for index: Int, viewportHeight: CGFloat) -> CGFloat {
-        guard index != 1 else { return 0 }
-        let textHeight = contentHeights[index] ?? estimatedContentHeight(for: index)
-        return max(0, viewportHeight - textHeight - GuideWalkthroughLayout.actionClearance - AppTheme.Space.xs)
-    }
-
-    private func advance() {
-        guard !isTransitioning else { return }
-        if page == pageCount - 1 { onClose() }
-        else { transition(to: page + 1) }
-    }
-
-    private func retreat() {
-        guard !isTransitioning else { return }
-        if page == 0 { onClose() }
-        else { transition(to: page - 1) }
-    }
-
-    /// Fade through the page background so two illustrations never overlap.
-    /// Page identity, scroll resets and layout changes happen while hidden.
-    private func transition(to nextPage: Int) {
-        guard !isTransitioning else { return }
-        guard !reduceMotion else {
-            var transaction = Transaction(animation: nil)
-            transaction.disablesAnimations = true
-            withTransaction(transaction) { page = nextPage }
-            return
-        }
-        isTransitioning = true
-        withAnimation(MotionTokens.walkthroughFadeOut, completionCriteria: .removed) {
-            pageOpacity = 0
-        } completion: {
-            var transaction = Transaction(animation: nil)
-            transaction.disablesAnimations = true
-            withTransaction(transaction) { page = nextPage }
-            withAnimation(MotionTokens.walkthroughFadeIn, completionCriteria: .removed) {
-                pageOpacity = 1
-            } completion: {
-                isTransitioning = false
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func walkthroughArtwork(for index: Int, height: CGFloat, topInset: CGFloat) -> some View {
-        switch index {
-        case 0:
-            heroCard("WalkthroughRosaryIntro", height: height, topInset: topInset, popsOut: false, fillsCard: true, cardFill: palette.surface, bottomFadeHeight: AppTheme.Space.section)
-        case 2:
-            heroCard("WalkthroughRosaryDecade", height: height, topInset: topInset, popsOut: false, cardFill: palette.surface, bottomFadeHeight: 0)
-        case 3:
-            heroCard("WalkthroughRosaryStructure", height: height, topInset: topInset, popsOut: false, fillsCard: true)
-        default:
-            heroCard("WalkthroughMary", height: height, topInset: topInset, popsOut: false, fillsCard: true)
-        }
-    }
-
-    /// Shared walkthrough hero: art cutout on a Marian blue card, optionally rising above
-    /// the card's top edge, with the page-colour front fade at the bottom.
-    private func heroCard(_ imageName: String, height: CGFloat, topInset: CGFloat, popsOut: Bool = true, fillsCard: Bool = false, cardFill: Color = AppTheme.marianBlue, bottomFadeHeight: CGFloat = GuideWalkthroughLayout.fadeHeight) -> some View {
-        let popOut = popsOut ? AppTheme.Space.xxl : 0
-        let card = RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-        return GeometryReader { geometry in
-            let cardHeight = max(0, geometry.size.height - popOut)
-            ZStack(alignment: .bottom) {
-                card
-                    .fill(fillsCard ? palette.surface : cardFill)
-                    .frame(height: cardHeight)
-                if fillsCard {
-                    Image(imageName)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geometry.size.width, height: cardHeight)
-                        .clipShape(card)
-                } else {
-                Image(imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .padding(.horizontal, AppTheme.Space.lg)
-                    .mask {
-                        VStack(spacing: 0) {
-                            Rectangle().frame(height: popOut)
-                            card
-                        }
-                    }
-                }
-                LinearGradient(colors: [palette.prayBg.opacity(0), palette.prayBg], startPoint: .top, endPoint: .bottom)
-                    .frame(height: min(bottomFadeHeight, cardHeight))
-                    .clipShape(card)
-            }
-        }
-        .padding(.top, topInset + AppTheme.Space.xxl + AppTheme.Space.xl)
-        .padding(.horizontal, AppTheme.gutter)
-        .padding(.bottom, AppTheme.Space.lg)
-        .frame(height: height)
-        .accessibilityHidden(true)
-    }
-
-    @ViewBuilder
-    private func pageContent(_ index: Int, topInset: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-            if index == 1 {
-                mysteryGrid
-                    .padding(.top, 72 - topInset - AppTheme.Space.xs)
-                    .padding(.bottom, AppTheme.Space.lg)
-            }
-            Text(title(for: index))
-                .font(AppTheme.TypeRole.modalTitle)
-                .foregroundStyle(palette.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityAddTraits(.isHeader)
-            switch index {
-            case 0:
-                paragraph("The Rosary is a prayer that helps you reflect on the life of Jesus with Mary. The beads help you keep your place as you pray.")
-            case 1:
-                paragraph("The Rosary’s “mysteries” are moments in the lives of Jesus and Mary. They’re grouped into four sets: Joyful, Luminous, Sorrowful and Glorious.")
-            case 2:
-                paragraph("A decade is a group of ten Hail Marys, beginning with an Our Father and ending with a Glory Be. As you pray, reflect on one mystery.")
-            case 3:
-                paragraph("Begin with the opening prayers, pray five decades, then finish with the closing prayers. We’ll guide you through each step.")
-            default:
-                paragraph("You don’t need to memorise the prayers or have rosary beads. Rosary Guide will show you each prayer and mystery. Take your time and follow along.")
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var mysteryGrid: some View {
-        LazyVGrid(
-            columns: [GridItem(.flexible(), spacing: AppTheme.Space.md), GridItem(.flexible(), spacing: AppTheme.Space.md)],
-            alignment: .leading,
-            spacing: AppTheme.Space.md
-        ) {
-            ForEach(MysterySetKind.displayOrder, id: \.self) { set in
-                mysteryTile(set)
-            }
-        }
-    }
-
-    /// Full-bleed statue tile with the set name and summary over a soft scrim.
-    private func mysteryTile(_ set: MysterySetKind) -> some View {
-        let cardHeight = mysteryImageHeight + AppTheme.Space.xxl + AppTheme.Space.lg
-        // How far the statue cutout rises above the card's top edge.
-        let popOut = AppTheme.Space.xl
-        let card = RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-        return ZStack(alignment: .bottom) {
-            card
-                .fill(palette.surface)
-                .frame(height: cardHeight)
-            Image(mysteryImageName(set))
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity)
-                .frame(height: cardHeight + popOut, alignment: .top)
-                // Open above the card so the head pops out; clipped to the card below.
-                .mask {
-                    VStack(spacing: 0) {
-                        Rectangle()
-                        card.frame(height: cardHeight)
-                    }
-                }
-            // Build the fade a little sooner behind the labels, keeping the faces clear.
-            LinearGradient(
-                stops: [
-                    .init(color: palette.prayBg.opacity(0), location: 0),
-                    .init(color: palette.prayBg.opacity(GuideWalkthroughLayout.mysteryLabelScrimOpacity), location: GuideWalkthroughLayout.mysteryLabelScrimPosition),
-                    .init(color: palette.prayBg, location: 1)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-                .frame(height: min(GuideWalkthroughLayout.fadeHeight, cardHeight))
-                .clipShape(card)
-            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                Text("\(set.shortName) Mysteries")
-                    .font(AppTheme.TypeRole.callout(weight: .semibold))
-                    .foregroundStyle(palette.textPrimary)
-                Text(mysterySummary(set))
-                    .font(AppTheme.TypeRole.caption)
-                    .foregroundStyle(palette.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(AppTheme.Space.md)
-            // The tile has a fixed height; cap its text so the largest sizes don't clip.
-            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-            .minimumScaleFactor(0.8)
-        }
-        .frame(height: cardHeight + popOut, alignment: .bottom)
-        .accessibilityElement(children: .combine)
-    }
-
-    private func mysteryImageName(_ set: MysterySetKind) -> String {
-        switch set {
-        case .joyful: "MysteryJoyful"
-        case .luminous: "MysteryLuminous"
-        case .sorrowful: "MysterySorrowful"
-        case .glorious: "MysteryGlorious"
-        }
-    }
-
-    private func paragraph(_ text: String) -> some View {
-        let size = AppTheme.TypeRole.prayerLineHeightReference(scale: settings.textSize.scale)
-        let lineFont = FontRegistrar.sansUI(size)
-        let lineExtra = max(0, size * 1.65 - lineFont.lineHeight)
-        return GuideWalkthroughText(
-            text: text,
-            font: AppTheme.TypeRole.prayerTextUIFont(scale: settings.textSize.scale),
-            color: palette.ink,
-            lineSpacing: lineExtra
-        )
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func title(for index: Int) -> String {
-        switch index {
-        case 0: "What is the Rosary?"
-        case 1: "Reflect on the life of Jesus"
-        case 2: "One decade at a time"
-        case 3: "A simple rhythm of prayer"
-        default: "Let’s pray together"
-        }
-    }
-
-    private func mysterySummary(_ set: MysterySetKind) -> String {
-        switch set {
-        case .joyful: "The birth and early life of Jesus"
-        case .luminous: "The public ministry of Jesus"
-        case .sorrowful: "The Passion and death of Jesus"
-        case .glorious: "The Resurrection and the glory that follows"
-        }
     }
 }
 

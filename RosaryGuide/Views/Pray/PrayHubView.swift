@@ -64,6 +64,12 @@ struct PrayHubView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
             #if DEBUG
+            // `-RGDebugIntro`: opens the Rosary introduction for screenshots.
+            .task {
+                guard DebugHooks.has("-RGDebugIntro") else { return }
+                try? await Task.sleep(for: .seconds(2))
+                showingWalkthrough = true
+            }
             // `-RGDebugRosaryPrayers`: opens Rosary prayers for screenshots.
             .navigationDestination(isPresented: $debugShowsRosaryPrayers) { rosaryPrayersPage }
             .task {

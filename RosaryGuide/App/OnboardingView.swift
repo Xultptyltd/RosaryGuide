@@ -89,7 +89,7 @@ struct OnboardingView: View {
     }
 }
 
-private struct OnboardingPage: Identifiable {
+struct OnboardingPage: Identifiable {
     var id: String { title + body }
     var title: String
     var body: String
@@ -117,10 +117,12 @@ private struct OnboardingPage: Identifiable {
     ]
 }
 
-private struct OnboardingPageView: View {
+struct OnboardingPageView: View {
     var page: OnboardingPage
     var index: Int
     var pageCount: Int
+    /// Lets longer copy (e.g. the Rosary introduction) scroll at large text sizes.
+    var scrollsText = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var imageDrift = false
@@ -146,6 +148,7 @@ private struct OnboardingPageView: View {
 
                 Spacer(minLength: AppTheme.Space.lg)
 
+                ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .center, spacing: AppTheme.Space.lg) {
                     Text(page.title)
                         .font(AppTheme.TypeRole.title.weight(.regular))
@@ -164,6 +167,10 @@ private struct OnboardingPageView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.horizontal, AppTheme.gutter)
+                }
+                .scrollDisabled(!scrollsText)
+                .scrollBounceBehavior(.basedOnSize)
+                .fixedSize(horizontal: false, vertical: !scrollsText)
 
                 Spacer(minLength: AppTheme.Space.lg)
 
@@ -456,9 +463,10 @@ private struct OnboardingAuthButton: View {
     }
 }
 
-private struct OnboardingDots: View {
+struct OnboardingDots: View {
     var current: Int
     var count: Int
+    var label = "Onboarding page"
 
     var body: some View {
         HStack(spacing: AppTheme.Space.sm) {
@@ -469,7 +477,7 @@ private struct OnboardingDots: View {
             }
         }
         .animation(.easeOut(duration: 0.22), value: current)
-        .accessibilityLabel("Onboarding page \(current + 1) of \(count)")
+        .accessibilityLabel("\(label) \(current + 1) of \(count)")
     }
 }
 
