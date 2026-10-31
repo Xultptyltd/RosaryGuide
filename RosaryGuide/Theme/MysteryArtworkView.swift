@@ -526,6 +526,8 @@ struct GuidePageDots: View {
     var current: Int
     var count: Int
     var alignment: Alignment = .leading
+    var activeColor: Color? = nil
+    var inactiveColor: Color? = nil
     @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -533,7 +535,7 @@ struct GuidePageDots: View {
         HStack(spacing: AppTheme.Space.sm) {
             ForEach(0..<count, id: \.self) { index in
                 Capsule()
-                    .fill(index == current ? palette.accent : palette.accent.opacity(0.28))
+                    .fill(index == current ? (activeColor ?? palette.accent) : (inactiveColor ?? palette.accent.opacity(0.28)))
                     .frame(width: index == current ? 18 : 6, height: 6)
             }
         }

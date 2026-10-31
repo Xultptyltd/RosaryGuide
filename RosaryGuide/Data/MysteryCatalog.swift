@@ -32,6 +32,30 @@ enum MysteryCatalog {
         )
     }
 
+    /// One calm line per mystery for cards (sentence case, ends with a full stop).
+    static let summaries: [String: String] = [
+        "joyful-1": "Mary says yes to God.",
+        "joyful-2": "Mary visits Elizabeth.",
+        "joyful-3": "Jesus is born in Bethlehem.",
+        "joyful-4": "Jesus is presented in the Temple.",
+        "joyful-5": "Jesus is found in the Temple.",
+        "luminous-1": "Jesus is baptized in the Jordan.",
+        "luminous-2": "Jesus turns water into wine.",
+        "luminous-3": "Jesus proclaims the Kingdom of God.",
+        "luminous-4": "Jesus is transfigured in glory.",
+        "luminous-5": "Jesus gives us the Eucharist.",
+        "sorrowful-1": "Jesus prays in Gethsemane.",
+        "sorrowful-2": "Jesus is scourged at the pillar.",
+        "sorrowful-3": "Jesus is crowned with thorns.",
+        "sorrowful-4": "Jesus carries his cross.",
+        "sorrowful-5": "Jesus dies on the cross.",
+        "glorious-1": "Jesus rises from the dead.",
+        "glorious-2": "Jesus ascends into heaven.",
+        "glorious-3": "The Holy Spirit comes at Pentecost.",
+        "glorious-4": "Mary is taken up into heaven.",
+        "glorious-5": "Mary is crowned Queen of Heaven."
+    ]
+
     static let joyful: [Mystery] = [
         item("joyful-1", .joyful, 1, "The Annunciation", "Annuntiatio",
              "Humility", "Humilitas",
@@ -192,4 +216,9 @@ enum MysteryScripture {
         "glorious-4": "Ecce enim ex hoc beatam me dicent omnes generationes, quia fecit mihi magna qui potens est: et sanctum nomen ejus.",
         "glorious-5": "Et signum magnum apparuit in cælo: mulier amicta sole, et luna sub pedibus ejus, et in capite ejus corona stellarum duodecim.",
     ]
+}
+
+extension Mystery {
+    /// Short card line from `MysteryCatalog.summaries`.
+    var summary: String { MysteryCatalog.summaries[id] ?? "" }
 }

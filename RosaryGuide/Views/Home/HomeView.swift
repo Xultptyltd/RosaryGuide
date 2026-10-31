@@ -962,13 +962,13 @@ struct HomeView: View {
     /// fruit row; accessibility sizes get more so nothing clips.
     private var mysteryRailHeight: CGFloat {
         let width = (UIScreen.main.bounds.width * AppTheme.Component.mysteryCardWidthFraction).rounded()
-        let text: CGFloat = dynamicTypeSize.isAccessibilitySize ? 400 : (dynamicTypeSize >= .xxLarge ? 200 : 140)
+        let text: CGFloat = dynamicTypeSize.isAccessibilitySize ? 460 : (dynamicTypeSize >= .xxLarge ? 230 : 164)
         return (width / AppTheme.Component.mysteryCardArtAspect).rounded() + text + AppTheme.Space.sm
     }
 
     private var mysteryPageDots: some View {
         // Today's dot fills in last on first load.
-        GuidePageDots(current: currentMysteryIndex, count: mysteries.count)
+        GuidePageDots(current: currentMysteryIndex, count: mysteries.count, alignment: .center, activeColor: palette.ink, inactiveColor: palette.dim.opacity(0.45))
             .accessibilityLabel("Mystery card \(currentMysteryIndex + 1) of \(mysteries.count)")
     }
 
@@ -1017,6 +1017,11 @@ struct HomeView: View {
                     WordSafeText(mystery.title.primary(for: settings.language), font: AppTheme.TypeRole.headingSecondaryUIFont)
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
+                    Text(mystery.summary)
+                        .font(AppTheme.TypeRole.rhythmCaption())
+                        .foregroundStyle(palette.dim)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                        .fixedSize(horizontal: false, vertical: dynamicTypeSize.isAccessibilitySize)
                     Spacer(minLength: AppTheme.Space.sm)
                     HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
                         Text("Fruit · \(mystery.fruit.primary(for: settings.language))")
