@@ -189,7 +189,8 @@ struct OfferView: View {
                 .buttonStyle(JourneyCardButtonStyle())
                 .accessibilityHint("Opens your prayer journey")
 
-                GuideSectionBoundary(verticalSpacing: 0)
+                // Intentions sit on the page background: spacing, not a section band.
+                Spacer().frame(height: AppTheme.Space.sm)
 
                 syncWarning
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
@@ -248,8 +249,8 @@ struct OfferView: View {
 
 
                 if let papal = visiblePapalSuggestion {
-                    // Separates the intentions (or the add-first button) from the card.
-                    GuideSectionBoundary(verticalSpacing: 0)
+                    // Intentions sit on the page background: spacing, not a section band.
+                    Spacer().frame(height: AppTheme.Space.sm)
                     GuideSectionLabel(text: "Holy Father’s intention", prominence: .strong)
                     PapalMonthCard(item: papal, isAdded: hasAdoptedSuggestion(papal),
                         onOpen: { papalDetail = papal }, onAdd: { adoptSuggestion(papal) }, onPin: { pinPapalSuggestion(papal) })
@@ -506,7 +507,7 @@ struct OfferView: View {
     /// toggle; "See all" lives at the bottom of the visible list.
     private var intentionsSectionHeader: some View {
         Text("Your intentions")
-            .font(AppTheme.TypeRole.headline(weight: .semibold))
+            .font(AppTheme.TypeRole.headline(weight: .medium))
             .foregroundStyle(palette.textPrimary)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityAddTraits(.isHeader)
