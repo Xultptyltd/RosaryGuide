@@ -614,7 +614,7 @@ struct HomeView: View {
                 }
                 .contentShape(shape)
                 .clipShape(shape)
-                .overlay(shape.stroke(palette.strokeSubtle, lineWidth: AppTheme.Component.hairline))
+                .overlay(shape.strokeBorder(palette.strokeRegular, lineWidth: 1))
             }
             .buttonStyle(.plain)
             .guidePressable()
@@ -1082,7 +1082,7 @@ struct HomeView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .contentShape(shape)
             .clipShape(shape)
-            .overlay(shape.strokeBorder(palette.strokeSubtle, lineWidth: AppTheme.Component.hairline))
+            .overlay(shape.strokeBorder(palette.strokeRegular, lineWidth: 1))
         }
         .buttonStyle(.plain)
         .guidePressable()
