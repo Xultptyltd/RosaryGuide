@@ -123,6 +123,8 @@ struct OnboardingPageView: View {
     var pageCount: Int
     /// Lets longer copy (e.g. the Rosary introduction) scroll at large text sizes.
     var scrollsText = false
+    /// Footer space kept clear below the copy (taller when a page has two buttons).
+    var controlsHeight: CGFloat = OnboardingLayout.controlsHeight
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var imageDrift = false
@@ -183,7 +185,7 @@ struct OnboardingPageView: View {
                 Spacer(minLength: AppTheme.Space.lg)
 
                 // Room for the dots and Continue button, which OnboardingView draws on top.
-                Color.clear.frame(height: OnboardingLayout.controlsHeight)
+                Color.clear.frame(height: controlsHeight)
             }
         }
         .background(Color.black)

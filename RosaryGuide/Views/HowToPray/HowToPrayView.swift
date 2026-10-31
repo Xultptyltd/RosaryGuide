@@ -5,7 +5,7 @@ import UIKit
 /// built from the onboarding template (panel art, centred copy, dots, pill button).
 struct RosaryWalkthroughView: View {
     var onClose: () -> Void
-    /// "Begin my first Rosary": closes the walkthrough and starts today's mysteries.
+    /// "Begin Rosary": closes the walkthrough and starts today's mysteries.
     var onBegin: () -> Void = {}
     @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -57,13 +57,17 @@ struct RosaryWalkthroughView: View {
 
     private var pages: [OnboardingPage] { Self.pages }
 
+    /// The last page adds a "Done" text button below the pill.
+    static let lastPageControlsHeight = OnboardingLayout.controlsHeight + AppTheme.Accessibility.minHitTarget + AppTheme.Space.sm
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
             TabView(selection: $page) {
                 ForEach(Array(pages.enumerated()), id: \.offset) { index, item in
-                    OnboardingPageView(page: item, index: index, pageCount: pages.count, scrollsText: true)
+                    OnboardingPageView(page: item, index: index, pageCount: pages.count, scrollsText: true,
+                                       controlsHeight: index == pages.count - 1 ? Self.lastPageControlsHeight : OnboardingLayout.controlsHeight)
                         .tag(index)
                         .accessibilityIdentifier("rosary-walkthrough-page-\(index + 1)")
                 }
@@ -75,7 +79,7 @@ struct RosaryWalkthroughView: View {
                 Spacer()
                 VStack(spacing: AppTheme.Space.lg) {
                     OnboardingDots(current: page, count: pages.count, label: "Introduction page")
-                    PillButton(title: page == pages.count - 1 ? "Begin my first Rosary" : "Continue", onDark: true) {
+                    PillButton(title: page == pages.count - 1 ? "Begin Rosary" : "Continue", onDark: true) {
                         HapticService.play(.light, enabled: settings.hapticsEnabled)
                         if page == pages.count - 1 {
                             onBegin()
@@ -84,7 +88,13 @@ struct RosaryWalkthroughView: View {
                         }
                     }
                     .environment(\.palette, palette)
-                    .accessibilityLabel(page == pages.count - 1 ? "Begin my first Rosary, page \(page + 1) of \(pages.count)" : "Continue, page \(page + 1) of \(pages.count)")
+                    .accessibilityLabel(page == pages.count - 1 ? "Begin Rosary with today’s mysteries, page \(page + 1) of \(pages.count)" : "Continue, page \(page + 1) of \(pages.count)")
+                    if page == pages.count - 1 {
+                        GuideTextButton(title: "Done", accessibilityLabel: "Done, close introduction", alignment: .center, action: onClose)
+                            .environment(\.palette, ThemePalette(scheme: .dark))
+                            .frame(minHeight: AppTheme.Accessibility.minHitTarget)
+                            .transition(.opacity)
+                    }
                 }
                 .padding(.horizontal, AppTheme.gutter)
                 .padding(.bottom, AppTheme.Space.xl)
