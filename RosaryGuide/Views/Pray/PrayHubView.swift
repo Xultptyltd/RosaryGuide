@@ -6,6 +6,7 @@ struct PrayHubView: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
     @Binding var prayLaunch: PrayLaunch?
+    @State private var debugShowsRosaryPrayers = false
     @State private var searchText = ""
     @State private var showingWalkthrough = false
     @State private var expandedQuestion: LearnArticle?
@@ -63,6 +64,13 @@ struct PrayHubView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
             #if DEBUG
+            // `-RGDebugRosaryPrayers`: opens Rosary prayers for screenshots.
+            .navigationDestination(isPresented: $debugShowsRosaryPrayers) { rosaryPrayersPage }
+            .task {
+                guard DebugHooks.has("-RGDebugRosaryPrayers") else { return }
+                try? await Task.sleep(for: .seconds(2))
+                debugShowsRosaryPrayers = true
+            }
             // `-RGDebugPrayPrayers`: scrolls to the Prayers tiles for screenshots.
             .task {
                 guard DebugHooks.has("-RGDebugPrayPrayers") else { return }
@@ -113,19 +121,19 @@ struct PrayHubView: View {
 
     private var rosaryPrayersPage: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 0) {
-                rosaryPrayerGroup("Opening prayers", detail: "Begin on the crucifix, then the first beads.", prayers: [
-                    PrayerCatalog.signOfTheCross, PrayerCatalog.apostlesCreed,
-                    PrayerCatalog.ourFather, PrayerCatalog.hailMary, PrayerCatalog.gloryBe
+            VStack(alignment: .leading, spacing: AppTheme.Space.xxl) {
+                rosaryPrayerGroup("Opening prayers", detail: "Begin on the crucifix and introductory beads.", rows: [
+                    (PrayerCatalog.signOfTheCross, nil), (PrayerCatalog.apostlesCreed, nil),
+                    (PrayerCatalog.ourFather, nil), (PrayerCatalog.hailMary, 3), (PrayerCatalog.gloryBe, nil)
                 ])
-                GuideSectionBoundary(verticalSpacing: 0)
-                rosaryPrayerGroup("Each decade", detail: "One Our Father, ten Hail Marys and one Glory be.", prayers: [
-                    PrayerCatalog.ourFather, PrayerCatalog.hailMary, PrayerCatalog.gloryBe, PrayerCatalog.fatima
+                rosaryPrayerGroup("Each decade", detail: "Repeat for each of the five mysteries.", rows: [
+                    (PrayerCatalog.ourFather, nil), (PrayerCatalog.hailMary, 10),
+                    (PrayerCatalog.gloryBe, nil), (PrayerCatalog.fatima, nil)
                 ])
-                GuideSectionBoundary(verticalSpacing: 0)
-                rosaryPrayerGroup("Closing prayers", detail: "Conclude after the final decade, then make the Sign of the Cross.", prayers: [
-                    PrayerCatalog.hailHolyQueen, PrayerCatalog.versicle, PrayerCatalog.concluding,
-                    PrayerCatalog.signOfTheCross
+                // Same closing sequence as the Rosary flow.
+                rosaryPrayerGroup("Closing prayers", detail: "After the fifth decade.", rows: [
+                    (PrayerCatalog.hailHolyQueen, nil), (PrayerCatalog.versicle, nil),
+                    (PrayerCatalog.concluding, nil), (PrayerCatalog.signOfTheCross, nil)
                 ])
             }
             .padding(.horizontal, AppTheme.gutter)
@@ -136,8 +144,9 @@ struct PrayHubView: View {
         .guideDetailChrome("Rosary prayers")
     }
 
-    private func rosaryPrayerGroup(_ title: String, detail: String, prayers: [Prayer]) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+    /// Heading, one-line caption, then an inset card of prayer rows.
+    private func rosaryPrayerGroup(_ title: String, detail: String, rows: [(Prayer, Int?)]) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
             GuideSectionLabel(text: title, prominence: .strong)
                 .accessibilityAddTraits(.isHeader)
             Text(detail)
@@ -145,11 +154,37 @@ struct PrayHubView: View {
                 .foregroundStyle(palette.dim)
                 .fixedSize(horizontal: false, vertical: true)
             VStack(spacing: 0) {
-                ForEach(prayers) { prayer in
-                    prayerNavRow(prayer: prayer, endsSection: prayer.id == prayers.last?.id)
-                    if prayer.id != prayers.last?.id { Hairline() }
+                ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                    NavigationLink { LearnPrayerDetailView(prayer: row.0) } label: {
+                        HStack(spacing: AppTheme.Space.sm) {
+                            Text(row.0.title.primary(for: settings.language))
+                                .font(AppTheme.TypeRole.bodySmall)
+                                .foregroundStyle(palette.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if let count = row.1 {
+                                Text("×\(count)")
+                                    .font(AppTheme.TypeRole.bodySmall)
+                                    .foregroundStyle(palette.dim)
+                                    .accessibilityLabel("\(count) times")
+                            }
+                            Image(systemName: "chevron.right")
+                                .guideSymbol(size: 12, weight: .regular)
+                                .foregroundStyle(palette.secondaryText)
+                                .accessibilityHidden(true)
+                        }
+                        .padding(.horizontal, AppTheme.Space.lg)
+                        .padding(.vertical, AppTheme.Space.md)
+                        .frame(minHeight: AppTheme.Accessibility.minHitTarget + AppTheme.Space.sm)
+                        .contentShape(Rectangle())
+                        .accessibilityElement(children: .combine)
+                    }
+                    .buttonStyle(.plain)
+                    if index < rows.count - 1 { Hairline().padding(.leading, AppTheme.Space.lg) }
                 }
             }
+            .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: false)
+            .padding(.top, AppTheme.Space.sm)
         }
     }
 
@@ -226,29 +261,19 @@ struct PrayHubView: View {
                 : AnyLayout(HStackLayout(alignment: .top, spacing: AppTheme.Space.md))
             layout {
                 NavigationLink { rosaryPrayersPage } label: {
-                    prayerTile(title: "Rosary prayers", subtitle: "Prayers used in the Rosary") {
-                        RosaryLineIcon().stroke(palette.accentText, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
-                            .frame(width: 28, height: 36)
-                    }
+                    prayerTile(title: "Rosary prayers", subtitle: "Prayers used in the Rosary")
                 }
                 .buttonStyle(.plain).guidePressable()
                 NavigationLink { libraryPage } label: {
-                    prayerTile(title: "All prayers", subtitle: "Explore the full collection") {
-                        Image(systemName: "book")
-                            .guideSymbol(size: 30, weight: .light)
-                            .foregroundStyle(palette.accentText)
-                            .frame(height: 36, alignment: .leading)
-                    }
+                    prayerTile(title: "All prayers", subtitle: "Explore the full collection")
                 }
                 .buttonStyle(.plain).guidePressable()
             }
         }
     }
 
-    private func prayerTile<Icon: View>(title: String, subtitle: String, @ViewBuilder icon: () -> Icon) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            icon().accessibilityHidden(true)
-            Spacer(minLength: AppTheme.Space.sm)
+    private func prayerTile(title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
             Text(title)
                 .font(AppTheme.TypeRole.body(weight: .semibold))
                 .foregroundStyle(palette.ink)
@@ -1558,23 +1583,3 @@ private extension MysterySetKind {
     }
 }
 
-/// Line-art rosary: a loop of beads, a short drop and a cross.
-private struct RosaryLineIcon: Shape {
-    func path(in r: CGRect) -> Path {
-        var p = Path()
-        let w = r.width, cx = r.midX
-        let ringR = w * 0.36, cy = r.minY + ringR + w * 0.08, bead = w * 0.075
-        for i in 0..<10 {
-            let a = Double(i) / 10 * 2 * .pi + .pi / 2 + .pi / 10
-            p.addEllipse(in: CGRect(x: cx + ringR * cos(a) - bead, y: cy + ringR * sin(a) - bead, width: bead * 2, height: bead * 2))
-        }
-        let dropTop = cy + ringR + bead
-        let crossTop = r.maxY - w * 0.42
-        p.move(to: CGPoint(x: cx, y: dropTop)); p.addLine(to: CGPoint(x: cx, y: crossTop))
-        p.addEllipse(in: CGRect(x: cx - bead, y: (dropTop + crossTop) / 2 - bead, width: bead * 2, height: bead * 2))
-        p.move(to: CGPoint(x: cx, y: crossTop)); p.addLine(to: CGPoint(x: cx, y: r.maxY))
-        let armY = crossTop + w * 0.13
-        p.move(to: CGPoint(x: cx - w * 0.14, y: armY)); p.addLine(to: CGPoint(x: cx + w * 0.14, y: armY))
-        return p
-    }
-}
