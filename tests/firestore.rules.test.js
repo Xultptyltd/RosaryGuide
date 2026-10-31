@@ -118,6 +118,11 @@ async function main() {
     // updatedAt may be the client's edit time (offline conflicts resolve by it).
     await assertSucceeds(setDoc(aliceDoc, validIntention({ updatedAt: new Date("2026-10-01T00:00:00Z") })));
     await assertFails(setDoc(aliceDoc, validIntention({ updatedAt: "yesterday" })));
+    // archivedAt: optional, a past (or near) timestamp; the app deletes it on unarchive.
+    await assertSucceeds(setDoc(aliceDoc, validIntention({ archivedAt: new Date("2026-10-01T00:00:00Z") })));
+    await assertFails(setDoc(aliceDoc, validIntention({ archivedAt: new Date(Date.now() + 3 * 24 * 3600 * 1000) })));
+    await assertFails(setDoc(aliceDoc, validIntention({ archivedAt: true })));
+    await assertSucceeds(setDoc(aliceDoc, validIntention()));
     await assertSucceeds(getDocs(collection(alice, "users/alice/intentions")));
 
     await assertFails(getDoc(doc(bob, "users/alice/intentions", VALID_ID)));

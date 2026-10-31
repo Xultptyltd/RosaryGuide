@@ -38,7 +38,8 @@ service cloud.firestore {
         'accent',
         'emoji',
         'suggestOn',
-        'updatedAt'
+        'updatedAt',
+        'archivedAt'
       ];
       let required = [
         'schemaVersion',
@@ -71,7 +72,8 @@ service cloud.firestore {
         && request.resource.data.suggestOn is list
         && request.resource.data.suggestOn.size() <= 4
         && request.resource.data.suggestOn.toSet().hasOnly(['joyful', 'luminous', 'sorrowful', 'glorious'])
-        && request.resource.data.updatedAt is timestamp;
+        && request.resource.data.updatedAt is timestamp
+        && (!('archivedAt' in request.resource.data) || notFutureTimestamp(request.resource.data.archivedAt));
     }
 
     function notFutureTimestamp(value) {
