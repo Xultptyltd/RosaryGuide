@@ -24,6 +24,7 @@ struct PrayHubView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
+            ScrollViewReader { scrollProxy in
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     searchField
@@ -33,7 +34,7 @@ struct PrayHubView: View {
                         GuideSectionBoundary(gutter: pageGutter)
                         mysteryTilesSection
                         GuideSectionBoundary(gutter: pageGutter)
-                        prayersTilesSection
+                        prayersTilesSection.id("pray-prayers")
                         if DevotionCatalog.isEnabled {
                             GuideSectionBoundary(gutter: pageGutter, verticalSpacing: 0)
                             devotionTilesSection
@@ -61,6 +62,15 @@ struct PrayHubView: View {
                 }
             }
             .scrollBounceBehavior(.basedOnSize)
+            #if DEBUG
+            // `-RGDebugPrayPrayers`: scrolls to the Prayers tiles for screenshots.
+            .task {
+                guard DebugHooks.has("-RGDebugPrayPrayers") else { return }
+                try? await Task.sleep(for: .seconds(3))
+                scrollProxy.scrollTo("pray-prayers", anchor: .center)
+            }
+            #endif
+            }
             .guideRootChrome("Pray")
             .fullScreenCover(isPresented: $showingWalkthrough) {
                 RosaryWalkthroughView(onClose: { showingWalkthrough = false })
