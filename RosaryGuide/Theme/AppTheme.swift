@@ -1631,6 +1631,8 @@ extension AppTheme {
             FontRegistrar.sansUI(12, weight: regularized(weight), textStyle: .caption1)
         }
         static var headingSecondaryUIFont: UIFont { FontRegistrar.sansUI(22, weight: .regular, textStyle: .title2) }
+        /// Home mystery card title.
+        static var headingCardUIFont: UIFont { FontRegistrar.sansUI(26, weight: .regular, textStyle: .title1) }
         static var serifBodyUIFont: UIFont { FontRegistrar.serifUI(20, opticalSize: 20, textStyle: .body) }
         static var settingsRowUIFont: UIFont { bodyUIFont() }
         static var settingsMetaUIFont: UIFont { captionUIFont() }

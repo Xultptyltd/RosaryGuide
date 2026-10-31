@@ -382,12 +382,11 @@ struct HomeView: View {
             }
 
             Group {
-                GuideSectionBoundary(gutter: gutter)
-
                 VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
                     GuideSectionLabel(text: "Upcoming feast days", prominence: .strong)
                     comingUpSection
                 }
+                .padding(.top, AppTheme.Space.xl)
             }
 
             Group {
@@ -960,7 +959,7 @@ struct HomeView: View {
     /// fruit row; accessibility sizes get more so nothing clips.
     private var mysteryRailHeight: CGFloat {
         let width = (UIScreen.main.bounds.width * AppTheme.Component.mysteryCardWidthFraction).rounded()
-        let text: CGFloat = dynamicTypeSize.isAccessibilitySize ? 380 : (dynamicTypeSize >= .xxLarge ? 140 : 88)
+        let text: CGFloat = dynamicTypeSize.isAccessibilitySize ? 380 : (dynamicTypeSize >= .xxLarge ? 160 : 104)
         return (width / AppTheme.Component.mysteryCardArtAspect).rounded() + text + AppTheme.Space.sm
     }
 
@@ -1016,19 +1015,25 @@ struct HomeView: View {
                         .font(AppTheme.TypeRole.caption(weight: .medium))
                         .tracking(AppTheme.Component.eyebrowTracking)
                         .foregroundStyle(palette.faint)
-                    WordSafeText(mystery.title.primary(for: settings.language), font: AppTheme.TypeRole.headingSecondaryUIFont)
+                    WordSafeText(mystery.title.primary(for: settings.language), font: AppTheme.TypeRole.headingCardUIFont)
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(mystery.summary)
                         .font(AppTheme.TypeRole.rhythmCaption())
                         .foregroundStyle(palette.dim)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("Fruit · \(mystery.fruit.primary(for: settings.language))")
-                        .font(AppTheme.TypeRole.caption())
-                        .foregroundStyle(palette.faint)
-                        .opacity(0.8)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, AppTheme.Space.xs)
+                    HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                        Text("Fruit · \(mystery.fruit.primary(for: settings.language))")
+                            .font(AppTheme.TypeRole.caption())
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(AppTheme.TypeRole.caption(weight: .medium))
+                            .accessibilityHidden(true)
+                    }
+                    .foregroundStyle(palette.faint)
+                    .opacity(0.8)
+                    .padding(.top, AppTheme.Space.md)
                 }
                 .padding(.horizontal, AppTheme.Space.lg)
                 .padding(.top, -AppTheme.Space.lg)
