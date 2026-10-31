@@ -1004,7 +1004,7 @@ struct HomeView: View {
                         MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false, cardFraming: true)
                     }
                     .overlay(alignment: .bottom) {
-                        LinearGradient(colors: [palette.surface.opacity(0), palette.surface], startPoint: .top, endPoint: .bottom)
+                        LinearGradient(colors: [palette.bg.opacity(0), palette.bg], startPoint: .top, endPoint: .bottom)
                             .frame(height: AppTheme.Space.xxl * 2)
                     }
                     .clipped()
@@ -1042,10 +1042,9 @@ struct HomeView: View {
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(palette.surface, in: shape)
+            .contentShape(shape)
             .clipShape(shape)
             .overlay(shape.strokeBorder(palette.strokeSubtle, lineWidth: AppTheme.Component.hairline))
-            .guideSoftShadow(elevated: colorScheme == .light)
         }
         .buttonStyle(.plain)
         .guidePressable()
