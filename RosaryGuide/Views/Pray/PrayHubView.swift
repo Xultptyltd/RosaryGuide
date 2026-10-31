@@ -261,21 +261,26 @@ struct PrayHubView: View {
                 : AnyLayout(HStackLayout(alignment: .top, spacing: AppTheme.Space.md))
             layout {
                 NavigationLink { rosaryPrayersPage } label: {
-                    prayerTile(title: "Rosary prayers", subtitle: "Prayers used in the Rosary")
+                    prayerTile(title: "Rosary prayers", subtitle: "Prayers used in the Rosary", icon: "PrayerIconRosary")
                 }
                 .buttonStyle(.plain).guidePressable()
                 NavigationLink { libraryPage } label: {
-                    prayerTile(title: "All prayers", subtitle: "Explore the full collection")
+                    prayerTile(title: "All prayers", subtitle: "Explore the full collection", icon: "PrayerIconAllPrayers")
                 }
                 .buttonStyle(.plain).guidePressable()
             }
         }
     }
 
-    private func prayerTile(title: String, subtitle: String) -> some View {
+    private func prayerTile(title: String, subtitle: String, icon: String) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            // Icons removed; this keeps the tile at its original height.
-            Color.clear.frame(height: 36).accessibilityHidden(true)
+            Image(icon)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 36, height: 36, alignment: .leading)
+                .foregroundStyle(palette.accentText)
+                .accessibilityHidden(true)
             Spacer(minLength: AppTheme.Space.sm)
             Text(title)
                 .font(AppTheme.TypeRole.body(weight: .semibold))
