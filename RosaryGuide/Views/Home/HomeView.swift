@@ -708,17 +708,10 @@ struct HomeView: View {
                 .frame(minWidth: 44, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 2) {
-                // "Today" shares the date's line so today's row stays one line tall.
-                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
-                    Text(day.formatted(.dateTime.day().month(.abbreviated)))
-                        .font(AppTheme.TypeRole.supportingLabel)
-                        .foregroundStyle(palette.dim)
-                    if isToday {
-                        Text("Today")
-                            .font(AppTheme.TypeRole.caption(weight: .semibold))
-                            .foregroundStyle(colorScheme == .dark ? palette.tabSelected : palette.accent) // Same as PrayerRhythmCard prayed dots.
-                    }
-                }
+                // Today's row is marked by its surface; VoiceOver says "today" via the row label.
+                Text(day.formatted(.dateTime.day().month(.abbreviated)))
+                    .font(AppTheme.TypeRole.supportingLabel)
+                    .foregroundStyle(palette.dim)
                 if let feast = assignment.feast {
                     Text(feast.feast.shortTitle)
                         .font(AppTheme.TypeRole.caption)
