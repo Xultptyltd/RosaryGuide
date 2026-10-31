@@ -391,20 +391,13 @@ struct HomeView: View {
 
             Group {
                 VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-                    HStack(alignment: .firstTextBaseline) {
-                        GuideSectionLabel(text: "Upcoming feast days", prominence: .strong)
-                        Spacer(minLength: AppTheme.Space.sm)
-                        Button("View all") { onViewAllFeasts() }
-                            .font(AppTheme.TypeRole.body(weight: .medium))
-                            .foregroundStyle(palette.accent)
-                            .buttonStyle(.plain)
-                    }
+                    GuideSectionLabel(text: "Upcoming feast days", prominence: .strong)
                     comingUpSection
                 }
                 .id("home-feasts")
                 .padding(.top, AppTheme.Space.xl)
                 // Tighten the gap below the last feast row before This week.
-                .padding(.bottom, -AppTheme.Space.xl)
+                .padding(.bottom, -AppTheme.Space.md)
             }
 
             Group {
@@ -627,6 +620,12 @@ struct HomeView: View {
                 }
             }
             .padding(.top, AppTheme.Space.sm)
+
+            // Same tertiary pill as "View all intentions" on the Offer tab.
+            PillButton(title: "View all feasts", filled: false, tertiary: true) {
+                onViewAllFeasts()
+            }
+            .padding(.top, AppTheme.Space.md)
         }
     }
 
