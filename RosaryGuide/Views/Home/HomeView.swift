@@ -410,12 +410,7 @@ struct HomeView: View {
                 GuideSectionBoundary(gutter: gutter)
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        GuideSectionLabel(text: "This week", prominence: .strong)
-                        Text(weekRangeText)
-                            .font(AppTheme.TypeRole.supportingLabel)
-                            .foregroundStyle(palette.dim)
-                    }
+                    GuideSectionLabel(text: "This week", prominence: .strong)
                     weekGlance
                 }
                 .id("home-week")
@@ -678,13 +673,6 @@ struct HomeView: View {
             .tracking(0)
             .textCase(.uppercase)
             .foregroundStyle(palette.dim)
-    }
-
-    private var weekRangeText: String {
-        let days = MysteryCalendar.week(containing: today).map(\.0)
-        guard let first = days.first, let last = days.last else { return "" }
-        let style = Date.FormatStyle.dateTime.day().month(.abbreviated)
-        return "\(first.formatted(style)) – \(last.formatted(style))"
     }
 
     private var weekGlance: some View {
