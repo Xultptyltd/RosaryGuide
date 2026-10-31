@@ -24,6 +24,7 @@ struct OfferView: View {
     @State private var journeyTab: JourneyTab = .milestones
     /// Pushes the All intentions screen from "See all".
     @State private var showingAllIntentions = false
+    @State private var showingArchived = false
     /// Banking-style privacy: when true, mask personal intention titles on the list surface.
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
     /// Rows shown under the Add button; more than this shows "See all".
@@ -161,7 +162,15 @@ struct OfferView: View {
                     onPray: { prayWith($0) }
                 )
             }
-            .onAppear { offer.pruneExpired() }
+            .navigationDestination(isPresented: $showingArchived) {
+                ArchivedIntentionsView(hideText: hideIntentionText)
+            }
+            .onAppear {
+                offer.pruneExpired()
+                #if DEBUG
+                if DebugHooks.has("-RGDebugOpenArchived") { showingArchived = true }
+                #endif
+            }
         }
     }
 
@@ -475,21 +484,12 @@ struct OfferView: View {
         Date().formatted(.dateTime.month(.wide).year())
     }
 
-    private var titlePrivacyButton: some View {
-        Button {
-            settings.hideIntentionText.toggle()
-        } label: {
-            IntentionPrivacyGlyph(hidden: hideIntentionText)
-                .foregroundStyle(palette.ink)
-            .frame(
-                width: AppTheme.Accessibility.minHitTarget,
-                height: AppTheme.Accessibility.minHitTarget
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .guidePressable()
-        .accessibilityLabel(hideIntentionText ? "Show intentions" : "Hide intentions")
+    private var titleMoreMenu: some View {
+        IntentionsMoreMenu(
+            hidden: hideIntentionText,
+            onToggleHidden: { settings.hideIntentionText.toggle() },
+            onViewArchived: { showingArchived = true }
+        )
     }
     /// Plain text action using the shared underlined label.
     private var seeAllIntentionsButton: some View {
@@ -511,10 +511,11 @@ struct OfferView: View {
             // Controls retain 44pt tap areas without adding height above the label.
             .overlay(alignment: .trailing) {
                 // Hidden until there is an intention to hide or add to.
-                if !offer.sortedIntentions.isEmpty {
+                if !offer.sortedIntentions.isEmpty || !offer.archivedIntentions.isEmpty {
                 HStack(spacing: AppTheme.Space.sm) {
-                    titlePrivacyButton
+                    titleMoreMenu
 
+                    if !offer.sortedIntentions.isEmpty {
                     Button(action: startAddingIntention) {
                         Image(systemName: "plus")
                             .guideSymbol(size: 22, weight: .regular)
@@ -528,6 +529,7 @@ struct OfferView: View {
                     .buttonStyle(.plain)
                     .guidePressable()
                     .accessibilityLabel("Add an intention")
+                    }
                 }
                 }
             }
@@ -902,6 +904,7 @@ private struct NextRosaryIntentionCard: View {
         .overlay(alignment: .topTrailing) {
             OverflowMenuButton(
                 isPinned: intention.isPinned,
+                intentionID: intention.id,
                 allowsPin: allowsPin,
                 allowsEdit: true,
                 onPin: onPin,
@@ -997,6 +1000,7 @@ private struct MyPrayerIntentionRow: View {
         .overlay(alignment: .trailing) {
             OverflowMenuButton(
                 isPinned: intention.isPinned,
+                intentionID: intention.id,
                 allowsPin: allowsPin,
                 allowsEdit: true,
                 onPin: onPin,
@@ -1133,6 +1137,7 @@ private struct CurrentIntentionHero: View {
             // Outside the card Button so menu taps do not also open detail.
             OverflowMenuButton(
                 isPinned: intention.isPinned,
+                intentionID: intention.id,
                 allowsPin: allowsPin,
                 allowsEdit: true,
                 onPin: onPin,
@@ -1395,71 +1400,8 @@ private struct PapalIntentionDetailView: View {
 
 /// Secondary row: NavigationLink for open, overflow menu overlaid outside the link
 /// so Pin/Edit/Delete are not swallowed by navigation (same pattern as CurrentIntentionHero).
-/// Eye (shown) or closed eye (hidden) for the hide intentions toggle; takes the
-/// caller's foreground style.
-private struct IntentionPrivacyGlyph: View {
-    let hidden: Bool
-
-    var body: some View {
-        if hidden {
-            ClosedEyeIcon()
-        } else {
-            Image(systemName: "eye")
-                .guideSymbol(size: 17, weight: .medium)
-        }
-    }
-}
-
-private struct ClosedEyeIcon: View {
-    var body: some View {
-        ZStack {
-            ClosedEyeLid()
-                .stroke(
-                    .foreground,
-                    style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round)
-                )
-
-            ClosedEyeLashes()
-                .stroke(
-                    .foreground,
-                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
-                )
-        }
-        .frame(width: 19, height: 17)
-        .accessibilityHidden(true)
-    }
-}
-
-private struct ClosedEyeLid: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX + rect.width * 0.12, y: rect.minY + rect.height * 0.45))
-        path.addQuadCurve(
-            to: CGPoint(x: rect.maxX - rect.width * 0.12, y: rect.minY + rect.height * 0.45),
-            control: CGPoint(x: rect.midX, y: rect.maxY - rect.height * 0.12)
-        )
-        return path
-    }
-}
-
-private struct ClosedEyeLashes: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let y = rect.minY + rect.height * 0.64
-        let lashTop = rect.minY + rect.height * 0.78
-        [0.36, 0.5, 0.64].forEach { ratio in
-            let x = rect.minX + rect.width * ratio
-            path.move(to: CGPoint(x: x, y: y))
-            path.addLine(to: CGPoint(x: x, y: lashTop))
-        }
-        return path
-    }
-}
-
-/// Every intention (featured first, via OfferStore's sort) as list rows, pushed from
-/// My prayer's "See all", with the standard level-2 compact bar. Rows behave exactly as on My prayer: open detail, menu to
-/// feature, edit or delete. Pops back if the list empties.
 private struct AllIntentionsView: View {
+    @State private var showingArchived = false
     @Environment(OfferStore.self) private var offer
     @Environment(SettingsStore.self) private var settings
     @Environment(\.palette) private var palette
@@ -1529,19 +1471,18 @@ private struct AllIntentionsView: View {
         // Standard level-2 chrome: native inline title, system back button and edge swipe.
         .guideDetailChrome("All intentions")
         .toolbar {
-            // Hide/show intention text: same setting as My prayer.
+            // Hide/show intention text (same setting as My prayer) and the archive.
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    settings.hideIntentionText.toggle()
-                } label: {
-                    IntentionPrivacyGlyph(hidden: hideText)
-                        .foregroundStyle(palette.ink)
-                }
-                // Ink, like the native back chevron beside it (bar buttons
-                // otherwise take the accent tint).
+                IntentionsMoreMenu(
+                    hidden: hideText,
+                    onToggleHidden: { settings.hideIntentionText.toggle() },
+                    onViewArchived: { showingArchived = true }
+                )
                 .tint(palette.ink)
-                .accessibilityLabel(hideText ? "Show intentions" : "Hide intentions")
             }
+        }
+        .navigationDestination(isPresented: $showingArchived) {
+            ArchivedIntentionsView(hideText: hideText)
         }
         .navigationDestination(item: $detail) { item in
             IntentionDetailView(
@@ -1590,6 +1531,7 @@ private struct IntentionSecondaryRow: View {
         .overlay(alignment: .trailing) {
             OverflowMenuButton(
                 isPinned: intention.isPinned,
+                intentionID: intention.id,
                 allowsPin: allowsPin,
                 allowsEdit: true,
                 onPin: onPin,
@@ -2070,6 +2012,7 @@ private struct IntentionRow: View {
 
                 OverflowMenuButton(
                     isPinned: intention.isPinned,
+                    intentionID: intention.id,
                     allowsPin: allowsPin,
                     allowsEdit: true,
                     onPin: onPin,
@@ -2124,7 +2067,10 @@ private struct IntentionRow: View {
 
 struct OverflowMenuButton: View {
     @Environment(\.palette) private var palette
+    @Environment(OfferStore.self) private var offer: OfferStore?
     var isPinned: Bool
+    /// Set to offer "Archive" for a saved intention.
+    var intentionID: UUID? = nil
     var allowsPin: Bool = true
     var allowsEdit: Bool = true
     var onPin: () -> Void
@@ -2146,6 +2092,14 @@ struct OverflowMenuButton: View {
                     onEdit()
                 } label: {
                     Label("Edit", systemImage: "pencil")
+                }
+            }
+
+            if let intentionID, let offer, !offer.isArchived(intentionID) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.25)) { offer.archive(id: intentionID) }
+                } label: {
+                    Label("Archive", systemImage: "archivebox")
                 }
             }
 
@@ -4429,4 +4383,112 @@ struct GuestBackupCard: View {
         .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
     }
 
+}
+
+/// Header overflow for "Your intentions": hide/show intention text and the archive.
+struct IntentionsMoreMenu: View {
+    @Environment(\.palette) private var palette
+    let hidden: Bool
+    let onToggleHidden: () -> Void
+    let onViewArchived: () -> Void
+
+    var body: some View {
+        Menu {
+            Button(action: onToggleHidden) {
+                Label(hidden ? "Show intentions" : "Hide intentions", systemImage: hidden ? "eye" : "eye.slash")
+            }
+            Button(action: onViewArchived) {
+                Label("View archived", systemImage: "archivebox")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .guideSymbol(size: 20, weight: .regular)
+                .foregroundStyle(palette.ink)
+                .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("More options")
+    }
+}
+
+/// Archived intentions (level 2). Unarchive restores a row to the active lists.
+private struct ArchivedIntentionsView: View {
+    @Environment(OfferStore.self) private var offer
+    @Environment(\.palette) private var palette
+    let hideText: Bool
+    @State private var pendingDelete: OfferIntention?
+
+    var body: some View {
+        let items = offer.archivedIntentions
+        Group {
+            if items.isEmpty {
+                emptyState
+            } else {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(items) { item in
+                            IntentionListRow(intention: item, hideText: hideText)
+                                .overlay(alignment: .trailing) { rowMenu(item) }
+                            if item.id != items.last?.id {
+                                Hairline().padding(.leading, 62)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, AppTheme.gutter)
+                    .padding(.top, GuideDetailChrome.contentTop)
+                    .padding(.bottom, 108)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(palette.bg)
+        .guideDetailChrome("Archived intentions")
+        .alert(
+            "Delete intention?",
+            isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
+            presenting: pendingDelete
+        ) { item in
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                withAnimation(.easeInOut(duration: 0.25)) { offer.delete(id: item.id) }
+            }
+        } message: { item in
+            Text("This will delete “\(IntentionPrivacy.displayTitle(item, hidden: hideText))” from your intentions.")
+        }
+    }
+
+    private func rowMenu(_ item: OfferIntention) -> some View {
+        Menu {
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) { offer.unarchive(id: item.id) }
+            } label: {
+                Label("Unarchive", systemImage: "tray.and.arrow.up")
+            }
+            Button(role: .destructive) {
+                pendingDelete = item
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .guideSymbol(size: 18, weight: .regular)
+                .foregroundStyle(palette.dim)
+                .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("More options")
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: AppTheme.Space.sm) {
+            Text("No archived intentions")
+                .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
+                .foregroundStyle(palette.ink)
+            Text("Intentions you archive will rest here")
+                .font(AppTheme.TypeRole.caption)
+                .foregroundStyle(palette.textSecondary)
+        }
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, AppTheme.gutter)
+    }
 }

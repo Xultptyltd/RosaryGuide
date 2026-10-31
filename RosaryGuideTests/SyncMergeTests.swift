@@ -390,6 +390,41 @@ final class GuestIntentionTests: XCTestCase {
         XCTAssertEqual(relaunched.intentions.map(\.id), [added.id])
     }
 
+    func testArchiveHidesFromActiveListsAndUnarchiveRestores() {
+        let defaults = freshDefaults()
+        let repository = FakeRepository()
+        let store = OfferStore(defaults: defaults, repository: repository)
+        store.configureSync(for: nil)
+        let kept = store.add(title: "Kept")
+        let rested = store.add(title: "Rested", pin: true)
+        store.archive(id: rested.id)
+
+        XCTAssertEqual(store.sortedIntentions.map(\.id), [kept.id])
+        XCTAssertFalse(store.sortedIntentions(for: .joyful).contains { $0.id == rested.id })
+        XCTAssertEqual(store.archivedIntentions.map(\.id), [rested.id])
+        XCTAssertFalse(store.intention(id: rested.id)?.isPinned ?? true, "Archiving unpins")
+        XCTAssertEqual(store.intentions.count, 2, "Archived intentions are kept, not deleted")
+        XCTAssertTrue(repository.uploaded.isEmpty, "Archive state stays on this device")
+
+        let relaunched = OfferStore(defaults: defaults, repository: FakeRepository())
+        XCTAssertTrue(relaunched.isArchived(rested.id), "Archive survives a relaunch")
+
+        store.unarchive(id: rested.id)
+        XCTAssertEqual(Set(store.sortedIntentions.map(\.id)), [kept.id, rested.id])
+        XCTAssertTrue(store.archivedIntentions.isEmpty)
+    }
+
+    func testDeletingAnArchivedIntentionClearsItsArchiveEntry() {
+        let defaults = freshDefaults()
+        let store = OfferStore(defaults: defaults, repository: FakeRepository())
+        store.configureSync(for: nil)
+        let item = store.add(title: "Done")
+        store.archive(id: item.id)
+        store.delete(id: item.id)
+        XCTAssertFalse(store.isArchived(item.id))
+        XCTAssertTrue(store.archivedIntentions.isEmpty)
+    }
+
     func testSigningInMergesAndUploadsGuestIntentions() async throws {
         let defaults = freshDefaults()
         let repository = FakeRepository()
