@@ -465,6 +465,8 @@ struct PillButton: View {
     var filled: Bool = true
     /// Tertiary token (surface fill). Only read when `filled` is false.
     var tertiary: Bool = false
+    /// Compact: `compactPillHeight` minimum, growing with large text instead of clipping.
+    var compact: Bool = false
     var action: () -> Void
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
@@ -482,7 +484,9 @@ struct PillButton: View {
                 .minimumScaleFactor(0.7)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
-                .frame(height: AppTheme.Component.pillHeight)
+                .padding(.vertical, compact ? AppTheme.Space.xs : 0)
+                .frame(minHeight: compact ? AppTheme.Component.compactPillHeight : AppTheme.Component.pillHeight,
+                       maxHeight: compact ? nil : AppTheme.Component.pillHeight)
                 .background(filled ? palette.primaryButtonFill : (tertiary ? palette.tertiaryButtonFill : palette.learnMoreButtonFill), in: Capsule())
                 .contentShape(Capsule())
         }

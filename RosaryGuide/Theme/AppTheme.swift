@@ -1671,6 +1671,8 @@ extension AppTheme {
         static let feastPreviewTextPadding: CGFloat = AppTheme.Space.xl + 2
         /// CSS `--btn-h: 3.3rem` ≈ 52pt.
         static let pillHeight: CGFloat = 52
+        /// Shorter pill for in-card actions (featured intention). Grows with text, never below the tap target.
+        static let compactPillHeight: CGFloat = Accessibility.minHitTarget
         static let textButtonVerticalPadding: CGFloat = 10
         static let sectionDividerHeight: CGFloat = 8
         static let sectionDividerEndpointWidth: CGFloat = 16

@@ -865,7 +865,7 @@ private struct NextRosaryIntentionCard: View {
 
     var body: some View {
         Button(action: onOpen) {
-            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     IntentionIconView(
                         accent: intention.accent,
@@ -888,10 +888,14 @@ private struct NextRosaryIntentionCard: View {
 
                 }
 
-                Color.clear
+                // Same size as the compact pill overlaid below, so large text never overlaps.
+                Text(" ")
+                    .font(AppTheme.TypeRole.pillLabel())
+                    .lineLimit(2)
+                    .hidden()
                     .frame(maxWidth: .infinity)
-                    .multilineTextAlignment(.center)
-                    .frame(height: AppTheme.Component.pillHeight)
+                    .padding(.vertical, AppTheme.Space.xs)
+                    .frame(minHeight: AppTheme.Component.compactPillHeight)
                     .accessibilityHidden(true)
             }
             .padding(AppTheme.Space.lg)
@@ -916,7 +920,7 @@ private struct NextRosaryIntentionCard: View {
             .padding(.trailing, AppTheme.Space.md)
         }
         .overlay(alignment: .bottom) {
-            PillButton(title: "Offer a Rosary", filled: false, action: onPray)
+            PillButton(title: "Offer a Rosary", filled: false, compact: true, action: onPray)
                 .accessibilityLabel("Offer a Rosary")
                 .accessibilityHint(IntentionPrivacy.hides(intention, hidden: hideText) ? "Starts a Rosary for this intention" : "Starts a Rosary for \(intention.title)")
                 // Starts under the title (icon 52 + spacing); full width at accessibility sizes.
@@ -1099,7 +1103,7 @@ private struct CurrentIntentionHero: View {
 
     var body: some View {
         Button(action: onOpen) {
-            VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                 HStack(alignment: .center, spacing: AppTheme.Space.lg) {
                     IntentionIconView(
                         accent: intention.accent,
@@ -1124,10 +1128,14 @@ private struct CurrentIntentionHero: View {
                 }
 
                 // Layout-only stand-in; real pray control is overlaid so it does not trigger navigation.
-                Color.clear
+                // Same size as the compact pill overlaid below, so large text never overlaps.
+                Text(" ")
+                    .font(AppTheme.TypeRole.pillLabel())
+                    .lineLimit(2)
+                    .hidden()
                     .frame(maxWidth: .infinity)
-                    .multilineTextAlignment(.center)
-                    .frame(height: AppTheme.Component.pillHeight)
+                    .padding(.vertical, AppTheme.Space.xs)
+                    .frame(minHeight: AppTheme.Component.compactPillHeight)
                     .accessibilityHidden(true)
             }
             .padding(AppTheme.Space.lg)
@@ -1154,7 +1162,7 @@ private struct CurrentIntentionHero: View {
         .overlay(alignment: .bottom) {
             // Outside the card Button so pray does not also open detail.
             // Secondary pill, same as Next in the rosary flow.
-            PillButton(title: "Offer my next Rosary", filled: false, action: onPray)
+            PillButton(title: "Offer my next Rosary", filled: false, compact: true, action: onPray)
             // Starts under the title (icon 64 + spacing); full width at accessibility sizes.
             .padding(.leading, AppTheme.Space.lg + (dynamicTypeSize.isAccessibilitySize ? 0 : 64 + AppTheme.Space.lg))
             .padding(.trailing, AppTheme.Space.lg)
