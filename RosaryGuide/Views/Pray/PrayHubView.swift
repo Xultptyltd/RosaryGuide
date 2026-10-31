@@ -273,7 +273,10 @@ struct PrayHubView: View {
     }
 
     private func prayerTile(title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+            // Icons removed; this keeps the tile at its original height.
+            Color.clear.frame(height: 36).accessibilityHidden(true)
+            Spacer(minLength: AppTheme.Space.sm)
             Text(title)
                 .font(AppTheme.TypeRole.body(weight: .semibold))
                 .foregroundStyle(palette.ink)
