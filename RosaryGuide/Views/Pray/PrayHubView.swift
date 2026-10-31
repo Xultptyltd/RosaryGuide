@@ -49,8 +49,10 @@ struct PrayHubView: View {
                         .padding(.top, -AppTheme.Space.lg)
                         // Preserve the decorative ends; its frame already provides
                         // 16pt around the central band, so add no extra padding here.
-                        GuideSectionBoundary(gutter: pageGutter, verticalSpacing: 0)
-                        devotionTilesSection
+                        if DevotionCatalog.isEnabled {
+                            GuideSectionBoundary(gutter: pageGutter, verticalSpacing: 0)
+                            devotionTilesSection
+                        }
                         GuideSectionBoundary(gutter: pageGutter)
 
                         questionsSection
@@ -227,7 +229,7 @@ struct PrayHubView: View {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let prayers = allPrayers.filter { PrayerCatalog.matchesSearch($0, query: query) }
         let sets = MysterySetKind.displayOrder.filter { "\($0.shortName) Mysteries".localizedCaseInsensitiveContains(query) }
-        let devotions = DevotionCatalog.all.filter { DevotionCatalog.matchesSearch($0, query: query) }
+        let devotions = !DevotionCatalog.isEnabled ? [] : DevotionCatalog.all.filter { DevotionCatalog.matchesSearch($0, query: query) }
         return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             if prayers.isEmpty && sets.isEmpty && devotions.isEmpty {
                 Text("No prayers or mysteries found. Try another search.")

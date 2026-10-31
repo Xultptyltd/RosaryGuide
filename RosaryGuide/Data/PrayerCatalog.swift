@@ -330,6 +330,10 @@ struct Devotion: Identifiable, Hashable, Sendable {
 }
 
 enum DevotionCatalog {
+    /// Release flag: set to true to show "Novenas & Rosary types" on the Pray tab
+    /// (hub tiles and search results). Content and data stay intact while hidden.
+    static let isEnabled = false
+
     static let all: [Devotion] = [scripturalRosary, divineMercyChaplet, sevenSorrowsChaplet, novena]
 
     static func devotion(id: String) -> Devotion? { all.first { $0.id == id } }
