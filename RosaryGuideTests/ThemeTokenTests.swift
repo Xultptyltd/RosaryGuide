@@ -47,7 +47,7 @@ final class ThemeTokenTests: XCTestCase {
         let light = ThemePalette(scheme: .light)
         let dark = ThemePalette(scheme: .dark)
 
-        XCTAssertEqual(UIColor(light.surface), UIColor(Color(hex: 0xF0F1F4)))
+        XCTAssertEqual(UIColor(light.surface), UIColor(Color(hex: 0xEBEBED)))
         XCTAssertEqual(UIColor(dark.surface), UIColor(Color(hex: 0x191B1E)))
         XCTAssertEqual(UIColor(light.bg), UIColor(Color(hex: 0xFEFEFE)))
         XCTAssertEqual(UIColor(dark.bg), UIColor(Color(hex: 0x090A0C)))
@@ -195,8 +195,8 @@ final class ContrastTokenTests: XCTestCase {
         XCTAssertEqual(UIColor(ThemePalette(scheme: .dark).accent), UIColor(Color(hex: 0x0054FF)))
         XCTAssertEqual(UIColor(ThemePalette(scheme: .dark).accentText), UIColor(Color(hex: 0x3D7DFF)))
         XCTAssertEqual(UIColor(ThemePalette(scheme: .light).accentText), UIColor(Color(hex: 0x0054FF)))
-        XCTAssertEqual(UIColor(ThemePalette(scheme: .light).textSecondary), UIColor(Color(hex: 0x6E6E6E)))
-        XCTAssertEqual(UIColor(ThemePalette(scheme: .light).destructive), UIColor(Color(hex: 0xCF3027)))
+        XCTAssertEqual(UIColor(ThemePalette(scheme: .light).textSecondary), UIColor(Color(hex: 0x6A6A6A)))
+        XCTAssertEqual(UIColor(ThemePalette(scheme: .light).destructive), UIColor(Color(hex: 0xC92E25)))
     }
 }
 

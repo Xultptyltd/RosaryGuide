@@ -26,7 +26,7 @@ enum AppTheme {
     /// Selected tab label on the dark glass tab bar: 4.5:1 on the selected pill (#3D3E3F).
     static let tabSelectedDark = Color(hex: 0x7DA8FF)
     /// Destructive text: 4.5:1 on background and surface (system red is 3.1:1 in light).
-    static let destructiveLight = Color(hex: 0xCF3027)
+    static let destructiveLight = Color(hex: 0xC92E25)
     static let destructiveLightHighContrast = Color(hex: 0xD70015)
     static let destructiveDark = Color(hex: 0xFF453A)
     static let destructiveDarkHighContrast = Color(hex: 0xFF6961)
@@ -194,8 +194,8 @@ struct ThemePalette {
     /// The app's single secondary grey. Use this for all supporting,
     /// disabled-looking, metadata, and explanatory copy.
     var textSecondary: Color {
-        // #6E6E6E: 4.5:1 on the light surface (#757575 was 4.1:1).
-        scheme == .light ? Color(hex: 0x6E6E6E) : Color(hex: 0xAEAEAE)
+        // #6A6A6A: 4.5:1 on the light surface #EBEBED (#6E6E6E was 4.3:1).
+        scheme == .light ? Color(hex: 0x6A6A6A) : Color(hex: 0xAEAEAE)
     }
 
     /// The app's single grouped/elevated surface color.
@@ -205,7 +205,7 @@ struct ThemePalette {
     /// surfaces across screens.
     var surface: Color {
         scheme == .light
-            ? Color(hex: 0xF0F1F4)
+            ? Color(hex: 0xEBEBED)
             : Color(hex: 0x191B1E)
     }
 
@@ -275,7 +275,7 @@ struct ThemePalette {
     var prayerBackground: Color { background }
     var artworkFallbackBackground: Color { Color(hex: 0x17181A) }
     /// Feast crown glyph: 3:1 on background and surface in both schemes.
-    var feastIndicator: Color { scheme == .light ? Color(hex: 0xB08328) : Color(hex: 0xE2B75A) }
+    var feastIndicator: Color { scheme == .light ? Color(hex: 0xAA7F26) : Color(hex: 0xE2B75A) }
     var accentTint: Color {
         scheme == .dark
             ? accent.opacity(0.20)
