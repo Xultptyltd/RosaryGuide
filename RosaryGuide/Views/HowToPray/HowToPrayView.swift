@@ -5,14 +5,17 @@ import UIKit
 /// built from the onboarding template (panel art, centred copy, dots, pill button).
 struct RosaryWalkthroughView: View {
     var onClose: () -> Void
+    /// "Begin my first Rosary": closes the walkthrough and starts today's mysteries.
+    var onBegin: () -> Void = {}
     @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(SettingsStore.self) private var settings
     @State private var page = 0
 
-    init(onClose: @escaping () -> Void) {
+    init(onClose: @escaping () -> Void, onBegin: @escaping () -> Void = {}) {
         self.onClose = onClose
+        self.onBegin = onBegin
         #if DEBUG
         // Screenshot hook: -RGDebugIntroPage <n> opens introduction page n (0-based).
         if let n = Int(UserDefaults.standard.string(forKey: "RGDebugIntroPage") ?? ""), Self.pages.indices.contains(n) {
@@ -24,30 +27,30 @@ struct RosaryWalkthroughView: View {
     static let pages: [OnboardingPage] = [
         OnboardingPage(
             title: "What is the Rosary?",
-            body: "The Rosary is a prayer that helps you reflect on the life of Jesus with Mary. The beads help you keep your place as you pray.",
+            body: "The Rosary is a way to draw closer to God through prayer and reflection on the life of Jesus, with Mary. You don’t need to know the prayers—we’ll guide you.",
             imageName: "WalkthroughRosaryIntro",
             imageAlignment: .center
         ),
         OnboardingPage(
-            title: "Reflect on the life of Jesus",
-            body: "The Rosary’s “mysteries” are moments in the lives of Jesus and Mary. They’re grouped into four sets: Joyful, Luminous, Sorrowful and Glorious.",
+            title: "A moment to reflect",
+            body: "Each “mystery” is a moment in the lives of Jesus and Mary. For example, imagine Mary hearing that she will become Jesus’ mother. As you pray, think about trusting God when life feels uncertain.",
             imageName: "MysteryJoyful"
         ),
         OnboardingPage(
             title: "One decade at a time",
-            body: "A decade is a group of ten Hail Marys, beginning with an Our Father and ending with a Glory Be. As you pray, reflect on one mystery.",
+            body: "A decade is a group of ten Hail Marys, beginning with an Our Father and ending with a Glory Be. While you say these prayers, reflect on one mystery.",
             imageName: "WalkthroughRosaryDecade",
             imageAlignment: .center
         ),
         OnboardingPage(
-            title: "A simple rhythm of prayer",
-            body: "Begin with the opening prayers, pray five decades, then finish with the closing prayers. We’ll guide you through each step.",
+            title: "Start with a little time",
+            body: "You can begin with just one decade. Take your time, and if your mind wanders, gently return to prayer. You don’t need to do it perfectly.",
             imageName: "WalkthroughRosaryStructure",
             imageAlignment: .center
         ),
         OnboardingPage(
-            title: "Let’s pray together",
-            body: "You don’t need to memorise the prayers or have rosary beads. Rosary Guide will show you each prayer and mystery. Take your time and follow along.",
+            title: "We’ll guide you",
+            body: "No rosary beads or memorised prayers needed. We’ll show you every prayer and mystery, one step at a time. Begin with the opening prayers, then follow along at your own pace.",
             imageName: "WalkthroughMary"
         )
     ]
@@ -72,16 +75,16 @@ struct RosaryWalkthroughView: View {
                 Spacer()
                 VStack(spacing: AppTheme.Space.lg) {
                     OnboardingDots(current: page, count: pages.count, label: "Introduction page")
-                    PillButton(title: page == pages.count - 1 ? "Begin" : "Continue") {
+                    PillButton(title: page == pages.count - 1 ? "Begin my first Rosary" : "Continue") {
                         HapticService.play(.light, enabled: settings.hapticsEnabled)
                         if page == pages.count - 1 {
-                            onClose()
+                            onBegin()
                         } else {
                             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.24)) { page += 1 }
                         }
                     }
                     .environment(\.palette, palette)
-                    .accessibilityLabel(page == pages.count - 1 ? "Begin, page \(page + 1) of \(pages.count)" : "Continue, page \(page + 1) of \(pages.count)")
+                    .accessibilityLabel(page == pages.count - 1 ? "Begin my first Rosary, page \(page + 1) of \(pages.count)" : "Continue, page \(page + 1) of \(pages.count)")
                 }
                 .padding(.horizontal, AppTheme.gutter)
                 .padding(.bottom, AppTheme.Space.xl)

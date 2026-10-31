@@ -87,7 +87,14 @@ struct PrayHubView: View {
             }
             .guideRootChrome("Pray")
             .fullScreenCover(isPresented: $showingWalkthrough) {
-                RosaryWalkthroughView(onClose: { showingWalkthrough = false })
+                RosaryWalkthroughView(onClose: { showingWalkthrough = false }, onBegin: {
+                    // Same launch as Home's "Pray today's mysteries", once the cover has gone.
+                    showingWalkthrough = false
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(450))
+                        prayLaunch = .fresh(todaysSet)
+                    }
+                })
             }
         }
     }
