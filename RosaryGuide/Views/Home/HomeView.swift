@@ -371,9 +371,9 @@ struct HomeView: View {
                 }
             }
 
-            GuideSectionBoundary(gutter: gutter)
-
+            // No section boundary: heading and carousel sit directly on the page.
             mysteryRail(gutter: gutter)
+                .padding(.top, AppTheme.Space.xxl)
                 .id("home-mysteries")
 
             if Self.showDailyScriptureOnHome {
@@ -953,8 +953,6 @@ struct HomeView: View {
             .frame(height: mysteryRailHeight)
             .padding(.horizontal, -gutter)
 
-            mysteryPageDots
-                .padding(.top, AppTheme.Space.xs)
         }
     }
 
@@ -962,7 +960,7 @@ struct HomeView: View {
     /// fruit row; accessibility sizes get more so nothing clips.
     private var mysteryRailHeight: CGFloat {
         let width = (UIScreen.main.bounds.width * AppTheme.Component.mysteryCardWidthFraction).rounded()
-        let text: CGFloat = dynamicTypeSize.isAccessibilitySize ? 460 : (dynamicTypeSize >= .xxLarge ? 230 : 164)
+        let text: CGFloat = dynamicTypeSize.isAccessibilitySize ? 380 : (dynamicTypeSize >= .xxLarge ? 140 : 88)
         return (width / AppTheme.Component.mysteryCardArtAspect).rounded() + text + AppTheme.Space.sm
     }
 
@@ -1000,45 +998,43 @@ struct HomeView: View {
             openMysteryDetail(mystery)
         } label: {
             VStack(alignment: .leading, spacing: 0) {
-                // Art fills the top edge to edge; priority so the text block never squeezes it.
+                // One composition: art fades into the card surface, text sits on the fade.
                 Color.clear
                     .aspectRatio(AppTheme.Component.mysteryCardArtAspect, contentMode: .fit)
                     .overlay {
                         MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false, cardFraming: true)
                     }
+                    .overlay(alignment: .bottom) {
+                        LinearGradient(colors: [palette.surface.opacity(0), palette.surface], startPoint: .top, endPoint: .bottom)
+                            .frame(height: AppTheme.Space.xxl * 2)
+                    }
                     .clipped()
                     .layoutPriority(1)
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    Text("\(OrdinalWord.english(mystery.number)) mystery".uppercased())
+                    Text(mysteryEyebrow(mystery))
                         .font(AppTheme.TypeRole.caption(weight: .medium))
                         .tracking(AppTheme.Component.eyebrowTracking)
-                        .foregroundStyle(palette.dim)
+                        .foregroundStyle(palette.faint)
                     WordSafeText(mystery.title.primary(for: settings.language), font: AppTheme.TypeRole.headingSecondaryUIFont)
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(mystery.summary)
                         .font(AppTheme.TypeRole.rhythmCaption())
                         .foregroundStyle(palette.dim)
-                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
-                        .fixedSize(horizontal: false, vertical: dynamicTypeSize.isAccessibilitySize)
-                    Spacer(minLength: AppTheme.Space.sm)
-                    HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
-                        Text("Fruit · \(mystery.fruit.primary(for: settings.language))")
-                            .font(AppTheme.TypeRole.rhythmCaption())
-                            .foregroundStyle(palette.faint)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right")
-                            .font(AppTheme.TypeRole.caption(weight: .medium))
-                            .foregroundStyle(palette.faint)
-                            .accessibilityHidden(true)
-                    }
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Fruit · \(mystery.fruit.primary(for: settings.language))")
+                        .font(AppTheme.TypeRole.caption())
+                        .foregroundStyle(palette.faint)
+                        .opacity(0.8)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, AppTheme.Space.xs)
                 }
                 .padding(.horizontal, AppTheme.Space.lg)
-                .padding(.top, AppTheme.Space.md)
+                .padding(.top, -AppTheme.Space.lg)
                 .padding(.bottom, AppTheme.Space.lg)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(palette.surface, in: shape)
@@ -1054,7 +1050,12 @@ struct HomeView: View {
     }
 
     private func mysteryAccessibilityLabel(_ mystery: Mystery) -> String {
-        "Mystery \(mystery.number), \(mystery.title.primary(for: settings.language))."
+        "\(OrdinalWord.english(mystery.number)) \(mystery.set.shortName) Mystery, \(mystery.title.primary(for: settings.language)), \(mystery.summary) Fruit: \(mystery.fruit.primary(for: settings.language).lowercased())"
+    }
+
+    /// "01 · JOYFUL MYSTERY"
+    private func mysteryEyebrow(_ mystery: Mystery) -> String {
+        "\(String(format: "%02d", mystery.number)) · \(mystery.set.shortName) mystery".uppercased()
     }
 
     /// Opens the mystery sheet on `mystery`; the sheet pages through the rest of its set.
