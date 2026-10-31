@@ -225,8 +225,9 @@ struct OfferView: View {
                                     onDelete: { animateIntentionChange { offer.delete(id: item.id) } },
                                     onPray: { prayWith(item) }
                                 )
-                                if item.id != visibleSecondaryIntentions.last?.id || showsSeeAllIntentions {
-                                    Hairline().padding(.leading, 62)
+                                // Inset to the text; none under the last row.
+                                if item.id != visibleSecondaryIntentions.last?.id {
+                                    Hairline().padding(.leading, 44 + AppTheme.Space.md)
                                 }
                             }
                             // Only once there is more than the profile can show (4 or more).
@@ -504,7 +505,10 @@ struct OfferView: View {
     /// "Your intentions" section title. The right slot keeps the hide/show intentions
     /// toggle; "See all" lives at the bottom of the visible list.
     private var intentionsSectionHeader: some View {
-        GuideSectionLabel(text: "Your intentions", prominence: .strong)
+        Text("Your intentions")
+            .font(AppTheme.TypeRole.headline(weight: .semibold))
+            .foregroundStyle(palette.textPrimary)
+            .fixedSize(horizontal: false, vertical: true)
             .accessibilityAddTraits(.isHeader)
             .padding(.trailing, AppTheme.Accessibility.minHitTarget * 2 + AppTheme.Space.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -844,7 +848,7 @@ private struct MyPrayerJourneySummaryCard: View {
 
 private struct NextRosaryIntentionCard: View {
     @Environment(\.palette) private var palette
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.colorScheme) private var colorScheme
     let intention: OfferIntention
     var hideText: Bool = false
     let onOpen: () -> Void
@@ -866,6 +870,14 @@ private struct NextRosaryIntentionCard: View {
     var body: some View {
         Button(action: onOpen) {
             VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                Text("Featured intention")
+                    .textCase(.uppercase)
+                    .font(AppTheme.TypeRole.caption(weight: .medium))
+                    .tracking(AppTheme.Component.eyebrowTracking)
+                    .foregroundStyle(palette.dim)
+                    .accessibilityAddTraits(.isHeader)
+                    // Clear of the overlaid overflow menu.
+                    .padding(.trailing, AppTheme.Accessibility.minHitTarget)
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     IntentionIconView(
                         accent: intention.accent,
@@ -920,12 +932,13 @@ private struct NextRosaryIntentionCard: View {
             .padding(.trailing, AppTheme.Space.md)
         }
         .overlay(alignment: .bottom) {
-            PillButton(title: "Offer a Rosary", filled: false, compact: true, action: onPray)
-                .accessibilityLabel("Offer a Rosary")
+            // Full-width pill across the card's inner width: white in dark, primary in light.
+            PillButton(title: "Pray for this intention", filled: colorScheme != .dark, compact: true,
+                       onDark: colorScheme == .dark, action: onPray)
+                .accessibilityLabel("Pray for this intention")
                 .accessibilityHint(IntentionPrivacy.hides(intention, hidden: hideText) ? "Starts a Rosary for this intention" : "Starts a Rosary for \(intention.title)")
                 // Starts under the title (icon 52 + spacing); full width at accessibility sizes.
-                .padding(.leading, AppTheme.Space.lg + (dynamicTypeSize.isAccessibilitySize ? 0 : 52 + AppTheme.Space.md))
-                .padding(.trailing, AppTheme.Space.lg)
+                .padding(.horizontal, AppTheme.Space.lg)
                 .padding(.bottom, AppTheme.Space.lg)
         }
         .deleteWarningHaptic(isPresented: showingDeleteAlert)
@@ -1052,7 +1065,8 @@ private struct MyPrayerIntentionRowLabel: View {
                 Text(displayTitle)
                     .font(AppTheme.TypeRole.bodySmall(weight: .regular))
                     .foregroundStyle(titleColor)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 if let month = intention.papalMonthLabel {
                     Text(month)
                         .font(AppTheme.TypeRole.caption)
@@ -1066,7 +1080,7 @@ private struct MyPrayerIntentionRowLabel: View {
                 .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
                 .accessibilityHidden(true)
         }
-        .padding(.vertical, AppTheme.Space.sm)
+        .padding(.vertical, AppTheme.Space.md)
         .contentShape(Rectangle())
         .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Hidden intention" : [intention.title, intention.papalMonthLabel].compactMap { $0 }.joined(separator: ", "))
     }
@@ -1162,7 +1176,7 @@ private struct CurrentIntentionHero: View {
         .overlay(alignment: .bottom) {
             // Outside the card Button so pray does not also open detail.
             // Secondary pill, same as Next in the rosary flow.
-            PillButton(title: "Offer my next Rosary", filled: false, compact: true, action: onPray)
+            PillButton(title: "Pray my next Rosary for this", filled: false, compact: true, action: onPray)
             // Starts under the title (icon 64 + spacing); full width at accessibility sizes.
             .padding(.leading, AppTheme.Space.lg + (dynamicTypeSize.isAccessibilitySize ? 0 : 64 + AppTheme.Space.lg))
             .padding(.trailing, AppTheme.Space.lg)
