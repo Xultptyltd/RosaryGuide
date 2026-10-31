@@ -127,6 +127,27 @@ struct OnboardingPageView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var imageDrift = false
 
+    private var textBlock: some View {
+            VStack(alignment: .center, spacing: AppTheme.Space.lg) {
+                Text(page.title)
+                    .font(AppTheme.TypeRole.title.weight(.regular))
+                    .foregroundStyle(Color.white)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+
+                Text(page.body)
+                    .font(AppTheme.TypeRole.body)
+                    .foregroundStyle(Color.white.opacity(0.72))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(5)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.horizontal, AppTheme.gutter)
+    }
+
     var body: some View {
         GeometryReader { geo in
             VStack(spacing: 0) {
@@ -148,29 +169,16 @@ struct OnboardingPageView: View {
 
                 Spacer(minLength: AppTheme.Space.lg)
 
-                ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .center, spacing: AppTheme.Space.lg) {
-                    Text(page.title)
-                        .font(AppTheme.TypeRole.title.weight(.regular))
-                        .foregroundStyle(Color.white)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityAddTraits(.isHeader)
-
-                    Text(page.body)
-                        .font(AppTheme.TypeRole.body)
-                        .foregroundStyle(Color.white.opacity(0.72))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(5)
-                        .fixedSize(horizontal: false, vertical: true)
+                if scrollsText {
+                    // Centre the copy between the art and the controls; scroll only if it overflows.
+                    ViewThatFits(in: .vertical) {
+                        textBlock.frame(maxHeight: .infinity, alignment: .center)
+                        ScrollView(.vertical, showsIndicators: false) { textBlock }
+                            .scrollBounceBehavior(.basedOnSize)
+                    }
+                } else {
+                    textBlock
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.horizontal, AppTheme.gutter)
-                }
-                .scrollDisabled(!scrollsText)
-                .scrollBounceBehavior(.basedOnSize)
-                .fixedSize(horizontal: false, vertical: !scrollsText)
 
                 Spacer(minLength: AppTheme.Space.lg)
 

@@ -467,6 +467,8 @@ struct PillButton: View {
     var tertiary: Bool = false
     /// Compact: `compactPillHeight` minimum, growing with large text instead of clipping.
     var compact: Bool = false
+    /// White pill with black text for black onboarding-style screens.
+    var onDark: Bool = false
     var action: () -> Void
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
@@ -479,7 +481,7 @@ struct PillButton: View {
         } label: {
             Text(title)
                 .font(AppTheme.TypeRole.pillLabel())
-                .foregroundStyle(filled ? palette.primaryButtonText : (tertiary ? palette.tertiaryButtonText : palette.learnMoreButtonText))
+                .foregroundStyle(onDark ? Color.black : filled ? palette.primaryButtonText : (tertiary ? palette.tertiaryButtonText : palette.learnMoreButtonText))
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)
                 .multilineTextAlignment(.center)
@@ -487,7 +489,7 @@ struct PillButton: View {
                 .padding(.vertical, compact ? AppTheme.Space.xs : 0)
                 .frame(minHeight: compact ? AppTheme.Component.compactPillHeight : AppTheme.Component.pillHeight,
                        maxHeight: compact ? nil : AppTheme.Component.pillHeight)
-                .background(filled ? palette.primaryButtonFill : (tertiary ? palette.tertiaryButtonFill : palette.learnMoreButtonFill), in: Capsule())
+                .background(onDark ? Color.white : filled ? palette.primaryButtonFill : (tertiary ? palette.tertiaryButtonFill : palette.learnMoreButtonFill), in: Capsule())
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

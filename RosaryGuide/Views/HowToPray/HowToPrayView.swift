@@ -75,7 +75,7 @@ struct RosaryWalkthroughView: View {
                 Spacer()
                 VStack(spacing: AppTheme.Space.lg) {
                     OnboardingDots(current: page, count: pages.count, label: "Introduction page")
-                    PillButton(title: page == pages.count - 1 ? "Begin my first Rosary" : "Continue") {
+                    PillButton(title: page == pages.count - 1 ? "Begin my first Rosary" : "Continue", onDark: true) {
                         HapticService.play(.light, enabled: settings.hapticsEnabled)
                         if page == pages.count - 1 {
                             onBegin()
