@@ -57,8 +57,8 @@ struct RosaryWalkthroughView: View {
 
     private var pages: [OnboardingPage] { Self.pages }
 
-    /// The last page adds a white "Done" pill below the blue "Begin Rosary" pill.
-    static let lastPageControlsHeight = OnboardingLayout.controlsHeight + AppTheme.Component.pillHeight + AppTheme.Space.lg
+    /// The last page adds a "Done" text button below the pill.
+    static let lastPageControlsHeight = OnboardingLayout.controlsHeight + AppTheme.Accessibility.minHitTarget + AppTheme.Space.sm
 
     var body: some View {
         ZStack {
@@ -79,7 +79,7 @@ struct RosaryWalkthroughView: View {
                 Spacer()
                 VStack(spacing: AppTheme.Space.lg) {
                     OnboardingDots(current: page, count: pages.count, label: "Introduction page")
-                    PillButton(title: page == pages.count - 1 ? "Begin Rosary" : "Continue", onDark: page < pages.count - 1) {
+                    PillButton(title: page == pages.count - 1 ? "Begin Rosary" : "Continue", onDark: true) {
                         HapticService.play(.light, enabled: settings.hapticsEnabled)
                         if page == pages.count - 1 {
                             onBegin()
@@ -90,8 +90,9 @@ struct RosaryWalkthroughView: View {
                     .environment(\.palette, palette)
                     .accessibilityLabel(page == pages.count - 1 ? "Begin Rosary with today’s mysteries, page \(page + 1) of \(pages.count)" : "Continue, page \(page + 1) of \(pages.count)")
                     if page == pages.count - 1 {
-                        PillButton(title: "Done", onDark: true, action: onClose)
-                            .accessibilityLabel("Done, close introduction")
+                        GuideTextButton(title: "Done", accessibilityLabel: "Done, close introduction", alignment: .center, action: onClose)
+                            .environment(\.palette, ThemePalette(scheme: .dark))
+                            .frame(minHeight: AppTheme.Accessibility.minHitTarget)
                             .transition(.opacity)
                     }
                 }
