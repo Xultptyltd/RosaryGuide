@@ -129,6 +129,14 @@ struct HomeView: View {
                     .padding(.bottom, AppTheme.tabBarContentClearance)
                 }
                 .scrollBounceBehavior(.basedOnSize, axes: .vertical)
+                #if DEBUG
+                // `-RGDebugHomeMysteries`: scrolls to the mystery cards for screenshots.
+                .task {
+                    guard DebugHooks.has("-RGDebugHomeMysteries") else { return }
+                    try? await Task.sleep(for: .seconds(3))
+                    proxy.scrollTo("home-mysteries", anchor: .center)
+                }
+                #endif
                 .onPreferenceChange(HomeCTABottomPreferenceKey.self) { value in
                     measuredCTABottom = value
                     updateHeroTopBandIfNeeded()
@@ -363,11 +371,10 @@ struct HomeView: View {
                 }
             }
 
-            Group {
-                GuideSectionBoundary(gutter: gutter)
+            GuideSectionBoundary(gutter: gutter)
 
-                mysteryRail(gutter: gutter)
-            }
+            mysteryRail(gutter: gutter)
+                .id("home-mysteries")
 
             if Self.showDailyScriptureOnHome {
                 liturgicalVerseSection
@@ -922,7 +929,7 @@ struct HomeView: View {
             GuideSectionLabel(text: mysteryRailTitle, prominence: .strong)
                 .padding(.bottom, AppTheme.sectionTitleGap)
             GeometryReader { geo in
-                let cardWidth = min(286, max(252, geo.size.width * 0.74))
+                let cardWidth = (geo.size.width * AppTheme.Component.mysteryCardWidthFraction).rounded()
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: AppTheme.Space.md) {
                         ForEach(mysteries) { mystery in
@@ -930,7 +937,6 @@ struct HomeView: View {
                                 .frame(width: cardWidth)
                                 .scrollTransition(.interactive, axis: .horizontal) { content, phase in
                                     content
-                                        .scaleEffect(phase.isIdentity ? 1 : 0.965)
                                         .opacity(phase.isIdentity ? 1 : 0.86)
                                 }
                         }
@@ -941,16 +947,23 @@ struct HomeView: View {
                 }
                 .scrollTargetBehavior(.viewAligned)
                 .scrollPosition(id: $mysteryScrollID)
-                .contentMargins(.horizontal, 0, for: .scrollContent)
                 .frame(width: geo.size.width)
                 .clipped()
             }
-            .frame(height: dynamicTypeSize.isAccessibilitySize ? 550 : 386)
+            .frame(height: mysteryRailHeight)
             .padding(.horizontal, -gutter)
 
             mysteryPageDots
                 .padding(.top, AppTheme.Space.xs)
         }
+    }
+
+    /// Art (85% width at `mysteryCardArtAspect`) plus room for caption, two title lines and the
+    /// fruit row; accessibility sizes get more so nothing clips.
+    private var mysteryRailHeight: CGFloat {
+        let width = (UIScreen.main.bounds.width * AppTheme.Component.mysteryCardWidthFraction).rounded()
+        let text: CGFloat = dynamicTypeSize.isAccessibilitySize ? 400 : (dynamicTypeSize >= .xxLarge ? 200 : 140)
+        return (width / AppTheme.Component.mysteryCardArtAspect).rounded() + text + AppTheme.Space.sm
     }
 
     private var mysteryPageDots: some View {
@@ -981,34 +994,51 @@ struct HomeView: View {
     }
 
     private func mysteryCard(_ mystery: Mystery) -> some View {
-        Button {
+        let shape = RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+        return Button {
             HapticService.play(.light, enabled: settings.hapticsEnabled)
             openMysteryDetail(mystery)
         } label: {
             VStack(alignment: .leading, spacing: 0) {
-                // Layout priority: the art takes its full-width 3:2 slot before the text block
-                // (which is maxHeight .infinity) claims the rest. Without it the fixed card height
-                // was split first and the art shrank, leaving a bare strip on the card's right.
-                MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false, cardFraming: true)
-                    .aspectRatio(1.5, contentMode: .fit)
-                    .frame(maxWidth: .infinity)
+                // Art fills the top edge to edge; priority so the text block never squeezes it.
+                Color.clear
+                    .aspectRatio(AppTheme.Component.mysteryCardArtAspect, contentMode: .fit)
+                    .overlay {
+                        MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false, cardFraming: true)
+                    }
                     .clipped()
                     .layoutPriority(1)
 
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                    Text("\(OrdinalWord.english(mystery.number)) mystery".uppercased())
+                        .font(AppTheme.TypeRole.caption(weight: .medium))
+                        .tracking(AppTheme.Component.eyebrowTracking)
+                        .foregroundStyle(palette.dim)
                     WordSafeText(mystery.title.primary(for: settings.language), font: AppTheme.TypeRole.headingSecondaryUIFont)
                         .foregroundStyle(palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: AppTheme.Space.sm)
+                    HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                        Text("Fruit · \(mystery.fruit.primary(for: settings.language))")
+                            .font(AppTheme.TypeRole.rhythmCaption())
+                            .foregroundStyle(palette.faint)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(AppTheme.TypeRole.caption(weight: .medium))
+                            .foregroundStyle(palette.faint)
+                            .accessibilityHidden(true)
+                    }
                 }
-                .padding(.horizontal, AppTheme.Space.xl)
-                .padding(.top, AppTheme.Space.lg)
-                .padding(.bottom, AppTheme.Space.xl)
+                .padding(.horizontal, AppTheme.Space.lg)
+                .padding(.top, AppTheme.Space.md)
+                .padding(.bottom, AppTheme.Space.lg)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : 340, alignment: .top)
-            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
-            .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(palette.surface, in: shape)
+            .clipShape(shape)
+            .overlay(shape.strokeBorder(palette.strokeSubtle, lineWidth: AppTheme.Component.hairline))
             .guideSoftShadow(elevated: colorScheme == .light)
         }
         .buttonStyle(.plain)

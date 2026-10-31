@@ -1699,6 +1699,12 @@ extension AppTheme {
         /// Matches `GuideSectionLabel` tracking.
         static let sectionLabelTracking: CGFloat = 0
         static let hairline: CGFloat = 1 / 3
+        /// Small uppercase caption above a card title (e.g. FIRST MYSTERY).
+        static let eyebrowTracking: CGFloat = 1.1
+        /// Home mystery card: art width-to-height, about 60% of the card.
+        static let mysteryCardArtAspect: CGFloat = 1.1
+        /// Home mystery card width as a share of the screen, so the next card peeks in.
+        static let mysteryCardWidthFraction: CGFloat = 0.85
     }
 
     enum Accessibility {
