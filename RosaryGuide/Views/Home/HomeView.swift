@@ -727,7 +727,7 @@ struct HomeView: View {
                 if isToday {
                     Text("Today")
                         .font(AppTheme.TypeRole.caption(weight: .semibold))
-                        .foregroundStyle(palette.accent)
+                        .foregroundStyle(colorScheme == .dark ? palette.tabSelected : palette.accent) // Same as PrayerRhythmCard prayed dots.
                 }
                 if let feast = assignment.feast {
                     Text(feast.feast.shortTitle)
