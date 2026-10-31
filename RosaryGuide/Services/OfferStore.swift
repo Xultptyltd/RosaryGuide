@@ -22,8 +22,7 @@ final class OfferStore {
         /// Intentions deleted on this device and when, so an older copy from another device
         /// or a late snapshot does not bring them back. Cleared once the server confirms the delete.
         static func deletedIDs(_ uid: String) -> String { "offer.deletedIDs." + uid }
-        /// Archived intention ids and when, per account (or the guest copy). Device-only:
-        /// the synced intention document has no archive field yet.
+        /// Older device-only archive list, per account (or guest). Migrated onto `archivedAt`.
         static func archivedIDs(_ owner: String?) -> String { "offer.archivedIDs." + (owner ?? "guest") }
     }
 
@@ -88,10 +87,7 @@ final class OfferStore {
         #endif
     }()
 
-    /// Archived intention ids and when they were archived (this device only).
-    private(set) var archivedIDs: [UUID: Date] = [:]
-
-    func isArchived(_ id: UUID) -> Bool { archivedIDs[id] != nil }
+    func isArchived(_ id: UUID) -> Bool { intentions.first { $0.id == id }?.isArchived ?? false }
 
     /// DEBUG `-RGDebugSampleArchived`: sample archived rows for screenshots. Render-only, never saved.
     private static let debugSampleArchived: [OfferIntention] = {
@@ -110,49 +106,49 @@ final class OfferStore {
     /// Archived intentions, most recently archived first.
     var archivedIntentions: [OfferIntention] {
         intentions
-            .filter { archivedIDs[$0.id] != nil && !$0.isExpired }
-            .sorted { (archivedIDs[$0.id] ?? .distantPast) > (archivedIDs[$1.id] ?? .distantPast) }
+            .filter { $0.isArchived && !$0.isExpired }
+            .sorted { ($0.archivedAt ?? .distantPast) > ($1.archivedAt ?? .distantPast) }
             + Self.debugSampleArchived
     }
 
-    /// Moves an intention out of the active lists. Unpins it so it is no longer current.
+    /// Moves an intention out of the active lists and unpins it. Syncs for an account;
+    /// a guest's copy stays on this device like the rest of its intentions.
     func archive(id: UUID) {
-        guard intentions.contains(where: { $0.id == id }) else { return }
-        if let idx = intentions.firstIndex(where: { $0.id == id }), intentions[idx].isPinned {
-            intentions[idx].isPinned = false
-        }
-        archivedIDs[id] = now()
-        saveArchive()
+        guard let idx = intentions.firstIndex(where: { $0.id == id }), !intentions[idx].isArchived else { return }
+        var item = intentions[idx]
+        item.isPinned = false
+        item.archivedAt = now().syncRounded
+        intentions[idx] = item
     }
 
     func unarchive(id: UUID) {
-        guard archivedIDs.removeValue(forKey: id) != nil else { return }
-        saveArchive()
+        guard let idx = intentions.firstIndex(where: { $0.id == id }), intentions[idx].isArchived else { return }
+        intentions[idx].archivedAt = nil
     }
 
-    private func loadArchive() {
-        let raw = defaults.dictionary(forKey: Keys.archivedIDs(owner)) as? [String: Double] ?? [:]
-        archivedIDs = Dictionary(uniqueKeysWithValues: raw.compactMap { key, value in
-            UUID(uuidString: key).map { ($0, Date(timeIntervalSince1970: value)) }
-        })
-    }
-
-    private func saveArchive() {
-        // Forget ids whose intention is gone (deleted here or on another device).
-        let known = Set(intentions.map(\.id))
-        archivedIDs = archivedIDs.filter { known.contains($0.key) }
+    /// Moves the older device-only archive list (if any) onto the intentions, then forgets it.
+    private func migrateDeviceArchive() {
         let key = Keys.archivedIDs(owner)
-        if archivedIDs.isEmpty {
-            defaults.removeObject(forKey: key)
-        } else {
-            defaults.set(Dictionary(uniqueKeysWithValues: archivedIDs.map { ($0.key.uuidString, $0.value.timeIntervalSince1970) }), forKey: key)
+        guard let raw = defaults.dictionary(forKey: key) as? [String: Double] else { return }
+        defaults.removeObject(forKey: key)
+        let dates = Dictionary(uniqueKeysWithValues: raw.compactMap { key, value in
+            UUID(uuidString: key).map { ($0, Date(timeIntervalSince1970: value).syncRounded) }
+        })
+        guard intentions.contains(where: { dates[$0.id] != nil && !$0.isArchived }) else { return }
+        intentions = intentions.map { item in
+            guard let date = dates[item.id], !item.isArchived else { return item }
+            var archived = item
+            archived.archivedAt = date
+            archived.isPinned = false
+            return archived
         }
+        persistIntentions()
     }
 
     var sortedIntentions: [OfferIntention] {
         let todaySet = MysteryCalendar.assignment(on: Date()).set
         return (intentions + Self.debugSampleIntentions)
-            .filter { !$0.isExpired && archivedIDs[$0.id] == nil }
+            .filter { !$0.isExpired && !$0.isArchived }
             .sorted { a, b in
                 if a.isPinned != b.isPinned { return a.isPinned && !b.isPinned }
                 let aToday = a.isSuggested(on: todaySet)
@@ -172,7 +168,7 @@ final class OfferStore {
         self.owner = owner
         intentions = Self.loadIntentions(defaults: defaults, key: owner.map(Keys.intentions) ?? Keys.legacyIntentions)
         pruneExpired()
-        loadArchive()
+        migrateDeviceArchive()
     }
 
     /// Switches to the signed-in account's intentions, or stops syncing for a guest.
@@ -203,8 +199,8 @@ final class OfferStore {
         defaults.removeObject(forKey: Keys.legacyIntentions)
         replaceWithoutSyncing(local.filter { !$0.isExpired })
         owner = uid
-        loadArchive()
         persistIntentions()
+        migrateDeviceArchive()
         startListening(uid: uid)
     }
 
@@ -338,14 +334,11 @@ final class OfferStore {
     /// The account copy is deleted by `syncLocalChangeIfNeeded`, like every other removal.
     func delete(id: UUID) {
         intentions.removeAll { $0.id == id }
-        if archivedIDs[id] != nil { unarchive(id: id) }
     }
 
     /// Removes every saved intention (Settings wipe).
     func clearAll() {
         intentions = []
-        archivedIDs = [:]
-        saveArchive()
     }
 
     /// Pin as the sole current intention, or unpin if already pinned.
@@ -377,7 +370,7 @@ final class OfferStore {
     /// Prefer intentions tagged for this mystery set (e.g. the Rosary just started).
     func sortedIntentions(for set: MysterySetKind) -> [OfferIntention] {
         intentions
-            .filter { !$0.isExpired && archivedIDs[$0.id] == nil }
+            .filter { !$0.isExpired && !$0.isArchived }
             .sorted { a, b in
                 if a.isPinned != b.isPinned { return a.isPinned && !b.isPinned }
                 let aMatch = a.isSuggested(on: set)

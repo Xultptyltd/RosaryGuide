@@ -404,7 +404,7 @@ final class GuestIntentionTests: XCTestCase {
         XCTAssertEqual(store.archivedIntentions.map(\.id), [rested.id])
         XCTAssertFalse(store.intention(id: rested.id)?.isPinned ?? true, "Archiving unpins")
         XCTAssertEqual(store.intentions.count, 2, "Archived intentions are kept, not deleted")
-        XCTAssertTrue(repository.uploaded.isEmpty, "Archive state stays on this device")
+        XCTAssertTrue(repository.uploaded.isEmpty, "A guest's archive stays on this device")
 
         let relaunched = OfferStore(defaults: defaults, repository: FakeRepository())
         XCTAssertTrue(relaunched.isArchived(rested.id), "Archive survives a relaunch")
@@ -423,6 +423,67 @@ final class GuestIntentionTests: XCTestCase {
         store.delete(id: item.id)
         XCTAssertFalse(store.isArchived(item.id))
         XCTAssertTrue(store.archivedIntentions.isEmpty)
+    }
+
+    func testArchivedAtEncodesToFirestoreAndIsAbsentWhenActive() {
+        let at = Date(timeIntervalSince1970: 1_790_000_000)
+        let archived = OfferIntention(title: "Rested", createdAt: at, updatedAt: at, archivedAt: at)
+        XCTAssertEqual((archived.firestoreData()["archivedAt"] as? Timestamp)?.dateValue(), at)
+        let active = OfferIntention(title: "Active", createdAt: at, updatedAt: at)
+        XCTAssertNil(active.firestoreData()["archivedAt"], "Active intentions write no archivedAt")
+    }
+
+    func testArchivedAtDecodesFromFirestore() {
+        let at = Date(timeIntervalSince1970: 1_790_000_000)
+        var data = OfferIntention(title: "Rested", createdAt: at, updatedAt: at).firestoreData()
+        let id = UUID()
+        XCTAssertNil(OfferIntention(firestoreId: id.uuidString, data: data)?.archivedAt)
+        data["archivedAt"] = Timestamp(date: at)
+        XCTAssertEqual(OfferIntention(firestoreId: id.uuidString, data: data)?.archivedAt, at)
+    }
+
+    func testArchivedAtRoundTripsThroughFirestoreAndDeviceStorage() throws {
+        let at = Date(timeIntervalSince1970: 1_790_000_000)
+        let original = OfferIntention(title: "Rested", createdAt: at, updatedAt: at, archivedAt: at)
+        let back = OfferIntention(firestoreId: original.id.uuidString, data: original.firestoreData())
+        XCTAssertEqual(back, original)
+        let saved = try JSONDecoder().decode(OfferIntention.self, from: JSONEncoder().encode(original))
+        XCTAssertEqual(saved.archivedAt, at)
+    }
+
+    func testSignedInArchiveAndUnarchiveSync() async throws {
+        let repository = FakeRepository()
+        let store = OfferStore(defaults: freshDefaults(), repository: repository)
+        store.configureSync(for: "user-a")
+        let item = store.add(title: "Rested")
+        repository.deliverServer(store.intentions)
+        try await eventually { repository.uploaded.contains(item.id) }
+        try await settle()
+
+        repository.uploaded.removeAll()
+        store.archive(id: item.id)
+        try await eventually { repository.uploaded.contains(item.id) }
+        XCTAssertNotNil(store.intention(id: item.id)?.archivedAt)
+        XCTAssertNotNil(store.intention(id: item.id)?.firestoreData()["archivedAt"])
+
+        repository.uploaded.removeAll()
+        store.unarchive(id: item.id)
+        try await eventually { repository.uploaded.contains(item.id) }
+        XCTAssertNil(store.intention(id: item.id)?.firestoreData()["archivedAt"], "Unarchive writes the field absent")
+    }
+
+    func testDeviceOnlyArchiveMigratesOntoTheIntention() {
+        let defaults = freshDefaults()
+        let store = OfferStore(defaults: defaults, repository: FakeRepository())
+        store.configureSync(for: nil)
+        let item = store.add(title: "Rested earlier", pin: true)
+        defaults.set([item.id.uuidString: 1_790_000_000.0], forKey: "offer.archivedIDs.guest")
+
+        let relaunched = OfferStore(defaults: defaults, repository: FakeRepository())
+        XCTAssertEqual(relaunched.intention(id: item.id)?.archivedAt, Date(timeIntervalSince1970: 1_790_000_000))
+        XCTAssertFalse(relaunched.intention(id: item.id)?.isPinned ?? true)
+        XCTAssertNil(defaults.object(forKey: "offer.archivedIDs.guest"), "Old list is forgotten")
+        XCTAssertTrue(OfferStore(defaults: defaults, repository: FakeRepository()).isArchived(item.id), "Migration is saved")
     }
 
     func testSigningInMergesAndUploadsGuestIntentions() async throws {

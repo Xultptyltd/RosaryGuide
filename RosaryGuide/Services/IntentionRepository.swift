@@ -119,7 +119,7 @@ private final class FirestoreIntentionRepository: IntentionRepository {
     }
 }
 
-private extension OfferIntention {
+extension OfferIntention {
     init?(firestoreId: String, data: [String: Any]) {
         guard
             let id = UUID(uuidString: firestoreId),
@@ -143,6 +143,7 @@ private extension OfferIntention {
         let suggestOn = (data["suggestOn"] as? [String] ?? []).compactMap(MysterySetKind.init(rawValue:))
         // Older documents hold the server's arrival time here; newer ones the edit time.
         let updatedAt = (data["updatedAt"] as? Timestamp)?.dateValue().syncRounded
+        let archivedAt = (data["archivedAt"] as? Timestamp)?.dateValue()
 
         self.init(
             id: id,
@@ -158,7 +159,8 @@ private extension OfferIntention {
             accent: accent,
             emoji: emoji?.isEmpty == false ? emoji : nil,
             suggestOn: suggestOn,
-            updatedAt: updatedAt
+            updatedAt: updatedAt,
+            archivedAt: archivedAt
         )
     }
 
@@ -190,6 +192,10 @@ private extension OfferIntention {
         }
         if let emoji {
             data["emoji"] = emoji
+        }
+        // Absent when active: writes replace the whole document, so unarchiving clears it.
+        if let archivedAt {
+            data["archivedAt"] = Timestamp(date: archivedAt)
         }
 
         return data

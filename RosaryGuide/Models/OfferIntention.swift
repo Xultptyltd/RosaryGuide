@@ -115,6 +115,10 @@ struct OfferIntention: Identifiable, Hashable, Sendable {
     /// When this intention was last edited on any device (whole milliseconds). Decides which
     /// copy wins when two devices change it while offline. Nil on copies saved before this existed.
     var updatedAt: Date? = nil
+    /// When this intention was archived (out of the active lists). Nil while active. Synced.
+    var archivedAt: Date? = nil
+
+    var isArchived: Bool { archivedAt != nil }
 
     init(
         id: UUID = UUID(),
@@ -130,7 +134,8 @@ struct OfferIntention: Identifiable, Hashable, Sendable {
         accent: IntentionAccent = .skyBlue,
         emoji: String? = nil,
         suggestOn: [MysterySetKind] = [],
-        updatedAt: Date? = nil
+        updatedAt: Date? = nil,
+        archivedAt: Date? = nil
     ) {
         self.id = id
         self.title = title
@@ -146,6 +151,7 @@ struct OfferIntention: Identifiable, Hashable, Sendable {
         self.emoji = emoji
         self.suggestOn = suggestOn
         self.updatedAt = updatedAt
+        self.archivedAt = archivedAt
     }
 
     var isPapal: Bool {
@@ -212,7 +218,7 @@ struct OfferIntention: Identifiable, Hashable, Sendable {
 extension OfferIntention: Codable {
     enum CodingKeys: String, CodingKey {
         case id, title, note, timesCarried, isPinned, createdAt, lastCarriedAt, expiresAt, sourceId, category, accent, emoji, suggestOn
-        case updatedAt
+        case updatedAt, archivedAt
     }
 
     init(from decoder: Decoder) throws {
@@ -232,6 +238,7 @@ extension OfferIntention: Codable {
             ?? IntentionCategory.inferred(sourceId: sourceId, accent: accent, emoji: emoji)
         suggestOn = try c.decodeIfPresent([MysterySetKind].self, forKey: .suggestOn) ?? []
         updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt)
+        archivedAt = try c.decodeIfPresent(Date.self, forKey: .archivedAt)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -250,6 +257,7 @@ extension OfferIntention: Codable {
         try c.encodeIfPresent(emoji, forKey: .emoji)
         try c.encode(suggestOn, forKey: .suggestOn)
         try c.encodeIfPresent(updatedAt, forKey: .updatedAt)
+        try c.encodeIfPresent(archivedAt, forKey: .archivedAt)
     }
 }
 
