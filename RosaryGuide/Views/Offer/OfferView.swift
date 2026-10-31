@@ -844,6 +844,7 @@ private struct MyPrayerJourneySummaryCard: View {
 
 private struct NextRosaryIntentionCard: View {
     @Environment(\.palette) private var palette
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let intention: OfferIntention
     var hideText: Bool = false
     let onOpen: () -> Void
@@ -918,7 +919,9 @@ private struct NextRosaryIntentionCard: View {
             PillButton(title: "Offer a Rosary", filled: false, action: onPray)
                 .accessibilityLabel("Offer a Rosary")
                 .accessibilityHint(IntentionPrivacy.hides(intention, hidden: hideText) ? "Starts a Rosary for this intention" : "Starts a Rosary for \(intention.title)")
-                .padding(.horizontal, AppTheme.Space.lg)
+                // Starts under the title (icon 52 + spacing); full width at accessibility sizes.
+                .padding(.leading, AppTheme.Space.lg + (dynamicTypeSize.isAccessibilitySize ? 0 : 52 + AppTheme.Space.md))
+                .padding(.trailing, AppTheme.Space.lg)
                 .padding(.bottom, AppTheme.Space.lg)
         }
         .deleteWarningHaptic(isPresented: showingDeleteAlert)
@@ -1074,6 +1077,7 @@ extension OfferIntention {
 
 private struct CurrentIntentionHero: View {
     @Environment(\.palette) private var palette
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.colorScheme) private var colorScheme
     let intention: OfferIntention
     var hideText: Bool = false
@@ -1151,7 +1155,9 @@ private struct CurrentIntentionHero: View {
             // Outside the card Button so pray does not also open detail.
             // Secondary pill, same as Next in the rosary flow.
             PillButton(title: "Offer my next Rosary", filled: false, action: onPray)
-            .padding(.horizontal, AppTheme.Space.lg)
+            // Starts under the title (icon 64 + spacing); full width at accessibility sizes.
+            .padding(.leading, AppTheme.Space.lg + (dynamicTypeSize.isAccessibilitySize ? 0 : 64 + AppTheme.Space.lg))
+            .padding(.trailing, AppTheme.Space.lg)
             .padding(.bottom, AppTheme.Space.lg)
         }
         .deleteWarningHaptic(isPresented: showingDeleteAlert)

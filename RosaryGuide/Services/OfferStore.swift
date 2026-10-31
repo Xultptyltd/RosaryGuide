@@ -80,7 +80,9 @@ final class OfferStore {
             case .someone: "For Grandma’s recovery"
             case .world: "Peace in the world"
             }
-            return OfferIntention(title: title, category: category, accent: accent, emoji: category == .personal ? "🙏" : (category == .someone ? "👥" : "🌍"))
+            // `-RGDebugPinSample` pins the first row so the featured card shows.
+            let pinned = category == .personal && DebugHooks.has("-RGDebugPinSample")
+            return OfferIntention(title: title, isPinned: pinned, category: category, accent: accent, emoji: category == .personal ? "🙏" : (category == .someone ? "👥" : "🌍"))
         }
         #else
         return []
