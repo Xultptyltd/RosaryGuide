@@ -403,6 +403,8 @@ struct HomeView: View {
                 }
                 .id("home-feasts")
                 .padding(.top, AppTheme.Space.xl)
+                // Tighten the gap below the last feast row before This week.
+                .padding(.bottom, -AppTheme.Space.xl)
             }
 
             Group {
@@ -601,7 +603,8 @@ struct HomeView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, AppTheme.Space.lg)
-                    .padding(.top, -AppTheme.Space.lg)
+                    // Caption sits on clear background, below the art fade.
+                    .padding(.top, AppTheme.Space.xs)
                     .padding(.bottom, AppTheme.Space.lg)
                 }
                 .contentShape(shape)
@@ -639,11 +642,8 @@ struct HomeView: View {
                     .foregroundStyle(palette.faint)
             }
             .frame(minWidth: 44)
+            .padding(.trailing, AppTheme.Space.xs)
             .accessibilityHidden(true)
-            Rectangle()
-                .fill(palette.strokeSubtle)
-                .frame(width: AppTheme.Component.hairline, height: 36)
-                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.feast.shortTitle)
                     .font(AppTheme.TypeRole.body(weight: .medium))
