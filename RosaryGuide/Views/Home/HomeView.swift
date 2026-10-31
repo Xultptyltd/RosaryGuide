@@ -395,10 +395,6 @@ struct HomeView: View {
                     .padding(.top, AppTheme.sectionGap)
             }
 
-            // Separates the mystery carousel from Upcoming feast days (same divider as Offer and Feasts).
-            GuideSectionDivider()
-                .padding(.top, AppTheme.Space.xl)
-
             Group {
                 VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
                     GuideSectionLabel(text: "Upcoming feast days", prominence: .strong)
@@ -614,7 +610,6 @@ struct HomeView: View {
                 }
                 .contentShape(shape)
                 .clipShape(shape)
-                .overlay(shape.strokeBorder(palette.strokeRegular, lineWidth: 1))
             }
             .buttonStyle(.plain)
             .guidePressable()
