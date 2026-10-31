@@ -343,3 +343,54 @@ extension FeastCatalog {
         "baptism-movable": FeastCelebration(today: "Today we celebrate the Lord's baptism in the Jordan.", occasion: "on the Baptism of the Lord"),
     ]
 }
+
+extension FeastCatalog {
+    /// One-line, calm subtitles for feast list rows. Sentence case, no full stop.
+    static let taglines: [String: String] = [
+        "mary-mother-of-god": "Honoring Mary as Mother of God",
+        "epiphany": "Christ revealed to the nations",
+        "presentation": "Jesus presented in the Temple",
+        "lourdes": "Mary appears to Saint Bernadette",
+        "joseph": "Guardian of the Redeemer",
+        "annunciation": "The Word becomes flesh",
+        "fatima": "Mary calls the world to prayer",
+        "visitation": "Mary visits her cousin Elizabeth",
+        "peter-paul": "Pillars of the early Church",
+        "carmel": "Mary, mother of Carmel",
+        "assumption": "Mary taken up into heaven",
+        "queenship": "Mary crowned Queen of Heaven",
+        "nativity-mary": "The birth of Our Lady",
+        "holy-name-mary": "Honoring the name of Mary",
+        "sorrows": "Mary stands beside the cross",
+        "michael": "The archangels who serve God",
+        "guardian-angels": "The angels who watch over us",
+        "rosary": "Giving thanks for the Rosary",
+        "all-saints": "Celebrating all the saints in heaven",
+        "all-souls": "Remembering the faithful departed",
+        "presentation-mary": "A life offered to God",
+        "immaculate-conception": "Mary, conceived without sin",
+        "guadalupe": "Mother of the Americas",
+        "christmas": "The birth of Jesus",
+        "ash-wednesday": "The season of Lent begins",
+        "palm-sunday": "Jesus enters Jerusalem",
+        "holy-thursday": "The Lord's Supper",
+        "good-friday": "Christ dies on the cross",
+        "holy-saturday": "Waiting in silence at the tomb",
+        "easter": "Christ is risen",
+        "divine-mercy": "Trusting in God's mercy",
+        "ascension": "Jesus ascends into heaven",
+        "pentecost": "The Holy Spirit comes down",
+        "mother-of-the-church": "Mary, Mother of the Church",
+        "trinity": "One God in three Persons",
+        "corpus-christi": "The Body and Blood of Christ",
+        "sacred-heart": "The loving heart of Jesus",
+        "immaculate-heart": "The pure heart of Mary",
+        "christ-the-king": "Christ, King of all creation",
+        "advent-1": "Preparing for Christ's coming",
+        "baptism-movable": "Jesus is baptized in the Jordan",
+    ]
+}
+
+extension Feast {
+    var tagline: String { FeastCatalog.taglines[id] ?? "" }
+}

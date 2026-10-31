@@ -279,6 +279,7 @@ struct Feast: Identifiable, Hashable, Sendable {
         case "holy-name-mary": "Holy Name of Mary"
         case "sorrows": "Our Lady of Sorrows"
         case "rosary": "Our Lady of the Rosary"
+        case "all-souls": "All Souls' Day"
         case "presentation-mary": "Presentation of Mary"
         case "immaculate-conception": "Immaculate Conception"
         case "immaculate-heart": "Immaculate Heart of Mary"

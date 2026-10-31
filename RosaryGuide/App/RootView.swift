@@ -107,7 +107,7 @@ struct RootView: View {
     @ViewBuilder
     private var rootTabs: some View {
         let tabs = TabView(selection: $tab) {
-            HomeView(prayLaunch: $prayLaunch)
+            HomeView(prayLaunch: $prayLaunch, onViewAllFeasts: { tab = .calendar })
                 .tabItem { tabLabel(.today) }
                 .tag(AppTab.today)
 

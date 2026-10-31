@@ -3,6 +3,15 @@ import SwiftUI
 @testable import RosaryGuide
 
 final class MysteryCalendarTests: XCTestCase {
+    func testEveryFeastHasTagline() {
+        for feast in FeastCatalog.all {
+            let line = feast.tagline
+            XCTAssertFalse(line.isEmpty, feast.id)
+            XCTAssertFalse(line.hasSuffix("."), feast.id)
+            XCTAssertLessThanOrEqual(line.split(separator: " ").count, 6, feast.id)
+        }
+    }
+
     func testEveryMysteryHasCardSummary() {
         XCTAssertEqual(MysteryCatalog.all.count, 20)
         for mystery in MysteryCatalog.all {

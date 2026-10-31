@@ -16,6 +16,8 @@ struct HomeView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Binding var prayLaunch: PrayLaunch?
+    /// Opens the Feasts tab ("View all" on Upcoming feast days).
+    var onViewAllFeasts: () -> Void = {}
 
     @State private var selectedSet: MysterySetKind?
     @State private var showIntentionSheet = false
@@ -135,6 +137,12 @@ struct HomeView: View {
                     guard DebugHooks.has("-RGDebugHomeMysteries") else { return }
                     try? await Task.sleep(for: .seconds(3))
                     proxy.scrollTo("home-mysteries", anchor: .center)
+                }
+                // `-RGDebugHomeFeasts`: scrolls to Upcoming feast days for screenshots.
+                .task {
+                    guard DebugHooks.has("-RGDebugHomeFeasts") else { return }
+                    try? await Task.sleep(for: .seconds(3))
+                    proxy.scrollTo("home-feasts", anchor: .center)
                 }
                 #endif
                 .onPreferenceChange(HomeCTABottomPreferenceKey.self) { value in
@@ -383,9 +391,17 @@ struct HomeView: View {
 
             Group {
                 VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-                    GuideSectionLabel(text: "Upcoming feast days", prominence: .strong)
+                    HStack(alignment: .firstTextBaseline) {
+                        GuideSectionLabel(text: "Upcoming feast days", prominence: .strong)
+                        Spacer(minLength: AppTheme.Space.sm)
+                        Button("View all") { onViewAllFeasts() }
+                            .font(AppTheme.TypeRole.body(weight: .medium))
+                            .foregroundStyle(palette.accent)
+                            .buttonStyle(.plain)
+                    }
                     comingUpSection
                 }
+                .id("home-feasts")
                 .padding(.top, AppTheme.Space.xl)
             }
 
@@ -530,35 +546,33 @@ struct HomeView: View {
             (isToday ? upcomingPreviewFeasts : Array(upcomingPreviewFeasts.dropFirst()))
                 .prefix(2)
         )
-        return VStack(spacing: 0) {
+        let shape = RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+        return VStack(alignment: .leading, spacing: 0) {
             NavigationLink {
                 FeastDetailView(prayLaunch: $prayLaunch, item: featured)
             } label: {
                 VStack(alignment: .leading, spacing: 0) {
-                    Group {
-                        if let path = ArtCatalog.feastHeroPath(feastId: featured.feast.id, scheme: colorScheme) {
-                            FocusedRasterImage(
-                                directory: path.directory,
-                                name: path.name,
-                                ext: path.ext,
-                                focus: UnitPoint(x: 0.5, y: 0.42)
-                            )
-                        } else {
-                            MysteryArtworkView(set: featured.feast.suggestedMysterySet ?? .glorious, mysteryNumber: 5, kind: .plateWide)
+                    Color.clear
+                        .frame(height: 176)
+                        .overlay {
+                            if let path = ArtCatalog.feastHeroPath(feastId: featured.feast.id, scheme: colorScheme) {
+                                FocusedRasterImage(
+                                    directory: path.directory,
+                                    name: path.name,
+                                    ext: path.ext,
+                                    focus: UnitPoint(x: 0.5, y: 0.42)
+                                )
+                            } else {
+                                MysteryArtworkView(set: featured.feast.suggestedMysterySet ?? .glorious, mysteryNumber: 5, kind: .plateWide)
+                            }
                         }
-                    }
-                    .frame(height: 176)
-                    .clipped()
-                    .overlay {
-                        PartialCardStroke(
-                            edges: [.top, .leading, .trailing],
-                            radius: AppTheme.featureRadius,
-                            color: palette.cardStroke,
-                            lineWidth: AppTheme.Component.panelStrokeWidth
-                        )
-                    }
+                        .overlay(alignment: .bottom) {
+                            LinearGradient(colors: [palette.bg.opacity(0), palette.bg], startPoint: .top, endPoint: .bottom)
+                                .frame(height: AppTheme.Space.xxl * 2)
+                        }
+                        .clipped()
 
-                    VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                         if isToday {
                             // Match This week calendar weekRow TODAY pill (colors, font, padding, Capsule).
                             Text("TODAY")
@@ -569,64 +583,87 @@ struct HomeView: View {
                                 .padding(.vertical, AppTheme.Space.xs)
                                 .background(palette.todayPillFill, in: Capsule())
                         } else {
-                            feastDateText(featured.date)
+                            Text("Next · \(featured.date.formatted(.dateTime.day().month(.wide)))".uppercased())
+                                .font(AppTheme.TypeRole.caption(weight: .medium))
+                                .tracking(AppTheme.Component.eyebrowTracking)
+                                .foregroundStyle(palette.faint)
                         }
-                        WordSafeText(featured.feast.shortTitle, font: AppTheme.TypeRole.headingSecondaryUIFont)
-                            .foregroundStyle(palette.ink)
-                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 5 : 3)
-                            .minimumScaleFactor(0.82)
+                        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                            WordSafeText(featured.feast.shortTitle, font: AppTheme.TypeRole.headingCardUIFont)
+                                .foregroundStyle(palette.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Image(systemName: "chevron.right")
+                                .font(AppTheme.TypeRole.caption(weight: .medium))
+                                .foregroundStyle(palette.faint)
+                                .accessibilityHidden(true)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, AppTheme.Space.xl)
-                    .padding(.vertical, AppTheme.Component.feastPreviewTextPadding)
-
+                    .padding(.horizontal, AppTheme.Space.lg)
+                    .padding(.top, -AppTheme.Space.lg)
+                    .padding(.bottom, AppTheme.Space.lg)
                 }
+                .contentShape(shape)
+                .clipShape(shape)
+                .overlay(shape.stroke(palette.strokeSubtle, lineWidth: AppTheme.Component.hairline))
             }
+            .buttonStyle(.plain)
             .guidePressable()
 
-            ForEach(Array(remaining.enumerated()), id: \.element.id) { index, item in
-                Hairline()
-                    .padding(.horizontal, AppTheme.Space.xl)
-                NavigationLink {
-                    FeastDetailView(prayLaunch: $prayLaunch, item: item)
-                } label: {
-                    Group {
-                        if dynamicTypeSize.isAccessibilitySize {
-                            // Accessibility sizes: date above the title so neither breaks mid-word.
-                            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                                feastDateText(item.date)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.6)
-                                WordSafeText(item.feast.shortTitle, font: AppTheme.TypeRole.calloutUIFont())
-                                    .foregroundStyle(palette.ink)
-                                    .lineLimit(5)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        } else {
-                            HStack(alignment: .top, spacing: AppTheme.Space.md) {
-                                feastDateText(item.date)
-                                    .frame(width: 64, alignment: .leading)
-                                Text(item.feast.shortTitle)
-                                    .font(AppTheme.TypeRole.bodySmall)
-                                    .foregroundStyle(palette.ink)
-                                    .lineLimit(2)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                Spacer()
-                            }
-                        }
+            VStack(spacing: 0) {
+                ForEach(Array(remaining.enumerated()), id: \.element.id) { index, item in
+                    if index > 0 { Hairline() }
+                    NavigationLink {
+                        FeastDetailView(prayLaunch: $prayLaunch, item: item)
+                    } label: {
+                        feastListRow(item)
                     }
-                    .padding(.horizontal, AppTheme.Space.xl)
-                    .padding(.top, AppTheme.Space.md)
-                    // Last row sits on the card edge, not a hairline: give it the card's xl inset.
-                    .padding(.bottom, index == remaining.count - 1 ? AppTheme.Space.xl : AppTheme.Space.md)
+                    .buttonStyle(.plain)
+                    .guidePressable()
                 }
-                .guidePressable()
             }
+            .padding(.top, AppTheme.Space.sm)
         }
-        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
-        .guideSoftShadow(elevated: colorScheme == .light)
+    }
+
+    private func feastListRow(_ item: DatedFeast) -> some View {
+        HStack(alignment: .center, spacing: AppTheme.Space.md) {
+            VStack(spacing: 2) {
+                Text(item.date.formatted(.dateTime.day(.twoDigits)))
+                    .font(AppTheme.TypeRole.headingSecondary)
+                    .foregroundStyle(palette.ink)
+                Text(item.date.formatted(.dateTime.month(.abbreviated)).uppercased())
+                    .font(AppTheme.TypeRole.caption(weight: .medium))
+                    .tracking(AppTheme.Component.eyebrowTracking)
+                    .foregroundStyle(palette.faint)
+            }
+            .frame(minWidth: 44)
+            .accessibilityHidden(true)
+            Rectangle()
+                .fill(palette.strokeSubtle)
+                .frame(width: AppTheme.Component.hairline, height: 36)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.feast.shortTitle)
+                    .font(AppTheme.TypeRole.body(weight: .medium))
+                    .foregroundStyle(palette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(item.feast.tagline)
+                    .font(AppTheme.TypeRole.rhythmCaption())
+                    .foregroundStyle(palette.dim)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "chevron.right")
+                .font(AppTheme.TypeRole.caption(weight: .medium))
+                .foregroundStyle(palette.faint)
+                .accessibilityHidden(true)
+        }
+        .padding(.vertical, AppTheme.Space.md)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.feast.shortTitle), \(item.date.formatted(.dateTime.day().month(.wide))). \(item.feast.tagline)")
     }
 
     private func feastDateText(_ date: Date) -> some View {
