@@ -177,6 +177,7 @@ struct OfferView: View {
 
 
     private var profileContent: some View {
+        ScrollViewReader { proxy in
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
                 // Rhythm at a glance; the journey screen opens on Milestones, where the
@@ -226,10 +227,8 @@ struct OfferView: View {
                                     onDelete: { animateIntentionChange { offer.delete(id: item.id) } },
                                     onPray: { prayWith(item) }
                                 )
-                                // Inset to the text; none under the last row.
-                                if item.id != visibleSecondaryIntentions.last?.id {
-                                    Hairline().padding(.leading, 44 + AppTheme.Space.md)
-                                }
+                                // Inset to the text; the last row's divider closes the list.
+                                Hairline().padding(.leading, 44 + AppTheme.Space.md)
                             }
                             // Only once there is more than the profile can show (4 or more).
                             if showsSeeAllIntentions {
@@ -242,8 +241,7 @@ struct OfferView: View {
                     }
                     // Cancels the last row's 8pt inset plus 4pt, so the divider sits 12pt below the last row (16pt below the divider).
                     // Featured card alone: 4pt tighter to the divider.
-                    .padding(.bottom, endsOnIntentionRow ? -(AppTheme.Space.sm + AppTheme.Space.xs)
-                        : (showsOnlyFeaturedIntention ? -AppTheme.Space.xs : 0))
+                    .padding(.bottom, showsOnlyFeaturedIntention ? -AppTheme.Space.xs : 0)
                 }
 
 
@@ -258,11 +256,11 @@ struct OfferView: View {
 
                 if !auth.isSignedIn {
                     // Once this month's papal intention is added its card is gone, so divide the list from the backup card.
-                    if showsBackupDivider {
-                        GuideSectionBoundary(verticalSpacing: 0)
-                    }
+                    // Divides the Holy Father's card (or the list) from the backup card, and the card from what follows.
+                    GuideSectionBoundary(verticalSpacing: 0)
                     GuestBackupCard { showSignIn = true }
-                        .padding(.top, showsBackupDivider ? 0 : AppTheme.Space.lg)
+                        .id("profile-backup")
+                    GuideSectionBoundary(verticalSpacing: 0)
                 }
             }
             .padding(.horizontal, AppTheme.gutter)
@@ -277,6 +275,15 @@ struct OfferView: View {
                     if auth.isSignedIn { AppLanding.shared.requestHome() } else { showSignIn = false }
                 }
             }
+        }
+        #if DEBUG
+        // `-RGDebugProfileBackup`: scrolls to the create-account card for screenshots.
+        .task {
+            guard DebugHooks.has("-RGDebugProfileBackup") else { return }
+            try? await Task.sleep(for: .seconds(3))
+            proxy.scrollTo("profile-backup", anchor: .center)
+        }
+        #endif
         }
     }
 

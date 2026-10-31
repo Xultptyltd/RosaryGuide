@@ -291,13 +291,15 @@ struct PrayerRhythmCard: View {
     }
 
     private var sideBySide: some View {
-        HStack(alignment: .center, spacing: 0) {
+        // Summary sits at the bottom, level with the calendar's last row.
+        HStack(alignment: .bottom, spacing: 0) {
             summaryText
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .layoutPriority(1)
             Rectangle()
                 .fill(palette.strokeRegular)
                 .frame(width: 1)
+                .frame(maxHeight: .infinity)
                 .padding(.vertical, Metric.dividerInset)
                 .padding(.horizontal, Metric.dividerGap)
                 .accessibilityHidden(true)
@@ -322,10 +324,6 @@ struct PrayerRhythmCard: View {
 
     private var summaryText: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-            Text("Your prayer")
-                .font(AppTheme.TypeRole.supportingLabel)
-                .foregroundStyle(palette.textSecondary)
-                .lineLimit(1)
             HStack(alignment: .center, spacing: AppTheme.Space.sm) {
                 if rhythm.isMilestone {
                     Image(systemName: "flame.fill")
@@ -400,11 +398,14 @@ struct PrayerRhythmCard: View {
     }
 
     /// Past days: small dim dot. Prayed: larger accent dot. Today: hollow ring.
-    /// Future days stay blank so the grid ends at today.
+    /// Future days: a fainter dot, so the whole month reads from the 1st.
     @ViewBuilder
     private func dot(_ day: PrayerRhythm.Day?) -> some View {
         ZStack {
-            if let day, !day.isFuture {
+            if let day, day.isFuture {
+                Circle().fill(palette.ink.opacity(isDark ? 0.14 : 0.10))
+                    .frame(width: Metric.dimDot, height: Metric.dimDot)
+            } else if let day {
                 if day.prayed {
                     Circle().fill(isDark ? palette.tabSelected : palette.accent)
                         .frame(width: Metric.prayedDot, height: Metric.prayedDot)
