@@ -869,7 +869,7 @@ private struct NextRosaryIntentionCard: View {
 
     var body: some View {
         Button(action: onOpen) {
-            VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 Text("Featured intention")
                     .textCase(.uppercase)
                     .font(AppTheme.TypeRole.caption(weight: .medium))
@@ -882,12 +882,13 @@ private struct NextRosaryIntentionCard: View {
                     IntentionIconView(
                         accent: intention.accent,
                         emoji: intention.displayEmoji,
-                        size: 52,
+                        size: 44,
                         usesPopePortrait: intention.isPapal
                     )
 
                     Text(displayTitle)
-                        .font(AppTheme.TypeRole.body(weight: .regular))
+                        .font(AppTheme.TypeRole.bodySmall(weight: .regular))
+                        .lineSpacing(AppTheme.Space.xs - 1)
                         .foregroundStyle(titleColor)
                         .lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
@@ -910,7 +911,7 @@ private struct NextRosaryIntentionCard: View {
                     .frame(minHeight: AppTheme.Component.compactPillHeight)
                     .accessibilityHidden(true)
             }
-            .padding(AppTheme.Space.lg)
+            .padding(AppTheme.Space.md)
             .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         }
@@ -928,8 +929,8 @@ private struct NextRosaryIntentionCard: View {
                 onEdit: onEdit,
                 onDelete: { showingDeleteAlert = true }
             )
-            .padding(.top, AppTheme.Space.md)
-            .padding(.trailing, AppTheme.Space.md)
+            .padding(.top, AppTheme.Space.sm)
+            .padding(.trailing, AppTheme.Space.sm)
         }
         .overlay(alignment: .bottom) {
             // Full-width pill across the card's inner width: white in dark, primary in light.
@@ -938,8 +939,8 @@ private struct NextRosaryIntentionCard: View {
                 .accessibilityLabel("Pray for this intention")
                 .accessibilityHint(IntentionPrivacy.hides(intention, hidden: hideText) ? "Starts a Rosary for this intention" : "Starts a Rosary for \(intention.title)")
                 // Starts under the title (icon 52 + spacing); full width at accessibility sizes.
-                .padding(.horizontal, AppTheme.Space.lg)
-                .padding(.bottom, AppTheme.Space.lg)
+                .padding(.horizontal, AppTheme.Space.md)
+                .padding(.bottom, AppTheme.Space.md)
         }
         .deleteWarningHaptic(isPresented: showingDeleteAlert)
         .alert("Delete intention?", isPresented: $showingDeleteAlert) {
@@ -1066,6 +1067,7 @@ private struct MyPrayerIntentionRowLabel: View {
                     .font(AppTheme.TypeRole.bodySmall(weight: .regular))
                     .foregroundStyle(titleColor)
                     .lineLimit(2)
+                    .lineSpacing(AppTheme.Space.xs - 1)
                     .fixedSize(horizontal: false, vertical: true)
                 if let month = intention.papalMonthLabel {
                     Text(month)
