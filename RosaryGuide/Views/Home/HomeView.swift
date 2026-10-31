@@ -645,17 +645,12 @@ struct HomeView: View {
             .frame(minWidth: 44)
             .padding(.trailing, AppTheme.Space.xs)
             .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.feast.shortTitle)
-                    .font(AppTheme.TypeRole.body(weight: .medium))
-                    .foregroundStyle(palette.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(item.feast.tagline)
-                    .font(AppTheme.TypeRole.rhythmCaption())
-                    .foregroundStyle(palette.dim)
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            // Later rows show date and title only; the featured card keeps the tagline.
+            Text(item.feast.shortTitle)
+                .font(AppTheme.TypeRole.body(weight: .medium))
+                .foregroundStyle(palette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
             Image(systemName: "chevron.right")
                 .font(AppTheme.TypeRole.caption(weight: .medium))
                 .foregroundStyle(palette.faint)
