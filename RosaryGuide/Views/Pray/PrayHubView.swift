@@ -33,22 +33,7 @@ struct PrayHubView: View {
                         GuideSectionBoundary(gutter: pageGutter)
                         mysteryTilesSection
                         GuideSectionBoundary(gutter: pageGutter)
-                        // No section title: the two rows sit straight under the boundary.
-                        VStack(spacing: 0) {
-                            NavigationLink { rosaryPrayersPage } label: {
-                                hubRow("Rosary prayers", detail: "The prayers at the heart of each decade", symbol: "hands.sparkles", showsIcon: false)
-                            }
-                            Hairline()
-                            NavigationLink { libraryPage } label: {
-                                hubRow("All prayers", detail: "Rosary prayers, Memorare, Saint Michael and more", symbol: "heart", showsIcon: false, endsSection: true)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        // The first row's own top pad would double the boundary gap,
-                        // so its title lines up where other section titles sit.
-                        .padding(.top, -AppTheme.Space.lg)
-                        // Preserve the decorative ends; its frame already provides
-                        // 16pt around the central band, so add no extra padding here.
+                        prayersTilesSection
                         if DevotionCatalog.isEnabled {
                             GuideSectionBoundary(gutter: pageGutter, verticalSpacing: 0)
                             devotionTilesSection
@@ -216,6 +201,62 @@ struct PrayHubView: View {
                 .accessibilityHidden(true)
         }
         .padding(AppTheme.Space.lg)
+        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: false)
+        .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+
+    /// "Prayers": two equal tiles side by side; stacked at accessibility sizes.
+    private var prayersTilesSection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
+            GuideSectionLabel(text: "Prayers", prominence: .strong)
+                .accessibilityAddTraits(.isHeader)
+            let layout = dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(spacing: AppTheme.Space.md))
+                : AnyLayout(HStackLayout(alignment: .top, spacing: AppTheme.Space.md))
+            layout {
+                NavigationLink { rosaryPrayersPage } label: {
+                    prayerTile(title: "Rosary prayers", subtitle: "Prayers used in the Rosary") {
+                        RosaryLineIcon().stroke(palette.accentText, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                            .frame(width: 28, height: 36)
+                    }
+                }
+                .buttonStyle(.plain).guidePressable()
+                NavigationLink { libraryPage } label: {
+                    prayerTile(title: "All prayers", subtitle: "Explore the full collection") {
+                        Image(systemName: "book")
+                            .guideSymbol(size: 30, weight: .light)
+                            .foregroundStyle(palette.accentText)
+                            .frame(height: 36, alignment: .leading)
+                    }
+                }
+                .buttonStyle(.plain).guidePressable()
+            }
+        }
+    }
+
+    private func prayerTile<Icon: View>(title: String, subtitle: String, @ViewBuilder icon: () -> Icon) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+            icon().accessibilityHidden(true)
+            Spacer(minLength: AppTheme.Space.sm)
+            Text(title)
+                .font(AppTheme.TypeRole.body(weight: .semibold))
+                .foregroundStyle(palette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .bottom, spacing: AppTheme.Space.sm) {
+                Text(subtitle)
+                    .font(AppTheme.TypeRole.caption)
+                    .foregroundStyle(palette.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right")
+                    .guideSymbol(size: 12, weight: .regular)
+                    .foregroundStyle(palette.dim)
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(AppTheme.Space.lg)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: false)
         .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         .accessibilityElement(children: .combine)
@@ -1504,5 +1545,26 @@ private extension MysterySetKind {
         case .glorious:
             "The Glorious Mysteries contemplate the Resurrection, Ascension, Pentecost, and Mary’s share in the glory of her Son."
         }
+    }
+}
+
+/// Line-art rosary: a loop of beads, a short drop and a cross.
+private struct RosaryLineIcon: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        let w = r.width, cx = r.midX
+        let ringR = w * 0.36, cy = r.minY + ringR + w * 0.08, bead = w * 0.075
+        for i in 0..<10 {
+            let a = Double(i) / 10 * 2 * .pi + .pi / 2 + .pi / 10
+            p.addEllipse(in: CGRect(x: cx + ringR * cos(a) - bead, y: cy + ringR * sin(a) - bead, width: bead * 2, height: bead * 2))
+        }
+        let dropTop = cy + ringR + bead
+        let crossTop = r.maxY - w * 0.42
+        p.move(to: CGPoint(x: cx, y: dropTop)); p.addLine(to: CGPoint(x: cx, y: crossTop))
+        p.addEllipse(in: CGRect(x: cx - bead, y: (dropTop + crossTop) / 2 - bead, width: bead * 2, height: bead * 2))
+        p.move(to: CGPoint(x: cx, y: crossTop)); p.addLine(to: CGPoint(x: cx, y: r.maxY))
+        let armY = crossTop + w * 0.13
+        p.move(to: CGPoint(x: cx - w * 0.14, y: armY)); p.addLine(to: CGPoint(x: cx + w * 0.14, y: armY))
+        return p
     }
 }
