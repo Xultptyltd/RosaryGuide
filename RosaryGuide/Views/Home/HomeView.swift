@@ -698,7 +698,7 @@ struct HomeView: View {
         let stacked = dynamicTypeSize.isAccessibilitySize
         let rowLayout = stacked
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: AppTheme.Space.xs))
-            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: AppTheme.Space.md))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: AppTheme.Space.md))  // Weekday, set and check centre on the full row.
 
         return rowLayout {
             Text(day.formatted(.dateTime.weekday(.abbreviated)))
