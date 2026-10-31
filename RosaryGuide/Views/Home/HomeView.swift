@@ -138,6 +138,12 @@ struct HomeView: View {
                     try? await Task.sleep(for: .seconds(3))
                     proxy.scrollTo("home-mysteries", anchor: .center)
                 }
+                // `-RGDebugHomeWeek`: scrolls to This week for screenshots.
+                .task {
+                    guard DebugHooks.has("-RGDebugHomeWeek") else { return }
+                    try? await Task.sleep(for: .seconds(3))
+                    proxy.scrollTo("home-week", anchor: .center)
+                }
                 // `-RGDebugHomeFeasts`: scrolls to Upcoming feast days for screenshots.
                 .task {
                     guard DebugHooks.has("-RGDebugHomeFeasts") else { return }
@@ -403,14 +409,16 @@ struct HomeView: View {
             Group {
                 GuideSectionBoundary(gutter: gutter)
 
-                VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
-                    GuideSectionLabel(text: "This week", prominence: .strong)
+                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        GuideSectionLabel(text: "This week", prominence: .strong)
+                        Text(weekRangeText)
+                            .font(AppTheme.TypeRole.supportingLabel)
+                            .foregroundStyle(palette.dim)
+                    }
                     weekGlance
                 }
-
-                shareAppButton
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, AppTheme.sectionGap)
+                .id("home-week")
             }
         }
         .padding(.horizontal, gutter)
@@ -673,20 +681,26 @@ struct HomeView: View {
             .foregroundStyle(palette.dim)
     }
 
-    private var weekGlance: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(spacing: 0) {
-                ForEach(Array(MysteryCalendar.week(containing: today).enumerated()), id: \.element.0) { index, entry in
-                    let day = entry.0
-                    let item = entry.1
-                    weekRow(day: day, assignment: item)
+    private var weekRangeText: String {
+        let days = MysteryCalendar.week(containing: today).map(\.0)
+        guard let first = days.first, let last = days.last else { return "" }
+        let style = Date.FormatStyle.dateTime.day().month(.abbreviated)
+        return "\(first.formatted(style)) – \(last.formatted(style))"
+    }
 
-                    if index < MysteryCalendar.week(containing: today).count - 1 {
-                        Hairline()
-                        }
+    private var weekGlance: some View {
+        let week = MysteryCalendar.week(containing: today)
+        return VStack(spacing: 0) {
+            ForEach(Array(week.enumerated()), id: \.element.0) { index, entry in
+                weekRow(day: entry.0, assignment: entry.1)
+                if index < week.count - 1 {
+                    let nextIsToday = Calendar.current.isDateInToday(week[index + 1].0)
+                    let isToday = Calendar.current.isDateInToday(entry.0)
+                    // Softened dividers; none against the highlighted today row.
+                    Hairline()
+                        .opacity(isToday || nextIsToday ? 0 : 0.6)
                 }
             }
-            .padding(.vertical, AppTheme.Space.sm)
         }
     }
 
@@ -697,83 +711,67 @@ struct HomeView: View {
         let stacked = dynamicTypeSize.isAccessibilitySize
         let rowLayout = stacked
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: AppTheme.Space.xs))
-            : AnyLayout(HStackLayout(alignment: .center, spacing: AppTheme.Space.sm))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: AppTheme.Space.md))
 
         return rowLayout {
-            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                Text(day.formatted(.dateTime.weekday(.wide)))
-                    .font(AppTheme.TypeRole.body)
-                    .foregroundStyle(palette.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-                HStack(spacing: AppTheme.Space.sm) {
-                    Text(day.formatted(.dateTime.day().month(.abbreviated)))
-                        .font(AppTheme.TypeRole.caption)
-                        .foregroundStyle(palette.textSecondary)
-                    if let feast = assignment.feast {
-                        Button {
-                            HapticService.play(.light, enabled: settings.hapticsEnabled)
-                            weekFeastInfo = feast
-                        } label: {
-                            Image(systemName: "crown.fill")
-                                .guideSymbol(size: 12, weight: .regular)
-                                .foregroundStyle(palette.feastIndicator)
-                                .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
-                                .contentShape(Rectangle())
-                                .padding(-16)
-                        }
-                        .buttonStyle(.plain)
-                        .zIndex(1)
-                        .accessibilityLabel("Feast day")
-                        .accessibilityValue(feast.feast.shortTitle)
-                        .accessibilityHint("Shows feast details")
-                    }
-                    if isToday {
-                        Text("Today")
-                            .font(AppTheme.TypeRole.caption)
-                            .foregroundStyle(palette.todayPillText)
-                            .padding(.horizontal, AppTheme.Space.sm)
-                            .padding(.vertical, 2)
-                            .background(palette.todayPillFill, in: Capsule())
-                    }
+            Text(day.formatted(.dateTime.weekday(.abbreviated)))
+                .font(AppTheme.TypeRole.body(weight: .medium))
+                .foregroundStyle(palette.ink)
+                .lineLimit(1)
+                .frame(minWidth: 44, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(day.formatted(.dateTime.day().month(.abbreviated)))
+                    .font(AppTheme.TypeRole.supportingLabel)
+                    .foregroundStyle(palette.dim)
+                if isToday {
+                    Text("Today")
+                        .font(AppTheme.TypeRole.caption(weight: .semibold))
+                        .foregroundStyle(palette.accent)
                 }
-                .fixedSize(horizontal: true, vertical: false)
+                if let feast = assignment.feast {
+                    Text(feast.feast.shortTitle)
+                        .font(AppTheme.TypeRole.caption)
+                        .foregroundStyle(palette.faint)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(assignment.set.shortName)
-                .font(AppTheme.TypeRole.callout)
-                .foregroundStyle(isToday ? palette.textPrimary : palette.textSecondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-                .frame(maxWidth: .infinity, alignment: stacked ? .leading : .trailing)
-
-            if prayed {
+            HStack(spacing: AppTheme.Space.sm) {
+                Text(assignment.set.shortName)
+                    .font(isToday ? AppTheme.TypeRole.body(weight: .medium) : AppTheme.TypeRole.body)
+                    .foregroundStyle(isToday ? palette.ink : palette.dim)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                // Fixed trailing slot keeps set names aligned whether or not the day is prayed.
                 Image(systemName: "checkmark.circle.fill")
-                    .guideSymbol(size: 16, weight: .regular)
-                    .foregroundStyle(palette.accentText)
-                    .frame(width: 20, height: 20)
+                    .guideSymbol(size: 18, weight: .regular)
+                    .foregroundStyle(palette.accent)
+                    .opacity(prayed ? 1 : 0)
+                    .frame(width: 22, height: 22)
                     .accessibilityHidden(true)
             }
         }
-        .padding(.vertical, AppTheme.Space.sm)
-        .frame(minHeight: 60)
-        .accessibilityElement(children: .combine)
+        .padding(.vertical, AppTheme.Space.md)
+        .padding(.horizontal, isToday ? AppTheme.Space.md : 0)
+        .background {
+            if isToday {
+                RoundedRectangle(cornerRadius: AppTheme.Space.md, style: .continuous)
+                    .fill(palette.ink.opacity(colorScheme == .dark ? 0.07 : 0.05))
+            }
+        }
+        .padding(.horizontal, isToday ? -AppTheme.Space.md : 0)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(weekAccessibilityLabel(day: day, assignment: assignment, prayed: prayed))
-        .accessibilityValue(prayed ? "Prayed" : "Not yet prayed")
     }
 
     private func weekAccessibilityLabel(day: Date, assignment: MysteryAssignment, prayed: Bool) -> String {
-        var parts = [
-            day.formatted(.dateTime.weekday(.wide)),
-            "\(assignment.set.shortName) Mysteries"
-        ]
-        if prayed {
-            parts.append("prayed")
-        }
-        if let feast = assignment.feast {
-            parts.append(feast.feast.shortTitle)
-        }
+        var parts = [day.formatted(.dateTime.weekday(.wide).day().month(.wide))]
+        if Calendar.current.isDateInToday(day) { parts.append("today") }
+        if let feast = assignment.feast { parts.append(feast.feast.shortTitle) }
+        parts.append("\(assignment.set.shortName) Mysteries")
+        if prayed { parts.append("prayed") }
         return parts.joined(separator: ", ")
     }
 
