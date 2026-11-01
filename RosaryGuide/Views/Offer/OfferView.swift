@@ -169,6 +169,7 @@ struct OfferView: View {
                 offer.pruneExpired()
                 #if DEBUG
                 if DebugHooks.has("-RGDebugOpenArchived") { showingArchived = true }
+                if DebugHooks.has("-RGDebugOpenAddIntention") { editor = .create }
                 #endif
             }
         }
@@ -2444,6 +2445,28 @@ struct IntentionEditorSheet: View {
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                    // Type icon follows the selected category, like intention rows.
+                    ZStack {
+                        IntentionIconView(
+                            accent: accent,
+                            emoji: emoji,
+                            size: 68,
+                            usesPopePortrait: isPapalIntention
+                        )
+                        .id("\(accent)-\(emoji)")
+                        .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.92)))
+                    }
+                    .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25), value: "\(accent)-\(emoji)")
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
+                    #if DEBUG
+                    .task {
+                        // `-RGDebugEditorKindCycle`: switches category once so screenshots show the icon follow it.
+                        guard DebugHooks.has("-RGDebugEditorKindCycle"), let next = IntentionKindChoice.allCases.dropFirst().first else { return }
+                        try? await Task.sleep(for: .seconds(2))
+                        kind = next
+                    }
+                    #endif
                     editorFieldSection(label: "Intention") {
                         TextField("For my family", text: $title, axis: .vertical)
                             .tint(palette.accent)
