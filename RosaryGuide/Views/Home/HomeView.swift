@@ -156,9 +156,8 @@ struct HomeView: View {
                     updateHeroTopBandIfNeeded()
                 }
             }
-            .background(palette.bg)
             .ignoresSafeArea(edges: .top)
-            .guidePageChrome()
+            .guidePageChrome(ambientBackground: true)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: DatedFeast.self) { item in
@@ -287,10 +286,22 @@ struct HomeView: View {
     }
 
     private var glassTheme: some View {
-        return Button {
-            settings.toggleLightDark(systemIsDark: colorScheme == .dark)
+        return Menu {
+            Picker("Appearance", selection: Binding(
+                get: { settings.appearance },
+                set: { appearance in
+                    guard appearance != settings.appearance else { return }
+                    AppearanceWindowStyle.transition {
+                        settings.appearance = appearance
+                    }
+                }
+            )) {
+                Text("Light").tag(AppearancePreference.light)
+                Text("Dark").tag(AppearancePreference.dark)
+                Text("System").tag(AppearancePreference.system)
+            }
         } label: {
-            Label(colorScheme == .light ? "Day" : "Night", systemImage: colorScheme == .light ? "sun.max.fill" : "moon.fill")
+            Label(colorScheme == .light ? "Light" : "Dark", systemImage: colorScheme == .light ? "sun.max.fill" : "moon.fill")
                 .labelStyle(.titleAndIcon)
                 .font(AppTheme.TypeRole.label(weight: .medium))
                 .foregroundStyle(palette.ink)
@@ -306,7 +317,7 @@ struct HomeView: View {
         .buttonStyle(.plain)
         .guidePressable()
         .accessibilityLabel("Appearance")
-        .accessibilityValue(colorScheme == .light ? "Day" : "Night")
+        .accessibilityValue(colorScheme == .light ? "Light" : "Dark")
     }
 
     /// Small centred tertiary pill at the end of Home that opens the share sheet.
@@ -564,52 +575,60 @@ struct HomeView: View {
                                 MysteryArtworkView(set: featured.feast.suggestedMysterySet ?? .glorious, mysteryNumber: 5, kind: .plateWide)
                             }
                         }
-                        .overlay(alignment: .bottom) {
-                            LinearGradient(colors: [palette.bg.opacity(0), palette.bg], startPoint: .top, endPoint: .bottom)
-                                .frame(height: AppTheme.Space.xxl * 2)
+                        .mask(alignment: .bottom) {
+                            VStack(spacing: AppTheme.Space.none) {
+                                Rectangle()
+                                LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+                                    .frame(height: AppTheme.Space.xxl * 2)
+                            }
                         }
                         .clipped()
+                        .overlay(alignment: .topLeading) {
+                            if isToday {
+                                // Same TODAY pill as the This week calendar (colors, font, padding, Capsule).
+                                Text("TODAY")
+                                    .font(AppTheme.TypeRole.caption(weight: .semibold))
+                                    .tracking(0.6)
+                                    .foregroundStyle(palette.todayPillText)
+                                    .padding(.horizontal, AppTheme.Space.sm)
+                                    .padding(.vertical, AppTheme.Space.xs)
+                                    .background(palette.todayPillFill, in: Capsule())
+                                    .padding(AppTheme.Space.lg)
+                            }
+                        }
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                        if isToday {
-                            // Match This week calendar weekRow TODAY pill (colors, font, padding, Capsule).
-                            Text("TODAY")
-                                .font(AppTheme.TypeRole.caption(weight: .semibold))
-                                .tracking(0.6)
-                                .foregroundStyle(palette.todayPillText)
-                                .padding(.horizontal, AppTheme.Space.sm)
-                                .padding(.vertical, AppTheme.Space.xs)
-                                .background(palette.todayPillFill, in: Capsule())
-                        } else {
+                        // Today's badge sits in the card's top-left corner (overlay above).
+                        if !isToday {
                             Text("Next · \(featured.date.formatted(.dateTime.day().month(.wide)))".uppercased())
                                 .font(AppTheme.TypeRole.caption(weight: .medium))
                                 .tracking(AppTheme.Component.eyebrowTracking)
                                 .foregroundStyle(palette.faint)
                         }
+                        WordSafeText(featured.feast.shortTitle, font: AppTheme.TypeRole.headingCardUIFont, color: palette.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        // Keep the navigation chevron aligned with the description.
                         HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
-                            WordSafeText(featured.feast.shortTitle, font: AppTheme.TypeRole.headingCardUIFont)
-                                .foregroundStyle(palette.ink)
-                                .fixedSize(horizontal: false, vertical: true)
+                            Text(featured.feast.tagline)
+                                .font(AppTheme.TypeRole.rhythmCaption())
+                                .foregroundStyle(palette.dim)
+                                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             Image(systemName: "chevron.right")
                                 .font(AppTheme.TypeRole.caption(weight: .medium))
                                 .foregroundStyle(palette.faint)
                                 .accessibilityHidden(true)
                         }
-                        // Only the featured card carries the one-line description.
-                        Text(featured.feast.tagline)
-                            .font(AppTheme.TypeRole.rhythmCaption())
-                            .foregroundStyle(palette.dim)
-                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, AppTheme.Space.lg)
-                    // Caption sits on clear background, below the art fade.
-                    .padding(.top, AppTheme.Space.xs)
+                    // Extra breathing room below the artwork, using the shared spacing scale.
+                    .padding(.top, AppTheme.Space.lg + AppTheme.Space.xs)
                     .padding(.bottom, AppTheme.Space.lg)
                 }
                 .contentShape(shape)
-                .clipShape(shape)
+                .guideCard()
             }
             .buttonStyle(.plain)
             .guidePressable()
@@ -628,8 +647,8 @@ struct HomeView: View {
             }
             .padding(.top, AppTheme.Space.sm)
 
-            // Same tertiary pill as "View all intentions" on the Offer tab.
-            PillButton(title: "View all feasts", filled: false, tertiary: true) {
+            // Match the black/white secondary action on Profile.
+            PillButton(title: "View all feasts", filled: false) {
                 onViewAllFeasts()
             }
             .padding(.top, AppTheme.Space.md)
@@ -977,7 +996,7 @@ struct HomeView: View {
     private var mysteryRailHeight: CGFloat {
         let width = (UIScreen.main.bounds.width * AppTheme.Component.mysteryCardWidthFraction).rounded()
         let text: CGFloat = dynamicTypeSize.isAccessibilitySize ? 380 : (dynamicTypeSize >= .xxLarge ? 160 : 104)
-        return (width / AppTheme.Component.mysteryCardArtAspect).rounded() + text + AppTheme.Space.sm
+        return (width / AppTheme.Component.mysteryCardArtAspect).rounded() + text + AppTheme.Space.sm + AppTheme.Space.lg
     }
 
     private var mysteryPageDots: some View {
@@ -1014,15 +1033,19 @@ struct HomeView: View {
             openMysteryDetail(mystery)
         } label: {
             VStack(alignment: .leading, spacing: 0) {
-                // One composition: art fades into the card surface, text sits on the fade.
+                // Fade the artwork into the shared glass surface.
                 Color.clear
                     .aspectRatio(AppTheme.Component.mysteryCardArtAspect, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
                     .overlay {
                         MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false, cardFraming: true)
                     }
-                    .overlay(alignment: .bottom) {
-                        LinearGradient(colors: [palette.bg.opacity(0), palette.bg], startPoint: .top, endPoint: .bottom)
-                            .frame(height: AppTheme.Space.xxl * 2)
+                    .mask(alignment: .bottom) {
+                        VStack(spacing: AppTheme.Space.none) {
+                            Rectangle()
+                            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+                                .frame(height: AppTheme.Space.xxl * 2)
+                        }
                     }
                     .clipped()
                     .layoutPriority(1)
@@ -1032,8 +1055,7 @@ struct HomeView: View {
                         .font(AppTheme.TypeRole.caption(weight: .medium))
                         .tracking(AppTheme.Component.eyebrowTracking)
                         .foregroundStyle(palette.faint)
-                    WordSafeText(mystery.title.primary(for: settings.language), font: AppTheme.TypeRole.headingCardUIFont)
-                        .foregroundStyle(palette.ink)
+                    WordSafeText(mystery.title.primary(for: settings.language), font: AppTheme.TypeRole.headingCardUIFont, color: palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(mystery.summary)
                         .font(AppTheme.TypeRole.rhythmCaption())
@@ -1053,16 +1075,15 @@ struct HomeView: View {
                     .padding(.top, AppTheme.Space.md)
                 }
                 .padding(.horizontal, AppTheme.Space.lg)
-                // 8pt more room between the art and the eyebrow.
-                .padding(.top, -AppTheme.Space.sm)
+                // Move the caption down 16pt from its previous -8pt inset.
+                .padding(.top, AppTheme.Space.sm)
                 .padding(.bottom, AppTheme.Space.lg)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .contentShape(shape)
-            .clipShape(shape)
-            .overlay(shape.strokeBorder(palette.strokeRegular, lineWidth: 1))
+            .guideCard()
         }
         .buttonStyle(.plain)
         .guidePressable()
@@ -1251,8 +1272,7 @@ struct HomeView: View {
                                 .frame(width: 44)
 
                                 HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
-                                    WordSafeText(item.feast.shortTitle, font: AppTheme.TypeRole.serifBodyUIFont)
-                                        .foregroundStyle(palette.ink)
+                                    WordSafeText(item.feast.shortTitle, font: AppTheme.TypeRole.serifBodyUIFont, color: palette.ink)
                                         .multilineTextAlignment(.leading)
                                         .lineLimit(dynamicTypeSize.isAccessibilitySize ? 5 : 2)
                                         .minimumScaleFactor(0.92)

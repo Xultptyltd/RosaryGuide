@@ -126,6 +126,17 @@ enum ArtCatalog {
         return UnitPoint(x: 0.5, y: values[max(0, min(number - 1, 4))])
     }
 
+    /// Wide crops of the square set heroes (Pray mystery pages, devotions, feast fallback).
+    /// Each value keeps the main figure's face in frame; checked in light and dark art.
+    static func heroWideFocus(set: MysterySetKind) -> UnitPoint {
+        switch set {
+        case .joyful: UnitPoint(x: 0.5, y: 0.10)    // Mary, Joseph and the Child
+        case .luminous: UnitPoint(x: 0.5, y: 0.04)  // Christ's face and raised hand
+        case .sorrowful: UnitPoint(x: 0.5, y: 0.18) // both faces under the cross
+        case .glorious: UnitPoint(x: 0.5, y: 0.02)  // the risen Christ's head and arms
+        }
+    }
+
     static func bandFocus(set: MysterySetKind, number: Int) -> UnitPoint {
         let values: [CGFloat]
         switch set {
@@ -177,8 +188,9 @@ struct FocusedRasterImage: View {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: contentMode)
-                    .frame(width: geo.size.width, height: geo.size.height, alignment: contentMode == .fit ? fitAlignment : .center)
+                    // Move the artwork inside the fixed crop, rather than shifting the crop itself.
                     .offset(x: shift.width, y: shift.height)
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: contentMode == .fit ? fitAlignment : .center)
                     .clipped()
             } else {
                 palette.artworkFallbackBackground

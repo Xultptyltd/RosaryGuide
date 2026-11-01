@@ -858,7 +858,7 @@ struct PrayView: View {
                     ? "\(OrdinalWord.roman(mystery.number)) · \(mystery.title.english)"
                     : step.progressLabel
             } ?? step.progressLabel
-            WordSafeText(text, font: AppTheme.TypeRole.captionUIFont(weight: .medium))
+            WordSafeText(text, font: AppTheme.TypeRole.captionUIFont(weight: .medium), color: palette.ink)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(palette.ink)
         } else if let mystery = step.mystery,

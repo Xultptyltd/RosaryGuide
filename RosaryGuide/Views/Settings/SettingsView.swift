@@ -48,7 +48,7 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
         // Same compact bar as every pushed page, with a back chevron on the left.
-        .guideDetailChrome("Settings")
+        .guideDetailChrome("Settings", ambientBackground: false)
         .toolbar { backToolbarItem }
         .navigationDestination(for: SettingsDestination.self) { destination in
             destinationView(destination)
@@ -737,17 +737,14 @@ private struct SettingsRowChrome: View {
                 SettingsRowIcon(symbol: icon, tint: tint)
             }
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                WordSafeText(title, font: AppTheme.TypeRole.settingsRowUIFont)
-                    .foregroundStyle(tint)
+                WordSafeText(title, font: AppTheme.TypeRole.settingsRowUIFont, color: tint)
                     .fixedSize(horizontal: false, vertical: true)
                 if let subtitle {
-                    WordSafeText(subtitle, font: AppTheme.TypeRole.settingsMetaUIFont)
-                        .foregroundStyle(palette.dim)
+                    WordSafeText(subtitle, font: AppTheme.TypeRole.settingsMetaUIFont, color: palette.dim)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 if let value {
-                    WordSafeText(value, font: AppTheme.TypeRole.settingsRowUIFont)
-                        .foregroundStyle(palette.dim)
+                    WordSafeText(value, font: AppTheme.TypeRole.settingsRowUIFont, color: palette.dim)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -1025,7 +1022,7 @@ private struct SettingsDetailScaffold<Content: View>: View {
         }
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
-        .guideDetailChrome(title)
+        .guideDetailChrome(title, ambientBackground: false)
     }
 }
 
@@ -1164,8 +1161,7 @@ private struct SettingsToggleRow: View {
                             SettingsRowIcon(symbol: icon, tint: palette.ink)
                         }
                         // Accessibility sizes: wrap at word boundaries instead of truncating.
-                        WordSafeText(title, font: AppTheme.TypeRole.settingsRowUIFont)
-                            .foregroundStyle(palette.ink)
+                        WordSafeText(title, font: AppTheme.TypeRole.settingsRowUIFont, color: palette.ink)
                     }
                 }
                 .tint(Color(uiColor: .systemGreen))
@@ -1743,7 +1739,7 @@ private struct SettingsLegalDocumentScreen: View {
         }
         .background(palette.bg)
         .tint(palette.ink)
-        .guideDetailChrome(document.title)
+        .guideDetailChrome(document.title, ambientBackground: false)
         .navigationDestination(item: $relatedDocument) { SettingsLegalDocumentScreen(document: $0) }
         .environment(\.openURL, OpenURLAction { url in
             if ["xult.ltd", "www.xult.ltd"].contains(url.host ?? "") {

@@ -70,10 +70,6 @@ struct PrayIntentionSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                    ForEach(unadoptedPapalSuggestions) { item in
-                        papalRadioCard(item)
-                    }
-
                     ForEach(listedIntentions) { item in
                         IntentionRadioRow(
                             item: item,
@@ -84,8 +80,14 @@ struct PrayIntentionSheet: View {
                             onChoose: { choose(item) },
                             onPin: { pinOrUnpin(item) },
                             onEdit: { editorRoute = .edit(item) },
-                            onDelete: { deleteIntention(item) }
+                            onDelete: { deleteIntention(item) },
+                            allowsArchive: true
                         )
+                    }
+
+                    // Not yet added by the user: the Holy Father's intention sits last, above "No specific intention".
+                    ForEach(unadoptedPapalSuggestions) { item in
+                        papalRadioCard(item)
                     }
 
                     radioCard(
@@ -107,6 +109,7 @@ struct PrayIntentionSheet: View {
             }
             .scrollIndicators(.hidden)
             .background(palette.bg)
+            .environment(\.glassSurfacesEnabled, true)
             .navigationTitle("Offer this Rosary for")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(palette.scheme, for: .navigationBar)
@@ -130,6 +133,14 @@ struct PrayIntentionSheet: View {
                 )
                 .environment(offer)
                 .environment(\.palette, palette)
+            }
+        }
+        .onChange(of: offer.sortedIntentions.map(\.id)) { _, ids in
+            // Archived from the row menu: drop it from the selection.
+            if let id = chosenId, !ids.contains(id) {
+                chosenId = nil
+                chosenTitle = ""
+                chosenNote = ""
             }
         }
         .presentationDetents(availableDetents, selection: $selectedDetent)
@@ -169,17 +180,15 @@ struct PrayIntentionSheet: View {
                 IntentionIconView(
                     accent: .purple,
                     emoji: "✝️",
-                    size: 44,
+                    size: 40,
                     usesPopePortrait: true
                 )
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    Text(item.title)
-                        .font(AppTheme.TypeRole.callout(weight: .semibold))
-                        .foregroundStyle(palette.ink)
+                    WordSafeText(item.title, font: AppTheme.TypeRole.bodyUIFont(weight: .semibold), color: palette.ink)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("Holy Father’s Intention")
+                    Text(item.monthLabel ?? Date().formatted(.dateTime.month(.wide).year()))
                         .font(AppTheme.TypeRole.label)
                         .foregroundStyle(palette.dim)
                         .multilineTextAlignment(.leading)
@@ -189,10 +198,7 @@ struct PrayIntentionSheet: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 14)
             .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .fill(palette.surface)
-            )
+            .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .strokeBorder(
@@ -221,9 +227,7 @@ struct PrayIntentionSheet: View {
                     .guideSymbolSwap(value: selected)
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    Text(title)
-                        .font(AppTheme.TypeRole.callout(weight: .semibold))
-                        .foregroundStyle(palette.ink)
+                    WordSafeText(title, font: AppTheme.TypeRole.bodyUIFont(weight: .semibold), color: palette.ink)
                         .multilineTextAlignment(.leading)
                     if let subtitle, !subtitle.isEmpty {
                         Text(subtitle)
@@ -238,10 +242,7 @@ struct PrayIntentionSheet: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 14)
             .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .fill(palette.surface)
-            )
+            .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .strokeBorder(
@@ -333,6 +334,8 @@ struct IntentionRadioRow: View {
     var multiSelect = false
     /// History detail: same card, no check mark, menu or tap.
     var readOnly = false
+    /// Adds the app's standard "Archive" item to the row menu.
+    var allowsArchive = false
 
     @State private var showingDeleteAlert = false
 
@@ -345,7 +348,8 @@ struct IntentionRadioRow: View {
     }
 
     private var subtitle: String? {
-        item.categoryTitle
+        // The Holy Father's row shows its month ("November 2026"), as on Profile.
+        item.papalMonthLabel ?? item.categoryTitle
     }
 
     var body: some View {
@@ -362,15 +366,13 @@ struct IntentionRadioRow: View {
                 IntentionIconView(
                     accent: item.accent,
                     emoji: item.displayEmoji,
-                    size: 44,
+                    size: 40,
                     usesPopePortrait: item.isPapal
                 )
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     HStack(spacing: AppTheme.Space.sm) {
-                        Text(displayTitle)
-                            .font(AppTheme.TypeRole.callout(weight: .semibold))
-                            .foregroundStyle(palette.ink)
+                        WordSafeText(displayTitle, font: AppTheme.TypeRole.bodyUIFont(weight: .semibold), color: palette.ink)
                             .multilineTextAlignment(.leading)
                         if item.isPinned, !multiSelect {
                             Image(systemName: "pin.fill")
@@ -398,10 +400,7 @@ struct IntentionRadioRow: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 14)
             .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .fill(palette.surface)
-            )
+            .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .strokeBorder(
@@ -420,6 +419,7 @@ struct IntentionRadioRow: View {
             if !readOnly {
             OverflowMenuButton(
                 isPinned: item.isPinned,
+                intentionID: allowsArchive ? item.id : nil,
                 allowsPin: allowsPin,
                 allowsEdit: true,
                 onPin: onPin,
@@ -475,20 +475,6 @@ struct IntentionMultiSelectList: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            ForEach(unadoptedPapalSuggestions) { item in
-                selectCard(
-                    title: item.title,
-                    subtitle: "Holy Father’s Intention",
-                    showsPope: true,
-                    selected: false
-                ) {
-                    adoptSuggestion(item)
-                }
-                .disabled(atLimit)
-                .opacity(atLimit ? 0.4 : 1)
-                .accessibilityLabel("Holy Father: \(item.title)")
-            }
-
             ForEach(offer.sortedIntentions(for: mysterySet)) { item in
                 let selected = selectedIds.contains(item.id)
                 IntentionRadioRow(
@@ -504,10 +490,26 @@ struct IntentionMultiSelectList: View {
                         selectedIds.removeAll { $0 == item.id }
                         offer.delete(id: item.id)
                     },
-                    multiSelect: true
+                    multiSelect: true,
+                    allowsArchive: true
                 )
                 .disabled(atLimit && !selected)
                 .opacity(atLimit && !selected ? 0.4 : 1)
+            }
+
+            // Not yet added by the user: the Holy Father's intention sits last, above "No specific intention".
+            ForEach(unadoptedPapalSuggestions) { item in
+                selectCard(
+                    title: item.title,
+                    subtitle: item.monthLabel ?? Date().formatted(.dateTime.month(.wide).year()),
+                    showsPope: true,
+                    selected: false
+                ) {
+                    adoptSuggestion(item)
+                }
+                .disabled(atLimit)
+                .opacity(atLimit ? 0.4 : 1)
+                .accessibilityLabel("Holy Father: \(item.title)")
             }
 
             selectCard(
@@ -528,6 +530,10 @@ struct IntentionMultiSelectList: View {
         }
         .onChange(of: addRequests) { _, _ in
             editorRoute = .create
+        }
+        .onChange(of: offer.sortedIntentions.map(\.id)) { _, ids in
+            // Archived from the row menu: drop it from the selection.
+            selectedIds.removeAll { !ids.contains($0) }
         }
         .sheet(item: $editorRoute) { route in
             IntentionEditorSheet(
@@ -597,13 +603,11 @@ struct IntentionMultiSelectList: View {
                     .guideSymbolSwap(value: selected)
 
                 if showsPope {
-                    IntentionIconView(accent: .purple, emoji: "✝️", size: 44, usesPopePortrait: true)
+                    IntentionIconView(accent: .purple, emoji: "✝️", size: 40, usesPopePortrait: true)
                 }
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    Text(title)
-                        .font(AppTheme.TypeRole.callout(weight: .semibold))
-                        .foregroundStyle(palette.ink)
+                    WordSafeText(title, font: AppTheme.TypeRole.bodyUIFont(weight: .semibold), color: palette.ink)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                     if let subtitle {
@@ -617,10 +621,7 @@ struct IntentionMultiSelectList: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .fill(palette.surface)
-            )
+            .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .strokeBorder(selected ? palette.accent.opacity(0.45) : Color.clear, lineWidth: 1)

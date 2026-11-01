@@ -64,8 +64,7 @@ struct OfferView: View {
             Group {
                 profileContent
             }
-            .background(palette.bg)
-            .guidePageChrome()
+            .guidePageChrome(ambientBackground: true)
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.large)
             .toolbar(.visible, for: .navigationBar)
@@ -177,19 +176,23 @@ struct OfferView: View {
 
 
 
+    /// Profile uses ordinary rows, including the pinned intention; the full list owns its hero.
+    private var profilePreviewIntentions: [OfferIntention] {
+        Array(offer.sortedIntentions.prefix(3))
+    }
+
     private var profileContent: some View {
         ScrollViewReader { proxy in
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-                // Rhythm at a glance; the journey screen opens on Milestones, where the
-                // stage card ("Growing in prayer") now sits at the top.
+                // Weekly prayer preview opens the full calendar.
                 Button {
                     openJourney(.milestones)
                 } label: {
                     PrayerRhythmCard(rhythm: PrayerRhythm(prayedDayStarts: profileRhythmDays))
                 }
                 .buttonStyle(JourneyCardButtonStyle())
-                .accessibilityHint("Opens your prayer journey")
+                .accessibilityHint("Opens your milestones")
 
                 // Intentions sit on the page background: spacing, not a section band.
                 Spacer().frame(height: AppTheme.Space.sm)
@@ -199,18 +202,6 @@ struct OfferView: View {
                     intentionsSectionHeader
                         // Empty state uses only the stack's 8pt title-to-body gap.
                         .padding(.bottom, offer.sortedIntentions.isEmpty ? 0 : AppTheme.Space.sm)
-                    if let currentIntention {
-                        NextRosaryIntentionCard(
-                            intention: currentIntention,
-                            hideText: hideIntentionText,
-                            onOpen: { intentionDetail = currentIntention },
-                            onPray: { prayWith(currentIntention) },
-                            onPin: { offer.togglePin(id: currentIntention.id) },
-                            onEdit: { editor = .edit(currentIntention) },
-                            onDelete: { animateIntentionChange { offer.delete(id: currentIntention.id) } },
-                            allowsPin: true
-                        )
-                    }
                     VStack(spacing: 0) {
                         if offer.sortedIntentions.isEmpty {
                             Text("Keep the people and things you pray for here")
@@ -220,7 +211,7 @@ struct OfferView: View {
                             // Secondary pill; the stack's lg spacing below matches the lg above, so it sits midway to the divider.
                             PillButton(title: "Add intention", filled: false, action: startAddingIntention)
                         } else {
-                            ForEach(visibleSecondaryIntentions) { item in
+                            ForEach(profilePreviewIntentions) { item in
                                 MyPrayerIntentionRow(
                                     intention: item, hideText: hideIntentionText, allowsPin: true,
                                     onPin: { offer.togglePin(id: item.id) },
@@ -228,21 +219,20 @@ struct OfferView: View {
                                     onDelete: { animateIntentionChange { offer.delete(id: item.id) } },
                                     onPray: { prayWith(item) }
                                 )
-                                // Inset to the text; the last row's divider closes the list.
-                                Hairline().padding(.leading, 44 + AppTheme.Space.md)
+                                // Separate rows, leaving the last intention clear of the button.
+                                if item.id != profilePreviewIntentions.last?.id {
+                                    Hairline().padding(.leading, 44 + AppTheme.Space.md)
+                                }
                             }
-                            // Only once there is more than the profile can show (4 or more).
-                            if showsSeeAllIntentions {
-                                PillButton(title: "View all intentions", filled: false, tertiary: true) {
+                            // The featured presentation lives in the full intentions page.
+                            if !offer.sortedIntentions.isEmpty {
+                                PillButton(title: "View all intentions", filled: false) {
                                     showingAllIntentions = true
                                 }
                                 .padding(.top, AppTheme.Space.lg)
                             }
                         }
                     }
-                    // Cancels the last row's 8pt inset plus 4pt, so the divider sits 12pt below the last row (16pt below the divider).
-                    // Featured card alone: 4pt tighter to the divider.
-                    .padding(.bottom, showsOnlyFeaturedIntention ? -AppTheme.Space.xs : 0)
                 }
 
 
@@ -257,11 +247,10 @@ struct OfferView: View {
 
                 if !auth.isSignedIn {
                     // Once this month's papal intention is added its card is gone, so divide the list from the backup card.
-                    // Divides the Holy Father's card (or the list) from the backup card, and the card from what follows.
+                    // Divides the Holy Father's card (or the list) from the backup card.
                     GuideSectionBoundary(verticalSpacing: 0)
                     GuestBackupCard { showSignIn = true }
                         .id("profile-backup")
-                    GuideSectionBoundary(verticalSpacing: 0)
                 }
             }
             .padding(.horizontal, AppTheme.gutter)
@@ -514,38 +503,32 @@ struct OfferView: View {
     /// "Your intentions" section title. The right slot keeps the hide/show intentions
     /// toggle; "See all" lives at the bottom of the visible list.
     private var intentionsSectionHeader: some View {
-        Text("Your intentions")
-            .font(AppTheme.TypeRole.headline(weight: .medium))
-            .foregroundStyle(palette.textPrimary)
-            .fixedSize(horizontal: false, vertical: true)
-            .accessibilityAddTraits(.isHeader)
-            .padding(.trailing, AppTheme.Accessibility.minHitTarget * 2 + AppTheme.Space.sm)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            // Controls retain 44pt tap areas without adding height above the label.
-            .overlay(alignment: .trailing) {
-                // Hidden until there is an intention to hide or add to.
-                if !offer.sortedIntentions.isEmpty || !offer.archivedIntentions.isEmpty {
-                HStack(spacing: AppTheme.Space.sm) {
-                    titleMoreMenu
+        HStack(alignment: .center, spacing: AppTheme.Space.sm) {
+            Text("Your intentions")
+                .font(AppTheme.TypeRole.sectionHeading)
+                .foregroundStyle(palette.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
+                .accessibilityAddTraits(.isHeader)
 
-                    if !offer.sortedIntentions.isEmpty {
+            if !offer.sortedIntentions.isEmpty || !offer.archivedIntentions.isEmpty {
+                titleMoreMenu
+                if !offer.sortedIntentions.isEmpty {
                     Button(action: startAddingIntention) {
                         Image(systemName: "plus")
                             .guideSymbol(size: 22, weight: .regular)
                             .foregroundStyle(palette.ink)
-                            .frame(
-                                width: AppTheme.Accessibility.minHitTarget,
-                                height: AppTheme.Accessibility.minHitTarget
-                            )
+                            .frame(width: AppTheme.Accessibility.minHitTarget,
+                                   height: AppTheme.Accessibility.minHitTarget)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .guidePressable()
                     .accessibilityLabel("Add an intention")
-                    }
-                }
                 }
             }
+        }
     }
 
     /// Profile card days. DEBUG `-RGDebugSampleRhythm` adds sample days for screenshots,
@@ -817,7 +800,7 @@ private struct MyPrayerJourneySummaryCard: View {
         }
         .padding(AppTheme.Space.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+        .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Your prayer rhythm, \(rhythmHeadline), \(rosaryCaption), \(rhythm.prayedDaysThisWeek) prayer days this week")
     }
@@ -855,6 +838,13 @@ private struct MyPrayerJourneySummaryCard: View {
     }
 }
 
+private struct FeaturedIntentionLabelAnchorKey: PreferenceKey {
+    static var defaultValue: Anchor<CGRect>? = nil
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = nextValue() ?? value
+    }
+}
+
 private struct NextRosaryIntentionCard: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
@@ -887,18 +877,16 @@ private struct NextRosaryIntentionCard: View {
                     .accessibilityAddTraits(.isHeader)
                     // Clear of the overlaid overflow menu.
                     .padding(.trailing, AppTheme.Accessibility.minHitTarget)
+                    .anchorPreference(key: FeaturedIntentionLabelAnchorKey.self, value: .bounds) { $0 }
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     IntentionIconView(
                         accent: intention.accent,
                         emoji: intention.displayEmoji,
-                        size: 44,
+                        size: 40,
                         usesPopePortrait: intention.isPapal
                     )
 
-                    Text(displayTitle)
-                        .font(AppTheme.TypeRole.bodySmall(weight: .regular))
-                        .lineSpacing(AppTheme.Space.xs - 1)
-                        .foregroundStyle(titleColor)
+                    WordSafeText(displayTitle, font: AppTheme.TypeRole.bodyUIFont(), color: titleColor)
                         .lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -921,25 +909,33 @@ private struct NextRosaryIntentionCard: View {
                     .accessibilityHidden(true)
             }
             .padding(AppTheme.Space.lg)
-            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
         .guidePressable()
         // On the card Button only, so the overlaid menu and pray pill keep their own labels.
         .accessibilityLabel(IntentionPrivacy.hides(intention, hidden: hideText) ? "Open hidden intention" : "Open \(intention.title)")
-        .overlay(alignment: .topTrailing) {
-            OverflowMenuButton(
-                isPinned: intention.isPinned,
-                intentionID: intention.id,
-                allowsPin: allowsPin,
-                allowsEdit: true,
-                onPin: onPin,
-                onEdit: onEdit,
-                onDelete: { showingDeleteAlert = true }
-            )
-            .padding(.top, AppTheme.Space.md)
-            .padding(.trailing, AppTheme.Space.md)
+        .overlayPreferenceValue(FeaturedIntentionLabelAnchorKey.self) { anchor in
+            if let anchor {
+                GeometryReader { geometry in
+                    OverflowMenuButton(
+                        isPinned: intention.isPinned,
+                        intentionID: intention.id,
+                        allowsPin: allowsPin,
+                        allowsEdit: true,
+                        onPin: onPin,
+                        onEdit: onEdit,
+                        onDelete: { showingDeleteAlert = true }
+                    )
+                    .frame(width: AppTheme.Accessibility.minHitTarget,
+                           height: AppTheme.Accessibility.minHitTarget)
+                    .position(
+                        x: geometry.size.width - AppTheme.Space.lg - AppTheme.Accessibility.minHitTarget / 2,
+                        y: geometry[anchor].midY
+                    )
+                }
+            }
         }
         .overlay(alignment: .bottom) {
             // Full-width pill across the card's inner width: white in dark, primary in light.
@@ -1067,17 +1063,22 @@ private struct MyPrayerIntentionRowLabel: View {
             IntentionIconView(
                 accent: intention.accent,
                 emoji: intention.displayEmoji,
-                size: 44,
+                size: 40,
                 usesPopePortrait: intention.isPapal
             )
 
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                Text(displayTitle)
-                    .font(AppTheme.TypeRole.bodySmall(weight: .regular))
-                    .foregroundStyle(titleColor)
-                    .lineLimit(2)
-                    .lineSpacing(AppTheme.Space.xs - 1)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                    WordSafeText(displayTitle, font: AppTheme.TypeRole.bodyUIFont(), color: titleColor)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if intention.isPinned {
+                        Image(systemName: "pin.fill")
+                            .guideSymbol(size: 12, weight: .semibold)
+                            .foregroundStyle(palette.accentText)
+                            .accessibilityLabel("Pinned")
+                    }
+                }
                 if let month = intention.papalMonthLabel {
                     Text(month)
                         .font(AppTheme.TypeRole.caption)
@@ -1133,14 +1134,12 @@ private struct CurrentIntentionHero: View {
                     IntentionIconView(
                         accent: intention.accent,
                         emoji: intention.displayEmoji,
-                        size: 64,
+                        size: 57,
                         usesPopePortrait: intention.isPapal
                     )
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                        Text(displayTitle)
-                            .font(AppTheme.TypeRole.body(weight: .semibold))
-                            .foregroundStyle(titleColor)
+                        WordSafeText(displayTitle, font: AppTheme.TypeRole.bodyUIFont(), color: titleColor)
                             .lineLimit(2)
                             .minimumScaleFactor(0.88)
                     }
@@ -1269,8 +1268,7 @@ private struct PapalMonthCard: View {
 
                 VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                     // Large sizes: the whole title wraps instead of "For mental health mi…".
-                    WordSafeText(item.title, font: AppTheme.TypeRole.calloutUIFont(weight: .semibold))
-                        .foregroundStyle(palette.ink)
+                    WordSafeText(item.title, font: AppTheme.TypeRole.calloutUIFont(weight: .semibold), color: palette.ink)
                         .lineLimit(dynamicTypeSize >= .xxLarge ? nil : 2)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1286,7 +1284,7 @@ private struct PapalMonthCard: View {
                 .padding(.vertical, AppTheme.Space.md)
             }
             .frame(minHeight: 96)
-            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -1372,7 +1370,6 @@ private struct PapalIntentionDetailView: View {
             .padding(.top, 18)
             .padding(.bottom, 108)
         }
-        .background(palette.bg)
         .guideDetailChrome("Holy Father’s intention")
         .toolbar {
             if added {
@@ -1469,7 +1466,7 @@ private struct AllIntentionsView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
                 if let featured {
-                    CurrentIntentionHero(
+                    NextRosaryIntentionCard(
                         intention: featured,
                         hideText: hideText,
                         onOpen: { detail = featured },
@@ -1506,7 +1503,6 @@ private struct AllIntentionsView: View {
             .padding(.top, GuideDetailChrome.contentTop)
             .padding(.bottom, 108)
         }
-        .background(palette.bg)
         // Standard level-2 chrome: native inline title, system back button and edge swipe.
         .guideDetailChrome("All intentions")
         .toolbar {
@@ -1606,16 +1602,14 @@ private struct IntentionListRow: View {
             IntentionIconView(
                 accent: intention.accent,
                 emoji: intention.displayEmoji,
-                size: 44,
+                size: 40,
                 usesPopePortrait: intention.isPapal
             )
 
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 HStack(spacing: AppTheme.Space.sm) {
-                    Text(displayTitle)
-                        .font(AppTheme.TypeRole.bodySmall(weight: .semibold))
-                        .foregroundStyle(titleColor)
-                        .lineLimit(1)
+                    WordSafeText(displayTitle, font: AppTheme.TypeRole.bodyUIFont(), color: titleColor)
+                        .lineLimit(2)
                     if intention.isPinned {
                         Image(systemName: "pin.fill")
                             .guideSymbol(size: 12, weight: .semibold)
@@ -1629,10 +1623,10 @@ private struct IntentionListRow: View {
                         .lineLimit(1)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .layoutPriority(1)
 
-            Spacer(minLength: 8)
-
-            // Reserve trailing space so the overlaid overflow menu sits clear of the title.
+            // Reserve only the menu hit target; the title takes the remaining width.
             Color.clear
                 .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
                 .accessibilityHidden(true)
@@ -1682,6 +1676,7 @@ private struct IntentionDetailView: View {
             VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                 detailHeader
                     .padding(.top, 18)
+                    .padding(.bottom, AppTheme.Space.md)
 
                 statsCard
 
@@ -1689,7 +1684,16 @@ private struct IntentionDetailView: View {
                     notesField
                 }
 
+                // Details first; the offer action closes the screen after the table.
                 VStack(alignment: .leading, spacing: 0) {
+                    // Same section divider as elsewhere, between the notes and the details table.
+                    if shouldShowNotesField {
+                        GuideSectionBoundary(verticalSpacing: 0)
+                            .padding(.bottom, AppTheme.Space.lg)
+                    }
+
+                    detailSection
+
                     Button(action: onPray) {
                         Text("Offer a Rosary")
                             .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
@@ -1701,10 +1705,7 @@ private struct IntentionDetailView: View {
                             .background(palette.secondaryButtonFill, in: Capsule())
                     }
                     .buttonStyle(.plain)
-
-                    GuideSectionBoundary()
-
-                    detailSection
+                    .padding(.top, AppTheme.Space.xl)
                 }
                 .padding(.top, shouldShowNotesField ? AppTheme.Space.lg - AppTheme.Space.md : 0)
 
@@ -1713,7 +1714,6 @@ private struct IntentionDetailView: View {
             .padding(.horizontal, AppTheme.gutter)
             .padding(.bottom, 108)
         }
-        .background(palette.bg)
         .toolbar {
             if intention.isPapal {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -1730,6 +1730,8 @@ private struct IntentionDetailView: View {
                 }
             }
         }
+        // Plain page colour over the ambient layer; glass cards stay on.
+        .background(palette.bg.ignoresSafeArea())
         .guideDetailChrome(detailNavigationTitle)
         .deleteWarningHaptic(isPresented: showingDeleteAlert)
         .alert("Delete intention?", isPresented: $showingDeleteAlert) {
@@ -1744,23 +1746,22 @@ private struct IntentionDetailView: View {
     }
 
     private var detailHeader: some View {
-        // Keep the intention name vertically centred beside its avatar.
-        HStack(alignment: .center, spacing: AppTheme.Space.lg) {
+        // Icon stacked above the title, centred.
+        VStack(alignment: .center, spacing: AppTheme.Space.md) {
             IntentionIconView(
                 accent: intention.accent,
                 emoji: intention.displayEmoji,
-                size: 64,
+                size: 52,
                 usesPopePortrait: intention.isPapal
             )
 
-            Text(displayTitle)
-                .font(AppTheme.TypeRole.modalTitle)
-                .foregroundStyle(hiddenTextColor)
+            WordSafeText(displayTitle, font: AppTheme.TypeRole.headingSecondaryUIFont, color: hiddenTextColor)
+                .multilineTextAlignment(.center)
                 .lineLimit(4)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
         .guideNavList(pageGutter: AppTheme.gutter)
     }
 
@@ -1771,7 +1772,7 @@ private struct IntentionDetailView: View {
             stat(lastPrayedRelative, "Last prayed")
         }
         .frame(height: 80)
-        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+        .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
     }
 
     private func stat(_ value: String, _ label: String) -> some View {
@@ -1827,7 +1828,7 @@ private struct IntentionDetailView: View {
                 Hairline().padding(.leading, 18)
                 detailRow("Created", value: intention.createdAt.formatted(.dateTime.day().month(.abbreviated).year()))
             }
-            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         }
     }
 
@@ -1840,7 +1841,7 @@ private struct IntentionDetailView: View {
                 .lineSpacing(4)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(20)
-                .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+                .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         } else {
             Button(action: onEdit) {
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
@@ -1853,7 +1854,7 @@ private struct IntentionDetailView: View {
                         .foregroundStyle(palette.accentText)
                 }
                 .padding(20)
-                .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+                .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             }
             .buttonStyle(.plain)
         }
@@ -2196,14 +2197,14 @@ struct IntentionIconView: View {
             } else {
                 ZStack {
                     Circle()
-                        .fill(colorScheme == .dark ? accent.color.opacity(0.18) : accent.color)
+                        .fill(accent.color)
                     if !emoji.isEmpty {
                         IntentionGlyphImage(glyph: AppTheme.IntentionIcon.glyph(for: emoji, accent: accent), size: size * AppTheme.MysteryIcon.assetRatio)
-                            .foregroundStyle(colorScheme == .dark ? accent.color : accent.onColor)
+                            .foregroundStyle(accent.onColor)
                     } else if let emptyPlaceholder, !emptyPlaceholder.isEmpty {
                         Image(systemName: "plus")
                             .guideSymbol(size: size * 0.26, weight: .regular)
-                            .foregroundStyle(accent.onColor.opacity(0.78))
+                            .foregroundStyle(accent.onColor)
                     }
                 }
                 .frame(width: size, height: size)
@@ -2450,7 +2451,7 @@ struct IntentionEditorSheet: View {
                         IntentionIconView(
                             accent: accent,
                             emoji: emoji,
-                            size: 68,
+                            size: 96,
                             usesPopePortrait: isPapalIntention
                         )
                         .id("\(accent)-\(emoji)")
@@ -2785,7 +2786,7 @@ struct IntentionEditorSheet: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, AppTheme.Space.md)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+                .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
                         .strokeBorder(palette.fieldStroke, lineWidth: 1)
@@ -2813,7 +2814,7 @@ struct IntentionEditorSheet: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+        .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
     }
 
 
@@ -2847,7 +2848,7 @@ struct IntentionEditorSheet: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+        .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
     }
 
     private var routeTitle: String {
@@ -3419,7 +3420,6 @@ private struct PrayerJourneyView: View {
             .padding(.bottom, AppTheme.tabBarContentClearance + AppTheme.Space.xs)
         }
         .scrollContentBackground(.hidden)
-        .background(palette.bg.ignoresSafeArea())
         .guideDetailChrome(tab.title)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedHistoryRow) { row in
@@ -3501,7 +3501,8 @@ private struct PrayerJourneyView: View {
                 .accessibilityLabel("Next month")
             }
 
-            VStack(spacing: AppTheme.Space.md) {
+            // Compact grid (about 25% shorter): 32pt rows, 4pt apart.
+            VStack(spacing: AppTheme.Space.xs) {
                 HStack {
                     ForEach(month.weekdaySymbols, id: \.self) { day in
                         Text(day)
@@ -3813,7 +3814,7 @@ private struct JourneyCalendarCell: View {
                     .foregroundStyle(foreground(for: day))
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 36)
+        .frame(maxWidth: .infinity, minHeight: 32)
         .accessibilityLabel(accessibilityLabel)
     }
 
@@ -4057,8 +4058,9 @@ private struct JourneyHistoryRow: View {
                     .font(AppTheme.TypeRole.caption())
                     .foregroundStyle(palette.textSecondary)
 
-                if let intentionTitle = normalizedIntentionTitle {
-                    Text(intentionTitle)
+                // Count only; the detail sheet lists each intention.
+                if let intentionCountText {
+                    Text(intentionCountText)
                         .font(AppTheme.TypeRole.caption())
                         .foregroundStyle(palette.textSecondary)
                         .lineLimit(1)
@@ -4090,9 +4092,11 @@ private struct JourneyHistoryRow: View {
         return "\(status) · \(JourneyDuration.text(duration))"
     }
 
-    private var normalizedIntentionTitle: String? {
-        let trimmed = row.intentionTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmed.isEmpty ? nil : trimmed
+    /// "1 intention" / "N intentions"; nil when none were offered.
+    private var intentionCountText: String? {
+        let count = OfferedIntentions.titles(row.intentionTitles, legacy: row.intentionTitle).count
+        guard count > 0 else { return nil }
+        return count == 1 ? "1 intention" : "\(count) intentions"
     }
 
     @ViewBuilder
@@ -4207,7 +4211,8 @@ private struct JourneyPrayerDetailSheet: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                HStack(spacing: AppTheme.Space.md) {
+                // Icon stacked above the title and status, left-aligned.
+                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                     if let set = row.mystery { JourneyMysteryThumb(set: set, kind: row.kind) }
                     VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                         Text(facts.title)
@@ -4219,6 +4224,7 @@ private struct JourneyPrayerDetailSheet: View {
                             .foregroundStyle(palette.textSecondary)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 VStack(spacing: 0) {
                     ForEach(Array(facts.facts.enumerated()), id: \.offset) { index, fact in
@@ -4441,7 +4447,7 @@ struct GuestBackupCard: View {
         .frame(maxWidth: .infinity)
         .padding(.horizontal, AppTheme.Space.lg)
         .padding(.vertical, AppTheme.Space.xl)
-        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
+        .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.featureRadius, style: .continuous))
     }
 
 }
@@ -4502,7 +4508,6 @@ private struct ArchivedIntentionsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(palette.bg)
         .guideDetailChrome("Archived intentions")
         .alert(
             "Delete intention?",

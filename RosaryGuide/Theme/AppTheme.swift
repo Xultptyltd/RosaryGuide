@@ -31,13 +31,13 @@ enum AppTheme {
     static let destructiveDark = Color(hex: 0xFF453A)
     static let destructiveDarkHighContrast = Color(hex: 0xFF6961)
     /// Intention category avatar fills (same in light and dark).
-    static let intentionPersonal = Color(hex: 0xA8DCCB)
-    static let intentionSomeoneElse = Color(hex: 0xC9B6EF)
-    static let intentionChurch = Color(hex: 0xADCFF0)
+    static let intentionPersonal = Color(hex: 0x00C895)
+    static let intentionSomeoneElse = Color(hex: 0x5EA1FF)
+    static let intentionChurch = Color(hex: 0x9751FA)
     /// Category-specific dark glyphs on the solid pastel intention fills.
-    static let intentionPersonalOn = Color(hex: 0x183E35)
-    static let intentionSomeoneElseOn = Color(hex: 0x38264F)
-    static let intentionChurchOn = Color(hex: 0x203C57)
+    static let intentionPersonalOn = Color.white
+    static let intentionSomeoneElseOn = Color.white
+    static let intentionChurchOn = Color.white
 
     /// Mystery-set colours (trial palette, same in light and dark). Separate from the
     /// intention avatar colours so intentions are unaffected.
@@ -384,6 +384,7 @@ struct ThemedRoot<Content: View>: View {
         let palette = ThemePalette(scheme: colorScheme, contrast: colorSchemeContrast)
         content()
             .environment(\.palette, palette)
+            .environment(\.glassSurfacesEnabled, false)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(palette.bg.ignoresSafeArea())
             .onAppear {
@@ -402,6 +403,36 @@ struct ThemedRoot<Content: View>: View {
 /// preferredColorScheme(nil) does not always clear a previous explicit override
 /// (notably in presented covers), so System could keep the old scheme.
 enum AppearanceWindowStyle {
+    /// Fade the old rendered appearance away after SwiftUI has drawn the new palette.
+    static func transition(_ update: () -> Void) {
+        #if canImport(UIKit)
+        guard !UIAccessibility.isReduceMotionEnabled,
+              let window = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .filter({ $0.activationState == .foregroundActive })
+                .flatMap(\.windows).first(where: \.isKeyWindow),
+              let snapshot = window.snapshotView(afterScreenUpdates: false) else {
+            update()
+            return
+        }
+        snapshot.frame = window.bounds
+        snapshot.isUserInteractionEnabled = false
+        snapshot.accessibilityElementsHidden = true
+        window.addSubview(snapshot)
+        update()
+        DispatchQueue.main.asyncAfter(deadline: .now() + AppTheme.AppearanceMotion.renderDelay) {
+            UIView.animate(withDuration: AppTheme.AppearanceMotion.duration,
+                           delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+                snapshot.alpha = 0
+            } completion: { _ in
+                snapshot.removeFromSuperview()
+            }
+        }
+        #else
+        update()
+        #endif
+    }
+
     static func apply(_ appearance: AppearancePreference) {
         #if canImport(UIKit)
         let style: UIUserInterfaceStyle = switch appearance {
@@ -577,11 +608,15 @@ enum GuideChrome {
 }
 
 struct GuidePageChrome: ViewModifier {
+    var ambientBackground = false
     @Environment(\.palette) private var palette
 
     func body(content: Content) -> some View {
         content
-            .background(palette.bg)
+            .environment(\.glassSurfacesEnabled, ambientBackground)
+            .background {
+                if ambientBackground { AppPageBackground() } else { palette.bg }
+            }
             // Leave nav bar material to the system (liquid glass on iOS 26).
             // A solid toolbarBackground fill cancels translucency.
             .toolbarColorScheme(palette.scheme, for: .navigationBar)
@@ -589,8 +624,8 @@ struct GuidePageChrome: ViewModifier {
 }
 
 extension View {
-    func guidePageChrome() -> some View {
-        modifier(GuidePageChrome())
+    func guidePageChrome(ambientBackground: Bool = false) -> some View {
+        modifier(GuidePageChrome(ambientBackground: ambientBackground))
     }
 }
 
@@ -599,10 +634,11 @@ extension View {
 struct GuideRootChrome: ViewModifier {
     static let contentTop = AppTheme.Space.xl
     let title: String
+    var ambientBackground = false
 
     func body(content: Content) -> some View {
         content
-            .guidePageChrome()
+            .guidePageChrome(ambientBackground: ambientBackground)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.large)
             .guidePageTitle(title)
@@ -611,8 +647,8 @@ struct GuideRootChrome: ViewModifier {
 }
 
 extension View {
-    func guideRootChrome(_ title: String) -> some View {
-        modifier(GuideRootChrome(title: title))
+    func guideRootChrome(_ title: String, ambientBackground: Bool = false) -> some View {
+        modifier(GuideRootChrome(title: title, ambientBackground: ambientBackground))
     }
 }
 
@@ -624,10 +660,11 @@ struct GuideDetailChrome: ViewModifier {
     static let contentTop: CGFloat = AppTheme.Space.lg
 
     let title: String
+    var ambientBackground = true
 
     func body(content: Content) -> some View {
         content
-            .guidePageChrome()
+            .guidePageChrome(ambientBackground: ambientBackground)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.visible, for: .navigationBar)
@@ -638,8 +675,8 @@ struct GuideDetailChrome: ViewModifier {
 extension View {
     /// Standard chrome for pushed level-2+ screens.
     /// Keeps the native NavigationStack back button, which preserves iOS edge-swipe back.
-    func guideDetailChrome(_ title: String) -> some View {
-        modifier(GuideDetailChrome(title: title))
+    func guideDetailChrome(_ title: String, ambientBackground: Bool = true) -> some View {
+        modifier(GuideDetailChrome(title: title, ambientBackground: ambientBackground))
     }
 }
 
@@ -1147,7 +1184,7 @@ struct GuideSectionLabel: View {
         case .quiet:
             AppTheme.TypeRole.sectionLabel
         case .strong:
-            AppTheme.TypeRole.callout(weight: .semibold)
+            AppTheme.TypeRole.sectionHeading
         }
     }
 
@@ -1244,22 +1281,6 @@ struct GuidePressStyle: ButtonStyle {
     }
 }
 
-struct GuideSoftShadow: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    var elevated: Bool = true
-
-    func body(content: Content) -> some View {
-        content.shadow(
-            color: colorScheme == .light && elevated && !reduceTransparency
-                ? Color.primary.opacity(0.035)
-                : .clear,
-            radius: elevated ? 8 : 0,
-            y: elevated ? 3 : 0
-        )
-    }
-}
-
 struct GuideReveal: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var delay: Double = 0
@@ -1317,6 +1338,48 @@ extension View {
     }
 }
 
+/// Content surfaces opt in through page chrome; prayer flow keeps solid surfaces.
+private struct GlassSurfacesEnabledKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var glassSurfacesEnabled: Bool {
+        get { self[GlassSurfacesEnabledKey.self] }
+        set { self[GlassSurfacesEnabledKey.self] = newValue }
+    }
+}
+
+private struct GuideSurfaceModifier<SurfaceShape: Shape>: ViewModifier {
+    @Environment(\.palette) private var palette
+    @Environment(\.glassSurfacesEnabled) private var enabled
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    let shape: SurfaceShape
+    var fill: Color?
+
+    func body(content: Content) -> some View {
+        if !enabled || reduceTransparency || (fill != nil && fill != palette.surface) {
+            content.background(fill ?? palette.surface, in: shape)
+        } else if #available(iOS 26.0, *) {
+            content.glassEffect(.regular, in: shape)
+                // Keep the glass rim while clipping its system drop shadow.
+                .clipShape(shape)
+        } else {
+            content.background(.regularMaterial, in: shape)
+                .overlay {
+                    shape.stroke(palette.controlStroke, lineWidth: AppTheme.Component.panelStrokeWidth)
+                }
+        }
+    }
+}
+
+extension View {
+    /// Shared content surface with native glass on regular app pages.
+    func guideSurface<SurfaceShape: Shape>(in shape: SurfaceShape, fill: Color? = nil) -> some View {
+        modifier(GuideSurfaceModifier(shape: shape, fill: fill))
+    }
+}
+
 struct GuideCardChrome: ViewModifier {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
@@ -1328,7 +1391,7 @@ struct GuideCardChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .background(fill ?? palette.surface, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .guideSurface(in: RoundedRectangle(cornerRadius: radius, style: .continuous), fill: fill)
             .overlay {
                 if stroke {
                     RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -1341,7 +1404,6 @@ struct GuideCardChrome: ViewModifier {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .guideSoftShadow(elevated: elevated && colorScheme == .light)
     }
 }
 
@@ -1351,7 +1413,7 @@ struct GuideRowGroupChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .background(palette.surface, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .guideSurface(in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
     }
 }
@@ -1449,10 +1511,6 @@ extension View {
         buttonStyle(GuidePressStyle())
     }
 
-    func guideSoftShadow(elevated: Bool = true) -> some View {
-        modifier(GuideSoftShadow(elevated: elevated))
-    }
-
     func guideReveal(delay: Double = 0) -> some View {
         modifier(GuideReveal(delay: delay))
     }
@@ -1489,6 +1547,7 @@ extension View {
 extension AppTheme {
     /// Spacing scale — prefer these over one-off paddings (14, 18, 22…).
     enum Space {
+        static let none: CGFloat = 0
         static let xs: CGFloat = 4
         static let sm: CGFloat = 8
         static let md: CGFloat = 12
@@ -1497,6 +1556,21 @@ extension AppTheme {
         static let xxl: CGFloat = 32
         /// Major block rhythm (same value as `sectionGap`).
         static let section: CGFloat = 44
+    }
+
+    /// Weekly prayer preview: shared geometry and symbol roles.
+    enum PrayerPreview {
+        static let cardInset = Space.lg + Space.xs
+        static let headerGap = Space.md
+        static let summaryGap = Space.sm
+        static let weekGap = Space.lg
+        static let dayLabelGap = Space.sm
+        static let markerSize = Space.xl
+        static let inactiveDotSize = Space.md
+        static let todayRingWidth: CGFloat = 2
+        static let todayRingInset: CGFloat = 1
+        static let checkmarkSize: CGFloat = 13
+        static let checkmarkWeight: Font.Weight = .bold
     }
 
     /// Type roles — product style guide scale, with Instrument Sans / Newsreader pairing.
@@ -1556,12 +1630,15 @@ extension AppTheme {
             AppTheme.sans(16, weight: regularized(weight), relativeTo: .callout)
         }
         static var supportingLabel: Font { AppTheme.sans(15, relativeTo: .subheadline) }
+        static var sectionHeading: Font { body }
+        static var prayerPreviewSummary: Font { cardTitle }
         static var rhythmSummary: Font { AppTheme.sans(32, relativeTo: .title, maxPointSize: Cap.heading) }
         static func rhythmCaption(compact: Bool = false) -> Font {
             AppTheme.sans(compact ? 13 : 14, relativeTo: .subheadline)
         }
+        /// End-of-Rosary quote: the app's sans (Instrument Sans), same 18pt size as before.
         static var completionQuote: Font {
-            AppTheme.serif(18, italic: true, opticalSize: 18, relativeTo: .body)
+            AppTheme.sans(18, relativeTo: .body)
         }
         static var caption: Font { AppTheme.sans(12, weight: .regular, relativeTo: .caption) }
         static func caption(weight: Font.Weight = .regular) -> Font {
@@ -2013,16 +2090,65 @@ extension AppTheme {
 /// Text that wraps only between words. At accessibility sizes, if the longest word is wider
 /// than the space, the whole label steps down in size (to `minimumScale`) instead of breaking
 /// inside the word ("Notification / s"). Below accessibility sizes it is exactly
-/// `Text(text).font(Font(font))`.
+/// full-width, word-wrapped text using the same scaled font.
+/// Fill each line before wrapping; short teaching paragraphs should not
+/// redistribute words just to balance the last two lines.
+struct GuideWrappingText: UIViewRepresentable {
+    var text: String
+    var font: UIFont
+    var color: Color
+    var lineSpacing: CGFloat = 0
+    var numberOfLines: Int = 0
+    var alignment: TextAlignment = .leading
+
+    func makeUIView(context: Context) -> UILabel {
+        let label = UILabel()
+        label.numberOfLines = 0
+        label.lineBreakMode = .byWordWrapping
+        label.lineBreakStrategy = []
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return label
+    }
+
+    func updateUIView(_ label: UILabel, context: Context) {
+        label.numberOfLines = numberOfLines
+        label.textAlignment = alignment == .center ? .center : alignment == .trailing ? .right : .left
+        label.lineBreakMode = numberOfLines == 1 ? .byTruncatingTail : .byWordWrapping
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = label.lineBreakMode
+        paragraph.lineBreakStrategy = []
+        paragraph.lineSpacing = lineSpacing
+        paragraph.alignment = label.textAlignment
+        label.attributedText = NSAttributedString(string: text, attributes: [
+            .font: font,
+            .foregroundColor: UIColor(color),
+            .paragraphStyle: paragraph
+        ])
+        label.accessibilityLabel = text
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UILabel, context: Context) -> CGSize? {
+        guard let width = proposal.width, width > 0 else { return nil }
+        uiView.preferredMaxLayoutWidth = width
+        let measured = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+        return CGSize(width: width, height: ceil(measured.height))
+    }
+}
+
+
 struct WordSafeText: View {
     let text: String
     let font: UIFont
+    var color: Color
+    @Environment(\.multilineTextAlignment) private var textAlignment
+    @Environment(\.lineLimit) private var lineLimit
     var minimumScale: CGFloat = 0.5
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    init(_ text: String, font: UIFont, minimumScale: CGFloat = 0.5) {
+    init(_ text: String, font: UIFont, minimumScale: CGFloat = 0.5, color: Color = .primary) {
         self.text = text
         self.font = font
+        self.color = color
         self.minimumScale = minimumScale
     }
 
@@ -2033,12 +2159,13 @@ struct WordSafeText: View {
                 ForEach(Self.scales(down: minimumScale), id: \.self) { scale in
                     let sized = scale == 1 ? font : font.withSize(font.pointSize * scale)
                     LongestWordWidth(width: Self.longestWordWidth(text, font: sized)) {
-                        Text(text).font(Font(sized))
+                        GuideWrappingText(text: text, font: sized, color: color, numberOfLines: lineLimit ?? 0, alignment: textAlignment)
                     }
                 }
             }
         } else {
-            Text(text).font(Font(font))
+            GuideWrappingText(text: text, font: font, color: color, numberOfLines: lineLimit ?? 0, alignment: textAlignment)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -2077,7 +2204,8 @@ private struct LongestWordWidth: Layout {
             let size = child.sizeThatFits(ProposedViewSize(width: width, height: proposal.height))
             return CGSize(width: width, height: size.height)
         }
-        return child.sizeThatFits(proposal)
+        let measured = child.sizeThatFits(proposal)
+        return CGSize(width: proposal.width ?? measured.width, height: measured.height)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
@@ -2114,5 +2242,13 @@ struct GuideShakeEffect: GeometryEffect {
 extension View {
     func guideCountRoll(_ value: Int) -> some View {
         modifier(GuideCountRoll(value: value))
+    }
+}
+
+
+extension AppTheme {
+    enum AppearanceMotion {
+        static let renderDelay: TimeInterval = 0.08
+        static let duration: TimeInterval = 0.55
     }
 }

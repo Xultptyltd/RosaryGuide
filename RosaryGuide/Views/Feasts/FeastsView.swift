@@ -175,7 +175,7 @@ struct FeastsView: View {
             }
             .scrollDisabled(calendarDrag != nil)
             .tint(palette.accent)
-            .guideRootChrome("Feasts")
+            .guideRootChrome("Feasts", ambientBackground: true)
         }
     }
 
@@ -433,11 +433,9 @@ private struct FeastTimelineRow: View {
             .frame(width: 56)
 
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                WordSafeText(item.feast.shortTitle, font: AppTheme.TypeRole.calloutUIFont(weight: .semibold))
-                    .foregroundStyle(palette.ink)
+                WordSafeText(item.feast.shortTitle, font: AppTheme.TypeRole.calloutUIFont(weight: .semibold), color: palette.ink)
                     .lineLimit(dynamicTypeSize.isAccessibilitySize ? 6 : 2)
-                WordSafeText(item.feast.rank.title, font: AppTheme.TypeRole.captionUIFont())
-                    .foregroundStyle(palette.dim)
+                WordSafeText(item.feast.rank.title, font: AppTheme.TypeRole.captionUIFont(), color: palette.dim)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -495,7 +493,9 @@ struct FeastDetailView: View {
             .padding(.bottom, 108)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(palette.bg)
+        // Plain page colour over the ambient layer; glass cards stay on.
+        .background(palette.bg.ignoresSafeArea())
+        .guidePageChrome(ambientBackground: true)
         // Keep native navigation visible so level-2 screens always have back navigation.
         // The system back gesture remains available from the far-left edge.
         .toolbar(.visible, for: .navigationBar)
@@ -662,7 +662,7 @@ struct FeastDetailView: View {
                 ForEach(Array(dayPractices.enumerated()), id: \.offset) { index, practice in
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                         Text(practice.title)
-                            .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
+                            .font(AppTheme.TypeRole.sectionHeading)
                             .foregroundStyle(palette.ink)
                         Text(practice.body)
                             .font(AppTheme.TypeRole.themeSummary)
@@ -711,7 +711,7 @@ struct FeastDetailView: View {
                         VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                             GuideSectionLabel(text: passage.reference, color: palette.dim)
                             Text(passage.title)
-                                .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
+                                .font(AppTheme.TypeRole.sectionHeading)
                                 .foregroundStyle(palette.ink)
                             Text(passage.excerpt)
                                 .font(AppTheme.TypeRole.themeSummary)
@@ -836,9 +836,7 @@ struct FeastDetailView: View {
     private var rosaryConnectionCard: some View {
         let set = feast.suggestedMysterySet ?? feastDayAssignment.set
         return HStack(alignment: .center, spacing: AppTheme.Space.md) {
-            MysteryArtworkView(set: set, mysteryNumber: 1, slug: MysteryCatalog.mysteries(for: set).first?.artSlug, kind: .plate)
-                .frame(width: 56, height: 56)
-                .clipShape(Circle())
+            MysterySetIcon(set: set, size: 56)
 
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 GuideSectionLabel(text: "Mystery set", prominence: .strong)
@@ -866,7 +864,16 @@ struct FeastDetailView: View {
         .frame(height: 330)
         .padding(.horizontal, -AppTheme.gutter)
         .padding(.top, -8)
+        .background(alignment: .bottom) { feastHeroTopFill }
         .ignoresSafeArea(edges: .top)
+    }
+
+    /// Plain page colour above the banner (status bar, nav bar and overscroll), not the ambient tint.
+    private var feastHeroTopFill: some View {
+        palette.bg
+            .frame(height: 330 + AppTheme.Space.section * 8)
+            .padding(.horizontal, -AppTheme.gutter)
+            .allowsHitTesting(false)
     }
 
     private var detailActions: some View {
@@ -884,7 +891,7 @@ struct FeastDetailView: View {
                 .foregroundStyle(palette.ink)
                 .frame(maxWidth: .infinity)
                 .frame(height: 76)
-                .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+                .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
                         .strokeBorder(palette.subtleStroke, lineWidth: AppTheme.Component.panelStrokeWidth)
@@ -906,7 +913,7 @@ struct FeastDetailView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 76)
-        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+        .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
                 .strokeBorder(palette.subtleStroke, lineWidth: AppTheme.Component.panelStrokeWidth)
@@ -943,7 +950,7 @@ struct FeastDetailView: View {
             } label: {
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     Text(prayer.title)
-                        .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
+                        .font(AppTheme.TypeRole.sectionHeading)
                         .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1029,7 +1036,7 @@ struct FeastDetailView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+        .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                 .strokeBorder(palette.hair, lineWidth: AppTheme.Component.panelStrokeWidth)
@@ -1102,7 +1109,7 @@ private struct FeastRelatedPrayersView: View {
             } label: {
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     Text(prayer.title)
-                        .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
+                        .font(AppTheme.TypeRole.sectionHeading)
                         .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1271,6 +1278,13 @@ private struct FeastSecondaryPage<Content: View>: View {
                 FeastHeroBanner(feast: feast, height: 238, cornerRadius: 0)
                     .padding(.horizontal, -AppTheme.gutter)
                     .padding(.top, -8)
+                    // Plain page colour above the banner, not the ambient tint.
+                    .background(alignment: .bottom) {
+                        palette.bg
+                            .frame(height: 238 + AppTheme.Space.section * 8)
+                            .padding(.horizontal, -AppTheme.gutter)
+                            .allowsHitTesting(false)
+                    }
                     .padding(.bottom, 22)
 
                 GuideSectionLabel(text: feast.rank.title, color: palette.dim)
@@ -1296,7 +1310,9 @@ private struct FeastSecondaryPage<Content: View>: View {
             .padding(.bottom, 108)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(palette.bg)
+        // Plain page colour over the ambient layer; glass cards stay on.
+        .background(palette.bg.ignoresSafeArea())
+        .guidePageChrome(ambientBackground: true)
         // Match FeastDetailView: native nav with hidden (translucent) bar material
         // so hero content can show through liquid glass.
         .toolbar(.visible, for: .navigationBar)

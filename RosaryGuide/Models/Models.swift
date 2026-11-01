@@ -140,16 +140,10 @@ enum MysterySetKind: String, CaseIterable, Codable, Identifiable {
     }
 
     /// Fill for mystery-set icons: blue scale from Joyful (strongest) to Glorious (palest).
-    var letterFill: Color {
-        switch self {
-        case .joyful: AppTheme.mysteryJoyful
-        case .luminous: AppTheme.mysteryLuminous
-        case .sorrowful: AppTheme.mysterySorrowful
-        case .glorious: AppTheme.mysteryGlorious
-        }
-    }
+    /// Every mystery icon uses the Joyful palette; the glyph identifies its set.
+    var letterFill: Color { AppTheme.mysteryJoyful }
 
-    /// Glyph colour on `letterFill`: one dark navy, readable on all four fills in both modes.
+    /// Shared dark navy glyph colour for light-mode icon circles.
     var letterOn: Color { AppTheme.mysteryOn }
 
     var iconAssetName: String {

@@ -5,20 +5,20 @@ import UIKit
 
 /// Shared mystery avatar for Learn and Journey History.
 struct MysterySetIcon: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.palette) private var palette
     let set: MysterySetKind
     var size: CGFloat = AppTheme.MysteryIcon.circleSize
 
     var body: some View {
-        let dark = colorScheme == .dark
+        // Same colours as the Introduction to the Rosary card icon (accent tint circle, accent glyph).
         ZStack {
-            Circle().fill(dark ? set.letterFill.opacity(0.18) : set.letterFill)
+            Circle().fill(palette.accentTint)
             Image(set.iconAssetName)
                 .renderingMode(.template)
                 .resizable()
                 .scaledToFit()
                 .frame(width: size * AppTheme.MysteryIcon.assetRatio, height: size * AppTheme.MysteryIcon.assetRatio)
-                .foregroundStyle(dark ? set.letterFill : set.letterOn)
+                .foregroundStyle(palette.accentText)
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
@@ -82,7 +82,7 @@ struct MysteryArtworkView: View {
             FocusedRasterImage(
                 directory: path.directory,
                 name: path.name,
-                focus: UnitPoint(x: 0.5, y: tall ? 0.28 : 0.42),
+                focus: tall ? UnitPoint(x: 0.5, y: 0.28) : ArtCatalog.heroWideFocus(set: set),
                 cropTop: tall ? cropTop : nil
             )
         case .plate, .plateWide:
@@ -183,7 +183,7 @@ struct SeasonBadge: View {
         .foregroundStyle(palette.ink)
         .padding(.horizontal, AppTheme.Space.md)
         .padding(.vertical, 7)
-        .background(palette.surface, in: Capsule())
+        .guideSurface(in: Capsule())
     }
 }
 
@@ -489,7 +489,7 @@ struct PillButton: View {
                 .padding(.vertical, compact ? AppTheme.Space.xs : 0)
                 .frame(minHeight: compact ? AppTheme.Component.compactPillHeight : AppTheme.Component.pillHeight,
                        maxHeight: compact ? nil : AppTheme.Component.pillHeight)
-                .background(onDark ? Color.white : filled ? palette.primaryButtonFill : (tertiary ? palette.tertiaryButtonFill : palette.learnMoreButtonFill), in: Capsule())
+                .guideSurface(in: Capsule(), fill: onDark ? Color.white : filled ? palette.primaryButtonFill : (tertiary ? palette.tertiaryButtonFill : palette.learnMoreButtonFill))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -571,7 +571,7 @@ struct SyncNotice: View {
         }
         .padding(AppTheme.Space.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
+        .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 }

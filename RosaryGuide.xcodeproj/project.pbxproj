@@ -74,6 +74,7 @@
 		EE5F4F6C5D5847F99D26F8BB /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = D9EF17A3557946A382A9BB17 /* Fonts */; };
 		F17192475C3C5E005FFA1934 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65622D107422099E4F60DE1E /* AppTheme.swift */; };
 		F47D85D5383CB8F901559461 /* LiturgicalCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E6BD2027DE74F3262A8F28 /* LiturgicalCalendarTests.swift */; };
+		AB1020261101000000000001 /* AppPageBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1020261101000000000002 /* AppPageBackground.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -152,6 +153,7 @@
 		F91288DB192297DC903FE08C /* RosaryGuide.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RosaryGuide.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FC2132B969E266BCD4A50F87 /* PopeIntentions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = PopeIntentions.json; sourceTree = "<group>"; };
 		23BA9EEC77C898EF9CED79E7 /* Licenses.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Licenses.json; sourceTree = "<group>"; };
+		AB1020261101000000000002 /* AppPageBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPageBackground.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -272,6 +274,7 @@
 			isa = PBXGroup;
 			children = (
 				65622D107422099E4F60DE1E /* AppTheme.swift */,
+				AB1020261101000000000002 /* AppPageBackground.swift */,
 				F63A4454F491B38C212CC931 /* ArtCatalog.swift */,
 				C29555CF3A426924297A6D05 /* MysteryArtworkView.swift */,
 				72AB64F2FF3FA95BF5E4AE36 /* PrayerRhythmCard.swift */,
@@ -534,6 +537,7 @@
 				5BEDC4E1A8748517C5BC54EB /* SessionStore.swift in Sources */,
 				BFB2E57A65DA2E74CFB07CD0 /* SettingsStore.swift in Sources */,
 				F17192475C3C5E005FFA1934 /* AppTheme.swift in Sources */,
+				AB1020261101000000000001 /* AppPageBackground.swift in Sources */,
 				A1C00101A1B2C3D4E5F60102 /* AppIconService.swift in Sources */,
 				92CDCB58703677D509CA6491 /* MysteryArtworkView.swift in Sources */,
 				28C4ADB4A22F41AFFC963274 /* PrayerRhythmCard.swift in Sources */,

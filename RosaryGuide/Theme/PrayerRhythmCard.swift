@@ -31,6 +31,8 @@ struct PrayerRhythm: Equatable {
     var prayedDaysThisMonth: Int
     /// Month grid in weeks of 7 cells; nil cells are blank (before the 1st / after the last day).
     var weeks: [[Day?]]
+    var currentWeek: [Day]
+    var weekdayLabels: [String]
 
     struct Day: Equatable, Hashable {
         var number: Int
@@ -77,6 +79,13 @@ struct PrayerRhythm: Equatable {
         let prayedWeeks = Set(prayedDays.map { weekStart(Date(timeIntervalSince1970: $0)).timeIntervalSince1970 })
         let thisWeek = weekStart(today)
         prayedDaysThisWeek = prayedDays.filter { $0 >= thisWeek.timeIntervalSince1970 }.count
+        currentWeek = (0..<7).map { offset in
+            let date = addDays(offset, to: thisWeek)
+            return Day(number: calendar.component(.day, from: date), prayed: prayed(date),
+                       isToday: calendar.isDate(date, inSameDayAs: today), isFuture: date > today)
+        }
+        let symbols = calendar.shortStandaloneWeekdaySymbols
+        weekdayLabels = (0..<7).map { symbols[(calendar.firstWeekday - 1 + $0) % 7] }
         let prayedThisWeek = prayedDaysThisWeek > 0
         var weekCursor = prayedThisWeek ? thisWeek : addWeeks(-1, to: thisWeek)
         var weeksCount = 0
@@ -250,175 +259,80 @@ struct PrayerRhythm: Equatable {
     }
 }
 
-/// "Your prayer" card: the rhythm on the left, a hairline, then this month's
-/// prayed days as a dot grid on the right that ends at today.
+/// Compact weekly preview; its parent button opens the full prayer calendar.
 struct PrayerRhythmCard: View {
     @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var rhythm: PrayerRhythm
 
-    private enum Metric {
-        static let radius: CGFloat = AppTheme.containerRadius
-        static let horizontalPadding: CGFloat = 20
-        static let verticalPadding: CGFloat = 20
-        static let dividerGap: CGFloat = 16
-        static let dividerInset: CGFloat = 4
-        static let cell: CGFloat = 13
-        static let dotColumnSpacing: CGFloat = 9
-        static let dotRowSpacing: CGFloat = 7
-        static let dimDot: CGFloat = 5
-        static let prayedDot: CGFloat = 10
-        static let todayRing: CGFloat = 13
+    private var weeklySummary: String {
+        "\(rhythm.prayedDaysThisWeek) \(rhythm.prayedDaysThisWeek == 1 ? "day" : "days") this week"
     }
 
-    private var isDark: Bool { colorScheme == .dark }
+    private var calendarChevron: some View {
+        Image(systemName: "chevron.right")
+            .font(AppTheme.TypeRole.caption(weight: .medium))
+            .foregroundStyle(palette.faint)
+            .accessibilityHidden(true)
+    }
 
     var body: some View {
-        Group {
-            if dynamicTypeSize < .xxLarge { sideBySide } else { stacked }
-        }
-        .padding(.horizontal, Metric.horizontalPadding)
-        .padding(.vertical, Metric.verticalPadding)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: Metric.radius, style: .continuous).fill(palette.surface)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: Metric.radius, style: .continuous))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(rhythm.accessibilityLabel)
-    }
-
-    private var sideBySide: some View {
-        // Summary sits at the bottom, level with the calendar's last row.
-        HStack(alignment: .bottom, spacing: 0) {
-            summaryText
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .layoutPriority(1)
-            Rectangle()
-                .fill(palette.strokeRegular)
-                .frame(width: 1)
-                .frame(maxHeight: .infinity)
-                .padding(.vertical, Metric.dividerInset)
-                .padding(.horizontal, Metric.dividerGap)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                monthHeader
-                dotGrid
+        VStack(alignment: .leading, spacing: AppTheme.Space.none) {
+            HStack(spacing: AppTheme.Space.sm) {
+                Text("Your prayer")
+                    .font(AppTheme.TypeRole.supportingLabel)
+                    .foregroundStyle(palette.textSecondary)
+                Spacer(minLength: AppTheme.PrayerPreview.headerGap)
+                calendarChevron
             }
-            .fixedSize()
-        }
-        .fixedSize(horizontal: false, vertical: true)
-    }
 
-    private var stacked: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            summaryText
-            monthHeader.padding(.top, AppTheme.Space.xl)
-            dotGrid.padding(.top, AppTheme.Space.md)
-        }
-    }
-
-    // MARK: Left column
-
-    private var summaryText: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-            HStack(alignment: .center, spacing: AppTheme.Space.sm) {
-                if rhythm.isMilestone {
-                    Image(systemName: "flame.fill")
-                        .guideSymbol(size: 22, weight: .semibold)
-                        .foregroundStyle(palette.accentText)
-                        .symbolRenderingMode(.hierarchical)
-                        .accessibilityHidden(true)
-                }
-                Text(rhythm.card.big)
-                    .font(AppTheme.TypeRole.rhythmSummary)
-                    .foregroundStyle(palette.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-            ViewThatFits(in: .horizontal) {
-                caption(compact: false).lineLimit(1)
-                caption(compact: true).lineLimit(1)
-                caption(compact: true).fixedSize(horizontal: false, vertical: true)
-            }
-        }
-    }
-
-    private func caption(compact: Bool) -> some View {
-        Text(rhythm.card.caption)
-            .font(AppTheme.TypeRole.rhythmCaption(compact: compact))
-            .foregroundStyle(palette.textSecondary)
-    }
-
-    // MARK: Right column
-
-    private var monthHeader: some View {
-        HStack(spacing: AppTheme.Space.sm) {
-            Text(rhythm.monthName)
-                .font(AppTheme.TypeRole.supportingLabel.weight(.semibold))
+            Text(weeklySummary)
+                .font(AppTheme.TypeRole.prayerPreviewSummary)
                 .foregroundStyle(palette.ink)
-                .lineLimit(1)
-            // Reads as tappable: the card opens the journey screen.
-            Image(systemName: "chevron.right")
-                .guideSymbol(size: 12, weight: .semibold)
-                .foregroundStyle(palette.ink)
-                .accessibilityHidden(true)
-        }
-    }
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, AppTheme.PrayerPreview.summaryGap)
 
-    private var weekdayInitials: [String] {
-        let calendar = Calendar.current
-        let symbols = calendar.veryShortStandaloneWeekdaySymbols
-        return (0..<7).map { String(symbols[(calendar.firstWeekday - 1 + $0) % 7].prefix(1)) }
-    }
-
-    private var dotGrid: some View {
-        Grid(horizontalSpacing: Metric.dotColumnSpacing, verticalSpacing: Metric.dotRowSpacing) {
-            GridRow {
-                ForEach(0..<7, id: \.self) { column in
-                    Text(weekdayInitials[column])
-                        .font(AppTheme.TypeRole.calendarCaption)
-                        .foregroundStyle(palette.dim)
-                        .lineLimit(1)
-                        .fixedSize()
-                        .frame(width: Metric.cell)
-                }
-            }
-            .accessibilityHidden(true)
-            ForEach(rhythm.weeks.indices, id: \.self) { row in
-                GridRow {
-                    ForEach(0..<7, id: \.self) { column in
-                        dot(rhythm.weeks[row][column])
+            HStack(alignment: .top, spacing: AppTheme.Space.none) {
+                ForEach(rhythm.currentWeek.indices, id: \.self) { index in
+                    VStack(spacing: AppTheme.PrayerPreview.dayLabelGap) {
+                        Text(dynamicTypeSize.isAccessibilitySize
+                             ? String(rhythm.weekdayLabels[index].prefix(1))
+                             : rhythm.weekdayLabels[index])
+                            .font(AppTheme.TypeRole.calendarCaption)
+                            .foregroundStyle(palette.textSecondary)
+                            .lineLimit(1)
+                        dayMarker(rhythm.currentWeek[index])
                     }
+                    .frame(maxWidth: .infinity)
                 }
             }
+            .padding(.top, AppTheme.PrayerPreview.weekGap)
         }
+        .padding(AppTheme.PrayerPreview.cardInset)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Your prayer, \(weeklySummary). " + zip(rhythm.weekdayLabels, rhythm.currentWeek).map { label, day in
+            "\(label): \(day.prayed ? "prayed" : day.isToday ? "today" : day.isFuture ? "upcoming" : "no prayer recorded")"
+        }.joined(separator: ". "))
     }
 
-    /// Past days: small dim dot. Prayed: larger accent dot. Today: hollow ring.
-    /// Future days: a fainter dot, so the whole month reads from the 1st.
-    @ViewBuilder
-    private func dot(_ day: PrayerRhythm.Day?) -> some View {
+    private func dayMarker(_ day: PrayerRhythm.Day) -> some View {
         ZStack {
-            if let day, day.isFuture {
-                Circle().fill(palette.ink.opacity(isDark ? 0.14 : 0.10))
-                    .frame(width: Metric.dimDot, height: Metric.dimDot)
-            } else if let day {
-                if day.prayed {
-                    Circle().fill(isDark ? palette.tabSelected : palette.accent)
-                        .frame(width: Metric.prayedDot, height: Metric.prayedDot)
-                } else if !day.isToday {
-                    Circle().fill(palette.ink.opacity(isDark ? 0.28 : 0.20))
-                        .frame(width: Metric.dimDot, height: Metric.dimDot)
-                }
-                if day.isToday {
-                    Circle().strokeBorder(palette.ink.opacity(isDark ? 0.9 : 0.75), lineWidth: 1.5)
-                        .frame(width: Metric.todayRing, height: Metric.todayRing)
-                }
+            if day.prayed {
+                Circle().fill(palette.accent)
+                Image(systemName: "checkmark")
+                    .guideSymbol(size: AppTheme.PrayerPreview.checkmarkSize, weight: AppTheme.PrayerPreview.checkmarkWeight)
+                    .foregroundStyle(palette.onAccent)
+            } else if day.isToday {
+                Circle().strokeBorder(palette.strokeSelected, lineWidth: AppTheme.PrayerPreview.todayRingWidth)
+                    .padding(AppTheme.PrayerPreview.todayRingInset)
+            } else {
+                Circle().fill(day.isFuture ? palette.strokeRegular : palette.strokeStrong)
+                    .frame(width: AppTheme.PrayerPreview.inactiveDotSize, height: AppTheme.PrayerPreview.inactiveDotSize)
             }
         }
-        .frame(width: Metric.cell, height: Metric.cell)
+        .frame(width: AppTheme.PrayerPreview.markerSize, height: AppTheme.PrayerPreview.markerSize)
     }
 }

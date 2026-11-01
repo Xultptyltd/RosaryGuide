@@ -129,47 +129,6 @@ struct RosaryWalkthroughView: View {
     }
 }
 
-/// Fill each line before wrapping; short teaching paragraphs should not
-/// redistribute words just to balance the last two lines.
-private struct GuideWalkthroughText: UIViewRepresentable {
-    var text: String
-    var font: UIFont
-    var color: Color
-    var lineSpacing: CGFloat = 0
-    var numberOfLines: Int = 0
-
-    func makeUIView(context: Context) -> UILabel {
-        let label = UILabel()
-        label.numberOfLines = 0
-        label.lineBreakMode = .byWordWrapping
-        label.lineBreakStrategy = []
-        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        return label
-    }
-
-    func updateUIView(_ label: UILabel, context: Context) {
-        label.numberOfLines = numberOfLines
-        label.lineBreakMode = numberOfLines == 1 ? .byTruncatingTail : .byWordWrapping
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.lineBreakMode = label.lineBreakMode
-        paragraph.lineBreakStrategy = []
-        paragraph.lineSpacing = lineSpacing
-        label.attributedText = NSAttributedString(string: text, attributes: [
-            .font: font,
-            .foregroundColor: UIColor(color),
-            .paragraphStyle: paragraph
-        ])
-        label.accessibilityLabel = text
-    }
-
-    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UILabel, context: Context) -> CGSize? {
-        guard let width = proposal.width, width > 0 else { return nil }
-        uiView.preferredMaxLayoutWidth = width
-        let measured = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
-        return CGSize(width: width, height: ceil(measured.height))
-    }
-}
-
 /// One template for artwork, copy and navigation across all five teaching pages.
 private enum GuideWalkthroughLayout {
     static let textToButtonGap = AppTheme.Component.readingContentToActionGap
@@ -353,7 +312,6 @@ struct HowToPrayView: View {
             .frame(maxWidth: 576, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
-        .background(palette.bg)
         .guideDetailChrome("How to pray")
     }
 
@@ -392,12 +350,11 @@ struct HowToPrayView: View {
                 }
             }
             .padding(.horizontal, AppTheme.Space.lg)
-            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .strokeBorder(panelStroke, lineWidth: 1)
             }
-            .guideSoftShadow(elevated: colorScheme == .light)
         }
         .guideReveal(delay: 0.05)
     }
@@ -417,12 +374,11 @@ struct HowToPrayView: View {
             }
             .padding(.horizontal, AppTheme.Space.lg)
             .padding(.vertical, AppTheme.Space.xs)
-            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .strokeBorder(panelStroke, lineWidth: 1)
             }
-            .guideSoftShadow(elevated: colorScheme == .light)
         }
         .guideReveal(delay: 0.1)
     }
@@ -502,12 +458,11 @@ struct HowToPrayView: View {
                 }
             }
             .padding(.horizontal, AppTheme.Space.lg)
-            .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+            .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .strokeBorder(panelStroke, lineWidth: 1)
             }
-            .guideSoftShadow(elevated: colorScheme == .light)
         }
         .guideReveal(delay: 0.14)
     }
@@ -526,12 +481,11 @@ struct HowToPrayView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AppTheme.Space.md)
                 .padding(.horizontal, AppTheme.Space.sm)
-                .background(palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+                .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                         .strokeBorder(panelStroke, lineWidth: 1)
                 }
-                .guideSoftShadow(elevated: colorScheme == .light)
         }
         .guideReveal(delay: 0.18)
     }

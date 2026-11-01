@@ -28,7 +28,7 @@ struct PrayHubView: View {
             ScrollViewReader { scrollProxy in
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    searchField
+                    InlinePrayerSearch(text: $searchText, prompt: "Search prayers and mysteries")
                     if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         introCard
                             .padding(.top, AppTheme.Space.xl)
@@ -85,7 +85,9 @@ struct PrayHubView: View {
             }
             #endif
             }
-            .guideRootChrome("Pray")
+            .guideRootChrome("Pray", ambientBackground: true)
+            .autocorrectionDisabled()
+            .scrollDismissesKeyboard(.interactively)
             .fullScreenCover(isPresented: $showingWalkthrough) {
                 RosaryWalkthroughView(onClose: { showingWalkthrough = false }, onBegin: {
                     // Same launch as Home's "Pray today's mysteries", once the cover has gone.
@@ -104,32 +106,6 @@ struct PrayHubView: View {
          PrayerCatalog.hailMary, PrayerCatalog.gloryBe, PrayerCatalog.hailHolyQueen,
          PrayerCatalog.concluding, PrayerCatalog.fatima, PrayerCatalog.sacramentMostHoly,
          PrayerCatalog.memorare, PrayerCatalog.saintMichael] + PrayerCatalog.additionalLibraryPrayers
-    }
-
-    private var searchField: some View {
-        HStack(spacing: AppTheme.Space.md) {
-            Image(systemName: "magnifyingglass").foregroundStyle(palette.dim)
-            // The prompt carries the font so the placeholder scales with Dynamic Type too.
-            TextField(
-                "Search prayers and mysteries",
-                text: $searchText,
-                prompt: Text(dynamicTypeSize.isAccessibilitySize ? "Search" : "Search prayers and mysteries")
-                    .font(AppTheme.TypeRole.bodySmall)
-            )
-                .font(AppTheme.TypeRole.bodySmall)
-                .foregroundStyle(palette.ink)
-                .autocorrectionDisabled()
-                .submitLabel(.search)
-            if !searchText.isEmpty {
-                Button { searchText = "" } label: { Image(systemName: "xmark.circle.fill") }
-                    .foregroundStyle(palette.dim)
-                    .accessibilityLabel("Clear search")
-            }
-        }
-        .padding(.horizontal, AppTheme.Space.lg)
-        .frame(minHeight: AppTheme.Component.pillHeight)
-        .background(palette.surface, in: Capsule())
-        .overlay { Capsule().stroke(palette.hair, lineWidth: 1) }
     }
 
     private var rosaryPrayersPage: some View {
@@ -153,7 +129,8 @@ struct PrayHubView: View {
             .padding(.top, GuideDetailChrome.contentTop)
             .padding(.bottom, AppTheme.tabBarContentClearance)
         }
-        .background(palette.bg)
+        // Plain page colour over the ambient layer; glass cards stay on.
+        .background(palette.bg.ignoresSafeArea())
         .guideDetailChrome("Rosary prayers")
     }
 
@@ -274,11 +251,11 @@ struct PrayHubView: View {
                 : AnyLayout(HStackLayout(alignment: .top, spacing: AppTheme.Space.md))
             layout {
                 NavigationLink { rosaryPrayersPage } label: {
-                    prayerTile(title: "Rosary prayers", subtitle: "Prayers used in the Rosary", icon: "PrayerIconRosary")
+                    prayerTile(title: "Rosary prayers", subtitle: "Used in the Rosary", icon: "PrayerIconRosary")
                 }
                 .buttonStyle(.plain).guidePressable()
                 NavigationLink { libraryPage } label: {
-                    prayerTile(title: "All prayers", subtitle: "Explore the full collection", icon: "PrayerIconAllPrayers")
+                    prayerTile(title: "All prayers", subtitle: "The full collection", icon: "PrayerIconAllPrayers")
                 }
                 .buttonStyle(.plain).guidePressable()
             }
@@ -303,7 +280,8 @@ struct PrayHubView: View {
                 Text(subtitle)
                     .font(AppTheme.TypeRole.caption)
                     .foregroundStyle(palette.dim)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "chevron.right")
                     .guideSymbol(size: 12, weight: .regular)
@@ -329,7 +307,7 @@ struct PrayHubView: View {
         let devotions = !DevotionCatalog.isEnabled ? [] : DevotionCatalog.all.filter { DevotionCatalog.matchesSearch($0, query: query) }
         return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             if prayers.isEmpty && sets.isEmpty && devotions.isEmpty {
-                Text("No prayers or mysteries found. Try another search.")
+                Text("Nothing can be found. Try another search")
                     .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
             }
             ForEach(prayers) { prayer in prayerNavRow(prayer: prayer); Hairline() }
@@ -843,7 +821,6 @@ private struct LearnArticleView: View {
             .padding(.top, AppTheme.Space.xxl)
             .padding(.bottom, 80)
         }
-        .background(palette.bg)
         .guideDetailChrome(article.title)
     }
 }
@@ -868,30 +845,7 @@ private struct AllPrayersView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
-                HStack(spacing: AppTheme.Space.md) {
-                    Image(systemName: "magnifyingglass").foregroundStyle(palette.dim)
-                    TextField(
-                        "Search prayers",
-                        text: $query,
-                        prompt: Text(dynamicTypeSize.isAccessibilitySize ? "Search" : "Search prayers")
-                            .font(AppTheme.TypeRole.bodySmall)
-                    )
-                        .font(AppTheme.TypeRole.bodySmall)
-                        .foregroundStyle(palette.ink)
-                        .autocorrectionDisabled()
-                        .submitLabel(.search)
-                    if !query.isEmpty {
-                        Button { query = "" } label: {
-                            Image(systemName: "xmark.circle.fill").foregroundStyle(palette.dim)
-                        }
-                        .accessibilityLabel("Clear search")
-                    }
-                }
-                .padding(.horizontal, AppTheme.Space.lg)
-                .frame(minHeight: AppTheme.Component.pillHeight)
-                .background(palette.surface, in: Capsule())
-                .overlay { Capsule().stroke(palette.hair, lineWidth: 1) }
-
+                InlinePrayerSearch(text: $query, prompt: "Search prayers")
                 LazyVStack(spacing: 0) {
                     ForEach(results) { prayer in
                         NavigationLink { LearnPrayerDetailView(prayer: prayer) } label: {
@@ -925,8 +879,10 @@ private struct AllPrayersView: View {
             .padding(.bottom, AppTheme.tabBarContentClearance)
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(palette.bg)
+        // Plain page colour over the ambient layer; glass cards stay on.
+        .background(palette.bg.ignoresSafeArea())
         .guideDetailChrome("All prayers")
+        .autocorrectionDisabled()
     }
 }
 
@@ -1060,7 +1016,8 @@ private struct LearnPrayerDetailView: View {
             .padding(.top, AppTheme.Space.lg)
             .padding(.bottom, AppTheme.Space.section)
         }
-        .background(palette.bg)
+        // Plain page colour over the ambient layer; glass cards stay on.
+        .background(palette.bg.ignoresSafeArea())
         .guideDetailChrome("")
     }
 
@@ -1283,7 +1240,6 @@ private struct DevotionDetailView: View {
             .padding(.top, AppTheme.Space.xl)
             .padding(.bottom, AppTheme.tabBarContentClearance)
         }
-        .background(palette.bg)
         .guideDetailChrome(devotion.eyebrow)
     }
 
@@ -1518,7 +1474,6 @@ private struct LearnMysteryDetailView: View {
             .padding(.top, AppTheme.Space.xl)
             .padding(.bottom, 80)
         }
-        .background(palette.bg)
         .guideDetailChrome(set.shortName)
     }
 
@@ -1604,3 +1559,38 @@ private extension MysterySetKind {
     }
 }
 
+
+/// Inline search shared by the Pray hub and prayer library.
+private struct InlinePrayerSearch: View {
+    @Environment(\.palette) private var palette
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Binding var text: String
+    let prompt: String
+
+    var body: some View {
+        HStack(spacing: AppTheme.Space.md) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(palette.dim)
+                .accessibilityHidden(true)
+            TextField(prompt, text: $text,
+                      prompt: Text(dynamicTypeSize.isAccessibilitySize ? "Search" : prompt))
+                .font(AppTheme.TypeRole.bodySmall)
+                .foregroundStyle(palette.ink)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+            if !text.isEmpty {
+                Button { text = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(palette.dim)
+                        .frame(minWidth: AppTheme.Accessibility.minHitTarget,
+                               minHeight: AppTheme.Accessibility.minHitTarget)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, AppTheme.Space.lg)
+        .frame(minHeight: AppTheme.Component.pillHeight)
+        .guideSurface(in: Capsule())
+    }
+}
