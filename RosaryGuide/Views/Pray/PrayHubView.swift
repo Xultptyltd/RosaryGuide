@@ -7,7 +7,6 @@ struct PrayHubView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Binding var prayLaunch: PrayLaunch?
     @State private var debugShowsRosaryPrayers = false
-    @State private var debugLearnSet: MysterySetKind?
     @State private var searchText = ""
     @State private var showingWalkthrough = false
     @State private var expandedQuestion: LearnArticle?
@@ -73,13 +72,6 @@ struct PrayHubView: View {
             }
             // `-RGDebugRosaryPrayers`: opens Rosary prayers for screenshots.
             .navigationDestination(isPresented: $debugShowsRosaryPrayers) { rosaryPrayersPage }
-            // `-RGDebugLearnMystery-<set>` (e.g. `-RGDebugLearnMystery-glorious`): opens that set's page.
-            .navigationDestination(item: $debugLearnSet) { set in LearnMysteryDetailView(set: set, prayLaunch: $prayLaunch) }
-            .task {
-                guard let set = MysterySetKind.allCases.first(where: { DebugHooks.has("-RGDebugLearnMystery-\($0.rawValue)") }) else { return }
-                try? await Task.sleep(for: .seconds(2))
-                debugLearnSet = set
-            }
             .task {
                 guard DebugHooks.has("-RGDebugRosaryPrayers") else { return }
                 try? await Task.sleep(for: .seconds(2))
@@ -282,11 +274,11 @@ struct PrayHubView: View {
                 : AnyLayout(HStackLayout(alignment: .top, spacing: AppTheme.Space.md))
             layout {
                 NavigationLink { rosaryPrayersPage } label: {
-                    prayerTile(title: "Rosary prayers", subtitle: "Used in the Rosary", icon: "PrayerIconRosary")
+                    prayerTile(title: "Rosary prayers", subtitle: "Prayers used in the Rosary", icon: "PrayerIconRosary")
                 }
                 .buttonStyle(.plain).guidePressable()
                 NavigationLink { libraryPage } label: {
-                    prayerTile(title: "All prayers", subtitle: "The full collection", icon: "PrayerIconAllPrayers")
+                    prayerTile(title: "All prayers", subtitle: "Explore the full collection", icon: "PrayerIconAllPrayers")
                 }
                 .buttonStyle(.plain).guidePressable()
             }
@@ -311,7 +303,7 @@ struct PrayHubView: View {
                 Text(subtitle)
                     .font(AppTheme.TypeRole.caption)
                     .foregroundStyle(palette.dim)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "chevron.right")
                     .guideSymbol(size: 12, weight: .regular)

@@ -82,7 +82,7 @@ struct MysteryArtworkView: View {
             FocusedRasterImage(
                 directory: path.directory,
                 name: path.name,
-                focus: tall ? UnitPoint(x: 0.5, y: 0.28) : ArtCatalog.heroWideFocus(set: set),
+                focus: UnitPoint(x: 0.5, y: tall ? 0.28 : 0.42),
                 cropTop: tall ? cropTop : nil
             )
         case .plate, .plateWide:

@@ -495,7 +495,6 @@ struct FeastDetailView: View {
             .padding(.bottom, 108)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .defaultScrollAnchor(DebugHooks.scrollAnchor)
         .background(palette.bg)
         // Keep native navigation visible so level-2 screens always have back navigation.
         // The system back gesture remains available from the far-left edge.
@@ -663,7 +662,7 @@ struct FeastDetailView: View {
                 ForEach(Array(dayPractices.enumerated()), id: \.offset) { index, practice in
                     VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                         Text(practice.title)
-                            .font(AppTheme.TypeRole.callout(weight: .semibold)) // Same token as strong section headings.
+                            .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
                             .foregroundStyle(palette.ink)
                         Text(practice.body)
                             .font(AppTheme.TypeRole.themeSummary)
@@ -712,7 +711,7 @@ struct FeastDetailView: View {
                         VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                             GuideSectionLabel(text: passage.reference, color: palette.dim)
                             Text(passage.title)
-                                .font(AppTheme.TypeRole.callout(weight: .semibold)) // Same token as strong section headings.
+                                .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
                                 .foregroundStyle(palette.ink)
                             Text(passage.excerpt)
                                 .font(AppTheme.TypeRole.themeSummary)
@@ -944,7 +943,7 @@ struct FeastDetailView: View {
             } label: {
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     Text(prayer.title)
-                        .font(AppTheme.TypeRole.callout(weight: .semibold)) // Same token as strong section headings.
+                        .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
                         .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1103,7 +1102,7 @@ private struct FeastRelatedPrayersView: View {
             } label: {
                 HStack(alignment: .center, spacing: AppTheme.Space.md) {
                     Text(prayer.title)
-                        .font(AppTheme.TypeRole.callout(weight: .semibold)) // Same token as strong section headings.
+                        .font(AppTheme.TypeRole.bodySmall.weight(.semibold))
                         .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
