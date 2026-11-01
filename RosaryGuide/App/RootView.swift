@@ -180,4 +180,11 @@ enum DebugHooks {
         false
         #endif
     }
+
+    /// `-RGDebugScrollMid` / `-RGDebugScrollBottom`: starting scroll anchor for screenshots of long pages.
+    static var scrollAnchor: UnitPoint? {
+        if has("-RGDebugScrollBottom") { return .bottom }
+        if has("-RGDebugScrollMid") { return .center }
+        return nil
+    }
 }

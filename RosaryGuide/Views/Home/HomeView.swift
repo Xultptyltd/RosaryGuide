@@ -150,6 +150,12 @@ struct HomeView: View {
                     try? await Task.sleep(for: .seconds(3))
                     proxy.scrollTo("home-feasts", anchor: .center)
                 }
+                // `-RGDebugOpenFeast`: opens the featured feast's detail for screenshots.
+                .task {
+                    guard DebugHooks.has("-RGDebugOpenFeast"), let feast = upcomingPreviewFeasts.first else { return }
+                    try? await Task.sleep(for: .seconds(2))
+                    navigationPath.append(feast)
+                }
                 #endif
                 .onPreferenceChange(HomeCTABottomPreferenceKey.self) { value in
                     measuredCTABottom = value
@@ -569,18 +575,22 @@ struct HomeView: View {
                                 .frame(height: AppTheme.Space.xxl * 2)
                         }
                         .clipped()
+                        // Today badge sits in the card's top-left corner, over the art.
+                        .overlay(alignment: .topLeading) {
+                            if isToday {
+                                Text("TODAY")
+                                    .font(AppTheme.TypeRole.caption(weight: .semibold))
+                                    .tracking(0.6)
+                                    .foregroundStyle(palette.todayPillText)
+                                    .padding(.horizontal, AppTheme.Space.sm)
+                                    .padding(.vertical, AppTheme.Space.xs)
+                                    .background(palette.todayPillFill, in: Capsule())
+                                    .padding(AppTheme.Space.md)
+                            }
+                        }
 
                     VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                        if isToday {
-                            // Match This week calendar weekRow TODAY pill (colors, font, padding, Capsule).
-                            Text("TODAY")
-                                .font(AppTheme.TypeRole.caption(weight: .semibold))
-                                .tracking(0.6)
-                                .foregroundStyle(palette.todayPillText)
-                                .padding(.horizontal, AppTheme.Space.sm)
-                                .padding(.vertical, AppTheme.Space.xs)
-                                .background(palette.todayPillFill, in: Capsule())
-                        } else {
+                        if !isToday {
                             Text("Next · \(featured.date.formatted(.dateTime.day().month(.wide)))".uppercased())
                                 .font(AppTheme.TypeRole.caption(weight: .medium))
                                 .tracking(AppTheme.Component.eyebrowTracking)
