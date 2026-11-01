@@ -284,6 +284,12 @@ struct OfferView: View {
             try? await Task.sleep(for: .seconds(3))
             proxy.scrollTo("profile-backup", anchor: .center)
         }
+        // `-RGDebugOpenIntentionDetail`: opens the first intention's detail for screenshots.
+        .task {
+            guard DebugHooks.has("-RGDebugOpenIntentionDetail") else { return }
+            try? await Task.sleep(for: .seconds(2))
+            intentionDetail = offer.sortedIntentions.first
+        }
         #endif
         }
     }
@@ -1690,6 +1696,9 @@ private struct IntentionDetailView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 0) {
+                    detailSection
+
+                    // The main action closes the screen, after the details.
                     Button(action: onPray) {
                         Text("Offer a Rosary")
                             .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
@@ -1701,10 +1710,7 @@ private struct IntentionDetailView: View {
                             .background(palette.secondaryButtonFill, in: Capsule())
                     }
                     .buttonStyle(.plain)
-
-                    GuideSectionBoundary()
-
-                    detailSection
+                    .padding(.top, AppTheme.Space.xl)
                 }
                 .padding(.top, shouldShowNotesField ? AppTheme.Space.lg - AppTheme.Space.md : 0)
 
