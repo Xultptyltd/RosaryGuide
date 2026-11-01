@@ -596,6 +596,11 @@ struct HomeView: View {
                                 .foregroundStyle(palette.faint)
                                 .accessibilityHidden(true)
                         }
+                        // Only the featured card carries the one-line description.
+                        Text(featured.feast.tagline)
+                            .font(AppTheme.TypeRole.rhythmCaption())
+                            .foregroundStyle(palette.dim)
+                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, AppTheme.Space.lg)
