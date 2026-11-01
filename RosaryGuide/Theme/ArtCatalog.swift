@@ -100,6 +100,18 @@ enum ArtCatalog {
         ("Art", "crucifix", "png")
     }
 
+    /// Wide set heroes (Pray > mystery set pages): per-image crop so each scene keeps
+    /// its key faces. Values position the crop within the overflow (0 = top).
+    static func heroWideFocus(set: MysterySetKind) -> UnitPoint {
+        let y: CGFloat = switch set {
+        case .joyful: 0.22
+        case .luminous: 0.16
+        case .sorrowful: 0.22
+        case .glorious: 0.0
+        }
+        return UnitPoint(x: 0.5, y: y)
+    }
+
     /// CSS object-position from art.js FOCUS (tall/square plate).
     static func focus(set: MysterySetKind, number: Int) -> UnitPoint {
         let values: [CGFloat]
