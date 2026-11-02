@@ -15,8 +15,9 @@ struct RosaryGuideApp: App {
     @State private var rootGeneration = 0
     private var landing: AppLanding { AppLanding.shared }
     /// DEBUG `-RGDebugSignInTransition`: holds the sign-in screen up (even with a saved session)
-    /// and plays the sign-in transition into Home, with no sign-in. Always false in release.
-    @State private var previewsSignInTransition = DebugHooks.has("-RGDebugSignInTransition")
+    /// and plays the sign-in transition into Home, with no sign-in (`-RGDebugGuestTransition`:
+    /// the same via Continue as guest). Always false in release.
+    @State private var previewsSignInTransition = DebugHooks.has("-RGDebugSignInTransition") || DebugHooks.has("-RGDebugGuestTransition")
     @AppStorage("onboarding.completed") private var didCompleteOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
 

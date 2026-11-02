@@ -47,7 +47,8 @@ struct OnboardingView: View {
                 .ignoresSafeArea()
                 .transition(.opacity)
             } else if includesSignIn {
-                OnboardingSignInView(onComplete: onComplete)
+                // Onboarding opens the app; the Profile and Settings sheets just close for a guest.
+                OnboardingSignInView(guestLandsOnHome: !startsAtSignIn, onComplete: onComplete)
                     .transition(.opacity)
             }
 
@@ -260,6 +261,8 @@ enum SignInLayout {
 }
 
 private struct OnboardingSignInView: View {
+    /// Continue as guest opens Home with the same fade as a sign-in (onboarding only).
+    var guestLandsOnHome = false
     var onComplete: () -> Void
 
     @Environment(AuthStore.self) private var auth
@@ -328,7 +331,7 @@ private struct OnboardingSignInView: View {
                             auth.signInWithApple()
                         }
                         .modifier(GuideShakeEffect(animatableData: lastProvider == .apple ? shakes : 0))
-                        .disabled(auth.isWorking || succeeded)
+                        .disabled(auth.isWorking || succeeded || leaving != nil)
                         .accessibilityLabel(auth.isSigningInWithApple ? "Signing in with Apple" : "Continue with Apple")
 
                         OnboardingAuthButton(title: auth.isSigningInWithGoogle ? "Signing in" : "Continue with Google", assetImage: "GoogleG", filled: false, status: buttonState(.google)) {
@@ -336,7 +339,7 @@ private struct OnboardingSignInView: View {
                             auth.signInWithGoogle()
                         }
                         .modifier(GuideShakeEffect(animatableData: lastProvider == .google ? shakes : 0))
-                        .disabled(auth.isWorking || succeeded)
+                        .disabled(auth.isWorking || succeeded || leaving != nil)
                         .accessibilityLabel(auth.isSigningInWithGoogle ? "Signing in with Google" : "Continue with Google")
 
                         if let message = auth.errorMessage {
@@ -358,10 +361,10 @@ private struct OnboardingSignInView: View {
                         ) {
                             HapticService.play(.light, enabled: settings.hapticsEnabled)
                             auth.errorMessage = nil
-                            onComplete()
+                            continueAsGuest()
                         }
                         .environment(\.palette, ThemePalette(scheme: .dark))
-                        .disabled(auth.isWorking)
+                        .disabled(auth.isWorking || leaving != nil)
                         .padding(.top, AppTheme.Space.xs)
                     }
                     .padding(.horizontal, AppTheme.gutter)
@@ -386,7 +389,8 @@ private struct OnboardingSignInView: View {
         }
         .onAppear {
             #if DEBUG
-            guard !DebugHooks.has("-RGDebugSignInTransition"), !DebugHooks.has("-RGDebugProfileSignInTransition") else { return }
+            guard !DebugHooks.has("-RGDebugSignInTransition"), !DebugHooks.has("-RGDebugProfileSignInTransition"),
+                  !DebugHooks.has("-RGDebugGuestTransition") else { return }
             #endif
             completeIfSignedIn()
         }
@@ -400,6 +404,12 @@ private struct OnboardingSignInView: View {
             try? await Task.sleep(for: .seconds(fromProfile ? 2 : 10))
             lastProvider = .apple
             completeAfterSuccess()
+        }
+        // `-RGDebugGuestTransition`: taps Continue as guest after 10 s (past the launch splash).
+        .task {
+            guard DebugHooks.has("-RGDebugGuestTransition") else { return }
+            try? await Task.sleep(for: .seconds(10))
+            continueAsGuest()
         }
         #endif
         .accessibilityElement(children: .contain)
@@ -429,6 +439,23 @@ private struct OnboardingSignInView: View {
         withTransaction(AppLanding.still) { AppLanding.shared.buildsHomeEarly = true }
         let style: SignInTransition.Style = reduceMotion ? .reduced : .standard
         DispatchQueue.main.asyncAfter(deadline: .now() + SignInTransition.tick) {
+            withAnimation(style.fadeOut) { leaving = style }
+            DispatchQueue.main.asyncAfter(deadline: .now() + style.fadeOutDuration) { handOff() }
+        }
+    }
+
+    /// Guest from onboarding: no tick or success haptic (nothing succeeded; the button keeps its
+    /// light tap), then the same fade into Home as a sign-in. From a sheet: just close.
+    private func continueAsGuest() {
+        guard guestLandsOnHome else {
+            onComplete()
+            return
+        }
+        guard leaving == nil else { return }
+        withTransaction(AppLanding.still) { AppLanding.shared.buildsHomeEarly = true }
+        let style: SignInTransition.Style = reduceMotion ? .reduced : .standard
+        // A turn of the run loop first, so Home's hidden first layout lands before the fade starts.
+        DispatchQueue.main.async {
             withAnimation(style.fadeOut) { leaving = style }
             DispatchQueue.main.asyncAfter(deadline: .now() + style.fadeOutDuration) { handOff() }
         }
