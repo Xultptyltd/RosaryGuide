@@ -54,13 +54,8 @@ private enum AppTab: String, CaseIterable, Identifiable, Hashable {
         case .today: "TabTodayOutline"
         case .pray: "TabLearnOutline"
         case .calendar: "TabFeastsOutline"
-        case .intentions: "TabIntentionsOutline"
+        case .intentions: "TabProfileOutline"
         }
-    }
-
-    /// SF Symbol (outline; ".fill" when selected) used instead of an asset.
-    var systemSymbol: String? {
-        self == .intentions ? "person.crop.circle" : nil
     }
 
     var selectedIconAsset: String {
@@ -68,7 +63,7 @@ private enum AppTab: String, CaseIterable, Identifiable, Hashable {
         case .today: "TabTodayFilled"
         case .pray: "TabLearnFilled"
         case .calendar: "TabFeastsFilled"
-        case .intentions: "TabIntentionsFilled"
+        case .intentions: "TabProfileFilled"
         }
     }
 }
@@ -136,12 +131,8 @@ struct RootView: View {
         Label {
             Text(item.title)
         } icon: {
-            if let symbol = item.systemSymbol {
-                Image(systemName: tab == item ? "\(symbol).fill" : symbol)
-            } else {
-                Image(tab == item ? item.selectedIconAsset : item.iconAsset)
-                    .renderingMode(.template)
-            }
+            Image(tab == item ? item.selectedIconAsset : item.iconAsset)
+                .renderingMode(.template)
         }
     }
 }
