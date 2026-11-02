@@ -61,6 +61,7 @@ struct MysteryArtworkView: View {
     enum Kind { case plate, plateWide, heroTall, heroWide }
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.pageStyle) private var pageStyle
     @Environment(\.palette) private var palette
 
     var body: some View {
@@ -97,13 +98,13 @@ struct MysteryArtworkView: View {
                 )
                 .overlay { plateScrim }
             } else {
-                palette.cardSurface
+                palette.cardSurface(on: pageStyle)
             }
         }
     }
 
     private var plateScrim: some View {
-        let fade = kind == .plateWide ? palette.bg : palette.cardSurface
+        let fade = kind == .plateWide ? palette.page(pageStyle) : palette.cardSurface(on: pageStyle)
         let stops: [Gradient.Stop] = bottomFade
             ? [
                 .init(color: fade.opacity(0.28), location: 0),

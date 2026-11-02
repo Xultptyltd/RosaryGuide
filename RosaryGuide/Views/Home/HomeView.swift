@@ -256,19 +256,20 @@ struct HomeView: View {
     private func hero(topInset: CGFloat, viewport: CGFloat) -> some View {
         // Top band above the artwork: 60% of the status-bar inset.
         let artworkTop = collapseHeroTopBand ? 0 : (topInset * 0.6).rounded()
+        // Home is a grouped (glow) page: the hero dissolves into the grouped colour.
         return ZStack(alignment: .top) {
-            palette.bg
+            palette.groupedBackground
             MysteryArtworkView(set: currentSet, kind: .heroTall)
                 .frame(height: AppTheme.homeHeroHeight(viewport: viewport) + topInset)
                 .clipped()
                 .overlay {
                     LinearGradient(
                         stops: [
-                            .init(color: palette.bg.opacity(colorScheme == .light ? 0.18 : 0.34), location: 0),
+                            .init(color: palette.groupedBackground.opacity(colorScheme == .light ? 0.18 : 0.34), location: 0),
                             .init(color: .clear, location: 0.22),
-                            .init(color: palette.bg.opacity(0.55), location: 0.64),
-                            .init(color: palette.bg, location: 0.86),
-                            .init(color: palette.bg, location: 1)
+                            .init(color: palette.groupedBackground.opacity(0.55), location: 0.64),
+                            .init(color: palette.groupedBackground, location: 0.86),
+                            .init(color: palette.groupedBackground, location: 1)
                         ],
                         startPoint: .top,
                         endPoint: .bottom

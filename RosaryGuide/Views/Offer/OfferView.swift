@@ -171,6 +171,8 @@ struct OfferView: View {
                 #if DEBUG
                 if DebugHooks.has("-RGDebugOpenArchived") { showingArchived = true }
                 if DebugHooks.has("-RGDebugOpenAddIntention") { editor = .create }
+                // `-RGDebugOpenIntention`: opens the first intention's detail (use with -RGDebugSampleIntentions).
+                if DebugHooks.has("-RGDebugOpenIntention") { intentionDetail = offer.sortedIntentions.first }
                 #endif
             }
         }
@@ -1772,7 +1774,7 @@ private struct IntentionDetailView: View {
             }
         }
         // Plain page colour over the ambient layer; glass cards stay on.
-        .background(palette.bg.ignoresSafeArea())
+        .guidePlainPageBackground()
         .guideDetailChrome(detailNavigationTitle)
         .deleteWarningHaptic(isPresented: showingDeleteAlert)
         .alert("Delete intention?", isPresented: $showingDeleteAlert) {

@@ -49,9 +49,13 @@ final class ThemeTokenTests: XCTestCase {
 
         XCTAssertEqual(UIColor(light.surface), UIColor(Color(hex: 0xEBEBED)))
         XCTAssertEqual(UIColor(dark.surface), UIColor(Color(hex: 0x191B1E)))
-        XCTAssertEqual(UIColor(light.bg), UIColor(Color(hex: 0xF2F3F7)))
-        XCTAssertEqual(UIColor(light.cardSurface), UIColor(Color.white))
-        XCTAssertEqual(UIColor(dark.cardSurface), UIColor(dark.surface))
+        XCTAssertEqual(UIColor(light.bg), UIColor(Color(hex: 0xFFFFFF)))
+        XCTAssertEqual(UIColor(light.groupedBackground), UIColor(Color(hex: 0xF2F3F7)))
+        XCTAssertEqual(UIColor(dark.groupedBackground), UIColor(dark.bg))
+        XCTAssertEqual(UIColor(light.cardSurface(on: .grouped)), UIColor(Color.white))
+        XCTAssertEqual(UIColor(light.cardSurface(on: .plain)), UIColor(light.groupedBackground))
+        XCTAssertEqual(UIColor(dark.cardSurface(on: .plain)), UIColor(dark.surface))
+        XCTAssertEqual(UIColor(dark.cardSurface(on: .grouped)), UIColor(dark.surface))
         XCTAssertEqual(UIColor(dark.sectionDivider), UIColor(dark.surface))
         XCTAssertEqual(UIColor(dark.bg), UIColor(Color(hex: 0x090A0C)))
         XCTAssertEqual(UIColor(light.prayBg), UIColor(light.bg))
@@ -167,7 +171,7 @@ final class ContrastTokenTests: XCTestCase {
 
     func testTextTokensReachFourAndAHalf() {
         for p in palettes {
-            for bg in [p.bg, p.surface] {
+            for bg in [p.bg, p.groupedBackground, p.surface] {
                 let where_ = "\(p.scheme) \(p.contrast)"
                 XCTAssertGreaterThanOrEqual(ratio(p.ink, bg), 4.5, where_)
                 XCTAssertGreaterThanOrEqual(ratio(p.textSecondary, bg), 4.5, "secondary \(where_)")
@@ -175,7 +179,9 @@ final class ContrastTokenTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(ratio(p.destructive, bg), 4.5, "destructive \(where_)")
             }
             XCTAssertGreaterThanOrEqual(ratio(p.onAccent, p.accent), 4.5, "button text")
-            XCTAssertGreaterThanOrEqual(ratio(p.stepNumberText, p.stepNumberFill, under: p.bg), 4.5, "step number")
+            for page in [p.bg, p.groupedBackground] {
+                XCTAssertGreaterThanOrEqual(ratio(p.stepNumberText, p.stepNumberFill, under: page), 4.5, "step number")
+            }
             XCTAssertGreaterThanOrEqual(ratio(p.completionMeta, p.completionBackground), 4.5, "completion meta")
         }
     }

@@ -178,12 +178,20 @@ struct ThemePalette {
 
     // MARK: Canonical foundation
 
-    /// The one page colour: grouped grey in light (white cards read on it), near-black in dark.
+    /// Plain page colour (detail pages, sheets, prayer flow): white in light, near-black in dark.
     var background: Color {
+        scheme == .light
+            ? Color(hex: 0xFFFFFF)
+            : Color(hex: 0x090A0C)
+    }
+    /// Grouped page colour under the blue glow (tab roots and glow pages): grey in light.
+    var groupedBackground: Color {
         scheme == .light
             ? Color(hex: 0xF2F3F7)
             : Color(hex: 0x090A0C)
     }
+    /// Page colour for a page style.
+    func page(_ style: PageStyle) -> Color { style == .grouped ? groupedBackground : background }
 
     /// Resolved from the palette's own scheme, not `.primary`. `.primary` follows the
     /// hosting controller's trait, which can stay on the old scheme inside covers
@@ -210,8 +218,12 @@ struct ThemePalette {
             : Color(hex: 0x191B1E)
     }
 
-    /// Content cards: white on the light grey page (as grouped lists); dark keeps the surface.
-    var cardSurface: Color { scheme == .light ? Color.white : surface }
+    /// Content cards. Light: white on the grouped grey page, grouped grey on a white plain page,
+    /// so a card always reads against its page. Dark keeps the surface.
+    func cardSurface(on style: PageStyle) -> Color {
+        guard scheme == .light else { return surface }
+        return style == .grouped ? background : groupedBackground
+    }
     /// Hairline rim on light cards; dark cards keep their glass rim.
     var cardSurfaceStroke: Color { textPrimary.opacity(0.04) }
     /// Section divider band: one step darker than the surface in light so it reads on the grey page.
@@ -643,6 +655,29 @@ enum GuideChrome {
     }
 }
 
+/// Whether a page sits on the grouped (glow) background or a plain one; cards follow it.
+enum PageStyle { case plain, grouped }
+
+extension EnvironmentValues {
+    /// Sheets and the prayer flow are plain unless their page chrome says otherwise.
+    @Entry var pageStyle: PageStyle = .plain
+}
+
+/// Plain page colour over the ambient layer (detail pages): glass stays on, cards go plain.
+struct GuidePlainPageBackground: ViewModifier {
+    @Environment(\.palette) private var palette
+
+    func body(content: Content) -> some View {
+        content
+            .background(palette.bg.ignoresSafeArea())
+            .environment(\.pageStyle, .plain)
+    }
+}
+
+extension View {
+    func guidePlainPageBackground() -> some View { modifier(GuidePlainPageBackground()) }
+}
+
 struct GuidePageChrome: ViewModifier {
     var ambientBackground = false
     @Environment(\.palette) private var palette
@@ -650,6 +685,7 @@ struct GuidePageChrome: ViewModifier {
     func body(content: Content) -> some View {
         content
             .environment(\.glassSurfacesEnabled, ambientBackground)
+            .environment(\.pageStyle, ambientBackground ? .grouped : .plain)
             .background {
                 if ambientBackground { AppPageBackground() } else { palette.bg }
             }
@@ -722,6 +758,7 @@ extension View {
 struct GuideChromeBar: ViewModifier {
     @Environment(\.displayScale) private var displayScale
     @Environment(\.palette) private var palette
+    @Environment(\.pageStyle) private var pageStyle
     /// 0 at rest, 1 when scrolled.
     var progress: CGFloat
     var prayerBackground = false
@@ -732,7 +769,7 @@ struct GuideChromeBar: ViewModifier {
         content.background(alignment: .top) {
             GuideBlurView()
                 .overlay {
-                    (prayerBackground ? palette.prayBg : palette.bg)
+                    (prayerBackground ? palette.prayBg : palette.page(pageStyle))
                         .opacity(Self.tintOpacity)
                 }
                 .overlay(alignment: .bottom) {
@@ -765,6 +802,7 @@ extension View {
 /// scrim. With Reduce Transparency it is the solid page colour.
 struct GuideFooterBackdrop: ViewModifier {
     @Environment(\.palette) private var palette
+    @Environment(\.pageStyle) private var pageStyle
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     var prayerBackground = false
@@ -775,7 +813,7 @@ struct GuideFooterBackdrop: ViewModifier {
 
     func body(content: Content) -> some View {
         content.background(alignment: .bottom) {
-            let page = prayerBackground ? palette.prayBg : palette.bg
+            let page = prayerBackground ? palette.prayBg : palette.page(pageStyle)
             Group {
                 if reduceTransparency {
                     page
@@ -1391,14 +1429,15 @@ extension EnvironmentValues {
 private struct GuideSurfaceModifier<SurfaceShape: Shape>: ViewModifier {
     @Environment(\.palette) private var palette
     @Environment(\.glassSurfacesEnabled) private var enabled
+    @Environment(\.pageStyle) private var pageStyle
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     let shape: SurfaceShape
     var fill: Color?
 
     func body(content: Content) -> some View {
         if palette.scheme == .light && (fill == nil || fill == palette.surface) {
-            // Light cards: solid white with a faint rim on the grey page, glass or not.
-            content.background(palette.cardSurface, in: shape)
+            // Light cards: solid, with a faint rim; white on grouped pages, grey on plain ones.
+            content.background(palette.cardSurface(on: pageStyle), in: shape)
                 .overlay { shape.stroke(palette.cardSurfaceStroke, lineWidth: AppTheme.Component.panelStrokeWidth) }
         } else if !enabled || reduceTransparency || (fill != nil && fill != palette.surface) {
             content.background(fill ?? palette.surface, in: shape)

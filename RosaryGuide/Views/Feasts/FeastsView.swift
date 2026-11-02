@@ -504,7 +504,7 @@ struct FeastDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         // Plain page colour over the ambient layer; glass cards stay on.
-        .background(palette.bg.ignoresSafeArea())
+        .guidePlainPageBackground()
         .guidePageChrome(ambientBackground: true)
         // Keep native navigation visible so level-2 screens always have back navigation.
         // The system back gesture remains available from the far-left edge.
@@ -1321,7 +1321,7 @@ private struct FeastSecondaryPage<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         // Plain page colour over the ambient layer; glass cards stay on.
-        .background(palette.bg.ignoresSafeArea())
+        .guidePlainPageBackground()
         .guidePageChrome(ambientBackground: true)
         // Match FeastDetailView: native nav with hidden (translucent) bar material
         // so hero content can show through liquid glass.

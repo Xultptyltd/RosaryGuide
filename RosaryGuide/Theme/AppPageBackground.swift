@@ -4,8 +4,8 @@ import UIKit
 extension AppTheme {
     /// Values translated from rosary-background-light.html and rosary-background-dark.html.
     enum AmbientBackground {
-        static let lightBase = ThemePalette(scheme: .light).background
-        static let darkBase = ThemePalette(scheme: .dark).background
+        static let lightBase = ThemePalette(scheme: .light).groupedBackground
+        static let darkBase = ThemePalette(scheme: .dark).groupedBackground
         static let glow = AppTheme.marianBlue
         static let blur: CGFloat = 70
         static let fadeStop: CGFloat = 0.65

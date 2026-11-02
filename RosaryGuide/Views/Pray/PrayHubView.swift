@@ -138,7 +138,7 @@ struct PrayHubView: View {
             .padding(.bottom, AppTheme.tabBarContentClearance)
         }
         // Plain page colour over the ambient layer; glass cards stay on.
-        .background(palette.bg.ignoresSafeArea())
+        .guidePlainPageBackground()
         .guideDetailChrome("Rosary prayers")
     }
 
@@ -888,7 +888,7 @@ private struct AllPrayersView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         // Plain page colour over the ambient layer; glass cards stay on.
-        .background(palette.bg.ignoresSafeArea())
+        .guidePlainPageBackground()
         .guideDetailChrome("All prayers")
         .autocorrectionDisabled()
     }
@@ -1025,7 +1025,7 @@ private struct LearnPrayerDetailView: View {
             .padding(.bottom, AppTheme.Space.section)
         }
         // Plain page colour over the ambient layer; glass cards stay on.
-        .background(palette.bg.ignoresSafeArea())
+        .guidePlainPageBackground()
         .guideDetailChrome("")
     }
 
