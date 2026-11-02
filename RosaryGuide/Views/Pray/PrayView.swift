@@ -68,6 +68,8 @@ struct PrayView: View {
     @State private var confirmReplace = false
     @State private var didConfigure = false
     @State private var showingMichael = false
+    /// The review alert on the completion screen (see `ReviewPromptGate`).
+    @State private var showingReviewPrompt = false
     @State private var showingRosarySettings = false
     /// Saint Michael after the Rosary keeps its own English / Latin / Both choice.
     @State private var michaelLanguage: PrayerLanguage?
@@ -205,6 +207,11 @@ struct PrayView: View {
             // DEBUG-only (DebugHooks.has is false in Release): screenshot the beads on / off.
             if DebugHooks.has("-RGDebugHideBeads") { settings.rosaryConfig.showBeads = false }
             if DebugHooks.has("-RGDebugShowBeads") { settings.rosaryConfig.showBeads = true }
+            // `-RGDebugReviewAlert` (with `-RGDebugRosaryFlow`): jumps to the completion screen,
+            // which then shows the review alert without recording anything.
+            if DebugHooks.has("-RGDebugReviewAlert") {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { showCompletionScreen() }
+            }
             if case .fresh(let set, _, _) = launch, sessionStore.resumableSession != nil {
                 freshSetPending = set
                 confirmReplace = true
@@ -1276,6 +1283,10 @@ struct PrayView: View {
         // Complete screen and Saint Michael are not counted, and closing the app now keeps it.
         // Deferred a turn so it never runs inside the transition's own update.
         .onAppear {
+            #if DEBUG
+            // The review preview never records a Rosary (the account may sync).
+            guard !DebugHooks.has("-RGDebugReviewAlert") else { return }
+            #endif
             DispatchQueue.main.async {
                 saveActivePrayerTime(continueTiming: false)
                 markRosaryCompletedIfNeeded()
@@ -1283,10 +1294,31 @@ struct PrayView: View {
         }
         // Asked only once the screen has settled, never mid-prayer or over Saint Michael.
         .task {
-            await ReviewPrompter.requestAfterCompletion(
-                completedRosaries: sessionStore.completedSessions.count,
+            #if DEBUG
+            if DebugHooks.has("-RGDebugReviewAlert") {
+                try? await Task.sleep(for: ReviewPrompter.settleDelay)
+                showingReviewPrompt = true
+                return
+            }
+            #endif
+            if await ReviewPrompter.shouldAskAfterSettling(
+                completedRosaries: { sessionStore.completedSessions.count },
                 isStillSettled: { !showingMichael }
-            )
+            ) {
+                showingReviewPrompt = true
+            }
+        }
+        .alert(ReviewPromptCopy.title, isPresented: $showingReviewPrompt) {
+            Button(ReviewPromptCopy.leaveReview) {
+                #if DEBUG
+                if DebugHooks.has("-RGDebugReviewAlert") { return }
+                #endif
+                ReviewPrompter.leaveReview()
+            }
+            .keyboardShortcut(.defaultAction)
+            Button(ReviewPromptCopy.notNow, role: .cancel) {}
+        } message: {
+            Text(ReviewPromptCopy.message)
         }
     }
 
