@@ -13,6 +13,10 @@ struct RosaryGuideApp: App {
     /// Bumped after a sign-in: rebuilding the tabs closes every sheet and pushed page and
     /// starts on Home.
     @State private var rootGeneration = 0
+    private var landing: AppLanding { AppLanding.shared }
+    /// DEBUG `-RGDebugWelcomePreview`: holds the sign-in screen up (even with a saved session)
+    /// and plays the sign-in welcome into Home, with no sign-in. Always false in release.
+    @State private var previewsWelcome = DebugHooks.has("-RGDebugWelcomePreview")
     @AppStorage("onboarding.completed") private var didCompleteOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -33,20 +37,43 @@ struct RosaryGuideApp: App {
         _sync = State(initialValue: AccountSyncStore(settings: settings, session: session, appIcon: appIcon))
     }
 
+    private func finishWelcome() {
+        guard let welcome = landing.welcome else { return }
+        withAnimation(welcome.plain ? SignInWelcomeMotion.plainFade : SignInWelcomeMotion.reveal) {
+            landing.welcome = nil
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             ThemedRoot {
                 ZStack {
                     // Signing in is optional (App Review 5.1.1(v)): guests use everything on this
                     // device, and an account only adds sync.
-                    if LaunchGate.showsApp(didCompleteOnboarding: didCompleteOnboarding, isSignedIn: auth.isSignedIn,
+                    if !previewsWelcome, LaunchGate.showsApp(didCompleteOnboarding: didCompleteOnboarding, isSignedIn: auth.isSignedIn,
                                            signedInThisLaunch: auth.interactiveSignIns > 0) {
                         RootView()
                             .id(rootGeneration)
+                            .scaleEffect(landing.welcome?.plain == false ? SignInWelcomeMotion.homeScale : 1)
                     } else {
                         OnboardingView {
-                            didCompleteOnboarding = true
+                            // A sign-in hands its welcome over first, so Home opens under it.
+                            withTransaction(AppLanding.still) {
+                                didCompleteOnboarding = true
+                                previewsWelcome = false
+                            }
                         }
+                    }
+
+                    if let welcome = landing.welcome {
+                        SignInWelcomeView(welcome: welcome, animatesIn: false, onTap: finishWelcome)
+                            .transition(.opacity)
+                            .zIndex(2)
+                            .task {
+                                // A beat for Home's first layout, then the welcome fades away.
+                                try? await Task.sleep(for: .seconds(0.1))
+                                finishWelcome()
+                            }
                     }
 
                     if isShowingSplash {
@@ -170,6 +197,8 @@ enum LaunchGate {
 final class AppLanding {
     static let shared = AppLanding()
     private(set) var homeRequests = 0
+    /// The welcome after a sign-in, held over Home until it fades away.
+    var welcome: SignInWelcome?
     func requestHome() { homeRequests += 1 }
 
     static var still: Transaction {
