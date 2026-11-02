@@ -234,8 +234,8 @@ struct OfferView: View {
 
 
                 if let papal = visiblePapalSuggestion {
-                    // Intentions sit on the page background: spacing, not a section band.
-                    Spacer().frame(height: AppTheme.Space.sm)
+                    // Divides your intentions (card or list) from the Holy Father's; the stack supplies the spacing.
+                    GuideSectionBoundary(verticalSpacing: 0)
                     GuideSectionLabel(text: "Holy Father’s intention", prominence: .strong)
                     PapalMonthCard(item: papal, isAdded: hasAdoptedSuggestion(papal),
                         onOpen: { papalDetail = papal }, onAdd: { adoptSuggestion(papal) }, onPin: { pinPapalSuggestion(papal) })
@@ -294,10 +294,11 @@ struct OfferView: View {
     /// No intentions yet: a centred invitation in the same glass card as Your prayer.
     private var intentionsEmptyCard: some View {
         VStack(spacing: AppTheme.Space.none) {
+            // White glyph on the mystery icon fill (accent tint in dark, Marian blue in light).
             IntentionGlyphImage(glyph: .heart, size: AppTheme.MysteryIcon.circleSize * AppTheme.MysteryIcon.assetRatio)
-                .foregroundStyle(palette.accentText)
+                .foregroundStyle(palette.mysteryIconGlyph)
                 .frame(width: AppTheme.MysteryIcon.circleSize, height: AppTheme.MysteryIcon.circleSize)
-                .background(palette.accentTint, in: Circle())
+                .background(palette.mysteryIconFill, in: Circle())
                 .accessibilityHidden(true)
             Text("What’s on your heart?")
                 .font(AppTheme.TypeRole.cardTitle)
