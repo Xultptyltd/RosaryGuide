@@ -7,6 +7,7 @@ struct PrayHubView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Binding var prayLaunch: PrayLaunch?
     @State private var debugShowsRosaryPrayers = false
+    @State private var debugShowsPrayer = false
     @State private var searchText = ""
     @State private var showingWalkthrough = false
     @State private var expandedQuestion: LearnArticle?
@@ -76,6 +77,13 @@ struct PrayHubView: View {
                 guard DebugHooks.has("-RGDebugRosaryPrayers") else { return }
                 try? await Task.sleep(for: .seconds(2))
                 debugShowsRosaryPrayers = true
+            }
+            // `-RGDebugOpenPrayer`: opens the Apostles' Creed page for screenshots.
+            .navigationDestination(isPresented: $debugShowsPrayer) { LearnPrayerDetailView(prayer: PrayerCatalog.apostlesCreed) }
+            .task {
+                guard DebugHooks.has("-RGDebugOpenPrayer") else { return }
+                try? await Task.sleep(for: .seconds(2))
+                debugShowsPrayer = true
             }
             // `-RGDebugPrayPrayers`: scrolls to the Prayers tiles for screenshots.
             .task {

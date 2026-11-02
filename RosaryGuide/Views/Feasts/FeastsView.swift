@@ -80,6 +80,7 @@ struct FeastsView: View {
     @State private var expandedWeek: Int? = 0
     @State private var selectedDay: Date = Calendar.current.startOfDay(for: Date())
     @State private var navigationPath = NavigationPath()
+    @State private var debugFeast: DatedFeast?
 
     private var calendar: Calendar { .current }
     @Environment(DayClock.self) private var dayClock
@@ -176,6 +177,15 @@ struct FeastsView: View {
             .scrollDisabled(calendarDrag != nil)
             .tint(palette.accent)
             .guideRootChrome("Feasts", ambientBackground: true)
+            #if DEBUG
+            // `-RGDebugOpenFeast`: opens the first upcoming feast's page for screenshots.
+            .navigationDestination(item: $debugFeast) { FeastDetailView(prayLaunch: $prayLaunch, item: $0) }
+            .task {
+                guard DebugHooks.has("-RGDebugOpenFeast") else { return }
+                try? await Task.sleep(for: .seconds(2))
+                debugFeast = agenda.sections.first?.items.first
+            }
+            #endif
         }
     }
 

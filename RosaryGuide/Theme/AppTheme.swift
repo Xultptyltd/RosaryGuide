@@ -178,9 +178,10 @@ struct ThemePalette {
 
     // MARK: Canonical foundation
 
+    /// The one page colour: grouped grey in light (white cards read on it), near-black in dark.
     var background: Color {
         scheme == .light
-            ? Color(hex: 0xFEFEFE)
+            ? Color(hex: 0xF2F3F7)
             : Color(hex: 0x090A0C)
     }
 
@@ -209,6 +210,13 @@ struct ThemePalette {
             : Color(hex: 0x191B1E)
     }
 
+    /// Content cards: white on the light grey page (as grouped lists); dark keeps the surface.
+    var cardSurface: Color { scheme == .light ? Color.white : surface }
+    /// Hairline rim on light cards; dark cards keep their glass rim.
+    var cardSurfaceStroke: Color { textPrimary.opacity(0.04) }
+    /// Section divider band: one step darker than the surface in light so it reads on the grey page.
+    var sectionDivider: Color { scheme == .light ? Color(hex: 0xE3E4E8) : surface }
+
     var accent: Color {
         switch (scheme, contrast) {
         case (.light, .increased): AppTheme.brandAccentHighContrast
@@ -235,7 +243,8 @@ struct ThemePalette {
         default: AppTheme.marianBlue
         }
     }
-    var stepNumberFill: Color { accent.opacity(scheme == .dark ? 0.15 : 0.12) }
+    // Light 8%: keeps the blue numeral at 4.5:1 on the grey page.
+    var stepNumberFill: Color { accent.opacity(scheme == .dark ? 0.15 : 0.08) }
     /// Selected tab bar item (icon and label).
     var tabSelected: Color {
         switch (scheme, contrast) {
@@ -1387,7 +1396,11 @@ private struct GuideSurfaceModifier<SurfaceShape: Shape>: ViewModifier {
     var fill: Color?
 
     func body(content: Content) -> some View {
-        if !enabled || reduceTransparency || (fill != nil && fill != palette.surface) {
+        if palette.scheme == .light && (fill == nil || fill == palette.surface) {
+            // Light cards: solid white with a faint rim on the grey page, glass or not.
+            content.background(palette.cardSurface, in: shape)
+                .overlay { shape.stroke(palette.cardSurfaceStroke, lineWidth: AppTheme.Component.panelStrokeWidth) }
+        } else if !enabled || reduceTransparency || (fill != nil && fill != palette.surface) {
             content.background(fill ?? palette.surface, in: shape)
         } else if #available(iOS 26.0, *) {
             content.glassEffect(.regular, in: shape)

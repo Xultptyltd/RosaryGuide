@@ -97,13 +97,13 @@ struct MysteryArtworkView: View {
                 )
                 .overlay { plateScrim }
             } else {
-                palette.surface
+                palette.cardSurface
             }
         }
     }
 
     private var plateScrim: some View {
-        let fade = kind == .plateWide ? palette.bg : palette.surface
+        let fade = kind == .plateWide ? palette.bg : palette.cardSurface
         let stops: [Gradient.Stop] = bottomFade
             ? [
                 .init(color: fade.opacity(0.28), location: 0),
@@ -304,7 +304,7 @@ struct GuideSectionDivider: View {
                    height: AppTheme.Component.sectionDividerEndpointHeight)
     }
 
-    private var fill: Color { palette.surface }
+    private var fill: Color { palette.sectionDivider }
 }
 
 /// Shared full-bleed section boundary with 16pt clear space above and below.
