@@ -750,6 +750,15 @@ struct ActivePrayerClock: Equatable {
         lastInteraction = now
     }
 
+    /// A step change: banks the time so far (an over-long gap only up to the cap) and times on
+    /// from `now` with a fresh idle allowance. A paused clock stays paused (the view resumes it).
+    mutating func step(at now: Date) -> TimeInterval {
+        guard isRunning else { return 0 }
+        let credited = take(at: now, keepRunning: false)
+        resume(at: now)
+        return credited
+    }
+
     /// Active seconds since the last take. Keeps running from `now` when `keepRunning`,
     /// otherwise pauses. Never negative, even if the clock moved backwards.
     mutating func take(at now: Date, keepRunning: Bool) -> TimeInterval {

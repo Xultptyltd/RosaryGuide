@@ -1758,7 +1758,20 @@ struct PrayView: View {
 
     private func saveActivePrayerTime(continueTiming: Bool) {
         guard prayerClock.isRunning else { return }
-        let duration = prayerClock.take(at: Date(), keepRunning: continueTiming)
+        creditActivePrayerTime(prayerClock.take(at: Date(), keepRunning: continueTiming))
+    }
+
+    /// A step change banks the time so far and keeps the clock running with a fresh idle
+    /// allowance; only Complete, closing the Rosary or leaving the flow stop it.
+    private func saveActivePrayerTimeForStepChange() {
+        if prayerClock.isRunning {
+            creditActivePrayerTime(prayerClock.step(at: Date()))
+        } else {
+            startActivePrayerTimerIfNeeded()
+        }
+    }
+
+    private func creditActivePrayerTime(_ duration: TimeInterval) {
         if sessionStore.session != nil {
             sessionStore.addActivePrayerTime(duration + pendingActivePrayerTime)
             pendingActivePrayerTime = 0
@@ -1929,9 +1942,8 @@ struct PrayView: View {
 
     private func recordCompletedDecadeIfNeeded() {
         guard current?.closesDecade == true, let decadeNumber = current?.decadeNumber else { return }
-        checkpointActivePrayerTime()
+        saveActivePrayerTimeForStepChange()
         sessionStore.recordCompletedDecadeIfNeeded(decadeNumber)
-        startActivePrayerTimerIfNeeded()
     }
 
     private func showCompletionScreen() {
@@ -1999,8 +2011,7 @@ struct PrayView: View {
 
     private func move(to next: Int, viaCompleteDecade: Bool = false) {
         let previous = current
-        checkpointActivePrayerTime()
-        prayerClock.touch(at: Date())
+        saveActivePrayerTimeForStepChange()
         if let set = freshSetPending, next > 0 {
             startSession(set: set)
             flushPendingActivePrayerTimeIfNeeded()

@@ -691,6 +691,40 @@ final class ActivePrayerClockTests: XCTestCase {
         XCTAssertEqual(clock.take(at: t0.addingTimeInterval(7_500), keepRunning: false), 0)
     }
 
+    func testEightyStepTwentyFiveMinuteRosaryCountsInFull() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        var total: TimeInterval = 0
+        // A tap every 18.75 s with the screen on, plus the 10 s autosave in between.
+        for step in 1...80 {
+            let tap = t0.addingTimeInterval(TimeInterval(step) * 18.75)
+            total += clock.take(at: tap.addingTimeInterval(-8.75), keepRunning: true)
+            total += clock.step(at: tap)
+            XCTAssertTrue(clock.isRunning, "A step change must not pause the clock")
+        }
+        total += clock.take(at: t0.addingTimeInterval(1_500), keepRunning: false)
+        XCTAssertEqual(total, 1_500, accuracy: 0.001)
+    }
+
+    func testIdleGapBetweenStepsIsCappedAtTenMinutes() {
+        var clock = ActivePrayerClock()
+        clock.resume(at: t0)
+        var total = clock.step(at: t0.addingTimeInterval(60))
+        // Thirty minutes on one step, autosaving every so often, then the next tap.
+        total += clock.take(at: t0.addingTimeInterval(900), keepRunning: true)
+        total += clock.step(at: t0.addingTimeInterval(1_860))
+        // Praying resumes normally after the tap.
+        total += clock.step(at: t0.addingTimeInterval(1_920))
+        total += clock.take(at: t0.addingTimeInterval(1_980), keepRunning: false)
+        XCTAssertEqual(total, 60 + ActivePrayerClock.idleLimit + 60 + 60)
+    }
+
+    func testStepOnAPausedClockStaysPaused() {
+        var clock = ActivePrayerClock()
+        XCTAssertEqual(clock.step(at: t0), 0)
+        XCTAssertFalse(clock.isRunning)
+    }
+
     func testCheckpointsDoNotDoubleCount() {
         var clock = ActivePrayerClock()
         clock.resume(at: t0)
