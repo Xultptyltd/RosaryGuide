@@ -9,6 +9,8 @@ enum SignInTransition {
     /// Success tick on the sign-in button before the screen fades.
     static let tick: Double = 0.3
 
+    /// Opacity only, never scale or offset: Home measures its call to action in global space
+    /// to place the hero, so a transform during the fade moved the artwork.
     enum Style: Equatable {
         case standard
         /// Reduce Motion: shorter fades, no scale.
@@ -19,8 +21,6 @@ enum SignInTransition {
         /// On the plain cover, with Home built underneath.
         var hold: Double { self == .standard ? 0.15 : 0.1 }
         var fadeIn: Animation { .easeInOut(duration: self == .standard ? 0.65 : 0.3) }
-        /// Home settles from a touch smaller as it fades in.
-        var homeScale: CGFloat { self == .standard ? 0.985 : 1 }
     }
 }
 

@@ -57,7 +57,6 @@ struct RosaryGuideApp: App {
                     if showsApp || landing.buildsHomeEarly {
                         RootView()
                             .id(rootGeneration)
-                            .scaleEffect(landing.signInTransition?.homeScale ?? 1)
                             .opacity(showsApp ? 1 : 0)
                             .allowsHitTesting(showsApp)
                             .accessibilityHidden(!showsApp)

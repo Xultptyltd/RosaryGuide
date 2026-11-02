@@ -7,6 +7,8 @@ struct OfferView: View {
     @Environment(AuthStore.self) private var auth
     /// Apple or Google, the same two sign-in routes as Settings and onboarding.
     @State private var showSignIn = false
+    /// Set by a sign-in from the sheet: Home is requested once the sheet has closed.
+    @State private var landsOnHomeAfterSignIn = false
     @Environment(AppIconService.self) private var appIcon
     @State private var showSettingsDrawer = false
     @Environment(SettingsStore.self) private var settings
@@ -258,11 +260,22 @@ struct OfferView: View {
             .padding(.bottom, AppTheme.tabBarContentClearance)
             // Reuses the onboarding sign-in step. Held here, not on the backup card: the card
             // goes the moment the account exists, which used to close this before its tick.
-            .fullScreenCover(isPresented: $showSignIn) {
-                // Signed in (after the tick): Home, with this closed instantly by the landing.
-                // Continue without: just close.
+            .fullScreenCover(isPresented: $showSignIn, onDismiss: {
+                guard landsOnHomeAfterSignIn else { return }
+                landsOnHomeAfterSignIn = false
+                AppLanding.shared.requestHome()
+            }) {
+                // Signed in (after the tick): close this instantly through its own state, and
+                // only once it has gone, Home. Closing it from UIKit while SwiftUI still held it
+                // open made SwiftUI present a fresh copy under the sign-in fade, which flashed
+                // the sign-in screen and ran a second landing. Continue without: just close.
                 OnboardingView(startsAtSignIn: true) {
-                    if auth.isSignedIn { AppLanding.shared.requestHome() } else { showSignIn = false }
+                    if auth.isSignedIn || DebugHooks.has("-RGDebugProfileSignInTransition") {
+                        landsOnHomeAfterSignIn = true
+                        withTransaction(AppLanding.still) { showSignIn = false }
+                    } else {
+                        showSignIn = false
+                    }
                 }
             }
         }
@@ -272,6 +285,13 @@ struct OfferView: View {
             guard DebugHooks.has("-RGDebugProfileBackup") else { return }
             try? await Task.sleep(for: .seconds(3))
             proxy.scrollTo("profile-backup", anchor: .center)
+        }
+        // `-RGDebugProfileSignInTransition`: opens the create-account sheet past the launch
+        // splash; the sheet then plays a sign-in success into Home (no real sign-in).
+        .task {
+            guard DebugHooks.has("-RGDebugProfileSignInTransition") else { return }
+            try? await Task.sleep(for: .seconds(9))
+            showSignIn = true
         }
         #endif
         }

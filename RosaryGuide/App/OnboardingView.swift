@@ -386,21 +386,26 @@ private struct OnboardingSignInView: View {
         }
         .onAppear {
             #if DEBUG
-            guard !DebugHooks.has("-RGDebugSignInTransition") else { return }
+            guard !DebugHooks.has("-RGDebugSignInTransition"), !DebugHooks.has("-RGDebugProfileSignInTransition") else { return }
             #endif
             completeIfSignedIn()
         }
         #if DEBUG
         // `-RGDebugSignInTransition`: plays the success and transition into Home after 10 s
-        // (past the launch splash), with no sign-in.
+        // (past the launch splash), with no sign-in. `-RGDebugProfileSignInTransition` does the
+        // same from Profile's create-account sheet, 2 s after it opens.
         .task {
-            guard DebugHooks.has("-RGDebugSignInTransition") else { return }
-            try? await Task.sleep(for: .seconds(10))
+            let fromProfile = DebugHooks.has("-RGDebugProfileSignInTransition")
+            guard fromProfile || DebugHooks.has("-RGDebugSignInTransition") else { return }
+            try? await Task.sleep(for: .seconds(fromProfile ? 2 : 10))
             lastProvider = .apple
             completeAfterSuccess()
         }
         #endif
         .accessibilityElement(children: .contain)
+        // The content fades out with the cover coming in, so nothing of it can show as the
+        // screen goes.
+        .opacity(leaving == nil ? 1 : 0)
         .overlay {
             if leaving != nil {
                 SignInTransitionCover(onTap: handOff)
