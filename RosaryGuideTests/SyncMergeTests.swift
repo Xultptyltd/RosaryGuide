@@ -545,57 +545,38 @@ final class GuestIntentionTests: XCTestCase {
 }
 
 final class ReviewPromptGateTests: XCTestCase {
-    private func makeGate() -> ReviewPromptGate {
+    private func gate(version: String) -> (ReviewPromptGate, UserDefaults) {
         let suite = "ReviewPromptGateTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         addTeardownBlock { defaults.removePersistentDomain(forName: suite) }
-        return ReviewPromptGate(defaults: defaults)
+        return (ReviewPromptGate(defaults: defaults, currentVersion: version), defaults)
     }
 
-    func testFirstAskAtTheThirdCompletedRosary() {
-        let gate = makeGate()
+    func testNotBeforeTheThirdCompletedRosary() {
+        let (gate, _) = gate(version: "1.0")
         XCTAssertFalse(gate.shouldPrompt(completedRosaries: 0))
+        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 1))
         XCTAssertFalse(gate.shouldPrompt(completedRosaries: 2))
         XCTAssertTrue(gate.shouldPrompt(completedRosaries: 3))
-        gate.markAsked(completedRosaries: 3)
-        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 3), "At most once at 3")
-        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 4))
+        XCTAssertTrue(gate.shouldPrompt(completedRosaries: 12))
     }
 
-    func testNotNowAsksOnceMoreAtTenThenNever() {
-        let gate = makeGate()
-        gate.markAsked(completedRosaries: 3)            // Not now
-        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 9))
-        XCTAssertTrue(gate.shouldPrompt(completedRosaries: 10))
-        gate.markAsked(completedRosaries: 10)           // Not now again
-        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 11))
-        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 500))
+    func testAtMostOncePerAppVersion() {
+        let (gate, defaults) = gate(version: "1.0")
+        gate.markPrompted()
+        XCTAssertEqual(defaults.string(forKey: ReviewPromptGate.lastPromptedVersionKey), "1.0")
+        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 3))
+        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 50))
+
+        let nextVersion = ReviewPromptGate(defaults: defaults, currentVersion: "1.1")
+        XCTAssertTrue(nextVersion.shouldPrompt(completedRosaries: 4), "A new version may ask again")
+        nextVersion.markPrompted()
+        XCTAssertFalse(nextVersion.shouldPrompt(completedRosaries: 5))
     }
 
-    func testLeaveAReviewNeverAsksAgain() {
-        let gate = makeGate()
-        gate.markAsked(completedRosaries: 3)
-        gate.markLeftReview()
+    func testUnknownVersionNeverPrompts() {
+        let (gate, _) = gate(version: "")
         XCTAssertFalse(gate.shouldPrompt(completedRosaries: 10))
-        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 100))
-    }
-
-    func testExistingUserPastThreeIsAskedAtTheirNextCompletionThenSpacedOut() {
-        let gate = makeGate()
-        XCTAssertTrue(gate.shouldPrompt(completedRosaries: 25), "Already past 3: asked at the next one")
-        gate.markAsked(completedRosaries: 25)
-        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 26), "Not the very next Rosary")
-        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 31))
-        XCTAssertTrue(gate.shouldPrompt(completedRosaries: 32), "Second ask as far after as 10 is from 3")
-        gate.markAsked(completedRosaries: 32)
-        XCTAssertFalse(gate.shouldPrompt(completedRosaries: 60))
-    }
-
-    func testCopy() {
-        XCTAssertEqual(ReviewPromptCopy.title, "Help others discover the Rosary")
-        XCTAssertEqual(ReviewPromptCopy.message, "Your review helps others find Rosary Guide and make time for prayer.")
-        XCTAssertEqual(ReviewPromptCopy.leaveReview, "Leave a review")
-        XCTAssertEqual(ReviewPromptCopy.notNow, "Not now")
     }
 
     func testAppStoreLinksUseTheAppleID() {
