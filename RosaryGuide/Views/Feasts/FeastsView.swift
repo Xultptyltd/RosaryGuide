@@ -178,12 +178,19 @@ struct FeastsView: View {
             .tint(palette.accent)
             .guideRootChrome("Feasts", ambientBackground: true)
             #if DEBUG
-            // `-RGDebugOpenFeast`: opens the first upcoming feast's page for screenshots.
+            // `-RGDebugOpenFeast`: opens the first upcoming feast's page for screenshots;
+            // `-RGDebugFeastID <id>` picks a feast (next occurrence) instead.
             .navigationDestination(item: $debugFeast) { FeastDetailView(prayLaunch: $prayLaunch, item: $0) }
             .task {
                 guard DebugHooks.has("-RGDebugOpenFeast") else { return }
                 try? await Task.sleep(for: .seconds(2))
-                debugFeast = agenda.sections.first?.items.first
+                if let id = UserDefaults.standard.string(forKey: "RGDebugFeastID") {
+                    let year = calendar.component(.year, from: today)
+                    debugFeast = (year...year + 1).flatMap { FeastCatalog.dated(in: $0, calendar: calendar) }
+                        .first { $0.feast.id == id && $0.date >= calendar.startOfDay(for: today) }
+                } else {
+                    debugFeast = agenda.sections.first?.items.first
+                }
             }
             #endif
         }
@@ -865,11 +872,6 @@ struct FeastDetailView: View {
         ZStack {
             FeastHeroBanner(feast: feast, height: 330, cornerRadius: 0)
                 .frame(maxWidth: .infinity)
-            LinearGradient(
-                colors: [.clear, palette.bg.opacity(0.58), palette.bg],
-                startPoint: .top,
-                endPoint: .bottom
-            )
         }
         .frame(height: 330)
         .padding(.horizontal, -AppTheme.gutter)
@@ -1401,17 +1403,15 @@ private struct FeastHeroBanner: View {
                 )
             }
 
+            // Artwork at full strength; only the lowest part dissolves into the page.
             LinearGradient(
-                colors: [
-                    palette.bg.opacity(colorScheme == .light ? 0.28 : 0.40),
-                    palette.bg.opacity(0.45),
-                    palette.bg.opacity(0.88)
+                stops: [
+                    .init(color: .clear, location: 1 - AppTheme.FeastHero.bottomFade),
+                    .init(color: palette.bg, location: 1)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
             )
-
-            palette.bg.opacity(colorScheme == .light ? 0.14 : 0.22)
 
             if feastArtPath == nil, feast.suggestedMysterySet == nil {
                 Image(systemName: heroSymbol)

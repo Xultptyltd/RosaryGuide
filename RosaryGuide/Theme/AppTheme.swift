@@ -1662,6 +1662,12 @@ extension AppTheme {
     }
 
     /// Weekly prayer preview: shared geometry and symbol roles.
+    /// Feast detail header artwork.
+    enum FeastHero {
+        /// Share of the image height, from the bottom, that fades into the page.
+        static let bottomFade: CGFloat = 0.18
+    }
+
     enum PrayerPreview {
         static let cardInset = Space.lg + Space.xs
         static let headerGap = Space.md
