@@ -1025,3 +1025,367 @@ final class RosarySettingsSheetTests: XCTestCase {
         XCTAssertEqual(clock.take(at: t0.addingTimeInterval(3_600), keepRunning: true), ActivePrayerClock.idleLimit)
     }
 }
+
+/// Rosary timing scenarios, end to end: `RosaryFlow` makes the same timing calls as PrayView
+/// (appear, step taps, the 10 s autosave, lock/background, return, relaunch, close, Complete)
+/// against a real SessionStore, on a simulated wall clock.
+final class RosaryTimingScenarioTests: XCTestCase {
+    private struct RosaryFlow {
+        let defaults: UserDefaults
+        var store: SessionStore
+        var clock = ActivePrayerClock()
+        var now: Date
+        var onCompleteScreen = false
+
+        init(at start: Date) {
+            defaults = UserDefaults(suiteName: "RosaryTimingScenario.\(UUID())")!
+            store = SessionStore(defaults: defaults)
+            now = start
+        }
+
+        var recorded: TimeInterval { store.session?.activeDuration ?? 0 }
+        var dayTotal: TimeInterval { store.prayerTimeByDay.values.reduce(0, +) }
+
+        /// Opens a fresh Rosary (configure / onAppear).
+        mutating func open() {
+            onCompleteScreen = false
+            store.start(set: .joyful, language: .english, at: now)
+            clock = ActivePrayerClock()
+            clock.resume(at: now)
+            store.updateTimingClock(clock)
+        }
+
+        /// Opens the saved Rosary: carries on its persisted clock, a return counts as a tap.
+        mutating func resumeSaved() {
+            onCompleteScreen = false
+            clock = store.savedTimingClock
+            tap()
+        }
+
+        /// Waits on the current step with the screen on; the autosave fires every 10 s.
+        mutating func read(_ seconds: TimeInterval) {
+            var left = seconds
+            while left >= 10 {
+                now += 10
+                left -= 10
+                if clock.isRunning { credit(clock.take(at: now, keepRunning: true)) }
+            }
+            now += left
+        }
+
+        /// Next, Back, Complete decade or a jump: `move(to:)`.
+        mutating func tap() {
+            guard !onCompleteScreen else { return }
+            if clock.isRunning { credit(clock.step(at: now)) } else { clock.resume(at: now) }
+            store.updateTimingClock(clock)
+        }
+
+        /// Steady praying: `steps` taps spread over `seconds`.
+        mutating func pray(_ seconds: TimeInterval, steps: Int) {
+            for _ in 0..<steps {
+                read(seconds / Double(steps))
+                tap()
+            }
+        }
+
+        /// Lock, the app switcher or another app (scene inactive/background): keeps running.
+        mutating func leaveApp(for seconds: TimeInterval) {
+            if clock.isRunning { credit(clock.take(at: now, keepRunning: true)) }
+            now += seconds
+        }
+
+        /// Scene active again.
+        mutating func returnToApp() { tap() }
+
+        /// The app is killed in the background and relaunched onto the saved Rosary.
+        mutating func killAndRelaunch(after seconds: TimeInterval) {
+            leaveApp(for: seconds)
+            store = SessionStore(defaults: defaults)
+            resumeSaved()
+        }
+
+        /// Close (X) or leaving the flow: pauses.
+        mutating func close() {
+            if clock.isRunning { credit(clock.take(at: now, keepRunning: false)) }
+            store.updateTimingClock(clock)
+        }
+
+        mutating func finishDecade(_ number: Int) {
+            tap()
+            store.recordCompletedDecadeIfNeeded(number, completedAt: now)
+        }
+
+        /// The Complete screen: timing stops and the Rosary is recorded.
+        mutating func complete() {
+            close()
+            onCompleteScreen = true
+            store.complete(at: now)
+        }
+
+        private mutating func credit(_ duration: TimeInterval) {
+            store.addActivePrayerTime(duration, at: now)
+            store.updateTimingClock(clock)
+        }
+    }
+
+    private let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+
+    private func at(_ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
+        Calendar.current.date(from: DateComponents(year: 2026, month: 11, day: day, hour: hour, minute: minute))!
+    }
+
+    func testSteadyTwentyFiveMinuteRosary() {
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.pray(1_500, steps: 80)
+        flow.complete()
+        XCTAssertEqual(flow.store.completedSessions.first?.duration ?? 0, 1_500, accuracy: 0.001)
+        XCTAssertEqual(flow.dayTotal, 1_500, accuracy: 0.001)
+    }
+
+    func testThreeMinuteLockMidStepCountsInFull() {
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.pray(300, steps: 15)
+        flow.read(30)
+        flow.leaveApp(for: 180)
+        flow.returnToApp()
+        flow.read(30)
+        flow.tap()
+        XCTAssertEqual(flow.recorded, 540, accuracy: 0.001)
+    }
+
+    func testFifteenMinuteLockIsCappedAtTenAndTimingCarriesOnAfterReturning() {
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.pray(300, steps: 15)
+        flow.read(30)
+        flow.leaveApp(for: 900)
+        flow.returnToApp()
+        flow.read(120)
+        flow.tap()
+        // 30 s + 14.5 min away counts only to 10 min after the last tap; the 2 min after
+        // returning count in full.
+        XCTAssertEqual(flow.recorded, 300 + 600 + 120, accuracy: 0.001)
+    }
+
+    func testAnotherAppAndBackCounts() {
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.read(60)
+        flow.leaveApp(for: 240)
+        flow.returnToApp()
+        flow.pray(60, steps: 3)
+        XCTAssertEqual(flow.recorded, 360, accuracy: 0.001)
+    }
+
+    func testKilledAndRelaunchedMidRosaryCarriesOn() {
+        // A relaunch keeps only a Rosary resumable today, so this one runs on the real clock.
+        var flow = RosaryFlow(at: Date())
+        flow.open()
+        flow.pray(600, steps: 30)
+        flow.read(20)
+        flow.killAndRelaunch(after: 120)
+        XCTAssertEqual(flow.recorded, 740, accuracy: 0.001, "Time up to the kill and the 2 min away count")
+        flow.pray(600, steps: 30)
+        flow.complete()
+        XCTAssertEqual(flow.store.completedSessions.first?.duration ?? 0, 1_340, accuracy: 0.001)
+    }
+
+    func testClosedThenResumedAfterMidnightContinues() throws {
+        var flow = RosaryFlow(at: at(10, 22, 30))
+        flow.open()
+        flow.pray(600, steps: 30)
+        flow.close()
+        XCTAssertFalse(flow.store.savedTimingClock.isRunning, "Closing pauses the saved clock")
+        flow.now = at(11, 2, 0)
+        XCTAssertNotNil(try XCTUnwrap(flow.store.session).isResumable(now: flow.now) ? flow.store.session : nil)
+        flow.resumeSaved()
+        flow.pray(600, steps: 30)
+        flow.complete()
+        // The 3 h 20 min closed overnight is not counted.
+        XCTAssertEqual(flow.store.completedSessions.first?.duration ?? 0, 1_200, accuracy: 0.001)
+        XCTAssertTrue(flow.store.prayed(on: at(10, 12)), "Credited to the evening it began")
+    }
+
+    func testSavedRosaryNotResumableNextMorning() throws {
+        var flow = RosaryFlow(at: at(10, 21, 0))
+        flow.open()
+        flow.pray(600, steps: 30)
+        flow.close()
+        XCTAssertFalse(try XCTUnwrap(flow.store.session).isResumable(now: at(11, 7, 0)))
+    }
+
+    func testLongReadingOnOneStep() {
+        var nine = RosaryFlow(at: t0)
+        nine.open()
+        nine.read(540)
+        nine.tap()
+        XCTAssertEqual(nine.recorded, 540, accuracy: 0.001)
+
+        var eleven = RosaryFlow(at: t0)
+        eleven.open()
+        eleven.read(660)
+        eleven.tap()
+        XCTAssertEqual(eleven.recorded, 600, accuracy: 0.001)
+    }
+
+    func testRapidTaps() {
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.pray(6, steps: 20)
+        XCTAssertEqual(flow.recorded, 6, accuracy: 0.001)
+    }
+
+    func testGoingBackStepsKeepsTiming() {
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.pray(120, steps: 6)
+        flow.pray(60, steps: 3) // Back, Back, Back
+        flow.pray(120, steps: 6)
+        XCTAssertEqual(flow.recorded, 300, accuracy: 0.001)
+    }
+
+    func testDecadeDurations() {
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.pray(120, steps: 7) // opening prayers
+        for decade in 1...5 {
+            flow.pray(290, steps: 12)
+            flow.read(10)
+            flow.finishDecade(decade)
+        }
+        let durations = flow.store.completedDecades.sorted { $0.decadeNumber < $1.decadeNumber }.map(\.duration)
+        XCTAssertEqual(durations.count, 5)
+        XCTAssertEqual(durations[0], 420, accuracy: 0.001, "Decade one includes the opening prayers")
+        for later in durations.dropFirst() { XCTAssertEqual(later, 300, accuracy: 0.001) }
+    }
+
+    func testClosedWithoutFinishingThenStartedFresh() {
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.pray(300, steps: 15)
+        flow.close()
+        flow.now += 3_600
+        flow.open()
+        XCTAssertEqual(flow.recorded, 0, "A fresh Rosary starts from zero")
+        flow.pray(1_200, steps: 60)
+        flow.complete()
+        XCTAssertEqual(flow.store.completedSessions.count, 1)
+        XCTAssertEqual(flow.store.completedSessions.first?.duration ?? 0, 1_200, accuracy: 0.001)
+        // The unfinished Rosary's minutes still count toward time in prayer.
+        XCTAssertEqual(flow.dayTotal, 1_500, accuracy: 0.001)
+    }
+
+    func testCompleteScreenIdleIsNotCounted() {
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.pray(1_500, steps: 80)
+        flow.complete()
+        flow.read(1_200)
+        flow.leaveApp(for: 600)
+        flow.returnToApp()
+        flow.read(300)
+        flow.close()
+        XCTAssertEqual(flow.store.completedSessions.first?.duration ?? 0, 1_500, accuracy: 0.001)
+        XCTAssertEqual(flow.dayTotal, 1_500, accuracy: 0.001)
+    }
+
+    func testCrossingMidnight() {
+        var flow = RosaryFlow(at: at(10, 23, 50))
+        flow.open()
+        flow.pray(1_200, steps: 60)
+        flow.complete()
+        XCTAssertEqual(flow.store.completedSessions.first?.duration ?? 0, 1_200, accuracy: 0.001)
+        XCTAssertTrue(flow.store.prayed(on: at(10, 12)))
+        XCTAssertFalse(flow.store.prayed(on: at(11, 12)))
+        // Time in prayer is filed under the day it was banked (to the 10 s autosave): about
+        // 10 min each side of midnight, 20 min in all.
+        XCTAssertEqual(flow.store.prayerTimeByDay[SyncedProgress.dayKey(for: at(10, 12))] ?? 0, 600, accuracy: 10)
+        XCTAssertEqual(flow.store.prayerTimeByDay[SyncedProgress.dayKey(for: at(11, 12))] ?? 0, 600, accuracy: 10)
+        XCTAssertEqual(flow.dayTotal, 1_200, accuracy: 0.001)
+    }
+
+    func testTimeZoneChangeMidRosaryDoesNotChangeTheDuration() {
+        // Timing works on absolute instants, so moving zones (Perth to Sydney) changes nothing.
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.pray(600, steps: 30)
+        flow.pray(900, steps: 50)
+        flow.complete()
+        XCTAssertEqual(flow.store.completedSessions.first?.duration ?? 0, 1_500, accuracy: 0.001)
+        var perth = Calendar(identifier: .gregorian)
+        perth.timeZone = TimeZone(identifier: "Australia/Perth")!
+        var sydney = perth
+        sydney.timeZone = TimeZone(identifier: "Australia/Sydney")!
+        let start = Date(timeIntervalSince1970: 1_793_976_000) // 22:40 in Perth, 01:40 next day in Sydney
+        XCTAssertNotEqual(SessionStore.creditedDayKey(startedAt: start, completedAt: start, calendar: perth),
+                          SessionStore.creditedDayKey(startedAt: start, completedAt: start, calendar: sydney),
+                          "The credited day follows the zone the phone is in")
+    }
+
+    func testDeviceClockJumpingBackwardsCreditsNothingThenCarriesOn() {
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.pray(300, steps: 15)
+        flow.now -= 3_600
+        flow.tap()
+        XCTAssertEqual(flow.recorded, 300, accuracy: 0.001)
+        flow.pray(120, steps: 6)
+        XCTAssertEqual(flow.recorded, 420, accuracy: 0.001, "Timing resumes from the corrected clock")
+    }
+
+    func testDeviceClockJumpingForwardIsCapped() {
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.pray(300, steps: 15)
+        flow.now += 7_200
+        flow.tap()
+        XCTAssertEqual(flow.recorded, 900, accuracy: 0.001)
+    }
+
+    func testAutosaveAloneDoesNotDoubleCount() {
+        var flow = RosaryFlow(at: t0)
+        flow.open()
+        flow.read(300)
+        XCTAssertEqual(flow.recorded, 300, accuracy: 0.001)
+        flow.tap()
+        flow.tap()
+        XCTAssertEqual(flow.recorded, 300, accuracy: 0.001)
+        XCTAssertEqual(flow.dayTotal, 300, accuracy: 0.001)
+    }
+
+    func testSyncedCopyOfTheSameRosaryNeitherInflatesNorResets() throws {
+        // A synced in-progress Rosary must be resumable today, so this one runs on the real clock.
+        var flow = RosaryFlow(at: Date())
+        flow.open()
+        flow.pray(600, steps: 30)
+        // The account copy has no active time or clock.
+        var echo = try XCTUnwrap(flow.store.session)
+        echo.id = UUID()
+        echo.activeDuration = 0
+        echo.timingRunningSince = nil
+        echo.timingLastInteraction = nil
+        flow.store.applySynced(SyncedProgress(completedDays: [], session: echo, sessionChangedAt: flow.now))
+        XCTAssertEqual(flow.recorded, 600, accuracy: 0.001)
+        XCTAssertTrue(flow.store.savedTimingClock.isRunning, "The local clock survives the echo")
+        flow.pray(600, steps: 30)
+        flow.complete()
+        XCTAssertEqual(flow.store.completedSessions.first?.duration ?? 0, 1_200, accuracy: 0.001)
+        XCTAssertEqual(flow.dayTotal, 1_200, accuracy: 0.001)
+    }
+
+    func testDurationDisplayThresholds() {
+        XCTAssertEqual(JourneyDuration.text(29), "Under a minute")
+        XCTAssertEqual(JourneyDuration.text(30), "1 min")
+        XCTAssertEqual(JourneyDuration.text(89), "1 min")
+        XCTAssertEqual(JourneyDuration.text(90), "2 mins")
+        XCTAssertEqual(JourneyDuration.text(1_500), "25 mins")
+        XCTAssertEqual(JourneyDuration.text(3_600), "1 hr")
+        XCTAssertEqual(JourneyDuration.text(3_930), "1 hr 6 mins")
+        XCTAssertNil(JourneyDuration.reliable(0.5))
+        XCTAssertEqual(JourneyDuration.reliable(1), 1)
+        XCTAssertEqual(JourneyDuration.reliable(10_800), 10_800)
+        XCTAssertNil(JourneyDuration.reliable(10_801), "Over 3 h shows as not recorded")
+    }
+}

@@ -208,8 +208,7 @@ final class SessionStore {
         }
     }
 
-    func start(set: MysterySetKind, language: PrayerLanguage, intentionId: UUID? = nil, intentionTitle: String? = nil, intentionIds: [UUID]? = nil, intentionTitles: [String]? = nil, intentionCategory: IntentionCategory? = nil, intentionSourceId: String? = nil, rosaryConfig: RosaryConfig = .default) {
-        let now = Date()
+    func start(set: MysterySetKind, language: PrayerLanguage, intentionId: UUID? = nil, intentionTitle: String? = nil, intentionIds: [UUID]? = nil, intentionTitles: [String]? = nil, intentionCategory: IntentionCategory? = nil, intentionSourceId: String? = nil, rosaryConfig: RosaryConfig = .default, at now: Date = Date()) {
         session = PrayerSession(
             mysterySet: set,
             stepIndex: 0,
@@ -282,10 +281,9 @@ final class SessionStore {
                           lastInteraction: session?.timingLastInteraction)
     }
 
-    func addActivePrayerTime(_ duration: TimeInterval) {
+    func addActivePrayerTime(_ duration: TimeInterval, at now: Date = Date()) {
         let clamped = max(0, duration)
         guard clamped > 0, var current = session else { return }
-        let now = Date()
         current.activeDuration += clamped
         current.updatedAt = now
         recordPrayerTime(clamped, at: now)
@@ -318,8 +316,7 @@ final class SessionStore {
         persistCompletedDecades()
     }
 
-    func complete() {
-        let completedAt = Date()
+    func complete(at completedAt: Date = Date()) {
         let creditedDay = Self.creditedDayKey(startedAt: session?.startedAt, completedAt: completedAt)
         if let session {
             recordCompletedSet(session.mysterySet)

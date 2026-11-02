@@ -233,7 +233,9 @@ struct PrayView: View {
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
-                startActivePrayerTimerIfNeeded()
+                // Coming back to the prayer counts as an interaction: bank the time away
+                // (capped) and give the step a fresh idle allowance.
+                saveActivePrayerTimeForStepChange()
                 startPrayerAutosave()
             case .inactive, .background:
                 // Lock or leaving the app mid-Rosary keeps the clock running: bank what has
@@ -1872,7 +1874,7 @@ struct PrayView: View {
             prayerClock = sessionStore.savedTimingClock
         }
         playHaptic()
-        startActivePrayerTimerIfNeeded()
+        saveActivePrayerTimeForStepChange()
     }
 
     private func advance() {
