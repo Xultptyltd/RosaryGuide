@@ -55,6 +55,19 @@ struct SettingsView: View {
         }
         // Screenshot hook (DebugHooks is DEBUG-only): opens Customise rosary.
         .navigationDestination(isPresented: $debugCustomiseRosary) { SettingsRosaryScreen() }
+        #if DEBUG
+        // `-RGDebugSettingsThemeCycle`: steps Color theme Light, Dark, System through the row's
+        // own binding (same transition as a tap), 3 s apart after 6 s (past the launch splash),
+        // for recordings.
+        .task {
+            guard DebugHooks.has("-RGDebugSettingsThemeCycle") else { return }
+            try? await Task.sleep(for: .seconds(3))
+            for option in [AppearancePreference.light, .dark, .system] {
+                try? await Task.sleep(for: .seconds(3))
+                settings.appearanceWithTransition.wrappedValue = option
+            }
+        }
+        #endif
         .fullScreenCover(isPresented: $showSignIn) {
             OnboardingView(startsAtSignIn: true) { showSignIn = false }
         }
@@ -151,7 +164,7 @@ struct SettingsView: View {
                         SettingsNavigationRow(title: "Customise rosary", icon: "slider.horizontal.3", destination: .rosary)
 
                         SettingsMenuRow(title: "Color theme", icon: "circle.lefthalf.filled", value: settings.appearance.title) {
-                            Picker("Color theme", selection: $settings.appearance) {
+                            Picker("Color theme", selection: settings.appearanceWithTransition) {
                                 ForEach(AppearancePreference.allCases) { option in
                                     Text(option.title).tag(option)
                                 }

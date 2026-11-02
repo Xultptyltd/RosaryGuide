@@ -287,15 +287,7 @@ struct HomeView: View {
 
     private var glassTheme: some View {
         return Menu {
-            Picker("Appearance", selection: Binding(
-                get: { settings.appearance },
-                set: { appearance in
-                    guard appearance != settings.appearance else { return }
-                    AppearanceWindowStyle.transition {
-                        settings.appearance = appearance
-                    }
-                }
-            )) {
+            Picker("Appearance", selection: settings.appearanceWithTransition) {
                 Text("Light").tag(AppearancePreference.light)
                 Text("Dark").tag(AppearancePreference.dark)
                 Text("System").tag(AppearancePreference.system)

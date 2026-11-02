@@ -403,6 +403,23 @@ struct ThemedRoot<Content: View>: View {
     }
 }
 
+extension SettingsStore {
+    /// The Color theme for any control that changes it (Home's appearance menu, Settings'
+    /// Color theme row): every change goes through the same whole-window cross-fade, so the
+    /// two can't drift. Reduce Motion: an instant change, as before.
+    var appearanceWithTransition: Binding<AppearancePreference> {
+        Binding(
+            get: { self.appearance },
+            set: { appearance in
+                guard appearance != self.appearance else { return }
+                AppearanceWindowStyle.transition {
+                    self.appearance = appearance
+                }
+            }
+        )
+    }
+}
+
 /// Mirrors the Color theme onto every window's UIKit style. SwiftUI's
 /// preferredColorScheme(nil) does not always clear a previous explicit override
 /// (notably in presented covers), so System could keep the old scheme.
