@@ -10,15 +10,15 @@ struct MysterySetIcon: View {
     var size: CGFloat = AppTheme.MysteryIcon.circleSize
 
     var body: some View {
-        // Same colours as the Introduction to the Rosary card icon (accent tint circle, accent glyph).
+        // White glyph on the mystery icon fill (accent tint in dark, Marian blue in light).
         ZStack {
-            Circle().fill(palette.accentTint)
+            Circle().fill(palette.mysteryIconFill)
             Image(set.iconAssetName)
                 .renderingMode(.template)
                 .resizable()
                 .scaledToFit()
                 .frame(width: size * AppTheme.MysteryIcon.assetRatio, height: size * AppTheme.MysteryIcon.assetRatio)
-                .foregroundStyle(palette.accentText)
+                .foregroundStyle(palette.mysteryIconGlyph)
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)

@@ -182,6 +182,7 @@ final class ContrastTokenTests: XCTestCase {
             for bg in [p.bg, p.surface] {
                 XCTAssertGreaterThanOrEqual(ratio(p.feastIndicator, bg), 3, "crown \(p.scheme)")
                 XCTAssertGreaterThanOrEqual(ratio(p.accentText, p.accentTint, under: bg), 3, "glyph on tint \(p.scheme)")
+                XCTAssertGreaterThanOrEqual(ratio(p.mysteryIconGlyph, p.mysteryIconFill, under: bg), 3, "mystery icon \(p.scheme)")
             }
         }
     }

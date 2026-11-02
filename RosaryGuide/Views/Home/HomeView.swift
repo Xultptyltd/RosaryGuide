@@ -628,7 +628,7 @@ struct HomeView: View {
                     .padding(.bottom, AppTheme.Space.lg)
                 }
                 .contentShape(shape)
-                .guideCard()
+                .guideArtCard()
             }
             .buttonStyle(.plain)
             .guidePressable()
@@ -671,7 +671,7 @@ struct HomeView: View {
             .accessibilityHidden(true)
             // Later rows show date and title only; the featured card keeps the tagline.
             Text(item.feast.shortTitle)
-                .font(AppTheme.TypeRole.body(weight: .medium))
+                .font(AppTheme.TypeRole.body)
                 .foregroundStyle(palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -730,7 +730,7 @@ struct HomeView: View {
                 // Today's row is marked by its surface; VoiceOver says "today" via the row label.
                 Text(day.formatted(.dateTime.day().month(.abbreviated)))
                     .font(AppTheme.TypeRole.supportingLabel)
-                    .foregroundStyle(palette.dim)
+                    .foregroundStyle(isToday ? palette.ink : palette.dim)
                 if let feast = assignment.feast {
                     Text(feast.feast.shortTitle)
                         .font(AppTheme.TypeRole.caption)
@@ -1083,7 +1083,7 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .contentShape(shape)
-            .guideCard()
+            .guideArtCard()
         }
         .buttonStyle(.plain)
         .guidePressable()

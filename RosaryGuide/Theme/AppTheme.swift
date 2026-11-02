@@ -281,6 +281,10 @@ struct ThemePalette {
             ? accent.opacity(0.20)
             : accent.opacity(0.12)
     }
+    /// Mystery set icon: white glyph. Dark keeps the soft accent tint; light uses solid
+    /// Marian blue because white on the 12% tint would be unreadable.
+    var mysteryIconFill: Color { scheme == .dark ? accentTint : accent }
+    var mysteryIconGlyph: Color { onAccent }
     /// Unselected segmented-control track. Keep this on the shared surface
     /// pathway so UIKit and custom segmented controls render the same surface.
     var segmentedControlTrack: Color { surface }
@@ -460,9 +464,11 @@ private struct GuideH1NavigationFont: UIViewControllerRepresentable {
         func apply() {
             guard let bar = navigationController?.navigationBar else { return }
             let font = AppTheme.TypeRole.h1UIFont(AppTheme.TypeRole.h1NavigationSize)
+            let inlineFont = AppTheme.TypeRole.navigationTitleUIFont
             func fix(_ a: UINavigationBarAppearance?) -> UINavigationBarAppearance? {
                 guard let a = a?.copy() else { return nil }
                 a.largeTitleTextAttributes[.font] = font
+                a.titleTextAttributes[.font] = inlineFont
                 return a
             }
             bar.standardAppearance = fix(bar.standardAppearance) ?? bar.standardAppearance
@@ -549,7 +555,11 @@ enum GuideChrome {
         let nav = UINavigationBarAppearance()
         nav.configureWithDefaultBackground()
         // Keep app ink while letting UIKit own title fonts, sizing and bar material.
-        nav.titleTextAttributes = [.foregroundColor: ink]
+        nav.titleTextAttributes = [
+            .foregroundColor: ink,
+            // Inline and collapsed titles: Instrument Sans at the native 17pt size.
+            .font: AppTheme.TypeRole.navigationTitleUIFont
+        ]
         nav.largeTitleTextAttributes = [
             .foregroundColor: ink,
             // H1 token: same face as Home's mystery title.
@@ -620,6 +630,8 @@ struct GuidePageChrome: ViewModifier {
             // Leave nav bar material to the system (liquid glass on iOS 26).
             // A solid toolbarBackground fill cancels translucency.
             .toolbarColorScheme(palette.scheme, for: .navigationBar)
+            // iOS 26 SwiftUI bars ignore appearance-proxy fonts; set them on the hosting bar.
+            .guideH1NavigationTitleFont()
     }
 }
 
@@ -1407,6 +1419,23 @@ struct GuideCardChrome: ViewModifier {
     }
 }
 
+/// Mystery and feast cards: dark mode drops the fill and keeps the border, so the card
+/// still reads as a card around its artwork. Light mode keeps the standard card.
+struct GuideArtCardChrome: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    var radius: CGFloat = AppTheme.containerRadius
+    var lightFill: Color?
+    var outlineInDark = true
+
+    func body(content: Content) -> some View {
+        if outlineInDark && colorScheme == .dark {
+            content.guideCard(radius: radius, fill: .clear, stroke: true)
+        } else {
+            content.guideCard(radius: radius, fill: lightFill)
+        }
+    }
+}
+
 struct GuideRowGroupChrome: ViewModifier {
     @Environment(\.palette) private var palette
     var radius: CGFloat = AppTheme.containerRadius
@@ -1517,6 +1546,11 @@ extension View {
 
     func guideCard(radius: CGFloat = AppTheme.containerRadius, fill: Color? = nil, stroke: Bool = false, elevated: Bool = false) -> some View {
         modifier(GuideCardChrome(radius: radius, fill: fill, stroke: stroke, elevated: elevated))
+    }
+
+    /// Art-led cards (Home mystery cards, the upcoming feast card, Pray's mystery tiles).
+    func guideArtCard(radius: CGFloat = AppTheme.containerRadius, lightFill: Color? = nil, outlineInDark: Bool = true) -> some View {
+        modifier(GuideArtCardChrome(radius: radius, lightFill: lightFill, outlineInDark: outlineInDark))
     }
 
     func guideRowGroup(radius: CGFloat = AppTheme.containerRadius) -> some View {
@@ -1710,6 +1744,8 @@ extension AppTheme {
         static var headingSecondaryUIFont: UIFont { FontRegistrar.sansUI(22, weight: .regular, textStyle: .title2) }
         /// Home mystery card title.
         static var headingCardUIFont: UIFont { FontRegistrar.sansUI(26, weight: .regular, textStyle: .title1) }
+        /// Inline / collapsed navigation bar title: Apple's 17pt headline size in Instrument Sans.
+        static var navigationTitleUIFont: UIFont { FontRegistrar.sansUI(17, weight: .medium, textStyle: .headline) }
         static var serifBodyUIFont: UIFont { FontRegistrar.serifUI(20, opticalSize: 20, textStyle: .body) }
         static var settingsRowUIFont: UIFont { bodyUIFont() }
         static var settingsMetaUIFont: UIFont { captionUIFont() }

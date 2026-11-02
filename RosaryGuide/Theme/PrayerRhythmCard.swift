@@ -267,7 +267,10 @@ struct PrayerRhythmCard: View {
     var rhythm: PrayerRhythm
 
     private var weeklySummary: String {
-        "\(rhythm.prayedDaysThisWeek) \(rhythm.prayedDaysThisWeek == 1 ? "day" : "days") this week"
+        let days = rhythm.prayedDaysThisWeek
+        // Zero state for this week: an invitation rather than "0 days this week".
+        guard days > 0 else { return "Find room for prayer" }
+        return "\(days) \(days == 1 ? "day" : "days") this week"
     }
 
     private var calendarChevron: some View {

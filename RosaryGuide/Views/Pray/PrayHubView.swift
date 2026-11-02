@@ -188,7 +188,7 @@ struct PrayHubView: View {
                     NavigationLink {
                         LearnMysteryDetailView(set: set, prayLaunch: $prayLaunch)
                     } label: {
-                        learnTile(caption: set.weekdayCaption, title: "\(set.shortName) Mysteries", set: set, mysteryNumber: 1)
+                        learnTile(caption: set.weekdayCaption, title: "\(set.shortName) Mysteries", set: set, mysteryNumber: 1, outlineInDark: true)
                     }
                     .buttonStyle(.plain)
                     .guidePressable()
@@ -215,7 +215,7 @@ struct PrayHubView: View {
         }
     }
 
-    private func learnTile(caption: String, title: String, set: MysterySetKind, mysteryNumber: Int) -> some View {
+    private func learnTile(caption: String, title: String, set: MysterySetKind, mysteryNumber: Int, outlineInDark: Bool = false) -> some View {
         return HStack(alignment: .center, spacing: AppTheme.Space.md) {
             MysterySetIcon(set: set, size: 56)
 
@@ -236,7 +236,7 @@ struct PrayHubView: View {
                 .accessibilityHidden(true)
         }
         .padding(AppTheme.Space.lg)
-        .guideCard(radius: AppTheme.containerRadius, fill: palette.surface, elevated: false)
+        .guideArtCard(lightFill: palette.surface, outlineInDark: outlineInDark)
         .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         .accessibilityElement(children: .combine)
     }
