@@ -14,9 +14,9 @@ struct RosaryGuideApp: App {
     /// starts on Home.
     @State private var rootGeneration = 0
     private var landing: AppLanding { AppLanding.shared }
-    /// DEBUG `-RGDebugWelcomePreview`: holds the sign-in screen up (even with a saved session)
-    /// and plays the sign-in welcome into Home, with no sign-in. Always false in release.
-    @State private var previewsWelcome = DebugHooks.has("-RGDebugWelcomePreview")
+    /// DEBUG `-RGDebugSignInTransition`: holds the sign-in screen up (even with a saved session)
+    /// and plays the sign-in transition into Home, with no sign-in. Always false in release.
+    @State private var previewsSignInTransition = DebugHooks.has("-RGDebugSignInTransition")
     @AppStorage("onboarding.completed") private var didCompleteOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -37,11 +37,10 @@ struct RosaryGuideApp: App {
         _sync = State(initialValue: AccountSyncStore(settings: settings, session: session, appIcon: appIcon))
     }
 
-    private func finishWelcome() {
-        guard let welcome = landing.welcome else { return }
-        withAnimation(welcome.plain ? SignInWelcomeMotion.plainFade : SignInWelcomeMotion.reveal) {
-            landing.welcome = nil
-        }
+    private func finishSignInTransition() {
+        guard let style = landing.signInTransition else { return }
+        landing.buildsHomeEarly = false
+        withAnimation(style.fadeIn) { landing.signInTransition = nil }
     }
 
     var body: some Scene {
@@ -50,29 +49,37 @@ struct RosaryGuideApp: App {
                 ZStack {
                     // Signing in is optional (App Review 5.1.1(v)): guests use everything on this
                     // device, and an account only adds sync.
-                    if !previewsWelcome, LaunchGate.showsApp(didCompleteOnboarding: didCompleteOnboarding, isSignedIn: auth.isSignedIn,
-                                           signedInThisLaunch: auth.interactiveSignIns > 0) {
+                    let showsApp = !previewsSignInTransition && LaunchGate.showsApp(
+                        didCompleteOnboarding: didCompleteOnboarding, isSignedIn: auth.isSignedIn,
+                        signedInThisLaunch: auth.interactiveSignIns > 0)
+                    // After an onboarding sign-in, Home is built (hidden) under the sign-in screen
+                    // during its success tick, so the plain cover isn't held while Home lays out.
+                    if showsApp || landing.buildsHomeEarly {
                         RootView()
                             .id(rootGeneration)
-                            .scaleEffect(landing.welcome?.plain == false ? SignInWelcomeMotion.homeScale : 1)
-                    } else {
+                            .scaleEffect(landing.signInTransition?.homeScale ?? 1)
+                            .opacity(showsApp ? 1 : 0)
+                            .allowsHitTesting(showsApp)
+                            .accessibilityHidden(!showsApp)
+                    }
+                    if !showsApp {
                         OnboardingView {
-                            // A sign-in hands its welcome over first, so Home opens under it.
+                            // A sign-in hands its cover over first, so Home opens under it.
                             withTransaction(AppLanding.still) {
                                 didCompleteOnboarding = true
-                                previewsWelcome = false
+                                previewsSignInTransition = false
                             }
                         }
                     }
 
-                    if let welcome = landing.welcome {
-                        SignInWelcomeView(welcome: welcome, animatesIn: false, onTap: finishWelcome)
+                    if let style = landing.signInTransition {
+                        SignInTransitionCover(onTap: finishSignInTransition)
                             .transition(.opacity)
                             .zIndex(2)
                             .task {
-                                // A beat for Home's first layout, then the welcome fades away.
-                                try? await Task.sleep(for: .seconds(0.1))
-                                finishWelcome()
+                                // A beat on the plain cover while Home lays out, then Home fades in.
+                                try? await Task.sleep(for: .seconds(style.hold))
+                                finishSignInTransition()
                             }
                     }
 
@@ -197,8 +204,10 @@ enum LaunchGate {
 final class AppLanding {
     static let shared = AppLanding()
     private(set) var homeRequests = 0
-    /// The welcome after a sign-in, held over Home until it fades away.
-    var welcome: SignInWelcome?
+    /// After a sign-in: the plain cover held over Home until Home fades in.
+    var signInTransition: SignInTransition.Style?
+    /// From an onboarding sign-in's success: build Home hidden under the sign-in screen.
+    var buildsHomeEarly = false
     func requestHome() { homeRequests += 1 }
 
     static var still: Transaction {

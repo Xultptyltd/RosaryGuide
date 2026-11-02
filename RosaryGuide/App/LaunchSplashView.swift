@@ -1,104 +1,40 @@
 import SwiftUI
 import WebKit
 
-/// The moment after a sign-in or new account, before Home: the R-with-halo mark rises in on the
-/// app background, its halo blooms in Marian blue, and a short welcome sits under it.
-/// The sign-in screen plays the entrance; the app root shows the same view, settled, over the
-/// new Home and fades it away, so the hand-off between the two is invisible.
-enum SignInWelcomeMotion {
-    /// Success tick on the sign-in button before the screen starts to leave.
+/// After a sign-in or new account: the sign-in screen fades to the plain page background
+/// (black in dark mode, white in light), holds a beat while Home builds underneath, then Home
+/// fades in. The sign-in screen plays the fade out; the app root holds the same plain cover
+/// over the new Home and fades it away, so the hand-off is invisible. Timing only, never data.
+enum SignInTransition {
+    /// Success tick on the sign-in button before the screen fades.
     static let tick: Double = 0.3
-    /// Sign-in content fades and scales down while the welcome fades in.
-    static let leave = Animation.easeInOut(duration: 0.35)
-    static let leaveScale: CGFloat = 0.96
-    /// The mark rises in, then the halo blooms, then the words.
-    static let markIn = MotionTokens.reveal.delay(0.12)
-    static let bloom = Animation.easeOut(duration: 0.9).delay(0.2)
-    static let wordsIn = MotionTokens.reveal.delay(0.42)
-    /// From the start of the leave to the hand-off to Home (the bloom has settled by then).
-    static let hold: Double = 1.15
-    /// The welcome fades away over Home, which settles from a touch smaller.
-    static let reveal = Animation.easeInOut(duration: 0.45)
-    static let homeScale: CGFloat = 0.985
-    /// Reduce Motion: a plain cross-fade through the app background.
-    static let plainFade = Animation.easeInOut(duration: 0.25)
-    static let plainHold: Double = 0.3
-}
 
-/// Hands the welcome from the sign-in screen to the app root.
-struct SignInWelcome: Equatable {
-    var firstName: String?
-    /// Reduce Motion: background only, no mark, glow or scale.
-    var plain: Bool
+    enum Style: Equatable {
+        case standard
+        /// Reduce Motion: shorter fades, no scale.
+        case reduced
 
-    var greeting: String {
-        guard let firstName, !firstName.isEmpty else { return "Welcome" }
-        return "Welcome, \(firstName)"
-    }
-
-    static func firstName(from displayName: String?) -> String? {
-        displayName?.split(separator: " ").first.map(String.init)
+        var fadeOut: Animation { .easeInOut(duration: self == .standard ? 0.35 : 0.2) }
+        var fadeOutDuration: Double { self == .standard ? 0.35 : 0.2 }
+        /// On the plain cover, with Home built underneath.
+        var hold: Double { self == .standard ? 0.15 : 0.1 }
+        var fadeIn: Animation { .easeInOut(duration: self == .standard ? 0.65 : 0.3) }
+        /// Home settles from a touch smaller as it fades in.
+        var homeScale: CGFloat { self == .standard ? 0.985 : 1 }
     }
 }
 
-struct SignInWelcomeView: View {
-    var welcome: SignInWelcome
-    /// False at the app root: it appears already settled, matching the sign-in screen's last frame.
-    var animatesIn = true
+/// The plain page background between the sign-in screen and Home. A tap skips ahead.
+struct SignInTransitionCover: View {
     var onTap: () -> Void = {}
-
     @Environment(\.palette) private var palette
-    @State private var markShown = false
-    @State private var bloomed = false
-    @State private var wordsShown = false
 
     var body: some View {
-        ZStack {
-            palette.background.ignoresSafeArea()
-
-            if !welcome.plain {
-                VStack(spacing: AppTheme.Space.xl) {
-                    ZStack {
-                        Circle()
-                            .fill(AppTheme.marianBlue)
-                            .frame(width: 132, height: 132)
-                            .scaleEffect(bloomed ? 1.3 : 0.55)
-                            .blur(radius: bloomed ? 44 : 18)
-                            .opacity(bloomed ? 0.5 : 0)
-                        Image("LogoMark")
-                            .renderingMode(.template)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 64)
-                            .foregroundStyle(palette.ink)
-                    }
-                    .scaleEffect(markShown ? 1 : 0.88)
-                    .opacity(markShown ? 1 : 0)
-
-                    Text(welcome.greeting)
-                        .font(AppTheme.TypeRole.headingSecondary)
-                        .foregroundStyle(palette.ink)
-                        .multilineTextAlignment(.center)
-                        .opacity(wordsShown ? 1 : 0)
-                        .offset(y: wordsShown ? 0 : 8)
-                }
-                .padding(.horizontal, AppTheme.gutter)
-            }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onTap)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(welcome.greeting)
-        .accessibilityAddTraits(.isStaticText)
-        .onAppear {
-            guard animatesIn, !welcome.plain else {
-                markShown = true; bloomed = true; wordsShown = true
-                return
-            }
-            withAnimation(SignInWelcomeMotion.markIn) { markShown = true }
-            withAnimation(SignInWelcomeMotion.bloom) { bloomed = true }
-            withAnimation(SignInWelcomeMotion.wordsIn) { wordsShown = true }
-        }
+        palette.background
+            .ignoresSafeArea()
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onTap)
+            .accessibilityHidden(true)
     }
 }
 

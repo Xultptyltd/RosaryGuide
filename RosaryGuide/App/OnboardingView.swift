@@ -269,8 +269,8 @@ private struct OnboardingSignInView: View {
     @State private var lastProvider: OnboardingAuthButton.Provider?
     @State private var succeeded = false
     @State private var shakes: CGFloat = 0
-    /// After a sign-in: the welcome is up and this screen is leaving.
-    @State private var welcome: SignInWelcome?
+    /// After a sign-in: this screen is fading to the plain cover.
+    @State private var leaving: SignInTransition.Style?
     @State private var handedOff = false
 
     private func buttonState(_ provider: OnboardingAuthButton.Provider) -> OnboardingAuthButton.Status {
@@ -386,25 +386,24 @@ private struct OnboardingSignInView: View {
         }
         .onAppear {
             #if DEBUG
-            guard !DebugHooks.has("-RGDebugWelcomePreview") else { return }
+            guard !DebugHooks.has("-RGDebugSignInTransition") else { return }
             #endif
             completeIfSignedIn()
         }
         #if DEBUG
-        // `-RGDebugWelcomePreview`: plays the success and welcome after 10 s (past the launch splash), with no sign-in.
+        // `-RGDebugSignInTransition`: plays the success and transition into Home after 10 s
+        // (past the launch splash), with no sign-in.
         .task {
-            guard DebugHooks.has("-RGDebugWelcomePreview") else { return }
+            guard DebugHooks.has("-RGDebugSignInTransition") else { return }
             try? await Task.sleep(for: .seconds(10))
             lastProvider = .apple
             completeAfterSuccess()
         }
         #endif
         .accessibilityElement(children: .contain)
-        .scaleEffect(welcome != nil && !reduceMotion ? SignInWelcomeMotion.leaveScale : 1)
-        .opacity(welcome == nil ? 1 : 0)
         .overlay {
-            if let welcome {
-                SignInWelcomeView(welcome: welcome, onTap: handOff)
+            if leaving != nil {
+                SignInTransitionCover(onTap: handOff)
                     .transition(.opacity)
             }
         }
@@ -415,36 +414,25 @@ private struct OnboardingSignInView: View {
         onComplete()
     }
 
-    /// One success haptic and a brief tick on the button. Then this screen fades and settles
-    /// back while the welcome rises in, and the app root carries the welcome over Home.
-    /// Timing only: Home is under the welcome from the hand-off, whatever its data is doing,
-    /// and a tap skips ahead.
+    /// One success haptic and a brief tick on the button. Then this screen fades to the plain
+    /// cover and the app root carries the cover over Home, which fades in. Timing only: Home
+    /// is under the cover from the hand-off, whatever its data is doing, and a tap skips ahead.
     private func completeAfterSuccess() {
         guard !succeeded else { return }
         HapticService.play(.success, enabled: settings.hapticsEnabled)
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { succeeded = true }
-        let plain = reduceMotion
-        DispatchQueue.main.asyncAfter(deadline: .now() + SignInWelcomeMotion.tick) {
-            withAnimation(plain ? SignInWelcomeMotion.plainFade : SignInWelcomeMotion.leave) {
-                welcome = SignInWelcome(firstName: SignInWelcome.firstName(from: welcomeName), plain: plain)
-            }
-            let hold = plain ? SignInWelcomeMotion.plainHold : SignInWelcomeMotion.hold
-            DispatchQueue.main.asyncAfter(deadline: .now() + hold) { handOff() }
+        withTransaction(AppLanding.still) { AppLanding.shared.buildsHomeEarly = true }
+        let style: SignInTransition.Style = reduceMotion ? .reduced : .standard
+        DispatchQueue.main.asyncAfter(deadline: .now() + SignInTransition.tick) {
+            withAnimation(style.fadeOut) { leaving = style }
+            DispatchQueue.main.asyncAfter(deadline: .now() + style.fadeOutDuration) { handOff() }
         }
     }
 
-    private var welcomeName: String? {
-        #if DEBUG
-        // `-RGDebugWelcomeName <name>` (or none) for previews, never the saved account's name.
-        if DebugHooks.has("-RGDebugWelcomePreview") { return UserDefaults.standard.string(forKey: "RGDebugWelcomeName") }
-        #endif
-        return auth.displayName
-    }
-
     private func handOff() {
-        guard let welcome, !handedOff else { return }
+        guard let leaving, !handedOff else { return }
         handedOff = true
-        withTransaction(AppLanding.still) { AppLanding.shared.welcome = welcome }
+        withTransaction(AppLanding.still) { AppLanding.shared.signInTransition = leaving }
         onComplete()
     }
 }
