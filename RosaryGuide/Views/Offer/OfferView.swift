@@ -202,16 +202,10 @@ struct OfferView: View {
                 syncWarning
                 VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
                     intentionsSectionHeader
-                        // Empty state uses only the stack's 8pt title-to-body gap.
-                        .padding(.bottom, offer.sortedIntentions.isEmpty ? 0 : AppTheme.Space.sm)
+                        .padding(.bottom, AppTheme.Space.sm)
                     VStack(spacing: 0) {
                         if offer.sortedIntentions.isEmpty {
-                            Text("Keep the people and things you pray for here")
-                                .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.bottom, AppTheme.Space.lg)
-                            // Secondary pill; the stack's lg spacing below matches the lg above, so it sits midway to the divider.
-                            PillButton(title: "Add intention", filled: false, action: startAddingIntention)
+                            intentionsEmptyCard
                         } else {
                             ForEach(profilePreviewIntentions) { item in
                                 MyPrayerIntentionRow(
@@ -295,6 +289,32 @@ struct OfferView: View {
         }
         #endif
         }
+    }
+
+    /// No intentions yet: a centred invitation in the same glass card as Your prayer.
+    private var intentionsEmptyCard: some View {
+        VStack(spacing: AppTheme.Space.none) {
+            IntentionGlyphImage(glyph: .heart, size: AppTheme.MysteryIcon.circleSize * AppTheme.MysteryIcon.assetRatio)
+                .foregroundStyle(palette.accentText)
+                .frame(width: AppTheme.MysteryIcon.circleSize, height: AppTheme.MysteryIcon.circleSize)
+                .background(palette.accentTint, in: Circle())
+                .accessibilityHidden(true)
+            Text("What’s on your heart?")
+                .font(AppTheme.TypeRole.cardTitle)
+                .foregroundStyle(palette.ink)
+                .padding(.top, AppTheme.Space.md)
+            Text("Keep your intentions close as you pray.")
+                .font(AppTheme.TypeRole.bodySmall)
+                .foregroundStyle(palette.textSecondary)
+                .padding(.top, AppTheme.Space.xs)
+            PillButton(title: "Add intention", action: startAddingIntention)
+                .padding(.top, AppTheme.Space.lg)
+        }
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(AppTheme.PrayerPreview.cardInset)
+        .frame(maxWidth: .infinity)
+        .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
     }
 
     /// Stage follows earned milestones, so a break in prayer never resets it.
