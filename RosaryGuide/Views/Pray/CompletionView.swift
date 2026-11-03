@@ -144,7 +144,6 @@ struct CompletionView: View {
             morphIn()
         }
         .background(pageBg.ignoresSafeArea())
-        .environment(\.glassSurfacesEnabled, true)
         .onPreferenceChange(SlotFrameKey.self) { rect in
             guard rect.width > 1, rect.height > 1 else { return }
             guard abs(rect.minX - slot.minX) > 0.5

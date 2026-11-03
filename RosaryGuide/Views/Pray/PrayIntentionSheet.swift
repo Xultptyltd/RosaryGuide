@@ -109,7 +109,6 @@ struct PrayIntentionSheet: View {
             }
             .scrollIndicators(.hidden)
             .background(palette.bg)
-            .environment(\.glassSurfacesEnabled, true)
             .navigationTitle("Offer this Rosary for")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(palette.scheme, for: .navigationBar)

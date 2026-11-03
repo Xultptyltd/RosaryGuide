@@ -178,17 +178,18 @@ struct ThemePalette {
 
     // MARK: Canonical foundation
 
-    /// Plain page colour (detail pages, sheets, prayer flow): white in light, near-black in dark.
+    /// Plain page colour (detail pages, sheets, prayer flow): white in light, black in dark.
     var background: Color {
         scheme == .light
             ? Color(hex: 0xFFFFFF)
-            : Color(hex: 0x090A0C)
+            : Color(hex: 0x000000)
     }
-    /// Grouped page colour under the blue glow (tab roots and glow pages): grey in light.
+    /// Grouped page colour under the blue glow (tab roots and glow pages): grey in light,
+    /// black in dark.
     var groupedBackground: Color {
         scheme == .light
             ? Color(hex: 0xF2F3F7)
-            : Color(hex: 0x090A0C)
+            : Color(hex: 0x000000)
     }
     /// Page colour for a page style.
     func page(_ style: PageStyle) -> Color { style == .grouped ? groupedBackground : background }
@@ -215,17 +216,18 @@ struct ThemePalette {
     var surface: Color {
         scheme == .light
             ? Color(hex: 0xEBEBED)
-            : Color(hex: 0x191B1E)
+            : Color(hex: 0x1C1C1E)
     }
 
-    /// Content cards. Light: white on the grouped grey page, grouped grey on a white plain page,
-    /// so a card always reads against its page. Dark keeps the surface.
+    /// Content cards, always solid. Light: white on the grouped grey page, grouped grey on a
+    /// white plain page, so a card always reads against its page. Dark: the lifted surface on
+    /// the black page, plain or grouped.
     func cardSurface(on style: PageStyle) -> Color {
         guard scheme == .light else { return surface }
         return style == .grouped ? background : groupedBackground
     }
-    /// Hairline rim on light cards; dark cards keep their glass rim.
-    var cardSurfaceStroke: Color { textPrimary.opacity(0.04) }
+    /// Hairline rim on cards, a touch stronger in dark so edges read on black.
+    var cardSurfaceStroke: Color { textPrimary.opacity(scheme == .light ? 0.04 : 0.07) }
     /// Section divider band: one step darker than the surface in light so it reads on the grey page.
     var sectionDivider: Color { scheme == .light ? Color(hex: 0xE3E4E8) : surface }
 
@@ -255,8 +257,8 @@ struct ThemePalette {
         default: AppTheme.marianBlue
         }
     }
-    // Light 8%: keeps the blue numeral at 4.5:1 on the grey page.
-    var stepNumberFill: Color { accent.opacity(scheme == .dark ? 0.15 : 0.08) }
+    // Light 8% and dark 12%: keep the blue numeral at 4.5:1 on the page and on cards.
+    var stepNumberFill: Color { accent.opacity(scheme == .dark ? 0.12 : 0.08) }
     /// Selected tab bar item (icon and label).
     var tabSelected: Color {
         switch (scheme, contrast) {
@@ -278,8 +280,9 @@ struct ThemePalette {
     var buttonPrimaryText: Color { onAccent }
     var buttonSecondaryFill: Color { scheme == .dark ? Color.white : Color.black }
     var buttonSecondaryText: Color { scheme == .dark ? Color.black : Color.white }
-    /// Quiet third action. Same fill as cards and grouped rows, not a new hue.
-    var buttonTertiaryFill: Color { surface }
+    /// Quiet third action. Light: the surface grey. Dark: one step above the card, so it
+    /// reads on cards as well as on the page.
+    var buttonTertiaryFill: Color { scheme == .light ? surface : Color(hex: 0x2C2C2E) }
     var buttonTertiaryText: Color { scheme == .dark ? Color.white.opacity(0.96) : Color.black }
     var todayPillFill: Color { Color.white }
     var todayPillText: Color { Color.black }
@@ -409,7 +412,6 @@ struct ThemedRoot<Content: View>: View {
         let palette = ThemePalette(scheme: colorScheme, contrast: colorSchemeContrast)
         content()
             .environment(\.palette, palette)
-            .environment(\.glassSurfacesEnabled, false)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(palette.bg.ignoresSafeArea())
             .onAppear {
@@ -684,7 +686,6 @@ struct GuidePageChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .environment(\.glassSurfacesEnabled, ambientBackground)
             .environment(\.pageStyle, ambientBackground ? .grouped : .plain)
             .background {
                 if ambientBackground { AppPageBackground() } else { palette.bg }
@@ -1414,48 +1415,25 @@ extension View {
     }
 }
 
-/// Content surfaces opt in through page chrome; prayer flow keeps solid surfaces.
-private struct GlassSurfacesEnabledKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-extension EnvironmentValues {
-    var glassSurfacesEnabled: Bool {
-        get { self[GlassSurfacesEnabledKey.self] }
-        set { self[GlassSurfacesEnabledKey.self] = newValue }
-    }
-}
-
 private struct GuideSurfaceModifier<SurfaceShape: Shape>: ViewModifier {
     @Environment(\.palette) private var palette
-    @Environment(\.glassSurfacesEnabled) private var enabled
     @Environment(\.pageStyle) private var pageStyle
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     let shape: SurfaceShape
     var fill: Color?
 
     func body(content: Content) -> some View {
-        if palette.scheme == .light && (fill == nil || fill == palette.surface) {
-            // Light cards: solid, with a faint rim; white on grouped pages, grey on plain ones.
+        if let fill, fill != palette.surface {
+            content.background(fill, in: shape)
+        } else {
+            // Solid cards with a faint rim, following the page (see `cardSurface(on:)`).
             content.background(palette.cardSurface(on: pageStyle), in: shape)
                 .overlay { shape.stroke(palette.cardSurfaceStroke, lineWidth: AppTheme.Component.panelStrokeWidth) }
-        } else if !enabled || reduceTransparency || (fill != nil && fill != palette.surface) {
-            content.background(fill ?? palette.surface, in: shape)
-        } else if #available(iOS 26.0, *) {
-            content.glassEffect(.regular, in: shape)
-                // Keep the glass rim while clipping its system drop shadow.
-                .clipShape(shape)
-        } else {
-            content.background(.regularMaterial, in: shape)
-                .overlay {
-                    shape.stroke(palette.controlStroke, lineWidth: AppTheme.Component.panelStrokeWidth)
-                }
         }
     }
 }
 
 extension View {
-    /// Shared content surface with native glass on regular app pages.
+    /// Shared solid content surface (cards, panels, grouped rows).
     func guideSurface<SurfaceShape: Shape>(in shape: SurfaceShape, fill: Color? = nil) -> some View {
         modifier(GuideSurfaceModifier(shape: shape, fill: fill))
     }

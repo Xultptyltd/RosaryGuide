@@ -48,7 +48,7 @@ final class ThemeTokenTests: XCTestCase {
         let dark = ThemePalette(scheme: .dark)
 
         XCTAssertEqual(UIColor(light.surface), UIColor(Color(hex: 0xEBEBED)))
-        XCTAssertEqual(UIColor(dark.surface), UIColor(Color(hex: 0x191B1E)))
+        XCTAssertEqual(UIColor(dark.surface), UIColor(Color(hex: 0x1C1C1E)))
         XCTAssertEqual(UIColor(light.bg), UIColor(Color(hex: 0xFFFFFF)))
         XCTAssertEqual(UIColor(light.groupedBackground), UIColor(Color(hex: 0xF2F3F7)))
         XCTAssertEqual(UIColor(dark.groupedBackground), UIColor(dark.bg))
@@ -57,7 +57,10 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(UIColor(dark.cardSurface(on: .plain)), UIColor(dark.surface))
         XCTAssertEqual(UIColor(dark.cardSurface(on: .grouped)), UIColor(dark.surface))
         XCTAssertEqual(UIColor(dark.sectionDivider), UIColor(dark.surface))
-        XCTAssertEqual(UIColor(dark.bg), UIColor(Color(hex: 0x090A0C)))
+        XCTAssertEqual(UIColor(dark.bg), UIColor(Color(hex: 0x000000)))
+        // Dark cards: solid #1C1C1E with a faint white rim on the black page.
+        XCTAssertEqual(UIColor(dark.cardSurfaceStroke), UIColor(Color.white.opacity(0.07)))
+        XCTAssertEqual(UIColor(light.cardSurfaceStroke), UIColor(Color.black.opacity(0.04)))
         XCTAssertEqual(UIColor(light.prayBg), UIColor(light.bg))
         XCTAssertEqual(UIColor(dark.prayBg), UIColor(dark.bg))
 
@@ -73,9 +76,9 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(UIColor(light.learnMoreButtonText), UIColor(light.secondaryButtonText))
         XCTAssertEqual(UIColor(dark.learnMoreButtonText), UIColor(dark.secondaryButtonText))
         XCTAssertEqual(UIColor(light.tertiaryButtonFill), UIColor(light.surface))
-        XCTAssertEqual(UIColor(dark.tertiaryButtonFill), UIColor(dark.surface))
+        XCTAssertEqual(UIColor(dark.tertiaryButtonFill), UIColor(Color(hex: 0x2C2C2E)))
         XCTAssertEqual(UIColor(light.buttonTertiaryFill), UIColor(light.surface))
-        XCTAssertEqual(UIColor(dark.buttonTertiaryFill), UIColor(dark.surface))
+        XCTAssertEqual(UIColor(dark.buttonTertiaryFill), UIColor(dark.tertiaryButtonFill))
     }
 
 
@@ -179,9 +182,10 @@ final class ContrastTokenTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(ratio(p.destructive, bg), 4.5, "destructive \(where_)")
             }
             XCTAssertGreaterThanOrEqual(ratio(p.onAccent, p.accent), 4.5, "button text")
-            for page in [p.bg, p.groupedBackground] {
+            for page in [p.bg, p.groupedBackground, p.cardSurface(on: .grouped), p.cardSurface(on: .plain)] {
                 XCTAssertGreaterThanOrEqual(ratio(p.stepNumberText, p.stepNumberFill, under: page), 4.5, "step number")
             }
+            XCTAssertGreaterThanOrEqual(ratio(p.tertiaryButtonText, p.tertiaryButtonFill), 4.5, "tertiary button")
             XCTAssertGreaterThanOrEqual(ratio(p.completionMeta, p.completionBackground), 4.5, "completion meta")
         }
     }
