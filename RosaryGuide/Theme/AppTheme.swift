@@ -184,11 +184,11 @@ struct ThemePalette {
             ? Color(hex: 0xFFFFFF)
             : Color(hex: 0x000000)
     }
-    /// Grouped page colour under the blue glow (tab roots and glow pages): grey in light,
+    /// Grouped page colour under the blue glow (tab roots and glow pages): near-white in light,
     /// black in dark.
     var groupedBackground: Color {
         scheme == .light
-            ? Color(hex: 0xF2F3F7)
+            ? Color(hex: 0xF8F8FA)
             : Color(hex: 0x000000)
     }
     /// Page colour for a page style.
@@ -219,16 +219,17 @@ struct ThemePalette {
             : Color(hex: 0x1C1C1E)
     }
 
-    /// Content cards, always solid. Light: white on the grouped grey page, grouped grey on a
+    /// Content cards, always solid. Light: white on the near-white grouped page, grey on a
     /// white plain page, so a card always reads against its page. Dark: the lifted surface on
     /// the black page, plain or grouped.
     func cardSurface(on style: PageStyle) -> Color {
         guard scheme == .light else { return surface }
-        return style == .grouped ? background : groupedBackground
+        return style == .grouped ? background : Color(hex: 0xF2F3F7)
     }
-    /// Hairline rim on cards, a touch stronger in dark so edges read on black.
-    var cardSurfaceStroke: Color { textPrimary.opacity(scheme == .light ? 0.04 : 0.07) }
-    /// Section divider band: one step darker than the surface in light so it reads on the grey page.
+    /// Hairline rim on every card: 8% ink in light (white cards on the near-white page, grey
+    /// cards on white), 7% white in dark, so edges read the same in both.
+    var cardSurfaceStroke: Color { textPrimary.opacity(scheme == .light ? 0.08 : 0.07) }
+    /// Section divider band: one step darker than the surface in light so it reads on the page.
     var sectionDivider: Color { scheme == .light ? Color(hex: 0xE3E4E8) : surface }
 
     var accent: Color {
