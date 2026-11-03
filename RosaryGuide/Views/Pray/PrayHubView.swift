@@ -277,7 +277,8 @@ struct PrayHubView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 36, height: 36, alignment: .leading)
-                .foregroundStyle(palette.accentText)
+                // Marian blue in both schemes, like the mystery icons (decorative).
+                .foregroundStyle(palette.accent)
                 .accessibilityHidden(true)
             Spacer(minLength: AppTheme.Space.sm)
             Text(title)

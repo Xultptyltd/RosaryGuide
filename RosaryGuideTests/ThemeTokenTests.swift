@@ -61,6 +61,9 @@ final class ThemeTokenTests: XCTestCase {
         // Dark cards: solid #1C1C1E with a faint white rim on the black page.
         XCTAssertEqual(UIColor(dark.cardSurfaceStroke), UIColor(Color.white.opacity(0.07)))
         XCTAssertEqual(UIColor(light.cardSurfaceStroke), UIColor(Color.black.opacity(0.08)))
+        // Mystery icons: white glyph on solid Marian blue in both schemes.
+        XCTAssertEqual(UIColor(light.mysteryIconFill), UIColor(Color(hex: 0x0054FF)))
+        XCTAssertEqual(UIColor(dark.mysteryIconFill), UIColor(Color(hex: 0x0054FF)))
         XCTAssertEqual(UIColor(light.prayBg), UIColor(light.bg))
         XCTAssertEqual(UIColor(dark.prayBg), UIColor(dark.bg))
 

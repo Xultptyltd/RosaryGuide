@@ -306,9 +306,8 @@ struct ThemePalette {
             ? accent.opacity(0.20)
             : accent.opacity(0.12)
     }
-    /// Mystery set icon: white glyph. Dark keeps the soft accent tint; light uses solid
-    /// Marian blue because white on the 12% tint would be unreadable.
-    var mysteryIconFill: Color { scheme == .dark ? accentTint : accent }
+    /// Mystery set icon: white glyph on solid Marian blue in both schemes.
+    var mysteryIconFill: Color { accent }
     var mysteryIconGlyph: Color { onAccent }
     /// Unselected segmented-control track. Keep this on the shared surface
     /// pathway so UIKit and custom segmented controls render the same surface.

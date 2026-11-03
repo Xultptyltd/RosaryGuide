@@ -10,7 +10,7 @@ struct MysterySetIcon: View {
     var size: CGFloat = AppTheme.MysteryIcon.circleSize
 
     var body: some View {
-        // White glyph on the mystery icon fill (accent tint in dark, Marian blue in light).
+        // White glyph on the mystery icon fill (solid Marian blue).
         ZStack {
             Circle().fill(palette.mysteryIconFill)
             Image(set.iconAssetName)

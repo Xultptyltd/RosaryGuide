@@ -296,7 +296,7 @@ struct OfferView: View {
     /// No intentions yet: a centred invitation in the same glass card as Your prayer.
     private var intentionsEmptyCard: some View {
         VStack(spacing: AppTheme.Space.none) {
-            // White glyph on the mystery icon fill (accent tint in dark, Marian blue in light).
+            // White glyph on the mystery icon fill (solid Marian blue).
             IntentionGlyphImage(glyph: .heart, size: AppTheme.MysteryIcon.circleSize * AppTheme.MysteryIcon.assetRatio)
                 .foregroundStyle(palette.mysteryIconGlyph)
                 .frame(width: AppTheme.MysteryIcon.circleSize, height: AppTheme.MysteryIcon.circleSize)
