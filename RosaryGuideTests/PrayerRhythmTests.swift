@@ -567,6 +567,50 @@ final class ReminderCopyTests: XCTestCase {
         let monday = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 19))!
         XCTAssertTrue(NotificationService.dailyBody(weekday: 2, day: monday).contains("Joyful"))
     }
+
+    func testDailyCopyIsOneSentenceNamingTheSet() {
+        let sunday = Calendar.current.date(from: DateComponents(year: 2026, month: 11, day: 1, hour: 12))!
+        XCTAssertEqual(NotificationService.dailyBody(weekday: 1, day: sunday),
+                       "Time to pray the Glorious Mysteries. Take a few quiet minutes for the Rosary.")
+    }
+
+    private func feast(_ name: String, _ rank: FeastRank) -> Feast {
+        Feast(id: name, name: BilingualText(english: name, latin: name), summary: "", suggestedMysterySet: nil,
+              isMarian: false, rank: rank, dateProvider: { _ in nil })
+    }
+
+    func testFeastCopyUsesRankAndReadsNaturally() {
+        XCTAssertEqual(NotificationService.feastBody([feast("All Saints", .solemnity)]),
+                       "Today is the solemnity of All Saints")
+        XCTAssertEqual(NotificationService.feastBody([feast("Saint Charles Borromeo", .memorial)]),
+                       "Today is the memorial of Saint Charles Borromeo")
+        XCTAssertEqual(NotificationService.feastBody([feast("The Assumption of the Blessed Virgin Mary", .solemnity)]),
+                       "Today is the solemnity of the Assumption of the Blessed Virgin Mary")
+        XCTAssertEqual(NotificationService.feastBody([feast("Our Lady of Lourdes", .optionalMemorial)]),
+                       "Today is the memorial of Our Lady of Lourdes")
+        XCTAssertEqual(NotificationService.feastBody([feast("Presentation of the Lord", .feast)]),
+                       "Today is the feast of the Presentation of the Lord")
+    }
+
+    func testEveryCatalogFeastReadsAsASentence() {
+        for feast in FeastCatalog.all {
+            let body = NotificationService.feastBody([feast])
+            print("FEASTCOPY \(body)")
+            XCTAssertTrue(body.hasPrefix("Today is "), body)
+            XCTAssertFalse(body.contains(" The "), body)
+            XCTAssertFalse(body.contains("the the "), body)
+        }
+    }
+
+    func testSeasonalDaysAndSharedDays() {
+        XCTAssertEqual(NotificationService.feastBody([feast("Ash Wednesday", .seasonal)]), "Today is Ash Wednesday")
+        XCTAssertEqual(NotificationService.feastBody([feast("First Sunday of Advent", .seasonal)]),
+                       "Today is the First Sunday of Advent")
+        XCTAssertEqual(NotificationService.feastBody([feast("The Commemoration of All the Faithful Departed", .seasonal)]),
+                       "Today is the Commemoration of All the Faithful Departed")
+        XCTAssertEqual(NotificationService.feastBody([feast("Our Lady of the Rosary", .memorial), feast("Saints Peter and Paul", .solemnity)]),
+                       "Today is the memorial of Our Lady of the Rosary and the solemnity of Saints Peter and Paul")
+    }
 }
 
 /// The Home week strip starts on the same weekday as the rhythm card.

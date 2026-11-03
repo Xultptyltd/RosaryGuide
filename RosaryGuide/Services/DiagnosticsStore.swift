@@ -5,12 +5,12 @@ import MetricKit
 
 /// A small rolling store of MetricKit JSON payloads in Application Support.
 ///
-/// Nothing here leaves the device: payloads are only read back when the person taps
-/// "Share diagnostics" in Settings and picks a destination in the share sheet.
+/// Nothing here leaves the device.
 /// Files are ordered by a timestamp in their *name*, so no file-date APIs are used.
 struct DiagnosticsStore {
     static let defaultMaxFiles = 10
     static let defaultMaxBytes = 2 * 1024 * 1024
+    /// Export written by the former Share diagnostics row; removed with the store.
     static let exportFileName = "RosaryGuide-diagnostics.json"
 
     let directory: URL
@@ -81,40 +81,6 @@ struct DiagnosticsStore {
     func removeAll(exportFolder: URL = FileManager.default.temporaryDirectory) {
         try? FileManager.default.removeItem(at: directory)
         try? FileManager.default.removeItem(at: exportFolder.appendingPathComponent(Self.exportFileName))
-    }
-
-    /// One JSON file holding every stored payload, written to the temporary directory for
-    /// the share sheet. Nil when there is nothing to share.
-    func exportCombined(appVersion: String = Self.appVersion, to folder: URL = FileManager.default.temporaryDirectory) -> URL? {
-        let payloads: [[String: Any]] = files().compactMap { url in
-            guard let data = try? Data(contentsOf: url),
-                  let object = try? JSONSerialization.jsonObject(with: data) else { return nil }
-            let name = url.deletingPathExtension().lastPathComponent
-            let kind = name.contains(Kind.diagnostic.rawValue) ? Kind.diagnostic.rawValue : Kind.metric.rawValue
-            return ["file": url.lastPathComponent, "kind": kind, "payload": object]
-        }
-        guard !payloads.isEmpty else { return nil }
-        let combined: [String: Any] = [
-            "app": "Rosary Guide",
-            "version": appVersion,
-            "exported": ISO8601DateFormatter().string(from: Date()),
-            "payloads": payloads
-        ]
-        guard let data = try? JSONSerialization.data(withJSONObject: combined, options: [.prettyPrinted, .sortedKeys]) else { return nil }
-        let url = folder.appendingPathComponent(Self.exportFileName)
-        do {
-            try data.write(to: url, options: .atomic)
-            return url
-        } catch {
-            return nil
-        }
-    }
-
-    static var appVersion: String {
-        let info = Bundle.main.infoDictionary
-        let short = info?["CFBundleShortVersionString"] as? String ?? "?"
-        let build = info?["CFBundleVersion"] as? String ?? "?"
-        return "\(short) (\(build))"
     }
 }
 

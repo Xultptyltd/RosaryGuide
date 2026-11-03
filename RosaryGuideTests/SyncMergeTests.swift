@@ -731,38 +731,22 @@ final class DiagnosticsStoreTests: XCTestCase {
         XCTAssertEqual(store.files().count, 2)
     }
 
-    func testRemoveAllDeletesFolderAndExportSoShareRowHides() throws {
+    func testRemoveAllDeletesFolderAndLeftoverExport() throws {
         let store = DiagnosticsStore(directory: directory.appendingPathComponent("Diagnostics", isDirectory: true))
         let out = directory.appendingPathComponent("out", isDirectory: true)
         try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
         store.save(payload(1), kind: .diagnostic)
         store.save(payload(2), kind: .metric, at: Date().addingTimeInterval(1))
-        let export = try XCTUnwrap(store.exportCombined(appVersion: "1.0 (1)", to: out))
+        let export = out.appendingPathComponent(DiagnosticsStore.exportFileName)
+        try Data("{}".utf8).write(to: export)
 
         store.removeAll(exportFolder: out)
 
         XCTAssertFalse(FileManager.default.fileExists(atPath: store.directory.path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: export.path))
         XCTAssertTrue(store.isEmpty)
-        // Settings shows the row only when an export exists.
-        XCTAssertNil(store.exportCombined(appVersion: "1.0 (1)", to: out))
         // The store keeps working afterwards.
         XCTAssertNotNil(store.save(payload(3), kind: .metric))
-    }
-
-    func testExportIsNilWhenEmptyAndCombinesPayloads() throws {
-        let store = DiagnosticsStore(directory: directory)
-        let out = directory.appendingPathComponent("out", isDirectory: true)
-        try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
-        XCTAssertNil(store.exportCombined(appVersion: "1.0 (1)", to: out))
-
-        store.save(payload(1), kind: .diagnostic, at: Date(timeIntervalSince1970: 1_800_000_000))
-        store.save(payload(2), kind: .metric, at: Date(timeIntervalSince1970: 1_800_000_001))
-        let url = try XCTUnwrap(store.exportCombined(appVersion: "1.0 (1)", to: out))
-        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
-        let payloads = try XCTUnwrap(object["payloads"] as? [[String: Any]])
-        XCTAssertEqual(payloads.map { $0["kind"] as? String }, ["diagnostic", "metric"])
-        XCTAssertEqual(object["version"] as? String, "1.0 (1)")
     }
 }
 

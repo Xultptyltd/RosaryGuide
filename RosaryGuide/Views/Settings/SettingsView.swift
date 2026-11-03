@@ -6,7 +6,6 @@ import UserNotifications
 private enum SettingsDestination: Hashable {
     case notifications
     case rosary
-    case faqs
     case acknowledgements
     case license(String)
     case appIcon
@@ -26,7 +25,6 @@ struct SettingsView: View {
     var onClose: (() -> Void)?
 
     /// Combined MetricKit export for the share sheet; nil hides the row.
-    @State private var diagnosticsExport: URL?
     @State private var confirmClearAppHistory = false
     @State private var confirmSignOut = false
     @State private var didClearAppHistory = false
@@ -142,7 +140,6 @@ struct SettingsView: View {
             Text(appIcon.lastErrorMessage ?? "Try again.")
         }
         .onAppear { appIcon.refreshFromSystem() }
-        .task(loadDiagnosticsExport)
         .alert("Mail not available", isPresented: Binding(
             get: { mailUnavailableMessage != nil },
             set: { if !$0 { mailUnavailableMessage = nil } }
@@ -204,7 +201,6 @@ struct SettingsView: View {
                     GuideSectionBoundary()
 
                     SettingsSection(title: "Help & support") {
-                        SettingsNavigationRow(title: "Frequently asked questions", icon: "questionmark.circle", destination: .faqs)
                         SettingsActionRow(title: "Report a problem", icon: "exclamationmark.bubble", accessory: .externalLink) {
                             showReportChoice = true
                         }
@@ -216,10 +212,6 @@ struct SettingsView: View {
                             SettingsActionRow(title: "Leave a review", icon: "star", accessory: .externalLink) {
                                 openURL(reviewURL)
                             }
-                        }
-                        // On-device MetricKit reports; shown only once there is something to share.
-                        if let diagnosticsExport {
-                            SettingsShareRow(title: "Share diagnostics", icon: "stethoscope", file: diagnosticsExport)
                         }
                     }
 
@@ -317,13 +309,6 @@ struct SettingsView: View {
         }
     }
 
-    @Sendable private func loadDiagnosticsExport() async {
-        let url = await Task.detached(priority: .utility) {
-            DiagnosticsStore.standard.exportCombined()
-        }.value
-        diagnosticsExport = url
-    }
-
     private var appVersion: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
@@ -349,9 +334,8 @@ struct SettingsView: View {
         session.clearHistoryAndData()
         offer.clearAll()
         settings.resetLocalPreferences(keepingAppIcon: appIcon.current)
-        // Stored MetricKit reports go too, which hides "Share diagnostics".
+        // Stored MetricKit reports go too.
         DiagnosticsStore.standard.removeAll()
-        diagnosticsExport = nil
         Task {
             await NotificationService.reschedule(settings.notificationPlan)
         }
@@ -435,8 +419,6 @@ struct SettingsView: View {
     @ViewBuilder
     private func destinationView(_ destination: SettingsDestination) -> some View {
         switch destination {
-        case .faqs:
-            SettingsFAQScreen()
         case .notifications:
             SettingsNotificationsScreen()
         case .rosary:
@@ -607,20 +589,6 @@ private struct SettingsActionRow: View {
     var body: some View {
         Button(action: action) {
             SettingsRowChrome(title: title, icon: icon, value: nil, destructive: destructive, accessory: accessory)
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-/// Opens the share sheet for a file the app wrote (the person picks where it goes).
-private struct SettingsShareRow: View {
-    let title: String
-    var icon: String?
-    let file: URL
-
-    var body: some View {
-        ShareLink(item: file, preview: SharePreview("Rosary Guide diagnostics")) {
-            SettingsRowChrome(title: title, icon: icon, value: nil, accessory: .externalLink)
         }
         .buttonStyle(.plain)
     }
@@ -1036,22 +1004,6 @@ private struct SettingsDetailScaffold<Content: View>: View {
         .scrollContentBackground(.hidden)
         .background(palette.bg.ignoresSafeArea())
         .guideDetailChrome(title, ambientBackground: false)
-    }
-}
-
-private struct SettingsFAQScreen: View {
-    var body: some View {
-        SettingsDetailScaffold(title: "Frequently asked questions") {
-            SettingsSection(title: "Rosary Guide") {
-                SettingsValueOnlyRow(title: "Do intentions sync?", icon: "questionmark.circle", value: "Yes")
-                SettingsValueOnlyRow(title: "Can I pray offline?", icon: "questionmark.circle", value: "Yes")
-                SettingsValueOnlyRow(title: "Can I use Latin?", icon: "questionmark.circle", value: "Yes")
-            }
-
-            SettingsFootnote(
-                "Signed-in intentions are privately synced to your account. Prayer progress and recent session state remain local to this device."
-            )
-        }
     }
 }
 

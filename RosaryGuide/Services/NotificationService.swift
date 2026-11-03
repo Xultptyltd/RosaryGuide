@@ -81,7 +81,7 @@ enum NotificationService {
             let offset = (weekday - calendar.component(.weekday, from: today) + 7) % 7
             guard let day = calendar.date(byAdding: .day, value: offset, to: today) else { return nil }
             let content = UNMutableNotificationContent()
-            content.title = "Time to pray"
+            // One line in the body; the lock screen already heads it with the app name.
             content.body = dailyBody(weekday: weekday, day: day)
             content.sound = .default
             content.threadIdentifier = "rosary.daily"
@@ -97,10 +97,33 @@ enum NotificationService {
 
     static func dailyBody(weekday: Int, day: Date) -> String {
         let set = MysteryCalendar.assignment(on: day).set
-        return "Today: the \(set.shortName) Mysteries. Take a few quiet minutes for the Rosary."
+        return "Time to pray the \(set.shortName) Mysteries. Take a few quiet minutes for the Rosary."
     }
 
     // MARK: - Feast days
+
+    /// "Today is the solemnity of All Saints"; several feasts on one day join with "and".
+    static func feastBody(_ feasts: [Feast]) -> String {
+        "Today is " + feasts.map(feastPhrase).joined(separator: " and ")
+    }
+
+    /// "the memorial of Our Lady of the Rosary". Seasonal days have no rank word, so they
+    /// read as the day itself: "Ash Wednesday", "the First Sunday of Advent".
+    static func feastPhrase(_ feast: Feast) -> String {
+        let name = feast.name.english
+        let named = articled(name)
+        guard let rank = feast.rank.notificationWord else { return named }
+        return "the \(rank) of \(named)"
+    }
+
+    /// Mystery and season names take "the" ("the Presentation of the Lord", "the First Sunday
+    /// of Advent"); people and titles don't ("All Saints", "Saint Joseph", "Our Lady of Lourdes").
+    private static func articled(_ name: String) -> String {
+        if name.hasPrefix("The ") { return "the " + name.dropFirst(4) }
+        let takesArticle = ["Presentation", "Epiphany", "Annunciation", "Visitation", "Nativity", "Baptism",
+                            "Ascension", "Assumption", "Commemoration", "First", "Second", "Third", "Fourth", "Fifth"]
+        return takesArticle.contains { name.hasPrefix($0 + " ") } ? "the " + name : name
+    }
 
     /// One alert at the chosen time (default 8:00 am) on each upcoming feast day in the
     /// app's own feast calendar.
@@ -120,8 +143,7 @@ enum NotificationService {
                 else { return nil }
 
                 let content = UNMutableNotificationContent()
-                content.title = "Feast day"
-                content.body = feasts.map { $0.feast.name.english }.joined(separator: " · ")
+                content.body = feastBody(feasts.map(\.feast))
                 content.sound = .default
                 content.threadIdentifier = "rosary.feast"
 

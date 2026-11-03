@@ -304,6 +304,16 @@ enum FeastRank: String, Codable {
         case .seasonal: "Seasonal"
         }
     }
+
+    /// Lowercase rank for notification sentences; optional memorials read as "memorial".
+    var notificationWord: String? {
+        switch self {
+        case .solemnity: "solemnity"
+        case .feast: "feast"
+        case .memorial, .optionalMemorial: "memorial"
+        case .seasonal: nil
+        }
+    }
 }
 
 struct DatedFeast: Identifiable, Hashable {
