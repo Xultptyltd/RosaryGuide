@@ -99,9 +99,10 @@ struct OfferView: View {
                     try? await Task.sleep(for: .seconds(5))
                     showSignIn = true
                 }
+                // `-RGDebugOpenJourney` opens Milestones; add `-RGDebugJourneyHistory` for History.
                 if DebugHooks.has("-RGDebugOpenJourney") {
                     try? await Task.sleep(for: .seconds(5))
-                    openJourney(.milestones)
+                    openJourney(DebugHooks.has("-RGDebugJourneyHistory") ? .history : .milestones)
                 }
                 guard DebugHooks.has("-RGDebugOpenSettings") else { return }
                 try? await Task.sleep(for: .seconds(5))
@@ -2288,8 +2289,7 @@ private enum RetentionChoice: String, CaseIterable, Identifiable {
 /// Category selector. The same SwiftUI segmented `Picker` + `guideSegmentedControl()` as the
 /// language toggle, so height, Liquid Glass and the sliding thumb match exactly. SwiftUI can
 /// only tint segmented pickers app-wide, so `SegmentedSelectedColors` finds this picker's own
-/// UISegmentedControl and inverts only its selected state: ink thumb (white in dark mode,
-/// near-black in light) with page-colour text.
+/// UISegmentedControl and sets only its selected state (`emphasisSegmentThumb` / `Title`).
 private struct IntentionKindSelector: View {
     @Environment(\.palette) private var palette
     @Binding var selection: IntentionKindChoice
@@ -2301,7 +2301,7 @@ private struct IntentionKindSelector: View {
             }
         }
         .guideSegmentedControl()
-        .background(SegmentedSelectedColors(thumb: UIColor(palette.ink), title: UIColor(palette.bg)))
+        .background(SegmentedSelectedColors(thumb: UIColor(palette.emphasisSegmentThumb), title: UIColor(palette.emphasisSegmentTitle)))
     }
 }
 
@@ -3446,7 +3446,7 @@ private struct PrayerJourneyView: View {
                     }
                 }
                 .guideSegmentedControl()
-                .background(SegmentedSelectedColors(thumb: UIColor(palette.ink), title: UIColor(palette.bg)))
+                .background(SegmentedSelectedColors(thumb: UIColor(palette.emphasisSegmentThumb), title: UIColor(palette.emphasisSegmentTitle)))
                 .padding(.bottom, AppTheme.Space.xl)
 
                 switch tab {
@@ -3984,19 +3984,6 @@ private struct JourneyMilestonesContent: View {
 
 }
 
-extension JourneyMilestones.Category {
-    /// Circle colour for every milestone in this category (completed or not).
-    var circleFill: Color {
-        switch self {
-        case .rosaries: AppTheme.milestoneRosaries
-        case .offerings: AppTheme.milestonePrayerForOthers
-        case .mysteries: AppTheme.milestoneMysterySets
-        case .days: AppTheme.milestoneDaysInPrayer
-        case .feasts: AppTheme.milestoneMarianFeasts
-        }
-    }
-}
-
 private struct JourneyMilestoneCard: View {
     @Environment(\.palette) private var palette
     let item: JourneyMilestones.Item
@@ -4005,12 +3992,14 @@ private struct JourneyMilestoneCard: View {
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             // Completed rows centre the tick; in-progress rows keep the top line.
             HStack(alignment: item.completed ? .center : .top, spacing: AppTheme.Space.md) {
+                // Every milestone: white glyph on solid Marian blue, like the mystery icons.
+                // Completed vs in progress reads from the tick, date and progress bar.
                 ZStack {
-                    Circle().fill(item.category.circleFill)
+                    Circle().fill(palette.mysteryIconFill)
                     MilestoneLineGlyph(glyph: AppTheme.MilestoneIcon.glyph(for: item.id))
                         .stroke(style: AppTheme.LineIcon.strokeStyle)
                         .frame(width: AppTheme.MysteryIcon.glyphSize, height: AppTheme.MysteryIcon.glyphSize)
-                        .foregroundStyle(AppTheme.milestoneOn)
+                        .foregroundStyle(palette.mysteryIconGlyph)
                 }
                 .frame(width: AppTheme.MysteryIcon.circleSize, height: AppTheme.MysteryIcon.circleSize)
                 .accessibilityHidden(true)
@@ -4172,9 +4161,10 @@ private struct JourneyHistoryRow: View {
             }
             .accessibilityLabel("Completed")
         case .decade:
+            // Same outlined ring as a partial day on the calendar.
             Circle()
-                .fill(palette.accent)
-                .frame(width: 12, height: 12)
+                .strokeBorder(palette.accent, lineWidth: 2)
+                .frame(width: 24, height: 24)
                 .accessibilityLabel("Partial prayer")
         }
     }

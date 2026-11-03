@@ -62,12 +62,13 @@ struct RosaryWalkthroughView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            palette.bg.ignoresSafeArea()
 
             TabView(selection: $page) {
                 ForEach(Array(pages.enumerated()), id: \.offset) { index, item in
                     OnboardingPageView(page: item, index: index, pageCount: pages.count, scrollsText: true,
-                                       controlsHeight: index == pages.count - 1 ? Self.lastPageControlsHeight : OnboardingLayout.controlsHeight)
+                                       controlsHeight: index == pages.count - 1 ? Self.lastPageControlsHeight : OnboardingLayout.controlsHeight,
+                                       titleColor: palette.ink, bodyColor: palette.dim, pageColor: palette.bg)
                         .tag(index)
                         .accessibilityIdentifier("rosary-walkthrough-page-\(index + 1)")
                 }
@@ -78,8 +79,10 @@ struct RosaryWalkthroughView: View {
             VStack {
                 Spacer()
                 VStack(spacing: AppTheme.Space.lg) {
-                    OnboardingDots(current: page, count: pages.count, label: "Introduction page")
-                    PillButton(title: page == pages.count - 1 ? "Begin Rosary" : "Continue", onDark: true) {
+                    OnboardingDots(current: page, count: pages.count, label: "Introduction page",
+                                   activeColor: palette.ink, inactiveColor: palette.strokeStrong)
+                    // Secondary pill: white with black text in dark, black with white text in light.
+                    PillButton(title: page == pages.count - 1 ? "Begin Rosary" : "Continue", filled: false) {
                         HapticService.play(.light, enabled: settings.hapticsEnabled)
                         if page == pages.count - 1 {
                             onBegin()
@@ -87,11 +90,9 @@ struct RosaryWalkthroughView: View {
                             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.24)) { page += 1 }
                         }
                     }
-                    .environment(\.palette, palette)
                     .accessibilityLabel(page == pages.count - 1 ? "Begin Rosary with today’s mysteries, page \(page + 1) of \(pages.count)" : "Continue, page \(page + 1) of \(pages.count)")
                     if page == pages.count - 1 {
                         GuideTextButton(title: "Done", accessibilityLabel: "Done, close introduction", alignment: .center, action: onClose)
-                            .environment(\.palette, ThemePalette(scheme: .dark))
                             .frame(minHeight: AppTheme.Accessibility.minHitTarget)
                             .transition(.opacity)
                     }
@@ -121,8 +122,9 @@ struct RosaryWalkthroughView: View {
                 Spacer()
             }
         }
-        // Same as onboarding: the template is designed on black in both appearances.
-        .preferredColorScheme(.dark)
+        // Follows the app's appearance. The artwork panel stays black (the art is painted on
+        // black) and runs under the status bar, so light mode hides the bar's dark icons.
+        .statusBarHidden(palette.scheme == .light)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.28), value: page)
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)

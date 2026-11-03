@@ -126,6 +126,10 @@ struct OnboardingPageView: View {
     var scrollsText = false
     /// Footer space kept clear below the copy (taller when a page has two buttons).
     var controlsHeight: CGFloat = OnboardingLayout.controlsHeight
+    /// Onboarding is black in both appearances; the Rosary introduction passes palette tokens.
+    var titleColor: Color = .white
+    var bodyColor: Color = .white.opacity(0.72)
+    var pageColor: Color = .black
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var imageDrift = false
@@ -134,7 +138,7 @@ struct OnboardingPageView: View {
             VStack(alignment: .center, spacing: AppTheme.Space.lg) {
                 Text(page.title)
                     .font(AppTheme.TypeRole.title.weight(.regular))
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(titleColor)
                     .multilineTextAlignment(.center)
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -142,7 +146,7 @@ struct OnboardingPageView: View {
 
                 Text(page.body)
                     .font(AppTheme.TypeRole.body)
-                    .foregroundStyle(Color.white.opacity(0.72))
+                    .foregroundStyle(bodyColor)
                     .multilineTextAlignment(.center)
                     .lineSpacing(5)
                     .fixedSize(horizontal: false, vertical: true)
@@ -189,7 +193,7 @@ struct OnboardingPageView: View {
                 Color.clear.frame(height: controlsHeight)
             }
         }
-        .background(Color.black)
+        .background(pageColor)
         .task {
             guard !reduceMotion else { return }
             imageDrift = true
@@ -545,12 +549,14 @@ struct OnboardingDots: View {
     var current: Int
     var count: Int
     var label = "Onboarding page"
+    var activeColor: Color = .white
+    var inactiveColor: Color = .white.opacity(0.28)
 
     var body: some View {
         HStack(spacing: AppTheme.Space.sm) {
             ForEach(0..<count, id: \.self) { index in
                 Capsule()
-                    .fill(index == current ? Color.white : Color.white.opacity(0.28))
+                    .fill(index == current ? activeColor : inactiveColor)
                     .frame(width: index == current ? 18 : 6, height: 6)
             }
         }

@@ -276,9 +276,11 @@ struct PrayHubView: View {
                 .renderingMode(.template)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 36, height: 36, alignment: .leading)
-                // Marian blue in both schemes, like the mystery icons (decorative).
-                .foregroundStyle(palette.accent)
+                .frame(width: 30, height: 30)
+                // Same soft circle and blue as the Introduction to the Rosary icon.
+                .foregroundStyle(palette.accentText)
+                .frame(width: 56, height: 56)
+                .background(palette.accentTint, in: Circle())
                 .accessibilityHidden(true)
             Spacer(minLength: AppTheme.Space.sm)
             Text(title)

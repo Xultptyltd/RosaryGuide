@@ -752,8 +752,14 @@ struct HomeView: View {
         .padding(.horizontal, isToday ? AppTheme.Space.md : 0)
         .background {
             if isToday {
-                RoundedRectangle(cornerRadius: AppTheme.Space.md, style: .continuous)
-                    .fill(palette.ink.opacity(colorScheme == .dark ? 0.07 : 0.05))
+                let shape = RoundedRectangle(cornerRadius: AppTheme.Space.md, style: .continuous)
+                if colorScheme == .dark {
+                    shape.fill(palette.ink.opacity(0.07))
+                } else {
+                    // Light: a white card on the near-white page, with the card rim.
+                    shape.fill(palette.cardSurface(on: .grouped))
+                        .overlay { shape.strokeBorder(palette.cardSurfaceStroke, lineWidth: AppTheme.Component.panelStrokeWidth) }
+                }
             }
         }
         .padding(.horizontal, isToday ? -AppTheme.Space.md : 0)

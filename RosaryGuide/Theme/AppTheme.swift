@@ -48,15 +48,6 @@ enum AppTheme {
     /// Glyph colour on every mystery fill: dark navy (6:1 on Joyful, higher on the rest).
     static let mysteryOn = Color(hex: 0x0A2540)
 
-    /// Milestone category circles (same in light and dark), strongest to palest.
-    /// Hexes shared with the mystery scale point at those tokens.
-    static let milestoneRosaries = Color(hex: 0x1E83FF)
-    static let milestonePrayerForOthers = mysteryJoyful
-    static let milestoneMysterySets = mysteryLuminous
-    static let milestoneDaysInPrayer = mysterySorrowful
-    static let milestoneMarianFeasts = mysteryGlorious
-    /// Navy glyph on every milestone circle (same as the mysteries).
-    static let milestoneOn = mysteryOn
 
     /// Canonical page-edge horizontal inset. Matches `Space.lg` (16pt).
     /// Prefer `AppTheme.gutter` over literals at screen edges.
@@ -313,6 +304,10 @@ struct ThemePalette {
     /// pathway so UIKit and custom segmented controls render the same surface.
     var segmentedControlTrack: Color { surface }
     var selectedControlFill: Color { Color(uiColor: .systemBackground) }
+    /// Emphasised pickers (Profile's History/Milestones, intention kind): a white thumb with
+    /// ink text in light; in dark an ink (white) thumb with page-colour text.
+    var emphasisSegmentThumb: Color { scheme == .light ? Color.white : textPrimary }
+    var emphasisSegmentTitle: Color { scheme == .light ? textPrimary : background }
     var selectedShadow: Color { accent.opacity(0.28) }
 
     var ceremonyBackground: Color { Color(hex: 0x000000) }

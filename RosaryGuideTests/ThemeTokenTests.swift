@@ -64,6 +64,11 @@ final class ThemeTokenTests: XCTestCase {
         // Mystery icons: white glyph on solid Marian blue in both schemes.
         XCTAssertEqual(UIColor(light.mysteryIconFill), UIColor(Color(hex: 0x0054FF)))
         XCTAssertEqual(UIColor(dark.mysteryIconFill), UIColor(Color(hex: 0x0054FF)))
+        // Emphasised pickers: white thumb with ink text in light; dark unchanged (ink thumb).
+        XCTAssertEqual(UIColor(light.emphasisSegmentThumb), UIColor(Color.white))
+        XCTAssertEqual(UIColor(light.emphasisSegmentTitle), UIColor(light.ink))
+        XCTAssertEqual(UIColor(dark.emphasisSegmentThumb), UIColor(dark.ink))
+        XCTAssertEqual(UIColor(dark.emphasisSegmentTitle), UIColor(dark.bg))
         XCTAssertEqual(UIColor(light.prayBg), UIColor(light.bg))
         XCTAssertEqual(UIColor(dark.prayBg), UIColor(dark.bg))
 
@@ -138,14 +143,6 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(UIColor(IntentionAccent.purple.onColor), UIColor(Color(hex: 0x203C57)))
     }
 
-    func testMilestoneCategoryCircleColours() {
-        XCTAssertEqual(UIColor(JourneyMilestones.Category.rosaries.circleFill), UIColor(Color(hex: 0x1E83FF)))
-        XCTAssertEqual(UIColor(JourneyMilestones.Category.offerings.circleFill), UIColor(Color(hex: 0x48A6FF)))
-        XCTAssertEqual(UIColor(JourneyMilestones.Category.mysteries.circleFill), UIColor(Color(hex: 0x83C6FF)))
-        XCTAssertEqual(UIColor(JourneyMilestones.Category.days.circleFill), UIColor(Color(hex: 0xB5DBFF)))
-        XCTAssertEqual(UIColor(JourneyMilestones.Category.feasts.circleFill), UIColor(Color(hex: 0xD6EAFF)))
-        XCTAssertEqual(UIColor(AppTheme.milestoneOn), UIColor(Color(hex: 0x0A2540)))
-    }
 }
 
 /// WCAG 2.x contrast for the colour tokens: text 4.5:1, icons 3:1.
