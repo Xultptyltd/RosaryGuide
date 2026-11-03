@@ -1821,6 +1821,8 @@ extension AppTheme {
 
     /// Shared chrome measurements.
     enum Component {
+        /// Border on a text field whose input is invalid.
+        static let fieldErrorStrokeWidth: CGFloat = 1.5
         /// Reading content clearance above the expanded floating action.
         static let readingContentToActionGap: CGFloat = 76
         static let prayerReadingContentToActionGap: CGFloat = 48
@@ -2209,9 +2211,9 @@ struct GuideWrappingText: UIViewRepresentable {
     func updateUIView(_ label: UILabel, context: Context) {
         label.numberOfLines = numberOfLines
         label.textAlignment = alignment == .center ? .center : alignment == .trailing ? .right : .left
-        label.lineBreakMode = numberOfLines == 1 ? .byTruncatingTail : .byWordWrapping
         let paragraph = NSMutableParagraphStyle()
-        paragraph.lineBreakMode = label.lineBreakMode
+        // Wrap by word in the text; the label truncates the last allowed line with "…".
+        paragraph.lineBreakMode = numberOfLines == 1 ? .byTruncatingTail : .byWordWrapping
         paragraph.lineBreakStrategy = []
         paragraph.lineSpacing = lineSpacing
         paragraph.alignment = label.textAlignment
@@ -2220,6 +2222,7 @@ struct GuideWrappingText: UIViewRepresentable {
             .foregroundColor: UIColor(color),
             .paragraphStyle: paragraph
         ])
+        label.lineBreakMode = numberOfLines > 0 ? .byTruncatingTail : .byWordWrapping
         label.accessibilityLabel = text
     }
 

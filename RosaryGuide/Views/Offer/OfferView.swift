@@ -173,7 +173,11 @@ struct OfferView: View {
                 if DebugHooks.has("-RGDebugOpenArchived") { showingArchived = true }
                 if DebugHooks.has("-RGDebugOpenAddIntention") { editor = .create }
                 // `-RGDebugOpenIntention`: opens the first intention's detail (use with -RGDebugSampleIntentions).
-                if DebugHooks.has("-RGDebugOpenIntention") { intentionDetail = offer.sortedIntentions.first }
+                // With `-RGDebugLongIntention` it opens the long sample instead.
+                if DebugHooks.has("-RGDebugOpenIntention") {
+                    let long = DebugHooks.has("-RGDebugLongIntention")
+                    intentionDetail = offer.sortedIntentions.first { !long || $0.title == OfferStore.debugLongTitle }
+                }
                 #endif
             }
         }
@@ -1883,6 +1887,8 @@ private struct IntentionDetailView: View {
                 .font(AppTheme.TypeRole.themeSummary)
                 .foregroundStyle(privacyHidesText ? palette.dim : palette.ink)
                 .lineSpacing(4)
+                .lineLimit(IntentionTextLimit.detailNoteLines)
+                .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(20)
                 .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
@@ -2455,6 +2461,38 @@ enum IntentionListRules {
     }
 }
 
+/// Intention lengths sized to the detail screen at the largest standard text size on
+/// iPhone 17 Pro Max and smaller phones. Kept under the Firestore rules (title 160, note 2000).
+enum IntentionTextLimit {
+    static let title = 100
+    static let note = 500
+    /// Lines a 500-character note needs on the detail screen; older, longer notes end in "…".
+    static let detailNoteLines = 14
+    /// The counter appears once the text reaches this share of its limit.
+    static let counterThreshold = 0.8
+
+    /// Characters that will be saved (the store trims surrounding whitespace).
+    static func count(_ text: String) -> Int {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).count
+    }
+
+    static func isOver(_ text: String, limit: Int) -> Bool {
+        count(text) > limit
+    }
+
+    static func showsCounter(_ text: String, limit: Int) -> Bool {
+        Double(count(text)) >= Double(limit) * counterThreshold
+    }
+
+    static func fits(title: String, note: String?) -> Bool {
+        !isOver(title, limit: self.title) && !(note.map { isOver($0, limit: self.note) } ?? false)
+    }
+
+    static func errorMessage(limit: Int) -> String {
+        "Keep it to \(limit) characters or fewer."
+    }
+}
+
 struct IntentionEditorSheet: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(OfferStore.self) private var offer
@@ -2506,12 +2544,19 @@ struct IntentionEditorSheet: View {
                     #if DEBUG
                     .task {
                         // `-RGDebugEditorKindCycle`: switches category once so screenshots show the icon follow it.
+                        // `-RGDebugEditorDraftLength <n>`: fills the title with n characters to show the limit.
+                        let draftLength = UserDefaults.standard.integer(forKey: "RGDebugEditorDraftLength")
+                        if draftLength > 0 {
+                            try? await Task.sleep(for: .seconds(1))
+                            let sample = OfferStore.debugLongTitle + " " + OfferStore.debugLongTitle
+                            title = String(sample.prefix(draftLength))
+                        }
                         guard DebugHooks.has("-RGDebugEditorKindCycle"), let next = IntentionKindChoice.allCases.dropFirst().first else { return }
                         try? await Task.sleep(for: .seconds(2))
                         kind = next
                     }
                     #endif
-                    editorFieldSection(label: "Intention") {
+                    editorFieldSection(label: "Intention", text: title, limit: IntentionTextLimit.title) {
                         TextField("For my family", text: $title, axis: .vertical)
                             .tint(palette.accent)
                             .font(AppTheme.TypeRole.body)
@@ -2530,7 +2575,7 @@ struct IntentionEditorSheet: View {
                         }
                     }
 
-                    editorFieldSection(label: "Notes") {
+                    editorFieldSection(label: "Notes", text: isPapalIntention ? nil : note, limit: IntentionTextLimit.note) {
                         if isPapalIntention {
                             Text(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "No notes" : note)
                                 .font(AppTheme.TypeRole.themeSummary)
@@ -2667,6 +2712,7 @@ struct IntentionEditorSheet: View {
 
     private var canSaveIntention: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && IntentionTextLimit.fits(title: title, note: isPapalIntention ? nil : note)
     }
 
     private func settleEditorAction(_ proxy: ScrollViewProxy) {
@@ -2738,9 +2784,13 @@ struct IntentionEditorSheet: View {
     @ViewBuilder
     private func editorFieldSection<Content: View>(
         label: String,
+        text: String? = nil,
+        limit: Int = .max,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
+        let over = text.map { IntentionTextLimit.isOver($0, limit: limit) } ?? false
+        let showsCounter = text.map { IntentionTextLimit.showsCounter($0, limit: limit) } ?? false
+        return VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
             GuideSectionLabel(text: label, color: palette.dim)
             content()
                 .padding(AppTheme.Space.lg)
@@ -2751,6 +2801,31 @@ struct IntentionEditorSheet: View {
                     stroke: true,
                     elevated: false
                 )
+                .overlay {
+                    if over {
+                        RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+                            .strokeBorder(palette.destructive, lineWidth: AppTheme.Component.fieldErrorStrokeWidth)
+                    }
+                }
+            if let text, showsCounter {
+                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
+                    if over {
+                        Text(IntentionTextLimit.errorMessage(limit: limit))
+                            .foregroundStyle(palette.destructive)
+                    }
+                    Spacer(minLength: 0)
+                    Text("\(IntentionTextLimit.count(text))/\(limit)")
+                        .monospacedDigit()
+                        .foregroundStyle(over ? palette.destructive : palette.dim)
+                        .accessibilityLabel("\(IntentionTextLimit.count(text)) of \(limit) characters")
+                }
+                .font(AppTheme.TypeRole.caption)
+                .padding(.horizontal, AppTheme.Space.xs)
+            }
+        }
+        .onChange(of: over) { _, isOver in
+            guard isOver else { return }
+            AccessibilityNotification.Announcement("\(label): \(IntentionTextLimit.errorMessage(limit: limit))").post()
         }
     }
 
@@ -3465,6 +3540,8 @@ private struct PrayerJourneyView: View {
             .padding(.bottom, AppTheme.tabBarContentClearance + AppTheme.Space.xs)
         }
         .scrollContentBackground(.hidden)
+        // DEBUG `-RGDebugJourneyScrollEnd`: opens scrolled to the end so screenshots show Show more.
+        .defaultScrollAnchor(DebugHooks.has("-RGDebugJourneyScrollEnd") ? .bottom : nil)
         .guideDetailChrome(tab.title)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedHistoryRow) { row in

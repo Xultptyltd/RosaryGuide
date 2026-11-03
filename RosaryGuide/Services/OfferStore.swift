@@ -75,19 +75,27 @@ final class OfferStore {
             case .someone: .skyBlue
             case .world: .purple
             }
-            let title = switch category {
+            // `-RGDebugLongIntention`: an over-limit first row, as an older intention could be.
+            let long = category == .personal && DebugHooks.has("-RGDebugLongIntention")
+            let shortTitle = switch category {
             case .personal: "Patience with my family"
             case .someone: "For Grandma’s recovery"
             case .world: "Peace in the world"
             }
+            let title = long ? OfferStore.debugLongTitle : shortTitle
             // `-RGDebugPinSample` pins the first row so the featured card shows.
             let pinned = category == .personal && DebugHooks.has("-RGDebugPinSample")
-            return OfferIntention(title: title, isPinned: pinned, category: category, accent: accent, emoji: category == .personal ? "🙏" : (category == .someone ? "👥" : "🌍"))
+            return OfferIntention(title: title, note: long ? String(repeating: OfferStore.debugLongNoteSentence, count: 12) : nil, isPinned: pinned, category: category, accent: accent, emoji: category == .personal ? "🙏" : (category == .someone ? "👥" : "🌍"))
         }
         #else
         return []
         #endif
     }()
+
+    #if DEBUG
+    static let debugLongTitle = "Patience and gentleness with my family through this long season of change, and peace in our home every single day of the year ahead"
+    private static let debugLongNoteSentence = "That we listen before we answer and forgive quickly. "
+    #endif
 
     func isArchived(_ id: UUID) -> Bool { intentions.first { $0.id == id }?.isArchived ?? false }
 

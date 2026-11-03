@@ -1403,3 +1403,32 @@ final class JourneyHistoryPagingTests: XCTestCase {
                        calendar.date(from: DateComponents(year: 2025, month: 12, day: 1)))
     }
 }
+
+final class IntentionTextLimitTests: XCTestCase {
+    func testLimitsStayWithinFirestoreRules() {
+        XCTAssertLessThanOrEqual(IntentionTextLimit.title, 160)
+        XCTAssertLessThanOrEqual(IntentionTextLimit.note, 2000)
+    }
+
+    func testOverLimitIsAnErrorNotAClamp() {
+        let atLimit = String(repeating: "a", count: IntentionTextLimit.title)
+        let pasted = atLimit + "bc"
+        XCTAssertFalse(IntentionTextLimit.isOver(atLimit, limit: IntentionTextLimit.title))
+        XCTAssertTrue(IntentionTextLimit.isOver(pasted, limit: IntentionTextLimit.title))
+        XCTAssertTrue(IntentionTextLimit.fits(title: atLimit, note: nil))
+        XCTAssertFalse(IntentionTextLimit.fits(title: pasted, note: nil))
+        XCTAssertFalse(IntentionTextLimit.fits(title: "Peace", note: String(repeating: "n", count: IntentionTextLimit.note + 1)))
+        XCTAssertEqual(IntentionTextLimit.errorMessage(limit: 100), "Keep it to 100 characters or fewer.")
+    }
+
+    func testSurroundingWhitespaceDoesNotCount() {
+        let padded = "  " + String(repeating: "a", count: IntentionTextLimit.title) + "\n "
+        XCTAssertEqual(IntentionTextLimit.count(padded), IntentionTextLimit.title)
+        XCTAssertFalse(IntentionTextLimit.isOver(padded, limit: IntentionTextLimit.title))
+    }
+
+    func testCounterAppearsNearTheLimit() {
+        XCTAssertFalse(IntentionTextLimit.showsCounter(String(repeating: "a", count: 79), limit: 100))
+        XCTAssertTrue(IntentionTextLimit.showsCounter(String(repeating: "a", count: 80), limit: 100))
+    }
+}
