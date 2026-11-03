@@ -403,8 +403,9 @@ private struct OnboardingSignInView: View {
         }
         .onAppear {
             #if DEBUG
+            // `-RGDebugHoldSignIn` keeps this screen up on a signed-in simulator for screenshots.
             guard !DebugHooks.has("-RGDebugSignInTransition"), !DebugHooks.has("-RGDebugProfileSignInTransition"),
-                  !DebugHooks.has("-RGDebugGuestTransition") else { return }
+                  !DebugHooks.has("-RGDebugGuestTransition"), !DebugHooks.has("-RGDebugHoldSignIn") else { return }
             #endif
             completeIfSignedIn()
         }
