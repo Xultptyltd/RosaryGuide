@@ -58,6 +58,12 @@ struct SettingsView: View {
         // own binding (same transition as a tap), 3 s apart after 6 s (past the launch splash),
         // for recordings.
         .task {
+            // `-RGDebugReplayWelcome`: opens the welcome pages (Replay welcome) for screenshots;
+            // add `-RGDebugOnboardingPage <n>` to start on page n.
+            if DebugHooks.has("-RGDebugReplayWelcome") {
+                try? await Task.sleep(for: .seconds(2))
+                showOnboardingPreview = true
+            }
             guard DebugHooks.has("-RGDebugSettingsThemeCycle") else { return }
             try? await Task.sleep(for: .seconds(3))
             for option in [AppearancePreference.light, .dark, .system] {

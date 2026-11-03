@@ -34,12 +34,13 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            palette.bg.ignoresSafeArea()
 
             if selection < pages.count {
                 TabView(selection: $selection) {
                     ForEach(Array(pages.enumerated()), id: \.offset) { index, page in
-                        OnboardingPageView(page: page, index: index, pageCount: pageCount)
+                        OnboardingPageView(page: page, index: index, pageCount: pageCount,
+                                           titleColor: palette.ink, bodyColor: palette.dim, pageColor: palette.bg)
                             .tag(index)
                     }
                 }
@@ -57,7 +58,8 @@ struct OnboardingView: View {
 
                 VStack(spacing: AppTheme.Space.lg) {
                     if !startsAtSignIn && selection < pages.count {
-                        OnboardingDots(current: selection, count: pageCount)
+                        OnboardingDots(current: selection, count: pageCount,
+                                       activeColor: palette.ink, inactiveColor: palette.strokeStrong)
                     }
 
                     if selection < pages.count {
@@ -71,7 +73,6 @@ struct OnboardingView: View {
                                 }
                             }
                         }
-                        .environment(\.palette, palette)
                         .accessibilityLabel(selection == pages.count - 1 ? "Begin, page \(selection + 1) of \(pageCount)" : "Continue, page \(selection + 1) of \(pageCount)")
                     }
                 }
@@ -80,7 +81,10 @@ struct OnboardingView: View {
                 .safeAreaPadding(.bottom)
             }
         }
-        .preferredColorScheme(.dark)
+        // Follows the app's appearance. The art panels (black, or Marian blue on sign-in) run
+        // under the status bar, so light mode hides the bar's dark icons, like the Rosary
+        // introduction.
+        .statusBarHidden(palette.scheme == .light)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.28), value: selection)
     }
 
@@ -126,10 +130,10 @@ struct OnboardingPageView: View {
     var scrollsText = false
     /// Footer space kept clear below the copy (taller when a page has two buttons).
     var controlsHeight: CGFloat = OnboardingLayout.controlsHeight
-    /// Onboarding is black in both appearances; the Rosary introduction passes palette tokens.
-    var titleColor: Color = .white
-    var bodyColor: Color = .white.opacity(0.72)
-    var pageColor: Color = .black
+    /// Callers pass palette tokens; the art panel stays black in both appearances.
+    var titleColor: Color
+    var bodyColor: Color
+    var pageColor: Color
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var imageDrift = false
@@ -271,6 +275,7 @@ private struct OnboardingSignInView: View {
 
     @Environment(AuthStore.self) private var auth
     @Environment(SettingsStore.self) private var settings
+    @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Which button last started a sign-in, so only that one shows progress.
     @State private var lastProvider: OnboardingAuthButton.Provider?
@@ -290,7 +295,7 @@ private struct OnboardingSignInView: View {
     var body: some View {
         GeometryReader { geo in
         ZStack {
-            Color.black.ignoresSafeArea()
+            palette.bg.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Marian blue panel behind the beads. It bleeds off the top of the screen and
@@ -314,11 +319,11 @@ private struct OnboardingSignInView: View {
                     GuideDisplayTitle(
                         text: OnboardingCopy.signInQuote,
                         size: SignInLayout.quoteSize,
-                        color: .white
+                        color: palette.ink
                     )
                     Text(OnboardingCopy.signInQuoteAttribution)
                         .font(AppTheme.TypeRole.body)
-                        .foregroundStyle(Color.white.opacity(0.5))
+                        .foregroundStyle(palette.dim)
                 }
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -330,7 +335,7 @@ private struct OnboardingSignInView: View {
                 Spacer(minLength: AppTheme.Space.xl)
 
                     VStack(spacing: AppTheme.Space.md) {
-                        OnboardingAuthButton(title: auth.isSigningInWithApple ? "Signing in" : "Continue with Apple", systemImage: "apple.logo", filled: true, status: buttonState(.apple)) {
+                        OnboardingAuthButton(title: auth.isSigningInWithApple ? "Signing in" : "Continue with Apple", systemImage: "apple.logo", provider: .apple, status: buttonState(.apple)) {
                             lastProvider = .apple
                             auth.signInWithApple()
                         }
@@ -338,7 +343,7 @@ private struct OnboardingSignInView: View {
                         .disabled(auth.isWorking || succeeded || leaving != nil)
                         .accessibilityLabel(auth.isSigningInWithApple ? "Signing in with Apple" : "Continue with Apple")
 
-                        OnboardingAuthButton(title: auth.isSigningInWithGoogle ? "Signing in" : "Continue with Google", assetImage: "GoogleG", filled: false, status: buttonState(.google)) {
+                        OnboardingAuthButton(title: auth.isSigningInWithGoogle ? "Signing in" : "Continue with Google", assetImage: "GoogleG", provider: .google, status: buttonState(.google)) {
                             lastProvider = .google
                             auth.signInWithGoogle()
                         }
@@ -349,7 +354,7 @@ private struct OnboardingSignInView: View {
                         if let message = auth.errorMessage {
                             Text(message)
                                 .font(AppTheme.TypeRole.caption())
-                                .foregroundStyle(Color.white.opacity(0.62))
+                                .foregroundStyle(palette.dim)
                                 .multilineTextAlignment(.center)
                                 .lineSpacing(4)
                                 .padding(.top, AppTheme.Space.xs)
@@ -367,14 +372,13 @@ private struct OnboardingSignInView: View {
                             auth.errorMessage = nil
                             continueAsGuest()
                         }
-                        .environment(\.palette, ThemePalette(scheme: .dark))
                         .disabled(auth.isWorking || leaving != nil)
                         .padding(.top, AppTheme.Space.xs)
 
                         Text(OnboardingCopy.legalNotice)
                             .font(AppTheme.TypeRole.caption())
-                            .foregroundStyle(ThemePalette(scheme: .dark).dim)
-                            .tint(ThemePalette(scheme: .dark).ink)
+                            .foregroundStyle(palette.dim)
+                            .tint(palette.ink)
                             .multilineTextAlignment(.center)
                             .lineLimit(2)
                             .minimumScaleFactor(0.8)
@@ -512,19 +516,24 @@ private struct OnboardingAuthButton: View {
     var letter: String?
     /// Full-colour vector asset (rendered as original, not tinted).
     var assetImage: String?
-    var filled: Bool
+    var provider: Provider
     var status: Status = .idle
     var action: () -> Void
 
+    @Environment(\.palette) private var palette
+
     enum Provider { case apple, google }
     enum Status { case idle, working, done }
+
+    private var fill: Color { provider == .apple ? palette.appleButtonFill : palette.googleButtonFill }
+    private var text: Color { provider == .apple ? palette.appleButtonText : palette.googleButtonText }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: AppTheme.Space.md) {
                 if status == .working {
                     ProgressView()
-                        .tint(filled ? Color.black : Color.white)
+                        .tint(text)
                         .transition(.opacity)
                 } else if status == .done {
                     Image(systemName: "checkmark")
@@ -549,14 +558,14 @@ private struct OnboardingAuthButton: View {
                     .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
                     .minimumScaleFactor(0.75)
             }
-            .foregroundStyle(filled ? Color.black : Color.white)
+            .foregroundStyle(text)
             .frame(maxWidth: .infinity)
             .frame(height: AppTheme.Component.pillHeight)
-            .background(filled ? Color.white : Color.white.opacity(0.16), in: Capsule())
+            .background(fill, in: Capsule())
             .overlay {
-                if !filled {
+                if provider == .google {
                     Capsule()
-                        .strokeBorder(Color.white.opacity(0.06), lineWidth: AppTheme.Component.panelStrokeWidth)
+                        .strokeBorder(palette.googleButtonStroke, lineWidth: 1)
                 }
             }
             .contentShape(Capsule())
@@ -571,8 +580,8 @@ struct OnboardingDots: View {
     var current: Int
     var count: Int
     var label = "Onboarding page"
-    var activeColor: Color = .white
-    var inactiveColor: Color = .white.opacity(0.28)
+    var activeColor: Color
+    var inactiveColor: Color
 
     var body: some View {
         HStack(spacing: AppTheme.Space.sm) {

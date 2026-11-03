@@ -232,6 +232,14 @@ struct ThemePalette {
         }
     }
     var onAccent: Color { Color.white }
+
+    // Sign-in buttons follow each provider's branding: Apple's black style on light pages and
+    // white on dark; Google's light (white, #747775 outline) and dark (#131314, #8E918F) themes.
+    var appleButtonFill: Color { scheme == .dark ? .white : .black }
+    var appleButtonText: Color { scheme == .dark ? .black : .white }
+    var googleButtonFill: Color { scheme == .dark ? Color(hex: 0x131314) : .white }
+    var googleButtonStroke: Color { scheme == .dark ? Color(hex: 0x8E918F) : Color(hex: 0x747775) }
+    var googleButtonText: Color { scheme == .dark ? Color(hex: 0xE3E3E3) : Color(hex: 0x1F1F1F) }
     /// Marian blue for text and glyphs. Fills, buttons and progress bars keep `accent`.
     var accentText: Color {
         switch (scheme, contrast) {

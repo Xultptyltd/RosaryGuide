@@ -200,6 +200,28 @@ final class ContrastTokenTests: XCTestCase {
         }
     }
 
+    /// Apple: black button on light pages, white on dark. Google: its light and dark themes.
+    func testSignInButtonsFollowProviderBranding() {
+        let light = ThemePalette(scheme: .light)
+        let dark = ThemePalette(scheme: .dark)
+        XCTAssertEqual(UIColor(light.appleButtonFill), UIColor(Color.black))
+        XCTAssertEqual(UIColor(light.appleButtonText), UIColor(Color.white))
+        XCTAssertEqual(UIColor(dark.appleButtonFill), UIColor(Color.white))
+        XCTAssertEqual(UIColor(dark.appleButtonText), UIColor(Color.black))
+        XCTAssertEqual(UIColor(light.googleButtonFill), UIColor(Color.white))
+        XCTAssertEqual(UIColor(light.googleButtonStroke), UIColor(Color(hex: 0x747775)))
+        XCTAssertEqual(UIColor(light.googleButtonText), UIColor(Color(hex: 0x1F1F1F)))
+        XCTAssertEqual(UIColor(dark.googleButtonFill), UIColor(Color(hex: 0x131314)))
+        XCTAssertEqual(UIColor(dark.googleButtonStroke), UIColor(Color(hex: 0x8E918F)))
+        XCTAssertEqual(UIColor(dark.googleButtonText), UIColor(Color(hex: 0xE3E3E3)))
+        for palette in [light, dark] {
+            XCTAssertGreaterThanOrEqual(ratio(palette.googleButtonText, palette.googleButtonFill), 4.5)
+            XCTAssertGreaterThanOrEqual(ratio(palette.appleButtonText, palette.appleButtonFill), 4.5)
+            // Legal links and footnote on the sign-in page.
+            XCTAssertGreaterThanOrEqual(ratio(palette.dim, palette.bg), 4.5)
+        }
+    }
+
     func testDarkSelectedTabLabelOnGlassPill() {
         // #3D3E3F: the selected glass pill measured from a dark-mode screenshot.
         XCTAssertGreaterThanOrEqual(ratio(ThemePalette(scheme: .dark).tabSelected, Color(hex: 0x3D3E3F)), 4.5)
