@@ -376,6 +376,8 @@ private struct OnboardingSignInView: View {
                             .foregroundStyle(ThemePalette(scheme: .dark).dim)
                             .tint(ThemePalette(scheme: .dark).ink)
                             .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.8)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.top, AppTheme.Space.sm)
                     }
@@ -485,9 +487,10 @@ enum OnboardingCopy {
     static let continueAsGuest = "Continue as guest"
     static let termsURL = "https://xult.ltd/terms/"
     static let privacyURL = "https://xult.ltd/privacy/"
-    /// Sign-in footnote; the two document names open the published pages.
+    /// Sign-in footnote on two fixed lines; the two document names open the published pages.
     static var legalNotice: AttributedString {
-        var notice = (try? AttributedString(markdown: "By continuing you agree to our [Terms & Conditions](\(termsURL)) and [Privacy Policy](\(privacyURL)).")) ?? AttributedString("By continuing you agree to our Terms & Conditions and Privacy Policy.")
+        var notice = AttributedString("By continuing you agree to our\n")
+        notice += (try? AttributedString(markdown: "[Terms & Conditions](\(termsURL)) and [Privacy Policy](\(privacyURL)).")) ?? AttributedString("Terms & Conditions and Privacy Policy.")
         for run in notice.runs where run.link != nil {
             notice[run.range].underlineStyle = .single
         }
