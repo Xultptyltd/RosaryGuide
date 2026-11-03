@@ -740,9 +740,7 @@ struct HomeView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
                 // Fixed trailing slot keeps set names aligned whether or not the day is prayed.
-                Image(systemName: "checkmark.circle.fill")
-                    .guideSymbol(size: 18, weight: .regular)
-                    .foregroundStyle(palette.accent)
+                PrayedTick(size: 18, color: palette.accent)
                     .opacity(prayed ? 1 : 0)
                     .frame(width: 22, height: 22)
                     .accessibilityHidden(true)

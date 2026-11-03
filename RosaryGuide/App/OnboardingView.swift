@@ -370,6 +370,14 @@ private struct OnboardingSignInView: View {
                         .environment(\.palette, ThemePalette(scheme: .dark))
                         .disabled(auth.isWorking || leaving != nil)
                         .padding(.top, AppTheme.Space.xs)
+
+                        Text(OnboardingCopy.legalNotice)
+                            .font(AppTheme.TypeRole.caption())
+                            .foregroundStyle(ThemePalette(scheme: .dark).dim)
+                            .tint(ThemePalette(scheme: .dark).ink)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, AppTheme.Space.sm)
                     }
                     .padding(.horizontal, AppTheme.gutter)
                     .padding(.bottom, AppTheme.Space.xl)
@@ -475,6 +483,16 @@ private struct OnboardingSignInView: View {
 
 enum OnboardingCopy {
     static let continueAsGuest = "Continue as guest"
+    static let termsURL = "https://xult.ltd/terms/"
+    static let privacyURL = "https://xult.ltd/privacy/"
+    /// Sign-in footnote; the two document names open the published pages.
+    static var legalNotice: AttributedString {
+        var notice = (try? AttributedString(markdown: "By continuing you agree to our [Terms & Conditions](\(termsURL)) and [Privacy Policy](\(privacyURL)).")) ?? AttributedString("By continuing you agree to our Terms & Conditions and Privacy Policy.")
+        for run in notice.runs where run.link != nil {
+            notice[run.range].underlineStyle = .single
+        }
+        return notice
+    }
     /// Rosarium Virginis Mariae §39 heading (Vatican English text).
     static let signInQuoteText = "A chain that links heaven and earth"
     /// Displayed with a fixed break so it sits on two balanced lines.

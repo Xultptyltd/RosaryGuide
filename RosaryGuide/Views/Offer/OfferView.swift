@@ -3384,6 +3384,8 @@ private struct PrayerJourneyView: View {
     @State private var visibleMonth: Date = Date()
     @State private var selectedDay: JourneySelectedDay?
     @State private var selectedHistoryRow: JourneyHistoryRow.Model?
+    /// History list shows this many calendar months; Show more adds a page.
+    @State private var historyMonthsShown = JourneyHistoryPaging.monthsPerPage
 
     var prayedDayStarts: Set<TimeInterval>
     var completedSessions: [CompletedPrayerSession]
@@ -3606,7 +3608,7 @@ private struct PrayerJourneyView: View {
 
     private var history: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-            if groupedHistoryRows.isEmpty {
+            if historyRows.isEmpty {
                 Text("Your completed Rosaries and decades will appear here.")
                     .font(AppTheme.TypeRole.bodySmall)
                     .foregroundStyle(palette.dim)
@@ -3614,6 +3616,14 @@ private struct PrayerJourneyView: View {
                     .padding(AppTheme.Space.lg)
                     .guideCard(fill: palette.surface)
             } else {
+                if groupedHistoryRows.isEmpty {
+                    Text("No prayers in the last \(historyMonthsShown) months.")
+                        .font(AppTheme.TypeRole.bodySmall)
+                        .foregroundStyle(palette.dim)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(AppTheme.Space.lg)
+                        .guideCard(fill: palette.surface)
+                }
                 ForEach(groupedHistoryRows) { group in
                     VStack(alignment: .leading, spacing: AppTheme.Space.md) {
                         GuideSectionLabel(text: group.title, prominence: .strong)
@@ -3633,7 +3643,12 @@ private struct PrayerJourneyView: View {
                 }
             }
 
-            if let startDate = historyStartDate {
+            if hasOlderHistory {
+                PillButton(title: "Show more", filled: false, tertiary: true, compact: true) {
+                    historyMonthsShown += JourneyHistoryPaging.monthsPerPage
+                }
+                .accessibilityHint("Shows \(JourneyHistoryPaging.monthsPerPage) more months of history")
+            } else if let startDate = historyStartDate {
                 VStack(spacing: AppTheme.Space.xs) {
                     Text("Your prayer history starts here")
                     Text(Self.footerFormatter.string(from: startDate))
@@ -3657,11 +3672,35 @@ private struct PrayerJourneyView: View {
         let legacy = prayedDayStarts
             .filter { !recordedDays.contains($0) }
             .map { JourneyHistoryRow.Model(date: Date(timeIntervalSince1970: $0), mystery: nil, duration: nil, intentionTitle: nil, kind: .rosary) }
-        return (recorded + decades + legacy).sorted { $0.date > $1.date }
+        return (recorded + decades + legacy + sampleHistoryRows).sorted { $0.date > $1.date }
+    }
+
+    /// DEBUG `-RGDebugSampleHistory` adds Rosaries and decades across eight months for
+    /// screenshots, rendering only: nothing is stored or synced.
+    private var sampleHistoryRows: [JourneyHistoryRow.Model] {
+        #if DEBUG
+        guard DebugHooks.has("-RGDebugSampleHistory") else { return [] }
+        let sets = MysterySetKind.allCases
+        return [0, 2, 9, 20, 34, 47, 61, 75, 96, 118, 150, 181, 212, 240].enumerated().compactMap { index, daysAgo in
+            guard let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date()) else { return nil }
+            let kind: JourneyHistoryRow.Model.Kind = index % 3 == 1 ? .decade(index % 5 + 1) : .rosary
+            return JourneyHistoryRow.Model(date: date, mystery: sets[index % sets.count], duration: index % 3 == 1 ? 300 : 1260, intentionTitle: nil, kind: kind)
+        }
+        #else
+        return []
+        #endif
+    }
+
+    private var historyCutoff: Date {
+        JourneyHistoryPaging.cutoff(monthsShown: historyMonthsShown)
     }
 
     private var filteredHistoryRows: [JourneyHistoryRow.Model] {
-        historyRows
+        historyRows.filter { $0.date >= historyCutoff }
+    }
+
+    private var hasOlderHistory: Bool {
+        historyRows.contains { $0.date < historyCutoff }
     }
 
     private var groupedHistoryRows: [JourneyHistoryGroup] {
@@ -3716,6 +3755,17 @@ private struct PrayerJourneyView: View {
         formatter.setLocalizedDateFormatFromTemplate("d MMMM yyyy")
         return formatter
     }()
+}
+
+/// History list paging: whole calendar months, newest first, counting this month.
+enum JourneyHistoryPaging {
+    static let monthsPerPage = 3
+
+    /// Start of the oldest month shown.
+    static func cutoff(monthsShown: Int, now: Date = Date(), calendar: Calendar = .current) -> Date {
+        let thisMonth = calendar.dateInterval(of: .month, for: now)?.start ?? calendar.startOfDay(for: now)
+        return calendar.date(byAdding: .month, value: -(max(monthsShown, 1) - 1), to: thisMonth) ?? thisMonth
+    }
 }
 
 private struct JourneyHistoryGroup: Identifiable {
@@ -4036,9 +4086,7 @@ private struct JourneyMilestoneCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 if item.completed {
-                    Image(systemName: "checkmark.circle.fill")
-                        .guideSymbol(size: 22, weight: .regular)
-                        .foregroundStyle(palette.accentText)
+                    PrayedTick(size: 22, color: palette.accentText)
                         .accessibilityLabel("Completed")
                 }
             }
@@ -4151,19 +4199,14 @@ private struct JourneyHistoryRow: View {
     private var statusMark: some View {
         switch row.kind {
         case .rosary:
-            ZStack {
-                Circle()
-                    .fill(palette.accent)
-                    .frame(width: 24, height: 24)
-                Image(systemName: "checkmark")
-                    .guideSymbol(size: 11, weight: .semibold)
-                    .foregroundStyle(palette.onAccent)
-            }
-            .accessibilityLabel("Completed")
+            PrayedTick(size: 21, color: palette.accent)
+                .frame(width: 24, height: 24)
+                .accessibilityLabel("Completed")
         case .decade:
-            // Same outlined ring as a partial day on the calendar.
+            // Same outlined ring as a partial day on the calendar, centred in the tick's slot.
             Circle()
                 .strokeBorder(palette.accent, lineWidth: 2)
+                .frame(width: 12, height: 12)
                 .frame(width: 24, height: 24)
                 .accessibilityLabel("Partial prayer")
         }

@@ -1342,6 +1342,18 @@ extension View {
     }
 }
 
+/// The prayed tick from Home's This week strip. Each place passes its own size and colour.
+struct PrayedTick: View {
+    var size: CGFloat
+    var color: Color
+
+    var body: some View {
+        Image(systemName: "checkmark.circle.fill")
+            .guideSymbol(size: size, weight: .regular)
+            .foregroundStyle(color)
+    }
+}
+
 struct GuidePressStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -1651,8 +1663,8 @@ extension AppTheme {
         static let inactiveDotSize = Space.md
         static let todayRingWidth: CGFloat = 2
         static let todayRingInset: CGFloat = 1
-        static let checkmarkSize: CGFloat = 13
-        static let checkmarkWeight: Font.Weight = .bold
+        /// Fills the marker like the old solid dot did.
+        static let tickSize: CGFloat = 21
     }
 
     /// Type roles — product style guide scale, with Instrument Sans / Newsreader pairing.

@@ -324,10 +324,7 @@ struct PrayerRhythmCard: View {
     private func dayMarker(_ day: PrayerRhythm.Day) -> some View {
         ZStack {
             if day.prayed {
-                Circle().fill(palette.accent)
-                Image(systemName: "checkmark")
-                    .guideSymbol(size: AppTheme.PrayerPreview.checkmarkSize, weight: AppTheme.PrayerPreview.checkmarkWeight)
-                    .foregroundStyle(palette.onAccent)
+                PrayedTick(size: AppTheme.PrayerPreview.tickSize, color: palette.accent)
             } else if day.isToday {
                 Circle().strokeBorder(palette.strokeSelected, lineWidth: AppTheme.PrayerPreview.todayRingWidth)
                     .padding(AppTheme.PrayerPreview.todayRingInset)

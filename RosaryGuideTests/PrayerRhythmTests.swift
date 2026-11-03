@@ -1389,3 +1389,17 @@ final class RosaryTimingScenarioTests: XCTestCase {
         XCTAssertNil(JourneyDuration.reliable(10_801), "Over 3 h shows as not recorded")
     }
 }
+
+final class JourneyHistoryPagingTests: XCTestCase {
+    func testCutoffCountsWholeMonthsIncludingThisOne() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Australia/Perth")!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 3, hour: 9))!
+        XCTAssertEqual(JourneyHistoryPaging.cutoff(monthsShown: 3, now: now, calendar: calendar),
+                       calendar.date(from: DateComponents(year: 2026, month: 9, day: 1)))
+        XCTAssertEqual(JourneyHistoryPaging.cutoff(monthsShown: 6, now: now, calendar: calendar),
+                       calendar.date(from: DateComponents(year: 2026, month: 6, day: 1)))
+        XCTAssertEqual(JourneyHistoryPaging.cutoff(monthsShown: 12, now: now, calendar: calendar),
+                       calendar.date(from: DateComponents(year: 2025, month: 12, day: 1)))
+    }
+}
