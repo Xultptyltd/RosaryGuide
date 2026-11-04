@@ -72,8 +72,8 @@ enum LiturgicalCalendar {
     static func holyFamily(year: Int, calendar: Calendar = gregorian) -> Date? {
         guard let dec26 = date(year: year, month: 12, day: 26, calendar: calendar) else { return nil }
         let sunday = sundayOnOrAfter(dec26, calendar: calendar)
-        if let sunday, calendar.component(.day, from: sunday) <= 31,
-           calendar.component(.month, from: sunday) == 12 {
+        if calendar.component(.month, from: sunday) == 12,
+           calendar.component(.day, from: sunday) <= 31 {
             return sunday
         }
         return date(year: year, month: 12, day: 30, calendar: calendar)
