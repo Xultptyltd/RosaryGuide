@@ -35,7 +35,7 @@ enum PrayLaunch: Identifiable, Hashable {
 }
 
 
-private enum AppTab: String, CaseIterable, Identifiable, Hashable {
+enum AppTab: String, CaseIterable, Identifiable, Hashable {
     case today, pray, calendar, intentions
 
     var id: String { rawValue }
@@ -43,7 +43,7 @@ private enum AppTab: String, CaseIterable, Identifiable, Hashable {
     var title: String {
         switch self {
         case .today: "Today"
-        case .pray: "Pray"
+        case .pray: "Learn"
         case .calendar: "Feasts"
         case .intentions: "Profile"
         }
@@ -142,6 +142,7 @@ struct RootView: View {
             Image(tab == item ? item.selectedIconAsset : item.iconAsset)
                 .renderingMode(.template)
         }
+        .accessibilityLabel(item.title)
     }
 }
 

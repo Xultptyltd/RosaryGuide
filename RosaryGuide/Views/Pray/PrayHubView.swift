@@ -29,7 +29,7 @@ struct PrayHubView: View {
             ScrollViewReader { scrollProxy in
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    InlinePrayerSearch(text: $searchText, prompt: "Search prayers and mysteries")
+                    InlinePrayerSearch(text: $searchText, prompt: "Search prayers, mysteries and feasts")
                     if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         introCard
                             .padding(.top, AppTheme.Space.xl)
@@ -93,7 +93,7 @@ struct PrayHubView: View {
             }
             #endif
             }
-            .guideRootChrome("Pray", ambientBackground: true)
+            .guideRootChrome(AppTab.pray.title, ambientBackground: true)
             .autocorrectionDisabled()
             .scrollDismissesKeyboard(.interactively)
             .fullScreenCover(isPresented: $showingWalkthrough) {
@@ -316,8 +316,9 @@ struct PrayHubView: View {
         let prayers = allPrayers.filter { PrayerCatalog.matchesSearch($0, query: query) }
         let sets = MysterySetKind.displayOrder.filter { "\($0.shortName) Mysteries".localizedCaseInsensitiveContains(query) }
         let devotions = !DevotionCatalog.isEnabled ? [] : DevotionCatalog.all.filter { DevotionCatalog.matchesSearch($0, query: query) }
+        let feasts = FeastCatalog.searchResults(matching: query, from: dayClock.today)
         return VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            if prayers.isEmpty && sets.isEmpty && devotions.isEmpty {
+            if prayers.isEmpty && sets.isEmpty && devotions.isEmpty && feasts.isEmpty {
                 Text("Nothing can be found. Try another search")
                     .font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.dim)
             }
@@ -325,6 +326,11 @@ struct PrayHubView: View {
             ForEach(sets, id: \.self) { set in
                 NavigationLink { LearnMysteryDetailView(set: set, prayLaunch: $prayLaunch) } label: {
                     hubRow("\(set.shortName) Mysteries", detail: set.weekdayNames, symbol: "sparkles")
+                }.guidePressable()
+            }
+            ForEach(feasts) { item in
+                NavigationLink { FeastDetailView(prayLaunch: $prayLaunch, item: item) } label: {
+                    hubRow(item.feast.shortTitle, detail: item.feast.tagline, symbol: "calendar")
                 }.guidePressable()
             }
             ForEach(devotions) { devotion in
@@ -365,6 +371,7 @@ struct PrayHubView: View {
                 .foregroundStyle(palette.accentText)
                 .frame(width: 52, height: 52)
                 .background(palette.accentTint, in: Circle())
+                .accessibilityHidden(true)
             }
             VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 Text(title).font(AppTheme.TypeRole.bodySmall).foregroundStyle(palette.ink)
@@ -494,7 +501,7 @@ struct PrayHubView: View {
     }
 
     private var questionsSection: some View {
-        let questions: [LearnArticle] = [.whatIsRosary, .beads, .oneDecade, .losePlace, .repetition, .mary]
+        let questions = LearnArticle.commonQuestions
 
         return VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
             GuideSectionLabel(text: "Common questions", prominence: .strong)
@@ -735,13 +742,19 @@ private enum LearnDestination {
     case mystery(MysterySetKind)
 }
 
-private enum LearnArticle: String, Identifiable {
+enum LearnArticle: String, Identifiable {
     case whatIsRosary
     case beads
     case oneDecade
     case losePlace
     case repetition
+    case meditate
     case mary
+
+    /// Common Questions on the Learn screen, in display order.
+    static let commonQuestions: [LearnArticle] = [
+        .whatIsRosary, .beads, .oneDecade, .losePlace, .repetition, .meditate, .mary
+    ]
 
     var id: String { rawValue }
 
@@ -752,6 +765,7 @@ private enum LearnArticle: String, Identifiable {
         case .oneDecade: "Can I pray one decade?"
         case .losePlace: "What if I lose my place?"
         case .repetition: "Why repeat prayers?"
+        case .meditate: "How do I meditate on the mysteries?"
         case .mary: "Why pray with Mary?"
         }
     }
@@ -794,6 +808,12 @@ private enum LearnArticle: String, Identifiable {
                 "The repetition of the Rosary is meant to become gentle and contemplative.",
                 "Like breathing, walking, or listening to a familiar song, repeated words can make space for deeper attention.",
                 "The prayers hold you steady while the mysteries invite you to look at Jesus with the Blessed Virgin Mary."
+            ]
+        case .meditate:
+            [
+                "Name the mystery at the start of the decade, then recall the Gospel scene in a sentence or two: who is there, and what Our Lord is doing.",
+                "Hold that scene in mind through the Our Father, the ten Hail Marys, and the Glory Be. If your thoughts wander, come back to the mystery. There is no need to begin the decade again.",
+                "You may read a short reflection once before the prayers begin. The repeated words keep the rhythm. The mystery is what you stay with."
             ]
         case .mary:
             [
@@ -1571,7 +1591,7 @@ private extension MysterySetKind {
 }
 
 
-/// Inline search shared by the Pray hub and prayer library.
+/// Inline search shared by the Learn screen and prayer library.
 private struct InlinePrayerSearch: View {
     @Environment(\.palette) private var palette
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize

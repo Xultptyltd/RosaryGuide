@@ -9,7 +9,7 @@ import UIKit
 final class DayClock {
     private(set) var today: Date
     /// On a feast with its own recommended set, the user chose the weekday set instead.
-    /// Shared by Home and the Pray hub, and reset when the day rolls over.
+    /// Shared by Home and the Learn screen, and reset when the day rolls over.
     var prefersWeekdaySet = false
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
 
@@ -57,7 +57,7 @@ struct MysteryAssignment: Equatable {
         return seasonalSunday.set
     }
 
-    /// The set Home and the Pray hub offer by default: the feast's recommended set when it
+    /// The set Home and the Learn screen offer by default: the feast's recommended set when it
     /// differs from the weekday's, unless the user chose the weekday set for today.
     func defaultSet(prefersWeekday: Bool) -> MysterySetKind {
         prefersWeekday ? set : (feastSuggestion ?? set)
