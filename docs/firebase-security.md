@@ -2,6 +2,22 @@
 
 Rosary Guide uses Firebase for authentication and private account sync. For signed-in users, prayer intentions, prayer progress (prayed days and the in-progress rosary) and user-facing preferences sync across devices. Device-only state (onboarding seen, notification permission, caches) never leaves the device.
 
+## Firestore TLS trust-store security update (4 November 2026)
+
+The app previously resolved Firebase Apple SDK 11.15.0, which is affected by the
+[eMudhra certificate compromise](https://firebase.google.com/support/guides/compromised-emudhra-intermediate-ca).
+The Swift Package Manager requirement now starts at **13.1.1**, and `Package.resolved`
+locks that patched release. Google Sign-In is updated to **10.1.0** for compatible
+App Check and GTMSessionFetcher dependencies. No Firebase products were added.
+
+Rebuild and replace every installed older app copy. Changing Firestore rules, backend
+settings, or the device OS cannot patch the embedded trust store in an old binary.
+The build currently in App Store review was archived before this patch (Firebase 11.15.0)
+and must be replaced with a build made from this patched dependency set: withdraw it from
+review (or reject the binary), archive a new build with a higher build number, upload it and
+resubmit. Local development installs must also be rebuilt. Future releases must retain a
+patched SDK requirement and the resolved dependency lockfile.
+
 ## Enabled Firebase Products
 
 - Firebase Authentication

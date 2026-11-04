@@ -835,7 +835,7 @@
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 11.0.0;
+				minimumVersion = 13.1.1;
 			};
 		};
 		A9F00101A1B2C3D4E5F61011 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
@@ -843,7 +843,7 @@
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 8.0.0;
+				minimumVersion = 10.1.0;
 			};
 		};
 		A9F00101A1B2C3D4E5F61030 /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
