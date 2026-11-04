@@ -23,12 +23,9 @@ enum ArtCatalog {
         return ("Art/hero", "hero-\(set.rawValue)-\(theme)")
     }
 
-    /// Feast hero art: dedicated light/dark files under `Art/feasts`, or a mapped mystery wide plate.
+    /// Feast hero art: a dedicated light or dark file under `Art/feasts`.
+    /// Mother of the Church shares the Assumption file; every other feast has its own.
     static func feastHeroPath(feastId: String, scheme: ColorScheme) -> (directory: String, name: String, ext: String)? {
-        if let plate = feastMysteryPlate(for: feastId) {
-            let theme = scheme == .dark ? "dark" : "light"
-            return ("Art/\(theme)/\(plate.set.rawValue)", "mystery-\(plate.slug)", "jpg")
-        }
         let artId = sharedFeastArt[feastId] ?? feastId
         if dedicatedFeastHeroIDs.contains(artId) {
             if scheme == .dark {
@@ -44,12 +41,9 @@ enum ArtCatalog {
         "advent-1", "carmel", "christ-the-king", "holy-saturday", "nativity-mary", "sacred-heart"
     ]
 
-    /// Feasts that borrow another feast's dedicated art.
+    /// The one feast that borrows another feast's dedicated art.
     private static let sharedFeastArt: [String: String] = [
-        "joachim-anne": "nativity-mary",
-        "mother-of-the-church": "assumption",
-        "john-baptist": "baptism-movable",
-        "loreto": "annunciation"
+        "mother-of-the-church": "assumption"
     ]
 
     /// Feasts with dedicated art under `Art/feasts/` (JPEG) and `Art/feasts/dark/`.
@@ -57,21 +51,12 @@ enum ArtCatalog {
         "advent-1", "all-saints", "all-souls", "annunciation", "ascension", "ash-wednesday",
         "assumption", "baptism-movable", "carmel", "christmas", "christ-the-king", "corpus-christi",
         "divine-mercy", "easter", "epiphany", "fatima", "good-friday", "guadalupe", "guardian-angels",
-        "holy-name-mary", "holy-saturday", "holy-thursday", "immaculate-conception", "immaculate-heart",
-        "joseph", "lourdes", "mary-mother-of-god", "michael", "nativity-mary", "palm-sunday", "pentecost",
-        "peter-paul", "presentation", "presentation-mary", "queenship", "rosary", "sacred-heart",
-        "sorrows", "trinity", "visitation"
+        "holy-cross", "holy-family", "holy-name-mary", "holy-saturday", "holy-thursday",
+        "immaculate-conception", "immaculate-heart", "joachim-anne", "john-baptist", "joseph",
+        "loreto", "lourdes", "mary-mother-of-god", "michael", "nativity-mary", "palm-sunday",
+        "pentecost", "peter-paul", "presentation", "presentation-mary", "queenship", "rosary",
+        "sacred-heart", "sorrows", "transfiguration", "trinity", "visitation"
     ]
-
-    /// Feasts that still reuse an existing mystery wide plate (light/dark via Art/{theme}/…).
-    private static func feastMysteryPlate(for feastId: String) -> (set: MysterySetKind, slug: String)? {
-        switch feastId {
-        case "holy-family": return (.joyful, "05-finding-of-the-child-jesus-in-the-temple")
-        case "transfiguration": return (.luminous, "04-transfiguration")
-        case "holy-cross": return (.sorrowful, "05-crucifixion")
-        default: return nil
-        }
-    }
 
     /// Scene slugs per set, in mystery order. Matches the files under `Art/{theme}/{set}`.
     static func plateSlugs(set: MysterySetKind) -> [String] {
