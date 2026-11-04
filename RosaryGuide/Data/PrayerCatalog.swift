@@ -330,7 +330,7 @@ struct Devotion: Identifiable, Hashable, Sendable {
 }
 
 enum DevotionCatalog {
-    /// Release flag: set to true to show "Novenas & Rosary types" on the Pray tab
+    /// Release flag: set to true to show "Novenas & Rosary types" on the Learn tab
     /// (hub tiles and search results). Content and data stay intact while hidden.
     static let isEnabled = false
 

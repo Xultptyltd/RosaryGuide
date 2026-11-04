@@ -207,6 +207,113 @@ extension FeastAgendaTests {
     }
 }
 
+final class LearnScreenTests: XCTestCase {
+    func testLearnTabTitleAndIcon() {
+        XCTAssertEqual(AppTab.pray.title, "Learn")
+        XCTAssertEqual(AppTab.pray.iconAsset, "TabLearnOutline")
+        XCTAssertEqual(AppTab.pray.selectedIconAsset, "TabLearnFilled")
+        XCTAssertEqual(AppTab.allCases.map(\.title), ["Today", "Learn", "Feasts", "Profile"])
+    }
+
+    func testMeditatingOnTheMysteriesIsACommonQuestion() {
+        XCTAssertTrue(LearnArticle.commonQuestions.contains(.meditate))
+        XCTAssertEqual(LearnArticle.meditate.title, "How do I meditate on the mysteries?")
+        XCTAssertEqual(LearnArticle.meditate.paragraphs.count, 3)
+        for paragraph in LearnArticle.meditate.paragraphs {
+            XCTAssertFalse(paragraph.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        XCTAssertEqual(LearnArticle.commonQuestions.map(\.title).count, Set(LearnArticle.commonQuestions.map(\.title)).count)
+    }
+}
+
+final class FeastSearchTests: XCTestCase {
+    private let calendar = LiturgicalCalendar.gregorian
+
+    func testSearchAliasesBelongToExistingFeasts() {
+        let ids = Set(FeastCatalog.all.map(\.id))
+        XCTAssertFalse(FeastCatalog.searchAliases.isEmpty)
+        for id in FeastCatalog.searchAliases.keys {
+            XCTAssertTrue(ids.contains(id), id)
+        }
+    }
+
+    func testFamiliarNamesResolveToExistingFeasts() {
+        let cases: [(String, String)] = [
+            ("Candlemas", "presentation"),
+            ("Theotokos", "mary-mother-of-god"),
+            ("Holy Thursday", "holy-thursday"),
+            ("Good Friday", "good-friday"),
+            ("Corpus Christi", "corpus-christi"),
+            ("Divine Mercy Sunday", "divine-mercy"),
+            ("Divine Mercy", "divine-mercy"),
+            ("Christ the King", "christ-the-king"),
+            ("All Souls Day", "all-souls"),
+            ("Mother of the Church", "mother-of-the-church"),
+            ("Our Lady of Guadalupe", "guadalupe"),
+            ("Assumptio", "assumption")
+        ]
+        for (query, id) in cases {
+            let hits = FeastCatalog.all.filter { FeastCatalog.matchesSearch($0, query: query) }
+            XCTAssertEqual(hits.map(\.id), [id], query)
+        }
+        XCTAssertFalse(FeastCatalog.matchesSearch(FeastCatalog.all[0], query: "   "))
+        XCTAssertTrue(FeastCatalog.searchResults(matching: "  ", from: date(2026, 6, 1), calendar: calendar).isEmpty)
+    }
+
+    func testEveryFeastIsSearchableByNameAndOpensOnItsNextDate() {
+        let from = date(2026, 1, 1)
+        let ids = Set(FeastCatalog.all.map(\.id))
+        for feast in FeastCatalog.all {
+            XCTAssertTrue(FeastCatalog.matchesSearch(feast, query: feast.name.english), feast.id)
+            XCTAssertTrue(FeastCatalog.matchesSearch(feast, query: feast.shortTitle), feast.id)
+            XCTAssertFalse(feast.name.latin.isEmpty, feast.id)
+            let hits = FeastCatalog.searchResults(matching: feast.name.english, from: from, calendar: calendar)
+            XCTAssertEqual(Set(hits.map(\.feast.id)).count, hits.count, feast.id)
+            let match = hits.first { $0.feast.id == feast.id }
+            XCTAssertNotNil(match, feast.id)
+            XCTAssertTrue(ids.contains(match?.feast.id ?? ""), feast.id)
+            XCTAssertGreaterThanOrEqual(match?.date ?? .distantPast, from)
+        }
+    }
+
+    func testAssumptionSearchUsesTheNextCelebration() throws {
+        let before = FeastCatalog.searchResults(matching: "Assumption", from: date(2026, 6, 1), calendar: calendar)
+        XCTAssertEqual(before.map(\.feast.id), ["assumption"])
+        let beforeDate = try XCTUnwrap(before.first?.date)
+        XCTAssertEqual(monthDay(beforeDate), (8, 15))
+        XCTAssertEqual(calendar.component(.year, from: beforeDate), 2026)
+
+        let after = FeastCatalog.searchResults(matching: "Assumption", from: date(2026, 8, 16), calendar: calendar)
+        XCTAssertEqual(after.map(\.feast.id), ["assumption"])
+        let afterDate = try XCTUnwrap(after.first?.date)
+        XCTAssertEqual(monthDay(afterDate), (8, 15))
+        XCTAssertEqual(calendar.component(.year, from: afterDate), 2027)
+    }
+
+    func testMotherOfTheChurchSearchKeepsSharedAssumptionArt() throws {
+        let hits = FeastCatalog.searchResults(matching: "Mother of the Church", from: date(2026, 1, 1), calendar: calendar)
+        let feast = try XCTUnwrap(hits.first?.feast)
+        XCTAssertEqual(feast.id, "mother-of-the-church")
+        let mother = ArtCatalog.feastHeroPath(feastId: feast.id, scheme: .light)
+        let assumption = ArtCatalog.feastHeroPath(feastId: "assumption", scheme: .light)
+        XCTAssertEqual(mother?.directory, assumption?.directory)
+        XCTAssertEqual(mother?.name, "feast-assumption")
+        XCTAssertEqual(mother?.name, assumption?.name)
+        let motherDark = ArtCatalog.feastHeroPath(feastId: "mother-of-the-church", scheme: .dark)
+        let assumptionDark = ArtCatalog.feastHeroPath(feastId: "assumption", scheme: .dark)
+        XCTAssertEqual(motherDark?.name, assumptionDark?.name)
+    }
+
+    private func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
+        LiturgicalCalendar.date(year: year, month: month, day: day, calendar: calendar)!
+    }
+
+    private func monthDay(_ date: Date?) -> (Int, Int) {
+        guard let date else { return (0, 0) }
+        return (calendar.component(.month, from: date), calendar.component(.day, from: date))
+    }
+}
+
 final class FeastMonthLayoutTests: XCTestCase {
     func testMonthAlignmentAndLeapDays() {
         var calendar = Calendar(identifier: .gregorian)

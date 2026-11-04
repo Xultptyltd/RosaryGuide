@@ -354,6 +354,45 @@ enum FeastCatalog {
     }
 }
 
+extension FeastCatalog {
+    /// Familiar names already used in feast copy when they are not part of the liturgical title.
+    /// Keys are existing feast ids from `FeastCatalog.all`.
+    static let searchAliases: [String: [String]] = [
+        "presentation": ["Candlemas"],
+        "mary-mother-of-god": ["Theotokos"],
+        "holy-thursday": ["Holy Thursday"],
+        "good-friday": ["Good Friday"],
+        "corpus-christi": ["Corpus Christi"],
+        "divine-mercy": ["Divine Mercy Sunday"],
+        "christ-the-king": ["Christ the King"],
+        "all-souls": ["All Souls Day"]
+    ]
+
+    static func matchesSearch(_ feast: Feast, query: String) -> Bool {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return false }
+        let fields = [feast.name.english, feast.name.latin, feast.shortTitle] + (searchAliases[feast.id] ?? [])
+        return fields.contains { $0.localizedStandardContains(query) }
+    }
+
+    /// Feasts whose name, Latin title, short title, or known alias matches `query`,
+    /// each paired with its next celebration on or after `date`.
+    static func searchResults(matching query: String, from date: Date = .now, calendar: Calendar = .current) -> [DatedFeast] {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return [] }
+        let start = calendar.startOfDay(for: date)
+        let year = LiturgicalCalendar.year(of: date)
+        let upcoming = (year...year + 1)
+            .flatMap { dated(in: $0, calendar: calendar) }
+            .filter { $0.date >= start }
+        var seen = Set<String>()
+        return upcoming.filter { item in
+            guard seen.insert(item.feast.id).inserted else { return false }
+            return matchesSearch(item.feast, query: query)
+        }
+    }
+}
+
 /// A short line for Home on a major feast: what today celebrates, then "Many pray the X Mysteries <occasion>".
 /// Only these feasts change Home's default set; other feasts follow the weekday there.
 struct FeastCelebration: Equatable, Sendable {
@@ -365,7 +404,7 @@ struct FeastCelebration: Equatable, Sendable {
 
 extension Feast {
     var celebration: FeastCelebration? { FeastCatalog.celebrations[id] }
-    /// Home and the Pray hub offer this feast's set instead of the weekday's.
+    /// Home and the Learn screen offer this feast's set instead of the weekday's.
     var recommendsOnHome: Bool { suggestedMysterySet != nil && celebration != nil }
 }
 
