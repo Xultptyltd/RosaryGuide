@@ -23,7 +23,7 @@ enum ArtCatalog {
         return ("Art/hero", "hero-\(set.rawValue)-\(theme)")
     }
 
-    /// Feast hero art: dedicated light/dark PNGs under `Art/feasts`, or a mapped mystery wide plate.
+    /// Feast hero art: dedicated light/dark files under `Art/feasts`, or a mapped mystery wide plate.
     static func feastHeroPath(feastId: String, scheme: ColorScheme) -> (directory: String, name: String, ext: String)? {
         if let plate = feastMysteryPlate(for: feastId) {
             let theme = scheme == .dark ? "dark" : "light"
@@ -45,35 +45,30 @@ enum ArtCatalog {
     ]
 
     /// Feasts that borrow another feast's dedicated art.
-    private static let sharedFeastArt: [String: String] = ["joachim-anne": "nativity-mary"]
+    private static let sharedFeastArt: [String: String] = [
+        "joachim-anne": "nativity-mary",
+        "mother-of-the-church": "assumption",
+        "john-baptist": "baptism-movable",
+        "loreto": "annunciation"
+    ]
 
     /// Feasts with dedicated art under `Art/feasts/` (JPEG) and `Art/feasts/dark/`.
     private static let dedicatedFeastHeroIDs: Set<String> = [
-        "advent-1", "all-saints", "all-souls", "ash-wednesday", "carmel", "christ-the-king",
-        "epiphany", "fatima", "guadalupe", "guardian-angels", "holy-name-mary", "holy-saturday",
-        "immaculate-conception", "immaculate-heart", "joseph", "lourdes", "mary-mother-of-god",
-        "michael", "nativity-mary", "palm-sunday", "peter-paul", "presentation-mary", "rosary",
-        "sacred-heart", "sorrows", "trinity"
+        "advent-1", "all-saints", "all-souls", "annunciation", "ascension", "ash-wednesday",
+        "assumption", "baptism-movable", "carmel", "christmas", "christ-the-king", "corpus-christi",
+        "divine-mercy", "easter", "epiphany", "fatima", "good-friday", "guadalupe", "guardian-angels",
+        "holy-name-mary", "holy-saturday", "holy-thursday", "immaculate-conception", "immaculate-heart",
+        "joseph", "lourdes", "mary-mother-of-god", "michael", "nativity-mary", "palm-sunday", "pentecost",
+        "peter-paul", "presentation", "presentation-mary", "queenship", "rosary", "sacred-heart",
+        "sorrows", "trinity", "visitation"
     ]
 
-    /// Feasts that reuse an existing mystery wide plate (light/dark via Art/{theme}/…).
+    /// Feasts that still reuse an existing mystery wide plate (light/dark via Art/{theme}/…).
     private static func feastMysteryPlate(for feastId: String) -> (set: MysterySetKind, slug: String)? {
         switch feastId {
-        case "annunciation", "loreto": return (.joyful, "01-annunciation")
-        case "visitation": return (.joyful, "02-visitation")
-        case "christmas": return (.joyful, "03-birth-of-jesus")
         case "holy-family": return (.joyful, "05-finding-of-the-child-jesus-in-the-temple")
         case "transfiguration": return (.luminous, "04-transfiguration")
         case "holy-cross": return (.sorrowful, "05-crucifixion")
-        case "presentation": return (.joyful, "04-presentation-of-the-baby-jesus")
-        case "baptism-movable", "john-baptist": return (.luminous, "01-baptism-of-jesus-in-the-jordan")
-        case "holy-thursday", "corpus-christi": return (.luminous, "05-institution-of-the-holy-eucharist")
-        case "good-friday": return (.sorrowful, "05-crucifixion")
-        case "easter", "divine-mercy": return (.glorious, "01-resurrection")
-        case "ascension": return (.glorious, "02-ascension")
-        case "pentecost": return (.glorious, "03-descent-of-the-holy-spirit")
-        case "assumption", "mother-of-the-church": return (.glorious, "04-assumption")
-        case "queenship": return (.glorious, "05-coronation")
         default: return nil
         }
     }
