@@ -448,3 +448,106 @@ final class CompletionScreenTests: XCTestCase {
         XCTAssertEqual(CompletionCopy.cardLabel(index: 0, count: 1, title: "Mum"), "Offered for Mum")
     }
 }
+
+final class FeastHeroFramingTests: XCTestCase {
+    func testPortraitFigureFillsTheCardAndKeepsTheTop() {
+        let cover = ArtCatalog.feastCover(
+            imageSize: CGSize(width: 1280, height: 720),
+            frame: CGSize(width: 358, height: 176),
+            subject: CGRect(x: 480, y: 0, width: 300, height: 720),
+            focusX: 630
+        )
+        XCTAssertEqual(cover.scale, 358.0 / 300.0, accuracy: 0.0001)
+        let visibleX = -cover.offset.width / cover.scale
+        let visibleY = -cover.offset.height / cover.scale
+        XCTAssertEqual(visibleX, 480, accuracy: 0.5)
+        XCTAssertEqual(visibleY, 0, accuracy: 0.5)
+        XCTAssertEqual(358 / cover.scale, 300, accuracy: 0.5)
+    }
+
+    func testTallFrameKeepsAFaceOnTheLeftInsideTheWindow() {
+        let focus: CGFloat = 314
+        let cover = ArtCatalog.feastCover(
+            imageSize: CGSize(width: 1280, height: 720),
+            frame: CGSize(width: 393, height: 330),
+            subject: CGRect(x: 12, y: 144, width: 1256, height: 540),
+            focusX: focus
+        )
+        let visibleX = -cover.offset.width / cover.scale
+        let visibleY = -cover.offset.height / cover.scale
+        let visibleWidth = 393 / cover.scale
+        let visibleHeight = 330 / cover.scale
+        XCTAssertEqual(visibleY, 144, accuracy: 1)
+        XCTAssertGreaterThanOrEqual(focus, visibleX - 0.5)
+        XCTAssertLessThanOrEqual(focus, visibleX + visibleWidth + 0.5)
+        XCTAssertGreaterThanOrEqual(visibleX, -0.5)
+        XCTAssertLessThanOrEqual(visibleX + visibleWidth, 1280.5)
+        XCTAssertLessThanOrEqual(visibleY + visibleHeight, 720.5)
+        XCTAssertLessThan(visibleWidth, 1200)
+    }
+
+    func testWideCardCropsTheBottomOfAFullBleedHero() {
+        let cover = ArtCatalog.feastCover(
+            imageSize: CGSize(width: 1280, height: 720),
+            frame: CGSize(width: 358, height: 176),
+            subject: CGRect(x: 0, y: 0, width: 1280, height: 720),
+            focusX: 640
+        )
+        XCTAssertEqual(cover.scale, 358.0 / 1280.0, accuracy: 0.0001)
+        let visibleX = -cover.offset.width / cover.scale
+        let visibleY = -cover.offset.height / cover.scale
+        let visibleHeight = 176 / cover.scale
+        XCTAssertEqual(visibleX, 0, accuracy: 0.5)
+        XCTAssertEqual(visibleY, 0, accuracy: 0.5)
+        XCTAssertLessThan(visibleHeight, 700)
+    }
+
+    func testDetectorFindsAMarkAtTheTopNotTheBottom() {
+        let mark = CGRect(x: 16, y: 10, width: 40, height: 36)
+        let image = raster(size: CGSize(width: 320, height: 180), fill: .white, marks: [(mark, .black)])
+        let subject = ArtCatalog.feastSubject(of: image)
+        XCTAssertLessThan(subject.bounds.minY, 30, "the mark is at the top of the image")
+        XCTAssertGreaterThan(subject.bounds.maxY, mark.maxY - 8)
+        XCTAssertLessThan(subject.bounds.maxY, 80)
+        XCTAssertGreaterThan(subject.bounds.minX, 4)
+        XCTAssertLessThan(subject.bounds.maxX, 80)
+        XCTAssertEqual(subject.focusX, mark.midX, accuracy: 12)
+    }
+
+    func testDetectorFindsALightFigureOnBlack() {
+        let mark = CGRect(x: 200, y: 20, width: 48, height: 140)
+        let image = raster(size: CGSize(width: 320, height: 180), fill: .black, marks: [(mark, .white)])
+        let subject = ArtCatalog.feastSubject(of: image)
+        XCTAssertGreaterThan(subject.bounds.minX, 170)
+        XCTAssertLessThan(subject.bounds.maxX, 270)
+        XCTAssertLessThan(subject.bounds.minY, 36)
+        XCTAssertGreaterThan(subject.bounds.maxY, 140)
+    }
+
+    func testUpperBandFocusFollowsTheHead() {
+        let head = CGRect(x: 48, y: 24, width: 36, height: 50)
+        let body = CGRect(x: 30, y: 70, width: 250, height: 100)
+        let image = raster(
+            size: CGSize(width: 320, height: 180),
+            fill: .white,
+            marks: [(body, .black), (head, .black)]
+        )
+        let subject = ArtCatalog.feastSubject(of: image)
+        XCTAssertLessThan(subject.focusX, 140)
+        XCTAssertGreaterThan(subject.focusX, 40)
+    }
+
+    private func raster(size: CGSize, fill: UIColor, marks: [(CGRect, UIColor)]) -> UIImage {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            fill.setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
+            for (rect, color) in marks {
+                color.setFill()
+                ctx.fill(rect)
+            }
+        }
+    }
+}

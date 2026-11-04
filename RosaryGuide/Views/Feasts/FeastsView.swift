@@ -1399,7 +1399,7 @@ private struct FeastHeroBanner: View {
                     directory: path.directory,
                     name: path.name,
                     ext: path.ext,
-                    focus: UnitPoint(x: 0.5, y: 0.42)
+                    coversSubject: true
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()

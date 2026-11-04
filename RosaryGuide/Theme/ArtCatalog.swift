@@ -155,6 +155,211 @@ enum ArtCatalog {
         }
         return CGSize(width: (0.5 - focus.x) * extraW, height: (0.5 - focusY) * extraH)
     }
+
+    /// Where the figure sits in a feast hero, in image points (origin at the top left).
+    struct FeastSubject: Equatable {
+        var bounds: CGRect
+        /// Horizontal anchor in the upper band of the figure, where faces sit.
+        var focusX: CGFloat
+    }
+
+    /// Uniform scale and top-leading shift that covers a frame with a feast hero.
+    struct FeastCover: Equatable {
+        var scale: CGFloat
+        var offset: CGSize
+    }
+
+    /// The marble figure inside a 1280×720 feast file. Those files letterbox portrait
+    /// statues on a flat field; this box is that figure, not the canvas.
+    static func feastSubject(of image: UIImage) -> FeastSubject {
+        let size = image.size
+        let fallback = FeastSubject(bounds: CGRect(origin: .zero, size: size), focusX: size.width / 2)
+        guard size.width > 2, size.height > 2 else { return fallback }
+        if let box = objc_getAssociatedObject(image, &feastSubjectKey) as? FeastSubjectBox {
+            return box.subject
+        }
+        let subject = detectFeastSubject(image) ?? fallback
+        objc_setAssociatedObject(image, &feastSubjectKey, FeastSubjectBox(subject), .OBJC_ASSOCIATION_RETAIN)
+        return subject
+    }
+
+    /// Cover `frame` with `subject` at one scale (no stretch). The top of the figure
+    /// stays at the top of the frame, and `focusX` — the upper band, where the face is —
+    /// stays inside the window when the frame is narrower than the figure.
+    static func feastCover(imageSize: CGSize, frame: CGSize, subject: CGRect, focusX: CGFloat) -> FeastCover {
+        guard imageSize.width > 1, imageSize.height > 1, frame.width > 1, frame.height > 1 else {
+            return FeastCover(scale: 1, offset: .zero)
+        }
+        let canvas = CGRect(origin: .zero, size: imageSize)
+        let box = subject.intersection(canvas)
+        let region = (box.width > 1 && box.height > 1) ? box : canvas
+        let scale = max(frame.width / region.width, frame.height / region.height)
+        let scaledW = imageSize.width * scale
+        let scaledH = imageSize.height * scale
+        let anchor = min(max(focusX, region.minX), region.maxX)
+        var visX = anchor * scale - frame.width / 2
+        var visY = region.minY * scale
+        let subjectMinX = region.minX * scale
+        let subjectMaxX = max(subjectMinX, region.maxX * scale - frame.width)
+        visX = min(max(visX, subjectMinX), subjectMaxX)
+        visX = min(max(visX, 0), max(0, scaledW - frame.width))
+        visY = min(max(visY, 0), max(0, scaledH - frame.height))
+        return FeastCover(scale: scale, offset: CGSize(width: -visX, height: -visY))
+    }
+}
+
+private var feastSubjectKey: UInt8 = 0
+
+private final class FeastSubjectBox: NSObject {
+    let subject: ArtCatalog.FeastSubject
+    init(_ subject: ArtCatalog.FeastSubject) { self.subject = subject }
+}
+
+private extension ArtCatalog {
+    /// Sampled luminance, row 0 at the top of the image.
+    static func detectFeastSubject(_ image: UIImage) -> FeastSubject? {
+        let sampleW = 320
+        let sampleH = 180
+        guard let gray = grayscale(image, width: sampleW, height: sampleH) else { return nil }
+        let count = sampleW * sampleH
+        guard gray.count == count else { return nil }
+
+        let corner = 8
+        var corners: [Float] = []
+        corners.reserveCapacity(corner * corner * 4)
+        for y in 0..<corner {
+            for x in 0..<corner {
+                corners.append(Float(gray[y * sampleW + x]))
+                corners.append(Float(gray[y * sampleW + (sampleW - 1 - x)]))
+                corners.append(Float(gray[(sampleH - 1 - y) * sampleW + x]))
+                corners.append(Float(gray[(sampleH - 1 - y) * sampleW + (sampleW - 1 - x)]))
+            }
+        }
+        let sortedCorners = corners.sorted()
+        let background = percentile(sortedCorners, 0.5)
+        let spread = percentile(sortedCorners, 0.9) - percentile(sortedCorners, 0.1)
+
+        let content: (Int) -> Bool
+        if spread > 30, background >= 40, background <= 180 {
+            content = { _ in true }
+        } else if background >= 170 {
+            content = { Float(gray[$0]) < background - 12 }
+        } else if background <= 45 {
+            content = { Float(gray[$0]) > background + 14 }
+        } else {
+            content = { _ in true }
+        }
+
+        var col = [Int](repeating: 0, count: sampleW)
+        var row = [Int](repeating: 0, count: sampleH)
+        for y in 0..<sampleH {
+            for x in 0..<sampleW {
+                if content(y * sampleW + x) {
+                    col[x] += 1
+                    row[y] += 1
+                }
+            }
+        }
+        let colCut = 0.012 * Float(sampleH)
+        let rowCut = 0.012 * Float(sampleW)
+        guard let minX = col.firstIndex(where: { Float($0) > colCut }),
+              let maxX = col.lastIndex(where: { Float($0) > colCut }),
+              let minY = row.firstIndex(where: { Float($0) > rowCut }),
+              let maxY = row.lastIndex(where: { Float($0) > rowCut }),
+              maxX > minX, maxY > minY else {
+            return nil
+        }
+        var left = minX
+        var right = maxX
+        var top = minY
+        var bottom = maxY
+        if Float(right - left) < Float(sampleW) * 0.12 || Float(bottom - top) < Float(sampleH) * 0.12 {
+            left = 0
+            right = sampleW - 1
+            top = 0
+            bottom = sampleH - 1
+        }
+
+        let bandHeight = max(1, Int((0.34 * Float(bottom - top + 1)).rounded(.down)))
+        var weightSum: Float = 0
+        var moment: Float = 0
+        let bandBottom = min(sampleH, top + bandHeight)
+        for y in top..<bandBottom {
+            for x in left...right where content(y * sampleW + x) {
+                weightSum += 1
+                moment += Float(x)
+            }
+        }
+        let focusSample = weightSum > 0 ? moment / weightSum : Float(left + right) / 2
+
+        let scaleX = image.size.width / CGFloat(sampleW)
+        let scaleY = image.size.height / CGFloat(sampleH)
+        let padX = image.size.width * 0.006
+        let padY = image.size.height * 0.006
+        let x0 = max(0, CGFloat(left) * scaleX - padX)
+        let y0 = max(0, CGFloat(top) * scaleY - padY)
+        let x1 = min(image.size.width, CGFloat(right + 1) * scaleX + padX)
+        let y1 = min(image.size.height, CGFloat(bottom + 1) * scaleY + padY)
+        let bounds = CGRect(x: x0, y: y0, width: max(1, x1 - x0), height: max(1, y1 - y0))
+        let focusX = min(max(CGFloat(focusSample) * scaleX, bounds.minX), bounds.maxX)
+        return FeastSubject(bounds: bounds, focusX: focusX)
+    }
+
+    /// Grayscale sample, row 0 at the top (UIKit coordinates).
+    static func grayscale(_ image: UIImage, width: Int, height: Int) -> [UInt8]? {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        let rendered = UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format).image { _ in
+            image.draw(in: CGRect(x: 0, y: 0, width: width, height: height))
+        }
+        guard let cg = rendered.cgImage,
+              cg.width >= width, cg.height >= height,
+              let data = cg.dataProvider?.data,
+              let bytes = CFDataGetBytePtr(data) else { return nil }
+        let bytesPerRow = cg.bytesPerRow
+        let bytesPerPixel = max(cg.bitsPerPixel / 8, 1)
+        let alpha = cg.alphaInfo
+        let order = cg.bitmapInfo.rawValue & CGBitmapInfo.byteOrderMask.rawValue
+        let little = order == CGBitmapInfo.byteOrder32Little.rawValue || order == 0
+        let alphaFirst = alpha == .premultipliedFirst || alpha == .first || alpha == .noneSkipFirst
+        var gray = [UInt8](repeating: 255, count: width * height)
+        for y in 0..<height {
+            for x in 0..<width {
+                let origin = y * bytesPerRow + x * bytesPerPixel
+                let r: UInt8
+                let g: UInt8
+                let b: UInt8
+                if bytesPerPixel >= 4 && alphaFirst && little {
+                    // BGRA, the layout UIGraphics uses. Row 0 is the top of the image.
+                    b = bytes[origin]
+                    g = bytes[origin + 1]
+                    r = bytes[origin + 2]
+                } else if bytesPerPixel >= 4 && alphaFirst {
+                    r = bytes[origin + 1]
+                    g = bytes[origin + 2]
+                    b = bytes[origin + 3]
+                } else if bytesPerPixel >= 3 {
+                    r = bytes[origin]
+                    g = bytes[origin + 1]
+                    b = bytes[origin + 2]
+                } else {
+                    r = bytes[origin]
+                    g = r
+                    b = r
+                }
+                gray[y * width + x] = UInt8((UInt16(r) + UInt16(g) + UInt16(b)) / 3)
+            }
+        }
+        return gray
+    }
+
+    static func percentile(_ sorted: [Float], _ p: Float) -> Float {
+        guard let first = sorted.first else { return 0 }
+        if sorted.count == 1 { return first }
+        let index = Int((Float(sorted.count - 1) * p).rounded())
+        return sorted[min(max(index, 0), sorted.count - 1)]
+    }
 }
 
 struct FocusedRasterImage: View {
@@ -167,23 +372,51 @@ struct FocusedRasterImage: View {
     var focus: UnitPoint = UnitPoint(x: 0.5, y: 0.32)
     /// When set, the top of the visible crop is this far down the image (0...1).
     var cropTop: CGFloat? = nil
+    /// Feast heroes. Scales the figure (not the letterboxed canvas) to fill the frame,
+    /// pinned to the top so faces stay in view. One scale; the frame clips the rest.
+    var coversSubject: Bool = false
 
     var body: some View {
         GeometryReader { geo in
             if let image = BundleRasterImage.load(directory: directory, name: name, ext: ext) {
-                let shift = contentMode == .fit ? CGSize.zero : ArtCatalog.offset(imageSize: image.size, frame: geo.size, focus: focus, cropTop: cropTop)
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: contentMode)
-                    // Move the artwork inside the fixed crop, rather than shifting the crop itself.
-                    .offset(x: shift.width, y: shift.height)
-                    .frame(width: geo.size.width, height: geo.size.height, alignment: contentMode == .fit ? fitAlignment : .center)
-                    .clipped()
+                if coversSubject {
+                    subjectFill(image, in: geo.size)
+                } else {
+                    let shift = contentMode == .fit ? CGSize.zero : ArtCatalog.offset(imageSize: image.size, frame: geo.size, focus: focus, cropTop: cropTop)
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: contentMode)
+                        // Move the artwork inside the fixed crop, rather than shifting the crop itself.
+                        .offset(x: shift.width, y: shift.height)
+                        .frame(width: geo.size.width, height: geo.size.height, alignment: contentMode == .fit ? fitAlignment : .center)
+                        .clipped()
+                }
             } else {
                 palette.artworkFallbackBackground
             }
         }
         .clipped()
+    }
+
+    private func subjectFill(_ image: UIImage, in frame: CGSize) -> some View {
+        let subject = ArtCatalog.feastSubject(of: image)
+        let cover = ArtCatalog.feastCover(
+            imageSize: image.size,
+            frame: frame,
+            subject: subject.bounds,
+            focusX: subject.focusX
+        )
+        // Round up so a fractional scale cannot leave a hairline of the card along the edge.
+        let width = max((image.size.width * cover.scale).rounded(.up), 1)
+        let height = max((image.size.height * cover.scale).rounded(.up), 1)
+        return Image(uiImage: image)
+            .resizable()
+            .interpolation(.high)
+            .frame(width: width, height: height)
+            .fixedSize()
+            .offset(x: cover.offset.width, y: cover.offset.height)
+            .frame(width: frame.width, height: frame.height, alignment: .topLeading)
+            .clipped()
     }
 }
 

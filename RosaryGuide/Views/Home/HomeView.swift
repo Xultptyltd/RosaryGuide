@@ -576,7 +576,7 @@ struct HomeView: View {
                                     directory: path.directory,
                                     name: path.name,
                                     ext: path.ext,
-                                    focus: UnitPoint(x: 0.5, y: 0.42)
+                                    coversSubject: true
                                 )
                             } else {
                                 MysteryArtworkView(set: featured.feast.suggestedMysterySet ?? .glorious, mysteryNumber: 5, kind: .plateWide)
