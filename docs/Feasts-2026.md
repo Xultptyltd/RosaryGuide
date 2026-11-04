@@ -76,7 +76,7 @@ Lent begins. The Sorrowful Mysteries accompany this season of conversion.
 - **Tags:** Solemnity · Joyful Mysteries
 - **Id:** `joseph`
 
-Guardian of the Redeemer and chaste spouse of Mary.
+Guardian of the Redeemer and chaste spouse of Mary. On a Sunday of Lent the solemnity is kept the next day; in Holy Week it is kept on the Saturday before Palm Sunday.
 
 ### Annunciation
 
@@ -86,7 +86,7 @@ Guardian of the Redeemer and chaste spouse of Mary.
 - **Tags:** Marian · Solemnity · Joyful Mysteries
 - **Id:** `annunciation`
 
-The Word becomes flesh in the womb of the Virgin. If March 25 falls in Holy Week or the Octave of Easter, the Annunciation is transferred to the Monday after Divine Mercy Sunday.
+The Word becomes flesh in the womb of the Virgin. On a Sunday of Lent it is kept the next day. In Holy Week or the Octave of Easter it moves to the Monday after Divine Mercy Sunday.
 
 ### Palm Sunday of the Passion of the Lord
 
@@ -386,7 +386,7 @@ The liturgical year begins. Sundays of Advent take the Joyful Mysteries.
 - **Tags:** Marian · Solemnity · Joyful Mysteries
 - **Id:** `immaculate-conception`
 
-Mary is preserved from original sin from the first instant of her conception. Patronal solemnity of the United States.
+Mary is preserved from original sin from the first instant of her conception. Patronal solemnity of the United States. When 8 December is a Sunday, it is kept the next day.
 
 ### Our Lady of Guadalupe
 

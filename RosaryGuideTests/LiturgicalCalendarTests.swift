@@ -85,6 +85,35 @@ final class LiturgicalCalendarTests: XCTestCase {
         }
     }
 
+    func testImpededSolemnitiesMoveOffSundaysAndHolyWeek() {
+        // 19 March 2023 was a Sunday of Lent: kept Monday 20 March.
+        XCTAssertEqual(monthDay(LiturgicalCalendar.saintJoseph(year: 2023)), (3, 20))
+        // 19 March 2035 is Monday of Holy Week: kept the Saturday before Palm Sunday.
+        XCTAssertEqual(monthDay(LiturgicalCalendar.saintJoseph(year: 2035)), (3, 17))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.saintJoseph(year: 2026)), (3, 19))
+
+        // 25 March 2012 was a Sunday of Lent, before Palm Sunday: kept 26 March.
+        XCTAssertEqual(monthDay(LiturgicalCalendar.annunciation(year: 2012)), (3, 26))
+        // Palm Sunday 2029 is 25 March: Monday of Holy Week is still impeded.
+        XCTAssertEqual(monthDay(LiturgicalCalendar.annunciation(year: 2029)), (4, 9))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.annunciation(year: 2026)), (3, 25))
+
+        // 8 December 2024 was the Second Sunday of Advent.
+        XCTAssertEqual(monthDay(LiturgicalCalendar.immaculateConception(year: 2024)), (12, 9))
+        XCTAssertEqual(monthDay(LiturgicalCalendar.immaculateConception(year: 2026)), (12, 8))
+    }
+
+    func testFeastLookupUsesTheGregorianYear() {
+        var buddhist = Calendar(identifier: .buddhist)
+        buddhist.timeZone = TimeZone.current
+        let christmas = LiturgicalCalendar.date(year: 2026, month: 12, day: 25)!
+        XCTAssertNotEqual(buddhist.component(.year, from: christmas), 2026)
+        let onChristmas = FeastCatalog.feasts(on: christmas, calendar: buddhist)
+        XCTAssertTrue(onChristmas.contains { $0.feast.id == "christmas" })
+        let upcoming = FeastCatalog.upcoming(from: christmas, limit: 4, calendar: buddhist)
+        XCTAssertEqual(upcoming.first?.feast.id, "christmas")
+    }
+
     func testMotherOfTheChurchIsMondayAfterPentecost() {
         // Easter + 50.
         XCTAssertEqual(monthDay(motherOfTheChurch(year: 2026)), (5, 25))

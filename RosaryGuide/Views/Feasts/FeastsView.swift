@@ -11,11 +11,14 @@ struct FeastAgenda {
 
     init(items: [DatedFeast], selectedDay: Date, today: Date = Date(), calendar: Calendar = .current) {
         let start = calendar.startOfDay(for: selectedDay)
-        let weekEnd = calendar.dateInterval(of: .weekOfYear, for: start)!.end
-        let monthEnd = calendar.dateInterval(of: .month, for: start)!.end
-        let nextMonthEnd = calendar.date(byAdding: .month, value: 1, to: monthEnd)!
-        let yearEnd = calendar.dateInterval(of: .year, for: start)!.end
-        let horizon = calendar.date(byAdding: .year, value: 1, to: yearEnd)!
+        let weekEnd = calendar.dateInterval(of: .weekOfYear, for: start)?.end
+            ?? calendar.date(byAdding: .day, value: 7, to: start) ?? start
+        let monthEnd = calendar.dateInterval(of: .month, for: start)?.end
+            ?? calendar.date(byAdding: .month, value: 1, to: start) ?? start
+        let nextMonthEnd = calendar.date(byAdding: .month, value: 1, to: monthEnd) ?? monthEnd
+        let yearEnd = calendar.dateInterval(of: .year, for: start)?.end
+            ?? calendar.date(byAdding: .year, value: 1, to: start) ?? start
+        let horizon = calendar.date(byAdding: .year, value: 1, to: yearEnd) ?? yearEnd
         let upcoming = items.filter { $0.date >= start && $0.date < horizon }.sorted {
             $0.date == $1.date ? $0.id < $1.id : $0.date < $1.date
         }
@@ -59,8 +62,13 @@ struct FeastMonthLayout {
     let cells: [Date?]
     var rows: Int { cells.count / 7 }
     init(month: Date, calendar: Calendar = .current) {
-        let start = calendar.dateInterval(of: .month, for: month)!.start
-        let count = calendar.range(of: .day, in: .month, for: start)!.count
+        guard
+            let start = calendar.dateInterval(of: .month, for: month)?.start,
+            let count = calendar.range(of: .day, in: .month, for: start)?.count
+        else {
+            cells = []
+            return
+        }
         let leading = (calendar.component(.weekday, from: start) - calendar.firstWeekday + 7) % 7
         var days = Array<Date?>(repeating: nil, count: leading)
         days += (0..<count).map { calendar.date(byAdding: .day, value: $0, to: start) }
@@ -86,7 +94,7 @@ struct FeastsView: View {
     @Environment(DayClock.self) private var dayClock
     private var today: Date { dayClock.today }
     private var feasts: [DatedFeast] {
-        let year = calendar.component(.year, from: selectedDay)
+        let year = LiturgicalCalendar.year(of: selectedDay)
         let all = (year...year + 1).flatMap { FeastCatalog.dated(in: $0, calendar: calendar) }
         return filter == .marian ? all.filter(\.feast.isMarian) : all
     }
@@ -185,7 +193,7 @@ struct FeastsView: View {
                 guard DebugHooks.has("-RGDebugOpenFeast") else { return }
                 try? await Task.sleep(for: .seconds(2))
                 if let id = UserDefaults.standard.string(forKey: "RGDebugFeastID") {
-                    let year = calendar.component(.year, from: today)
+                    let year = LiturgicalCalendar.year(of: today)
                     debugFeast = (year...year + 1).flatMap { FeastCatalog.dated(in: $0, calendar: calendar) }
                         .first { $0.feast.id == id && $0.date >= calendar.startOfDay(for: today) }
                 } else {
@@ -197,15 +205,21 @@ struct FeastsView: View {
     }
 
     private func weekStart(_ offset: Int) -> Date {
-        let start = calendar.dateInterval(of: .weekOfYear, for: today)!.start
-        return calendar.date(byAdding: .weekOfYear, value: offset, to: start)!
+        let anchor = calendar.startOfDay(for: today)
+        let start = calendar.dateInterval(of: .weekOfYear, for: anchor)?.start ?? anchor
+        // Step by seven days. Adding `.weekOfYear` can skip or repeat a week at the year boundary.
+        return calendar.date(byAdding: .day, value: offset * 7, to: start) ?? start
+    }
+
+    private func adding(days: Int, to start: Date) -> Date {
+        calendar.date(byAdding: .day, value: days, to: start) ?? start
     }
 
     private var rollingCalendar: some View {
         let offsets = min(-12, weekOffset)...max(26, weekOffset)
-        let firstYear = calendar.component(.year, from: weekStart(offsets.lowerBound))
-        let lastYear = calendar.component(.year, from: calendar.date(byAdding: .day,
-            value: AppTheme.Component.feastCalendarWeekCount * 7 - 1, to: weekStart(offsets.upperBound))!)
+        let firstYear = LiturgicalCalendar.year(of: weekStart(offsets.lowerBound))
+        let stripEnd = adding(days: AppTheme.Component.feastCalendarWeekCount * 7 - 1, to: weekStart(offsets.upperBound))
+        let lastYear = LiturgicalCalendar.year(of: stripEnd)
         let stripFeasts = (firstYear...lastYear).flatMap { FeastCatalog.dated(in: $0, calendar: calendar) }
             .filter { filter == .all || $0.feast.isMarian }
         let feastDays = Set(stripFeasts.map { calendar.startOfDay(for: $0.date) })
@@ -215,7 +229,7 @@ struct FeastsView: View {
                     ForEach(0..<AppTheme.Component.feastCalendarWeekCount, id: \.self) { row in
                         HStack(spacing: AppTheme.Space.xs) {
                             ForEach(0..<7, id: \.self) { column in
-                                let day = calendar.date(byAdding: .day, value: row * 7 + column, to: weekStart(offset))!
+                                let day = adding(days: row * 7 + column, to: weekStart(offset))
                                 dayButton(day, hasFeast: feastDays.contains(calendar.startOfDay(for: day)), showsWeekday: false)
                             }
                         }
@@ -231,8 +245,8 @@ struct FeastsView: View {
 
     private var expandedCalendar: some View {
         let offsets = min(-52, weekOffset)...max(104, weekOffset)
-        let firstYear = calendar.component(.year, from: weekStart(offsets.lowerBound))
-        let lastYear = calendar.component(.year, from: calendar.date(byAdding: .day, value: 6, to: weekStart(offsets.upperBound))!)
+        let firstYear = LiturgicalCalendar.year(of: weekStart(offsets.lowerBound))
+        let lastYear = LiturgicalCalendar.year(of: adding(days: 6, to: weekStart(offsets.upperBound)))
         let items = (firstYear...lastYear).flatMap { FeastCatalog.dated(in: $0, calendar: calendar) }
             .filter { filter == .all || $0.feast.isMarian }
         let feastDays = Set(items.map { calendar.startOfDay(for: $0.date) })
@@ -241,7 +255,7 @@ struct FeastsView: View {
                 ForEach(offsets, id: \.self) { offset in
                     HStack(spacing: AppTheme.Space.xs) {
                         ForEach(0..<7, id: \.self) { column in
-                            let day = calendar.date(byAdding: .day, value: column, to: weekStart(offset))!
+                            let day = adding(days: column, to: weekStart(offset))
                             dayButton(day, hasFeast: feastDays.contains(calendar.startOfDay(for: day)), showsWeekday: false)
                         }
                     }
@@ -442,7 +456,7 @@ private struct FeastTimelineRow: View {
                     .foregroundStyle(palette.ink)
                 Text(item.date.formatted(.dateTime.month(.abbreviated)).uppercased())
                     .font(AppTheme.TypeRole.calendarCaptionMedium)
-                    .tracking(1.1)
+                    .tracking(AppTheme.Component.eyebrowTracking)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .foregroundStyle(palette.dim)

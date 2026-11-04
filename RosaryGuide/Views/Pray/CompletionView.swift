@@ -320,7 +320,7 @@ struct CompletionView: View {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, intention in
                         Circle()
                             .fill((cardID ?? rows[0].id) == intention.id
-                                  ? palette.completionTitle : palette.completionMeta.opacity(0.4))
+                                  ? palette.completionTitle : palette.completionMeta)
                             .frame(width: 6, height: 6)
                     }
                 }
