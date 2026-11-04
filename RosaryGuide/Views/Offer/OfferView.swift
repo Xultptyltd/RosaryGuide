@@ -62,6 +62,24 @@ struct OfferView: View {
     }
 
     var body: some View {
+        if DebugHooks.has("-RGDebugOpenJourney") {
+            NavigationStack {
+                PrayerJourneyView(
+                    prayedDayStarts: sessionStore.completedDayStarts,
+                    completedSessions: sessionStore.completedSessions,
+                    completedDecades: sessionStore.completedDecades,
+                    prayerTimeByDay: sessionStore.prayerTimeByDay,
+                    milestones: sessionStore.journeyMilestones,
+                    stage: milestoneStage,
+                    tab: $journeyTab
+                )
+            }
+        } else {
+            regularBody
+        }
+    }
+
+    private var regularBody: some View {
         NavigationStack(path: $navigationPath) {
             Group {
                 profileContent

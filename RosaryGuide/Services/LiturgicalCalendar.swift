@@ -62,6 +62,23 @@ enum LiturgicalCalendar {
         return addingDays(7, to: epiphanyDate, calendar: calendar)
     }
 
+    /// Sacred Heart: Friday after the second Sunday after Pentecost (Easter + 68).
+    static func sacredHeart(year: Int, calendar: Calendar = gregorian) -> Date? {
+        easter(year: year, calendar: calendar).flatMap { addingDays(68, to: $0, calendar: calendar) }
+    }
+
+    /// Holy Family: Sunday within the Octave of Christmas (26–31 December), or 30 December
+    /// when Christmas is a Sunday and the octave has no Sunday.
+    static func holyFamily(year: Int, calendar: Calendar = gregorian) -> Date? {
+        guard let dec26 = date(year: year, month: 12, day: 26, calendar: calendar) else { return nil }
+        let sunday = sundayOnOrAfter(dec26, calendar: calendar)
+        if let sunday, calendar.component(.day, from: sunday) <= 31,
+           calendar.component(.month, from: sunday) == 12 {
+            return sunday
+        }
+        return date(year: year, month: 12, day: 30, calendar: calendar)
+    }
+
     static func ashWednesday(year: Int, calendar: Calendar = gregorian) -> Date? {
         easter(year: year, calendar: calendar).flatMap { addingDays(-46, to: $0, calendar: calendar) }
     }

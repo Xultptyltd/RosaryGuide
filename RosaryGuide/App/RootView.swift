@@ -75,6 +75,8 @@ struct RootView: View {
     @Environment(AuthStore.self) private var auth
     @Environment(\.palette) private var palette
     @State private var prayLaunch: PrayLaunch?
+    @State private var completedFromHome = false
+    @State private var homeScrollReset = 0
     @State private var tab: AppTab = DebugHooks.once("-RGDebugProfileTab") ? .intentions : (DebugHooks.once("-RGDebugPrayTab") ? .pray : (DebugHooks.once("-RGDebugFeastsTab") ? .calendar : .today))
 
     var body: some View {
@@ -85,9 +87,15 @@ struct RootView: View {
                 try? await Task.sleep(for: .seconds(3))
                 prayLaunch = .fresh(.joyful)
             }
-            .fullScreenCover(item: $prayLaunch) { launch in
+            .fullScreenCover(item: $prayLaunch, onDismiss: {
+                guard completedFromHome else { return }
+                completedFromHome = false
+                homeScrollReset += 1
+            }) { launch in
                 ThemedRoot {
-                    PrayView(launch: launch)
+                    PrayView(launch: launch, onCompleted: {
+                        completedFromHome = tab == .today
+                    })
                 }
                 .environment(settings)
                 .environment(session)
@@ -102,7 +110,7 @@ struct RootView: View {
     @ViewBuilder
     private var rootTabs: some View {
         let tabs = TabView(selection: $tab) {
-            HomeView(prayLaunch: $prayLaunch, onViewAllFeasts: { tab = .calendar })
+            HomeView(prayLaunch: $prayLaunch, completionScrollReset: homeScrollReset, onViewAllFeasts: { tab = .calendar })
                 .tabItem { tabLabel(.today) }
                 .tag(AppTab.today)
 

@@ -29,11 +29,12 @@ enum ArtCatalog {
             let theme = scheme == .dark ? "dark" : "light"
             return ("Art/\(theme)/\(plate.set.rawValue)", "mystery-\(plate.slug)", "jpg")
         }
-        if dedicatedFeastHeroIDs.contains(feastId) {
+        let artId = sharedFeastArt[feastId] ?? feastId
+        if dedicatedFeastHeroIDs.contains(artId) {
             if scheme == .dark {
-                return ("Art/feasts/dark", "feast-\(feastId)", darkFeastPNGIDs.contains(feastId) ? "png" : "jpg")
+                return ("Art/feasts/dark", "feast-\(artId)", darkFeastPNGIDs.contains(artId) ? "png" : "jpg")
             }
-            return ("Art/feasts", "feast-\(feastId)", "jpg")
+            return ("Art/feasts", "feast-\(artId)", "jpg")
         }
         return nil
     }
@@ -42,6 +43,9 @@ enum ArtCatalog {
     private static let darkFeastPNGIDs: Set<String> = [
         "advent-1", "carmel", "christ-the-king", "holy-saturday", "nativity-mary", "sacred-heart"
     ]
+
+    /// Feasts that borrow another feast's dedicated art.
+    private static let sharedFeastArt: [String: String] = ["joachim-anne": "nativity-mary"]
 
     /// Feasts with dedicated art under `Art/feasts/` (JPEG) and `Art/feasts/dark/`.
     private static let dedicatedFeastHeroIDs: Set<String> = [
@@ -55,11 +59,14 @@ enum ArtCatalog {
     /// Feasts that reuse an existing mystery wide plate (light/dark via Art/{theme}/…).
     private static func feastMysteryPlate(for feastId: String) -> (set: MysterySetKind, slug: String)? {
         switch feastId {
-        case "annunciation": return (.joyful, "01-annunciation")
+        case "annunciation", "loreto": return (.joyful, "01-annunciation")
         case "visitation": return (.joyful, "02-visitation")
         case "christmas": return (.joyful, "03-birth-of-jesus")
+        case "holy-family": return (.joyful, "05-finding-of-the-child-jesus-in-the-temple")
+        case "transfiguration": return (.luminous, "04-transfiguration")
+        case "holy-cross": return (.sorrowful, "05-crucifixion")
         case "presentation": return (.joyful, "04-presentation-of-the-baby-jesus")
-        case "baptism-movable": return (.luminous, "01-baptism-of-jesus-in-the-jordan")
+        case "baptism-movable", "john-baptist": return (.luminous, "01-baptism-of-jesus-in-the-jordan")
         case "holy-thursday", "corpus-christi": return (.luminous, "05-institution-of-the-holy-eucharist")
         case "good-friday": return (.sorrowful, "05-crucifixion")
         case "easter", "divine-mercy": return (.glorious, "01-resurrection")

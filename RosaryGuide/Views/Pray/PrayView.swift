@@ -60,6 +60,7 @@ struct PrayView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var launch: PrayLaunch
+    var onCompleted: () -> Void = {}
 
     @State private var steps: [RosaryStep] = []
     @State private var index: Int = 0
@@ -185,7 +186,7 @@ struct PrayView: View {
                 michaelLayer
             }
             if finishBlack > 0, !showingCompletion, !showingMichael {
-                Color.black
+                palette.completionBackground
                     .opacity(finishBlack)
                     .ignoresSafeArea()
                     .allowsHitTesting(finishBlack > 0.05)
@@ -1733,6 +1734,7 @@ struct PrayView: View {
     private func finishRosary() {
         markRosaryCompletedIfNeeded()
         stopPrayerAutosave()
+        onCompleted()
         dismiss()
     }
 

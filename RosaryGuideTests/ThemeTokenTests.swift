@@ -172,6 +172,19 @@ final class ContrastTokenTests: XCTestCase {
         ThemePalette(scheme: .light, contrast: .increased), ThemePalette(scheme: .dark, contrast: .increased)
     ]
 
+    func testCompletionFollowsPrayerAppearance() {
+        for palette in palettes {
+            XCTAssertEqual(UIColor(palette.completionBackground), UIColor(palette.prayBg))
+            XCTAssertEqual(UIColor(palette.completionTitle), UIColor(palette.textPrimary))
+            XCTAssertGreaterThanOrEqual(ratio(palette.completionLabel, palette.completionBackground), 4.5)
+            XCTAssertGreaterThanOrEqual(ratio(palette.completionMetaValue, palette.surface), 4.5)
+        }
+        XCTAssertNotEqual(
+            UIColor(ThemePalette(scheme: .light).completionBackground),
+            UIColor(ThemePalette(scheme: .dark).completionBackground)
+        )
+    }
+
     func testTextTokensReachFourAndAHalf() {
         for p in palettes {
             for bg in [p.bg, p.groupedBackground, p.surface] {

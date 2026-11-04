@@ -318,11 +318,10 @@ struct ThemePalette {
     var emphasisSegmentTitle: Color { scheme == .light ? textPrimary : background }
     var selectedShadow: Color { accent.opacity(0.28) }
 
-    var ceremonyBackground: Color { Color(hex: 0x000000) }
-    var ceremonyTextPrimary: Color { Color.white.opacity(0.96) }
-    var ceremonyTextSecondary: Color { Color.white.opacity(0.48) }
-    /// 46 %: 4.5:1 on the black ceremony background.
-    var ceremonyTextTertiary: Color { Color.white.opacity(0.46) }
+    var ceremonyBackground: Color { prayerBackground }
+    var ceremonyTextPrimary: Color { textPrimary }
+    var ceremonyTextSecondary: Color { textSecondary }
+    var ceremonyTextTertiary: Color { textSecondary }
 
     var beadHighlight: Color { Color.white }
     var beadPulseFill: Color {
@@ -391,6 +390,8 @@ struct ThemePalette {
     var completionBackground: Color { ceremonyBackground }
     var completionLabel: Color { ceremonyTextSecondary }
     var completionTitle: Color { ceremonyTextPrimary }
+    var completionTick: Color { textPrimary }
+    var completionGlow: Color { accentText }
     var completionMeta: Color { ceremonyTextTertiary }
     var completionMetaValue: Color { ceremonyTextPrimary.opacity(0.94) }
 }
@@ -1738,10 +1739,8 @@ extension AppTheme {
         static func rhythmCaption(compact: Bool = false) -> Font {
             AppTheme.sans(compact ? 13 : 14, relativeTo: .subheadline)
         }
-        /// End-of-Rosary quote: the app's sans (Instrument Sans), same 18pt size as before.
-        static var completionQuote: Font {
-            AppTheme.sans(18, relativeTo: .body)
-        }
+        /// End-of-Rosary quote uses the shared 16pt body style.
+        static var completionQuote: Font { body }
         static var caption: Font { AppTheme.sans(12, weight: .regular, relativeTo: .caption) }
         static func caption(weight: Font.Weight = .regular) -> Font {
             AppTheme.sans(12, weight: regularized(weight), relativeTo: .caption)

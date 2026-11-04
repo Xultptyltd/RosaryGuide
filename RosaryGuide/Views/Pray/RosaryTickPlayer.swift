@@ -15,6 +15,8 @@ struct RosaryTickPlayer: UIViewRepresentable {
     /// Trim of the tick stroke reaches 100% at frame 70 (30 fps).
     static let strokeDoneProgress: AnimationProgressTime = 70.0 / 96.0
 
+    @Environment(\.palette) private var palette
+
     var plays: Bool
     var hapticsEnabled: Bool
     var onComplete: () -> Void
@@ -52,6 +54,7 @@ struct RosaryTickPlayer: UIViewRepresentable {
 
     func updateUIView(_ view: UIView, context: Context) {
         context.coordinator.onComplete = onComplete
+        context.coordinator.applyPalette(palette)
         guard !context.coordinator.didStart else { return }
         context.coordinator.didStart = true
 
@@ -59,6 +62,7 @@ struct RosaryTickPlayer: UIViewRepresentable {
         let plays = plays
         let start: (LottieAnimation?) -> Void = { animation in
             animationView.animation = animation
+            context.coordinator.applyPalette(palette)
             guard animation != nil else {
                 DispatchQueue.main.async { context.coordinator.onComplete() }
                 return
@@ -106,6 +110,24 @@ struct RosaryTickPlayer: UIViewRepresentable {
         private let tickHaptic = UIImpactFeedbackGenerator(style: .light)
         #endif
         init(onComplete: @escaping () -> Void) { self.onComplete = onComplete }
+
+        /// Keep the drawn ring, beads and tick neutral; only the timed back glow is blue.
+        func applyPalette(_ palette: ThemePalette) {
+            guard let animationView else { return }
+            animationView.setValueProvider(
+                ColorValueProvider(UIColor(palette.completionTick).lottieColorValue),
+                keypath: AnimationKeypath(keypath: "**.Color")
+            )
+            let blue = UIColor(palette.completionGlow)
+            animationView.setValueProvider(
+                GradientValueProvider([
+                    blue.withAlphaComponent(0.30).lottieColorValue,
+                    blue.withAlphaComponent(0.10).lottieColorValue,
+                    blue.withAlphaComponent(0).lottieColorValue
+                ], locations: [0, 0.5, 1]),
+                keypath: AnimationKeypath(keypath: "glow.**.Colors")
+            )
+        }
 
         func prepareTickHaptic() {
             #if canImport(UIKit)

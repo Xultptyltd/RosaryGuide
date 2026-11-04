@@ -16,6 +16,7 @@ struct HomeView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Binding var prayLaunch: PrayLaunch?
+    var completionScrollReset = 0
     /// Opens the Feasts tab ("View all" on Upcoming feast days).
     var onViewAllFeasts: () -> Void = {}
 
@@ -52,7 +53,11 @@ struct HomeView: View {
     }
     /// A hand-picked set wins; otherwise a feast's recommended set, or the weekday set.
     private var currentSet: MysterySetKind {
-        assignment.shownSet(manual: selectedSet, prefersWeekday: dayClock.prefersWeekdaySet)
+        #if DEBUG
+        if let value = UserDefaults.standard.string(forKey: "RGDebugMysterySet"),
+           let set = MysterySetKind(rawValue: value) { return set }
+        #endif
+        return assignment.shownSet(manual: selectedSet, prefersWeekday: dayClock.prefersWeekdaySet)
     }
     private var mysteries: [Mystery] { MysteryCatalog.mysteries(for: currentSet) }
     /// Only an intention the user picked here pre-selects on the intention step.
@@ -131,6 +136,15 @@ struct HomeView: View {
                     .padding(.bottom, AppTheme.tabBarContentClearance)
                 }
                 .scrollBounceBehavior(.basedOnSize, axes: .vertical)
+                .onChange(of: completionScrollReset) { _, _ in
+                    // Feast details can also launch the flow from this tab; preserve that destination.
+                    guard navigationPath.isEmpty else { return }
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        proxy.scrollTo("home-top", anchor: .top)
+                    }
+                }
                 #if DEBUG
                 // `-RGDebugHomeMysteries`: scrolls to the mystery cards for screenshots.
                 .task {

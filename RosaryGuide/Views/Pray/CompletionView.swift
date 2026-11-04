@@ -39,14 +39,7 @@ struct CompletionView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SettingsStore.self) private var settings
-    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
-
-    /// Always the dark ceremony palette. Reading the inherited palette would
-    /// follow the app scheme, and forcing that scheme with preferredColorScheme
-    /// is what froze the transition onto this screen.
-    private var palette: ThemePalette {
-        ThemePalette(scheme: .dark, contrast: colorSchemeContrast)
-    }
+    @Environment(\.palette) private var palette
 
     /// True once the tick has landed in the icon slot. Reduce Motion starts here.
     @State private var settled = false
@@ -60,7 +53,6 @@ struct CompletionView: View {
     @State private var cardID: Int?
     /// Complete-screen scene, fixed when the screen opens. Never the Home hero file.
     @State private var plate: (number: Int, slug: String)?
-    @Environment(\.colorScheme) private var colorScheme
 
     private var shownIntentions: [CompletionIntention] {
         intentions.filter { !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -81,8 +73,7 @@ struct CompletionView: View {
 
     private var resting: Bool { reduceMotion || settled }
 
-    /// Ceremonial page ground, routed through the app palette even though this
-    /// screen intentionally stays dark.
+    /// Use the same appearance-aware ground as the prayer flow.
     private var pageBg: Color { palette.completionBackground }
 
     /// One line: "Joyful Mysteries", "Sorrowful Mysteries", and the rest.
@@ -97,10 +88,11 @@ struct CompletionView: View {
         ZStack {
             VStack(spacing: 0) {
                 // The spare room above the tick is the artwork. It fades to
-                // black at the bottom edge, so the statue reads down to just
+                // the page ground at the bottom edge, so the statue reads down to just
                 // above the check instead of stopping in a short top band.
                 completionArt
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .offset(y: AppTheme.Space.xl)
                 .overlay { heroFade }
                 .clipped()
                 .ignoresSafeArea(edges: .top)
@@ -156,7 +148,7 @@ struct CompletionView: View {
     /// A scene plate from the same set, not the hero Home shows.
     private var completionArt: some View {
         let chosen = plate ?? ArtCatalog.completionPlate(set: mysterySet)
-        let path = ArtCatalog.platePath(set: mysterySet, slug: chosen.slug, scheme: .dark, wide: false)
+        let path = ArtCatalog.platePath(set: mysterySet, slug: chosen.slug, scheme: palette.scheme, wide: false)
         return FocusedRasterImage(
             directory: path.directory,
             name: path.name,
@@ -216,7 +208,7 @@ struct CompletionView: View {
     }
 
     /// Clear through most of the artwork. The dissolve is only the last
-    /// stretch, so the image meets black just above the tick.
+    /// stretch, so the image meets the page ground just above the tick.
     private var heroFade: some View {
         LinearGradient(
             stops: [
@@ -409,7 +401,7 @@ struct CompletionView: View {
         .padding(.bottom, 0)
     }
 
-    /// Finish-screen pills use the ceremony palette, not the inherited scheme.
+    /// Finish-screen pills use the shared appearance-aware button tokens.
     private func ceremonyButton(
         title: String,
         fill: Color,

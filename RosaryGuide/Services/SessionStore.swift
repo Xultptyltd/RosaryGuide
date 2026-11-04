@@ -506,6 +506,15 @@ final class SessionStore {
 
     /// Completed milestones survive history pruning. The archive contains no intention titles.
     var journeyMilestones: JourneyMilestones {
+        #if DEBUG
+        if DebugHooks.has("-RGDebugSampleMilestones") {
+            let today = Calendar.current.startOfDay(for: Date())
+            let dates = (0..<12).compactMap { Calendar.current.date(byAdding: .day, value: -$0, to: today) }
+            return JourneyMilestones(rosaryDates: dates, prayerDates: dates,
+                                     mysteryDates: [MysterySetKind.joyful.rawValue: today],
+                                     offeringDates: [IntentionCategory.personal.rawValue: today])
+        }
+        #endif
         let calendar = Calendar.current
         let recordedDays = Set(completedSessions.map { calendar.startOfDay(for: $0.completedAt).timeIntervalSince1970 })
         let legacy = completedDayStarts.subtracting(recordedDays).map { Date(timeIntervalSince1970: $0) }

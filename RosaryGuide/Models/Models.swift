@@ -305,6 +305,17 @@ enum FeastRank: String, Codable {
         }
     }
 
+    /// Higher wins when two feasts share a day.
+    var precedence: Int {
+        switch self {
+        case .solemnity: 5
+        case .feast: 4
+        case .memorial: 3
+        case .optionalMemorial: 2
+        case .seasonal: 1
+        }
+    }
+
     /// Lowercase rank for notification sentences; optional memorials read as "memorial".
     var notificationWord: String? {
         switch self {

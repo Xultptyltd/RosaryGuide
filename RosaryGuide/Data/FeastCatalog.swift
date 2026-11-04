@@ -24,7 +24,7 @@ enum FeastCatalog {
             guard let date = feast.dateProvider(year) else { return nil }
             return DatedFeast(feast: feast, date: calendar.startOfDay(for: date))
         }
-        .sorted { $0.date < $1.date }
+        .sorted { $0.date != $1.date ? $0.date < $1.date : $0.feast.rank.precedence > $1.feast.rank.precedence }
     }
 
     // MARK: - Fixed
@@ -66,10 +66,30 @@ enum FeastCatalog {
                    "Mary asks for daily Rosary and conversion of heart."),
         fixedFeast("visitation", "The Visitation of the Blessed Virgin Mary", "Visitátio Beátæ Maríæ Vírginis", 5, 31, .feast, marian: true, set: .joyful,
                    "Mary carries Christ to Elizabeth; the infant leaps, and the Magnificat is sung."),
+        Feast(
+            id: "john-baptist",
+            name: BilingualText(english: "The Nativity of Saint John the Baptist", latin: "Natívitas Sancti Ioánnis Baptístæ"),
+            summary: "The forerunner of the Lord is born to Elizabeth and Zechariah. If the Sacred Heart falls on June 24, this solemnity is kept on June 23.",
+            suggestedMysterySet: .joyful,
+            isMarian: false,
+            rank: .solemnity,
+            dateProvider: { year in
+                guard let jun24 = LiturgicalCalendar.date(year: year, month: 6, day: 24) else { return nil }
+                if let sacredHeart = LiturgicalCalendar.sacredHeart(year: year),
+                   LiturgicalCalendar.gregorian.isDate(sacredHeart, inSameDayAs: jun24) {
+                    return LiturgicalCalendar.addingDays(-1, to: jun24)
+                }
+                return jun24
+            }
+        ),
         fixedFeast("peter-paul", "Saints Peter and Paul", "Sancti Petrus et Paulus", 6, 29, .solemnity, set: .glorious,
                    "The apostles on whom the Church is built."),
         fixedFeast("carmel", "Our Lady of Mount Carmel", "Beáta María Virgo de Monte Carmélo", 7, 16, .optionalMemorial, marian: true, set: .glorious,
                    "Mary of Carmel, associated with the Brown Scapular."),
+        fixedFeast("joachim-anne", "Saints Joachim and Anne, Parents of the Blessed Virgin Mary", "Sancti Ióachim et Anna, paréntes Beátæ Maríæ Vírginis", 7, 26, .memorial, set: .joyful,
+                   "The parents of Mary and grandparents of Jesus."),
+        fixedFeast("transfiguration", "The Transfiguration of the Lord", "In Transfiguratióne Dómini", 8, 6, .feast, set: .luminous,
+                   "Christ is transfigured before Peter, James and John. The fourth Luminous Mystery."),
         fixedFeast("assumption", "The Assumption of the Blessed Virgin Mary", "Assúmptio Beátæ Maríæ Vírginis", 8, 15, .solemnity, marian: true, set: .glorious,
                    "Mary is taken body and soul into heavenly glory."),
         fixedFeast("queenship", "The Queenship of the Blessed Virgin Mary", "Beáta María Virgo Regína", 8, 22, .memorial, marian: true, set: .glorious,
@@ -78,6 +98,8 @@ enum FeastCatalog {
                    "The birthday of the Mother of God."),
         fixedFeast("holy-name-mary", "The Most Holy Name of Mary", "Sanctíssimum Nomen Maríæ", 9, 12, .optionalMemorial, marian: true, set: .joyful,
                    "The name of Mary is our sweetness and defense."),
+        fixedFeast("holy-cross", "The Exaltation of the Holy Cross", "In Exaltatióne Sanctæ Crucis", 9, 14, .feast, set: .sorrowful,
+                   "The Cross, instrument of death, is honored as the sign of victory and salvation."),
         fixedFeast("sorrows", "Our Lady of Sorrows", "Beáta María Virgo Perdolens", 9, 15, .memorial, marian: true, set: .sorrowful,
                    "Mary stands at the Cross. The seven sorrows keep company with the Sorrowful Mysteries."),
         fixedFeast("michael", "Saints Michael, Gabriel, and Raphael, Archangels", "Sancti Míchael, Gábriel et Ráphael", 9, 29, .feast, set: .glorious,
@@ -94,10 +116,21 @@ enum FeastCatalog {
                    "Mary is offered in the Temple; a feast of consecration."),
         fixedFeast("immaculate-conception", "The Immaculate Conception of the Blessed Virgin Mary", "Immaculáta Conceptio Beátæ Maríæ Vírginis", 12, 8, .solemnity, marian: true, set: .joyful,
                    "Mary is preserved from original sin from the first instant of her conception. Patronal solemnity of the United States."),
+        fixedFeast("loreto", "Our Lady of Loreto", "Beáta María Virgo de Laureto", 12, 10, .optionalMemorial, marian: true, set: .joyful,
+                   "The Holy House of Loreto recalls the home of Nazareth, where the Word was made flesh."),
         fixedFeast("guadalupe", "Our Lady of Guadalupe", "Sancta María de Guadalupe", 12, 12, .feast, marian: true, set: .joyful,
                    "Mary appears to St. Juan Diego. Patroness of the Americas."),
         fixedFeast("christmas", "The Nativity of the Lord", "Natívitas Dómini", 12, 25, .solemnity, marian: true, set: .joyful,
-                   "The Word is made flesh and dwells among us. The Joyful Mysteries are especially fitting.")
+                   "The Word is made flesh and dwells among us. The Joyful Mysteries are especially fitting."),
+        Feast(
+            id: "holy-family",
+            name: BilingualText(english: "The Holy Family of Jesus, Mary and Joseph", latin: "Sancta Família Iesu, Maríæ et Ioseph"),
+            summary: "The Sunday within the Octave of Christmas, or December 30 when Christmas falls on a Sunday.",
+            suggestedMysterySet: .joyful,
+            isMarian: true,
+            rank: .feast,
+            dateProvider: { year in LiturgicalCalendar.holyFamily(year: year) }
+        )
     ]
 
     // MARK: - Movable (depend on Easter / Advent)
@@ -244,7 +277,7 @@ enum FeastCatalog {
             isMarian: false,
             rank: .solemnity,
             dateProvider: { year in
-                LiturgicalCalendar.easter(year: year).flatMap { LiturgicalCalendar.addingDays(68, to: $0) }
+                LiturgicalCalendar.sacredHeart(year: year)
             }
         ),
         Feast(
@@ -388,6 +421,12 @@ extension FeastCatalog {
         "christ-the-king": "Christ, King of all creation",
         "advent-1": "Preparing for Christ's coming",
         "baptism-movable": "Jesus is baptized in the Jordan",
+        "john-baptist": "The birth of the Lord's forerunner",
+        "joachim-anne": "The parents of Mary",
+        "transfiguration": "Christ's glory revealed on the mountain",
+        "holy-cross": "The Cross, sign of salvation",
+        "loreto": "The holy house of Nazareth",
+        "holy-family": "Jesus, Mary and Joseph at home",
     ]
 }
 
