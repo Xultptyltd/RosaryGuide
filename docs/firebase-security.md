@@ -224,3 +224,5 @@ A separate production Firebase project still needs to be created and configured 
 ## App Store Privacy Review
 
 `PrivacyInfo.xcprivacy` now declares account-linked user ID and account-linked user content for app functionality. Before App Store submission, review App Store Connect privacy answers against Firebase Authentication and synced Firestore intentions, prayer history and preferences (prayer history may count as "Other User Content" or usage data linked to the user).
+
+The in-app Privacy Policy (`LegalDocumentKind.privacy` in `RosaryGuide/Views/Settings/SettingsView.swift`) must name Firebase. The published copy at https://xult.ltd/privacy/ is outside this repository and must stay aligned with it: name Firebase (Google) for Authentication, Cloud Firestore, and App Check; describe Rosary Guide iOS account sync (intentions, prayer progress and history, and preferences); state that Rosary Guide does not use generative AI or large language models to process Personal Data; and describe deletion in Settings (synced cloud data, then the Auth account, with Apple or Google revocation as implemented).
