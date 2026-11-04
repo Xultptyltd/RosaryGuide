@@ -696,7 +696,7 @@ struct HomeView: View {
     private func feastDateText(_ date: Date) -> some View {
         Text(date.formatted(.dateTime.day().month(.abbreviated)))
             .font(AppTheme.TypeRole.label(weight: .medium))
-            .tracking(0)
+            .tracking(AppTheme.Component.sectionLabelTracking)
             .textCase(.uppercase)
             .foregroundStyle(palette.dim)
     }

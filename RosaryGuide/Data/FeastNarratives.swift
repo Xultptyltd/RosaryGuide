@@ -322,7 +322,7 @@ enum FeastNarratives {
         
         For families, workers, and the anxious, Joseph is a spiritual father: he teaches trust when plans change, courage in danger, and fidelity in ordinary work. Entrusting homes and the Church to him asks for the grace of steadfast care and a quiet heart before God’s will.
         """,
-            history: "Devotion to Joseph grew strongly in the late Middle Ages and modern era. His solemnity on 19 March honors him as husband of Mary; a separate memorial on 1 May honors Joseph the Worker.",
+            history: "Devotion to Joseph grew strongly in the late Middle Ages and modern era. His solemnity on 19 March honors him as husband of Mary. When that day is a Sunday of Lent it is kept the next day, and when it falls in Holy Week it is kept on the Saturday before Palm Sunday. A separate memorial on 1 May honors Joseph the Worker.",
             indulgence: nil,
             relatedPrayers: [stJoseph, hailHolyQueen]
         ),
@@ -332,7 +332,7 @@ enum FeastNarratives {
         
         Spiritually the day invites our own fiat. Mary’s openness becomes the pattern of discipleship: to listen, to consent, and to carry Christ into the world. The Angelus prayer keeps this grace close—asking that what was begun in her may be brought to maturity in us through the Cross and Resurrection.
         """,
-            history: "Kept on 25 March from early centuries, the solemnity is transferred when it falls in Holy Week or the Easter Octave. It remains a hinge of the liturgical year: the mystery of the Word made flesh announced and received.",
+            history: "Kept on 25 March from early centuries. On a Sunday of Lent the solemnity is kept the next day; in Holy Week or the Easter Octave it moves to the Monday after Divine Mercy Sunday. It remains a hinge of the liturgical year: the mystery of the Word made flesh announced and received.",
             indulgence: nil,
             relatedPrayers: [angelus, memorare, hailHolyQueen]
         ),
@@ -642,7 +642,7 @@ enum FeastNarratives {
         
         Spiritually the feast reveals what grace can do. Mary’s purity is not distance from us but hope for us: we ask for the grace of a clean heart, freedom from sin’s grip, and confidence in Christ who saves even at the root.
         """,
-            history: "Defined by Pius IX in 1854 (Ineffabilis Deus), the dogma crowns centuries of devotion. The solemnity on 8 December stands nine months before Mary’s Nativity.",
+            history: "Defined by Pius IX in 1854 (Ineffabilis Deus), the dogma crowns centuries of devotion. The solemnity on 8 December stands nine months before Mary’s Nativity. When that date is a Sunday it is kept the next day.",
             indulgence: nil,
             relatedPrayers: [memorare, hailHolyQueen, angelus]
         ),

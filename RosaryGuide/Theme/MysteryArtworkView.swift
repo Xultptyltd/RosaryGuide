@@ -482,7 +482,7 @@ struct PillButton: View {
         } label: {
             Text(title)
                 .font(AppTheme.TypeRole.pillLabel())
-                .foregroundStyle(onDark ? Color.black : filled ? palette.primaryButtonText : (tertiary ? palette.tertiaryButtonText : palette.learnMoreButtonText))
+                .foregroundStyle(onDark ? palette.todayPillText : filled ? palette.primaryButtonText : (tertiary ? palette.tertiaryButtonText : palette.learnMoreButtonText))
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)
                 .multilineTextAlignment(.center)
@@ -490,7 +490,7 @@ struct PillButton: View {
                 .padding(.vertical, compact ? AppTheme.Space.xs : 0)
                 .frame(minHeight: compact ? AppTheme.Component.compactPillHeight : AppTheme.Component.pillHeight,
                        maxHeight: compact ? nil : AppTheme.Component.pillHeight)
-                .guideSurface(in: Capsule(), fill: onDark ? Color.white : filled ? palette.primaryButtonFill : (tertiary ? palette.tertiaryButtonFill : palette.learnMoreButtonFill))
+                .guideSurface(in: Capsule(), fill: onDark ? palette.todayPillFill : filled ? palette.primaryButtonFill : (tertiary ? palette.tertiaryButtonFill : palette.learnMoreButtonFill))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

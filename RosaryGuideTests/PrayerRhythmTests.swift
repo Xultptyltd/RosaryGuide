@@ -490,6 +490,26 @@ final class PrayedDayKeyTests: XCTestCase {
         XCTAssertEqual(defaults.stringArray(forKey: "session.completedDayKeys"), [SyncedProgress.dayKey(for: today)])
     }
 
+    func testFinishedSetFollowsTheCreditedDayAcrossMidnight() {
+        let suite = "PrayedDayKeyTests.sets.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let calendar = Calendar.current
+        let started = calendar.date(from: DateComponents(year: 2026, month: 10, day: 14, hour: 23, minute: 50))!
+        let finished = calendar.date(from: DateComponents(year: 2026, month: 10, day: 15, hour: 0, minute: 10))!
+        let store = SessionStore(defaults: defaults)
+        store.start(set: .joyful, language: .english, at: started)
+        store.complete(at: finished)
+
+        XCTAssertTrue(store.prayed(on: started))
+        XCTAssertFalse(store.prayed(on: finished))
+        XCTAssertTrue(store.completedToday(.joyful, now: started))
+        XCTAssertFalse(store.completedToday(.joyful, now: finished), "The new morning is not already prayed")
+
+        store.applySynced(store.syncedProgress)
+        XCTAssertTrue(store.completedToday(.joyful, now: started), "The account echo must not clear the credited day")
+    }
+
     func testRosaryAcrossMidnightCreditsTheDayItStarted() {
         let perth = calendar("Australia/Perth")
         let started = perth.date(from: DateComponents(year: 2026, month: 10, day: 14, hour: 23, minute: 50))!

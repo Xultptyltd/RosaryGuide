@@ -4,12 +4,12 @@ enum FeastCatalog {
     static let all: [Feast] = fixed + movable
 
     static func feasts(on date: Date, calendar: Calendar = .current) -> [DatedFeast] {
-        let year = calendar.component(.year, from: date)
+        let year = LiturgicalCalendar.year(of: date)
         return dated(in: year, calendar: calendar).filter { calendar.isDate($0.date, inSameDayAs: date) }
     }
 
     static func upcoming(from date: Date = .now, limit: Int = 12, calendar: Calendar = .current) -> [DatedFeast] {
-        let year = calendar.component(.year, from: date)
+        let year = LiturgicalCalendar.year(of: date)
         let nextYear = year + 1
         let combined = dated(in: year, calendar: calendar) + dated(in: nextYear, calendar: calendar)
         return combined
@@ -45,22 +45,23 @@ enum FeastCatalog {
                    "Candlemas: Jesus is presented in the Temple; Simeon and Anna confess the Light."),
         fixedFeast("lourdes", "Our Lady of Lourdes", "Beáta María Virgo de Lúrdibus", 2, 11, .optionalMemorial, marian: true, set: .joyful,
                    "The Immaculate Virgin appears to St. Bernadette. World Day of the Sick."),
-        fixedFeast("joseph", "Saint Joseph, Spouse of the Blessed Virgin Mary", "Sanctus Ioseph", 3, 19, .solemnity, set: .joyful,
-                   "Guardian of the Redeemer and chaste spouse of Mary."),
+        Feast(
+            id: "joseph",
+            name: BilingualText(english: "Saint Joseph, Spouse of the Blessed Virgin Mary", latin: "Sanctus Ioseph"),
+            summary: "Guardian of the Redeemer and chaste spouse of Mary. On a Sunday of Lent the solemnity is kept the next day; in Holy Week it is kept on the Saturday before Palm Sunday.",
+            suggestedMysterySet: .joyful,
+            isMarian: false,
+            rank: .solemnity,
+            dateProvider: { year in LiturgicalCalendar.saintJoseph(year: year) }
+        ),
         Feast(
             id: "annunciation",
             name: BilingualText(english: "The Annunciation of the Lord", latin: "Annuntiátio Dómini"),
-            summary: "The Word becomes flesh in the womb of the Virgin. If March 25 falls in Holy Week or the Octave of Easter, the Annunciation is transferred to the Monday after Divine Mercy Sunday.",
+            summary: "The Word becomes flesh in the womb of the Virgin. On a Sunday of Lent it is kept the next day. In Holy Week or the Octave of Easter it moves to the Monday after Divine Mercy Sunday.",
             suggestedMysterySet: .joyful,
             isMarian: true,
             rank: .solemnity,
-            dateProvider: { year in
-                guard let mar25 = LiturgicalCalendar.date(year: year, month: 3, day: 25) else { return nil }
-                if LiturgicalCalendar.isInHolyWeekOrEasterOctave(mar25, year: year) {
-                    return LiturgicalCalendar.mondayAfterDivineMercy(year: year)
-                }
-                return mar25
-            }
+            dateProvider: { year in LiturgicalCalendar.annunciation(year: year) }
         ),
         fixedFeast("fatima", "Our Lady of Fatima", "Beáta María Virgo de Fátima", 5, 13, .optionalMemorial, marian: true, set: .joyful,
                    "Mary asks for daily Rosary and conversion of heart."),
@@ -114,8 +115,15 @@ enum FeastCatalog {
                    "Pray the Rosary for the holy souls, especially with the Fatima prayer."),
         fixedFeast("presentation-mary", "The Presentation of the Blessed Virgin Mary", "Præsentátio Beátæ Maríæ Vírginis", 11, 21, .memorial, marian: true, set: .joyful,
                    "Mary is offered in the Temple; a feast of consecration."),
-        fixedFeast("immaculate-conception", "The Immaculate Conception of the Blessed Virgin Mary", "Immaculáta Conceptio Beátæ Maríæ Vírginis", 12, 8, .solemnity, marian: true, set: .joyful,
-                   "Mary is preserved from original sin from the first instant of her conception. Patronal solemnity of the United States."),
+        Feast(
+            id: "immaculate-conception",
+            name: BilingualText(english: "The Immaculate Conception of the Blessed Virgin Mary", latin: "Immaculáta Conceptio Beátæ Maríæ Vírginis"),
+            summary: "Mary is preserved from original sin from the first instant of her conception. Patronal solemnity of the United States. When 8 December is a Sunday, it is kept the next day.",
+            suggestedMysterySet: .joyful,
+            isMarian: true,
+            rank: .solemnity,
+            dateProvider: { year in LiturgicalCalendar.immaculateConception(year: year) }
+        ),
         fixedFeast("loreto", "Our Lady of Loreto", "Beáta María Virgo de Laureto", 12, 10, .optionalMemorial, marian: true, set: .joyful,
                    "The Holy House of Loreto recalls the home of Nazareth, where the Word was made flesh."),
         fixedFeast("guadalupe", "Our Lady of Guadalupe", "Sancta María de Guadalupe", 12, 12, .feast, marian: true, set: .joyful,

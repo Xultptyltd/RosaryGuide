@@ -2010,7 +2010,7 @@ private struct PapalSuggestionCard: View {
                         .font(AppTheme.TypeRole.caption(weight: .medium))
                         .foregroundStyle(palette.accentText)
                         .textCase(.uppercase)
-                        .tracking(1.1)
+                        .tracking(AppTheme.Component.eyebrowTracking)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(item.title)
@@ -2948,7 +2948,7 @@ struct IntentionEditorSheet: View {
                 )
             }
         }
-        .padding(16)
+        .padding(AppTheme.Space.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
     }
@@ -2982,7 +2982,7 @@ struct IntentionEditorSheet: View {
                 }
             }
         }
-        .padding(16)
+        .padding(AppTheme.Space.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
     }

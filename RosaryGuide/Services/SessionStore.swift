@@ -181,10 +181,12 @@ final class SessionStore {
         completedSetsDay == SyncedProgress.dayKey(for: now) && completedSets.contains(set)
     }
 
-    private func recordCompletedSet(_ set: MysterySetKind) {
-        let today = SyncedProgress.dayKey(for: Date())
-        if completedSetsDay != today {
-            completedSetsDay = today
+    /// `dayKey` is the day the Rosary is credited to (the day it started), not the clock
+    /// at the Amen. A Rosary that crosses midnight would otherwise mark the new morning
+    /// as already prayed while the history credits the evening before.
+    private func recordCompletedSet(_ set: MysterySetKind, on dayKey: String) {
+        if completedSetsDay != dayKey {
+            completedSetsDay = dayKey
             completedSets = []
         }
         completedSets.insert(set)
@@ -319,7 +321,7 @@ final class SessionStore {
     func complete(at completedAt: Date = Date()) {
         let creditedDay = Self.creditedDayKey(startedAt: session?.startedAt, completedAt: completedAt)
         if let session {
-            recordCompletedSet(session.mysterySet)
+            recordCompletedSet(session.mysterySet, on: creditedDay)
             removePartialDecades(for: session.id)
             recordCompletedSession(from: session, completedAt: completedAt)
         }
@@ -648,8 +650,11 @@ final class SessionStore {
         persistCompletedSessions()
         persistCompletedDecades()
         persistPrayerTime()
-        // Another account's data, or history wiped elsewhere: today's sets no longer apply.
-        if !progress.completedDays.contains(SyncedProgress.dayKey(for: Date())) {
+        // Another account's data, or history wiped elsewhere: the device-only set flags
+        // no longer apply. Match the credited day, not "today", so an overnight Rosary
+        // kept on the evening it started is not cleared by its own sync echo.
+        let setDay = completedSetsDay.isEmpty ? SyncedProgress.dayKey(for: Date()) : completedSetsDay
+        if !completedDayKeys.contains(setDay) {
             clearCompletedSets()
         }
         preserveMilestones()
@@ -972,7 +977,7 @@ struct JourneyMilestones {
                                earnedAt: days.count >= target ? days[target - 1] : nil))
         }
         // Resolve the app's dated feast calendar once per recorded year, including transfers.
-        let years = Set(prayerDates.map { calendar.component(.year, from: $0) })
+        let years = Set(prayerDates.map { LiturgicalCalendar.year(of: $0) })
         var marianDayNames: [Date: String] = [:]
         var rosaryFeastDays: Set<Date> = []
         for year in years {

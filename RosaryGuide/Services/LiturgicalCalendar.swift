@@ -13,6 +13,13 @@ enum LiturgicalCalendar {
         calendar.date(from: DateComponents(year: year, month: month, day: day))
     }
 
+    /// Civil year of `date` on the Gregorian calendar. `Calendar.current` may be Buddhist,
+    /// Japanese, or another era, and feeding that year into Computus or a fixed feast
+    /// lands the observance centuries away from the day the user is looking at.
+    static func year(of date: Date) -> Int {
+        gregorian.component(.year, from: date)
+    }
+
     static func addingDays(_ days: Int, to date: Date, calendar: Calendar = gregorian) -> Date? {
         calendar.date(byAdding: .day, value: days, to: date)
     }
@@ -137,9 +144,47 @@ enum LiturgicalCalendar {
         return addingDays(8 - weekday, to: date, calendar: calendar) ?? calendar.startOfDay(for: date)
     }
 
-    /// Monday after Divine Mercy Sunday (octave of Easter) — typical Annunciation transfer landing.
+    /// Monday after Divine Mercy Sunday (octave of Easter) — Annunciation transfer when
+    /// 25 March falls in Holy Week or the Easter Octave.
     static func mondayAfterDivineMercy(year: Int, calendar: Calendar = gregorian) -> Date? {
         easter(year: year, calendar: calendar).flatMap { addingDays(8, to: $0, calendar: calendar) }
+    }
+
+    /// 25 March, or the next day when that is a Sunday of Lent. Holy Week and the Easter
+    /// Octave outrank the solemnity, so it then waits until the Monday after Divine Mercy Sunday.
+    static func annunciation(year: Int, calendar: Calendar = gregorian) -> Date? {
+        guard let mar25 = date(year: year, month: 3, day: 25, calendar: calendar) else { return nil }
+        if isInHolyWeekOrEasterOctave(mar25, year: year, calendar: calendar) {
+            return mondayAfterDivineMercy(year: year, calendar: calendar)
+        }
+        if calendar.component(.weekday, from: mar25) == 1 {
+            return addingDays(1, to: mar25, calendar: calendar)
+        }
+        return mar25
+    }
+
+    /// 19 March. A Sunday of Lent keeps it the next day. Holy Week keeps it on the Saturday
+    /// before Palm Sunday (the Monday would still be inside Holy Week).
+    static func saintJoseph(year: Int, calendar: Calendar = gregorian) -> Date? {
+        guard let mar19 = date(year: year, month: 3, day: 19, calendar: calendar) else { return nil }
+        if isInHolyWeekOrEasterOctave(mar19, year: year, calendar: calendar),
+           let easter = easter(year: year, calendar: calendar),
+           let palm = addingDays(-7, to: easter, calendar: calendar) {
+            return addingDays(-1, to: palm, calendar: calendar)
+        }
+        if calendar.component(.weekday, from: mar19) == 1 {
+            return addingDays(1, to: mar19, calendar: calendar)
+        }
+        return mar19
+    }
+
+    /// 8 December. An Advent Sunday outranks the solemnity, so it is kept the next day.
+    static func immaculateConception(year: Int, calendar: Calendar = gregorian) -> Date? {
+        guard let dec8 = date(year: year, month: 12, day: 8, calendar: calendar) else { return nil }
+        if calendar.component(.weekday, from: dec8) == 1 {
+            return addingDays(1, to: dec8, calendar: calendar)
+        }
+        return dec8
     }
 
     static func isInHolyWeekOrEasterOctave(_ date: Date, year: Int, calendar: Calendar = gregorian) -> Bool {
