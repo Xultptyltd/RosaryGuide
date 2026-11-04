@@ -124,23 +124,21 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(MysterySetKind.sorrowful.letter, "S")
         XCTAssertEqual(MysterySetKind.glorious.letter, "G")
 
-        // Mystery blues, strongest to palest; one navy glyph colour.
-        XCTAssertEqual(UIColor(MysterySetKind.joyful.letterFill), UIColor(AppTheme.mysteryJoyful))
-        XCTAssertEqual(UIColor(MysterySetKind.luminous.letterFill), UIColor(AppTheme.mysteryLuminous))
-        XCTAssertEqual(UIColor(MysterySetKind.sorrowful.letterFill), UIColor(AppTheme.mysterySorrowful))
-        XCTAssertEqual(UIColor(MysterySetKind.glorious.letterFill), UIColor(AppTheme.mysteryGlorious))
+        // Every mystery icon uses the Joyful fill; the glyph letter identifies the set.
         for set in MysterySetKind.allCases {
+            XCTAssertEqual(UIColor(set.letterFill), UIColor(AppTheme.mysteryJoyful))
             XCTAssertEqual(UIColor(set.letterOn), UIColor(AppTheme.mysteryOn))
         }
     }
 
     func testIntentionCategoryAvatarColours() {
-        XCTAssertEqual(UIColor(IntentionAccent.mintGreen.color), UIColor(Color(hex: 0xA8DCCB)))
-        XCTAssertEqual(UIColor(IntentionAccent.skyBlue.color), UIColor(Color(hex: 0xC9B6EF)))
-        XCTAssertEqual(UIColor(IntentionAccent.purple.color), UIColor(Color(hex: 0xADCFF0)))
-        XCTAssertEqual(UIColor(IntentionAccent.mintGreen.onColor), UIColor(Color(hex: 0x183E35)))
-        XCTAssertEqual(UIColor(IntentionAccent.skyBlue.onColor), UIColor(Color(hex: 0x38264F)))
-        XCTAssertEqual(UIColor(IntentionAccent.purple.onColor), UIColor(Color(hex: 0x203C57)))
+        // mintGreen = Personal, skyBlue = Someone else, purple = Church & world.
+        XCTAssertEqual(UIColor(IntentionAccent.mintGreen.color), UIColor(AppTheme.intentionPersonal))
+        XCTAssertEqual(UIColor(IntentionAccent.skyBlue.color), UIColor(AppTheme.intentionSomeoneElse))
+        XCTAssertEqual(UIColor(IntentionAccent.purple.color), UIColor(AppTheme.intentionChurch))
+        XCTAssertEqual(UIColor(IntentionAccent.mintGreen.onColor), UIColor(AppTheme.intentionPersonalOn))
+        XCTAssertEqual(UIColor(IntentionAccent.skyBlue.onColor), UIColor(AppTheme.intentionSomeoneElseOn))
+        XCTAssertEqual(UIColor(IntentionAccent.purple.onColor), UIColor(AppTheme.intentionChurchOn))
     }
 
 }
