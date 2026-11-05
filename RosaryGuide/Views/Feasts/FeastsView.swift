@@ -487,6 +487,8 @@ struct FeastDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
     /// Nil = all collapsed — keeps feast detail from becoming a wall of prayer text.
     @State private var expandedPrayerID: String?
+    /// Captured before the hero ignores the top safe area so status-bar inset stays real.
+    @State private var topSafeInset: CGFloat = 0
 
     private var feast: Feast { item.feast }
     private var feastDayAssignment: MysteryAssignment {
@@ -527,6 +529,17 @@ struct FeastDetailView: View {
         // Plain page colour over the ambient layer; glass cards stay on.
         .guidePlainPageBackground()
         .guidePageChrome(ambientBackground: true)
+        // Read safe-area from a non-ignoring probe (HomeView captureMetrics pattern).
+        // A GeometryReader under the hero's ignoresSafeArea can report top = 0.
+        .background {
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear { topSafeInset = geo.safeAreaInsets.top }
+                    .onChange(of: geo.safeAreaInsets.top) { _, value in
+                        topSafeInset = value
+                    }
+            }
+        }
         // Keep native navigation visible so level-2 screens always have back navigation.
         // The system back gesture remains available from the far-left edge.
         .toolbar(.visible, for: .navigationBar)
@@ -883,9 +896,15 @@ struct FeastDetailView: View {
     }
 
     private var detailHero: some View {
-        ZStack {
-            FeastHeroBanner(feast: feast, height: 330, cornerRadius: 0)
-                .frame(maxWidth: .infinity)
+        let chrome = topSafeInset + AppTheme.FeastHero.inlineNavBarHeight
+        return ZStack {
+            FeastHeroBanner(
+                feast: feast,
+                height: 330,
+                cornerRadius: 0,
+                topChromeInset: chrome
+            )
+            .frame(maxWidth: .infinity)
         }
         .frame(height: 330)
         .padding(.horizontal, -AppTheme.gutter)
@@ -1297,11 +1316,17 @@ private struct FeastSecondaryPage<Content: View>: View {
     var feast: Feast
     @ViewBuilder var content: () -> Content
     @Environment(\.palette) private var palette
+    @State private var topSafeInset: CGFloat = 0
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                FeastHeroBanner(feast: feast, height: 238, cornerRadius: 0)
+                FeastHeroBanner(
+                    feast: feast,
+                    height: 238,
+                    cornerRadius: 0,
+                    topChromeInset: topSafeInset + AppTheme.FeastHero.inlineNavBarHeight
+                )
                     .padding(.horizontal, -AppTheme.gutter)
                     .padding(.top, -8)
                     // Plain page colour above the banner, not the ambient tint.
@@ -1339,6 +1364,15 @@ private struct FeastSecondaryPage<Content: View>: View {
         // Plain page colour over the ambient layer; glass cards stay on.
         .guidePlainPageBackground()
         .guidePageChrome(ambientBackground: true)
+        .background {
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear { topSafeInset = geo.safeAreaInsets.top }
+                    .onChange(of: geo.safeAreaInsets.top) { _, value in
+                        topSafeInset = value
+                    }
+            }
+        }
         // Match FeastDetailView: native nav with hidden (translucent) bar material
         // so hero content can show through liquid glass.
         .toolbar(.visible, for: .navigationBar)
@@ -1373,6 +1407,8 @@ private struct FeastHeroBanner: View {
     var feast: Feast
     var height: CGFloat = 200
     var cornerRadius: CGFloat = AppTheme.containerRadius
+    /// Status + inline nav clearance for under-nav heroes. Home cards leave this at 0.
+    var topChromeInset: CGFloat = 0
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
 
@@ -1399,7 +1435,8 @@ private struct FeastHeroBanner: View {
                     directory: path.directory,
                     name: path.name,
                     ext: path.ext,
-                    coversSubject: true
+                    coversSubject: true,
+                    topChromeInset: topChromeInset
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()

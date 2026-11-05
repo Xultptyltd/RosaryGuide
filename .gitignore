@@ -49,3 +49,10 @@ Secrets.xcconfig
 *AppCheckDebugToken*
 *appcheck-debug-token*
 *.debug-token
+
+# Local art staging drops (never ship)
+_feast-image-drop/
+_feast-staging/
+_mystery-image-drop/
+_mystery-plate-staging/
+_mystery-plates-replace.zip
