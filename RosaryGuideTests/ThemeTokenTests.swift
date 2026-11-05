@@ -450,56 +450,91 @@ final class CompletionScreenTests: XCTestCase {
 }
 
 final class FeastHeroFramingTests: XCTestCase {
-    func testPortraitFigureFillsTheCardAndKeepsTheTop() {
+    func testTopAirIsAboutATenthOfTheFrame() {
+        let fraction = ArtCatalog.feastCoverTopInsetFraction
+        XCTAssertGreaterThanOrEqual(fraction, 0.08)
+        XCTAssertLessThanOrEqual(fraction, 0.12)
+    }
+
+    func testPortraitFigureFillsTheCardAndLeavesTopAir() {
+        let frame = CGSize(width: 358, height: 176)
+        let subject = CGRect(x: 480, y: 0, width: 300, height: 720)
         let cover = ArtCatalog.feastCover(
             imageSize: CGSize(width: 1280, height: 720),
-            frame: CGSize(width: 358, height: 176),
-            subject: CGRect(x: 480, y: 0, width: 300, height: 720),
+            frame: frame,
+            subject: subject,
             focusX: 630
         )
         XCTAssertEqual(cover.scale, 358.0 / 300.0, accuracy: 0.0001)
         let visibleX = -cover.offset.width / cover.scale
         let visibleY = -cover.offset.height / cover.scale
         XCTAssertEqual(visibleX, 480, accuracy: 0.5)
-        XCTAssertEqual(visibleY, 0, accuracy: 0.5)
-        XCTAssertEqual(358 / cover.scale, 300, accuracy: 0.5)
+        // Width matches the figure: no side letterboxing.
+        XCTAssertEqual(frame.width / cover.scale, subject.width, accuracy: 0.5)
+        assertTopAir(visibleY: visibleY, subjectMinY: subject.minY, scale: cover.scale, frameHeight: frame.height)
+        // The head stays in frame; the lower body is what the card cuts.
+        XCTAssertLessThanOrEqual(visibleY, subject.minY + 0.5)
+        let visibleBottom = visibleY + frame.height / cover.scale
+        XCTAssertLessThan(visibleBottom, subject.maxY)
+        XCTAssertGreaterThan(visibleBottom, subject.minY)
     }
 
     func testTallFrameKeepsAFaceOnTheLeftInsideTheWindow() {
         let focus: CGFloat = 314
+        let frame = CGSize(width: 393, height: 330)
+        let subject = CGRect(x: 12, y: 144, width: 1256, height: 540)
         let cover = ArtCatalog.feastCover(
             imageSize: CGSize(width: 1280, height: 720),
-            frame: CGSize(width: 393, height: 330),
-            subject: CGRect(x: 12, y: 144, width: 1256, height: 540),
+            frame: frame,
+            subject: subject,
             focusX: focus
         )
         let visibleX = -cover.offset.width / cover.scale
         let visibleY = -cover.offset.height / cover.scale
-        let visibleWidth = 393 / cover.scale
-        let visibleHeight = 330 / cover.scale
-        XCTAssertEqual(visibleY, 144, accuracy: 1)
+        let visibleWidth = frame.width / cover.scale
+        let visibleHeight = frame.height / cover.scale
+        assertTopAir(visibleY: visibleY, subjectMinY: subject.minY, scale: cover.scale, frameHeight: frame.height)
+        XCTAssertLessThanOrEqual(visibleY, subject.minY + 0.5)
         XCTAssertGreaterThanOrEqual(focus, visibleX - 0.5)
         XCTAssertLessThanOrEqual(focus, visibleX + visibleWidth + 0.5)
         XCTAssertGreaterThanOrEqual(visibleX, -0.5)
         XCTAssertLessThanOrEqual(visibleX + visibleWidth, 1280.5)
         XCTAssertLessThanOrEqual(visibleY + visibleHeight, 720.5)
         XCTAssertLessThan(visibleWidth, 1200)
+        // The figure still covers the card's width.
+        XCTAssertGreaterThanOrEqual(subject.width * cover.scale, frame.width - 0.5)
     }
 
     func testWideCardCropsTheBottomOfAFullBleedHero() {
+        let frame = CGSize(width: 358, height: 176)
+        let subject = CGRect(x: 0, y: 0, width: 1280, height: 720)
         let cover = ArtCatalog.feastCover(
             imageSize: CGSize(width: 1280, height: 720),
-            frame: CGSize(width: 358, height: 176),
-            subject: CGRect(x: 0, y: 0, width: 1280, height: 720),
+            frame: frame,
+            subject: subject,
             focusX: 640
         )
         XCTAssertEqual(cover.scale, 358.0 / 1280.0, accuracy: 0.0001)
         let visibleX = -cover.offset.width / cover.scale
         let visibleY = -cover.offset.height / cover.scale
-        let visibleHeight = 176 / cover.scale
+        let visibleHeight = frame.height / cover.scale
         XCTAssertEqual(visibleX, 0, accuracy: 0.5)
-        XCTAssertEqual(visibleY, 0, accuracy: 0.5)
+        assertTopAir(visibleY: visibleY, subjectMinY: subject.minY, scale: cover.scale, frameHeight: frame.height)
         XCTAssertLessThan(visibleHeight, 700)
+        // Full width of the file, so the card has no side bars.
+        XCTAssertEqual(frame.width / cover.scale, subject.width, accuracy: 0.5)
+        let visibleBottom = visibleY + visibleHeight
+        XCTAssertGreaterThan(visibleBottom, 0)
+        XCTAssertLessThan(visibleBottom, subject.height)
+    }
+
+    /// The figure's top sits about a tenth of the frame below the frame's top.
+    private func assertTopAir(visibleY: CGFloat, subjectMinY: CGFloat, scale: CGFloat, frameHeight: CGFloat, file: StaticString = #filePath, line: UInt = #line) {
+        let subjectTop = (subjectMinY - visibleY) * scale
+        let inset = frameHeight * ArtCatalog.feastCoverTopInsetFraction
+        XCTAssertEqual(subjectTop, inset, accuracy: 0.75, file: file, line: line)
+        XCTAssertGreaterThanOrEqual(subjectTop, frameHeight * 0.08 - 0.5, file: file, line: line)
+        XCTAssertLessThanOrEqual(subjectTop, frameHeight * 0.12 + 0.5, file: file, line: line)
     }
 
     func testDetectorFindsAMarkAtTheTopNotTheBottom() {
