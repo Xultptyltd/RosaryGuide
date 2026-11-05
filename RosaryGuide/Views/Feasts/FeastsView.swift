@@ -487,8 +487,9 @@ struct FeastDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
     /// Nil = all collapsed — keeps feast detail from becoming a wall of prayer text.
     @State private var expandedPrayerID: String?
-    /// Captured before the hero ignores the top safe area so status-bar inset stays real.
-    @State private var topSafeInset: CGFloat = 0
+    /// How far the hero's top actually sits under the status + nav chrome at rest,
+    /// measured in scroll-content space (constant while scrolling).
+    @State private var heroChromeOverlap: CGFloat = 0
 
     private var feast: Feast { item.feast }
     private var feastDayAssignment: MysteryAssignment {
@@ -525,21 +526,11 @@ struct FeastDetailView: View {
             .padding(.horizontal, AppTheme.gutter)
             .padding(.bottom, 108)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .coordinateSpace(name: FeastHeroChrome.contentSpace)
         }
         // Plain page colour over the ambient layer; glass cards stay on.
         .guidePlainPageBackground()
         .guidePageChrome(ambientBackground: true)
-        // Read safe-area from a non-ignoring probe (HomeView captureMetrics pattern).
-        // A GeometryReader under the hero's ignoresSafeArea can report top = 0.
-        .background {
-            GeometryReader { geo in
-                Color.clear
-                    .onAppear { topSafeInset = geo.safeAreaInsets.top }
-                    .onChange(of: geo.safeAreaInsets.top) { _, value in
-                        topSafeInset = value
-                    }
-            }
-        }
         // Keep native navigation visible so level-2 screens always have back navigation.
         // The system back gesture remains available from the far-left edge.
         .toolbar(.visible, for: .navigationBar)
@@ -896,15 +887,15 @@ struct FeastDetailView: View {
     }
 
     private var detailHero: some View {
-        let chrome = topSafeInset + AppTheme.FeastHero.inlineNavBarHeight
-        return ZStack {
+        ZStack {
             FeastHeroBanner(
                 feast: feast,
                 height: 330,
                 cornerRadius: 0,
-                topChromeInset: chrome
+                topChromeInset: heroChromeOverlap
             )
             .frame(maxWidth: .infinity)
+            .modifier(FeastHeroChrome.OverlapReader(overlap: $heroChromeOverlap))
         }
         .frame(height: 330)
         .padding(.horizontal, -AppTheme.gutter)
@@ -1316,7 +1307,7 @@ private struct FeastSecondaryPage<Content: View>: View {
     var feast: Feast
     @ViewBuilder var content: () -> Content
     @Environment(\.palette) private var palette
-    @State private var topSafeInset: CGFloat = 0
+    @State private var heroChromeOverlap: CGFloat = 0
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -1325,8 +1316,9 @@ private struct FeastSecondaryPage<Content: View>: View {
                     feast: feast,
                     height: 238,
                     cornerRadius: 0,
-                    topChromeInset: topSafeInset + AppTheme.FeastHero.inlineNavBarHeight
+                    topChromeInset: heroChromeOverlap
                 )
+                    .modifier(FeastHeroChrome.OverlapReader(overlap: $heroChromeOverlap))
                     .padding(.horizontal, -AppTheme.gutter)
                     .padding(.top, -8)
                     // Plain page colour above the banner, not the ambient tint.
@@ -1360,19 +1352,11 @@ private struct FeastSecondaryPage<Content: View>: View {
             .padding(.horizontal, AppTheme.gutter)
             .padding(.bottom, 108)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .coordinateSpace(name: FeastHeroChrome.contentSpace)
         }
         // Plain page colour over the ambient layer; glass cards stay on.
         .guidePlainPageBackground()
         .guidePageChrome(ambientBackground: true)
-        .background {
-            GeometryReader { geo in
-                Color.clear
-                    .onAppear { topSafeInset = geo.safeAreaInsets.top }
-                    .onChange(of: geo.safeAreaInsets.top) { _, value in
-                        topSafeInset = value
-                    }
-            }
-        }
         // Match FeastDetailView: native nav with hidden (translucent) bar material
         // so hero content can show through liquid glass.
         .toolbar(.visible, for: .navigationBar)
@@ -1398,6 +1382,29 @@ private struct FeastTextPanel: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.bottom, 2)
+    }
+}
+
+// MARK: - Hero chrome
+
+/// Measures how far a feast hero's top sits under the status + nav chrome when the
+/// page is at rest. The scroll content (VStack) origin is where the scroll view's
+/// safe-area inset ends, i.e. the bottom of the chrome, so any negative minY of the
+/// hero in that space is real overlap. Constant while scrolling, unlike global frames.
+enum FeastHeroChrome {
+    static let contentSpace = "feastHeroContent"
+
+    struct OverlapReader: ViewModifier {
+        @Binding var overlap: CGFloat
+
+        func body(content: Content) -> some View {
+            content.onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.frame(in: .named(FeastHeroChrome.contentSpace)).minY
+            } action: { minY in
+                let value = max(0, -minY).rounded()
+                if abs(value - overlap) > 0.5 { overlap = value }
+            }
+        }
     }
 }
 
