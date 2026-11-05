@@ -230,13 +230,13 @@ final class LearnScreenTests: XCTestCase {
         XCTAssertEqual(LearnArticle.commonQuestions[1], .howToPray)
         XCTAssertEqual(LearnArticle.whatIsRosary.title, "What is the Rosary?")
         XCTAssertEqual(LearnArticle.howToPray.title, "How do I pray the Rosary?")
-        XCTAssertEqual(LearnArticle.whatIsRosary.paragraphs.count, 3)
-        XCTAssertEqual(LearnArticle.howToPray.paragraphs.count, 3)
+        XCTAssertEqual(LearnArticle.whatIsRosary.paragraphs.count, 4)
+        XCTAssertEqual(LearnArticle.howToPray.paragraphs.count, 7)
         let history = LearnArticle.whatIsRosary.paragraphs.joined(separator: " ").lowercased()
-        for term in ["psalm", "middle ages", "dominican"]:
+        for term in ["catholic", "middle ages", "mysteries", "decades"]:
             XCTAssertTrue(history.contains(term), term)
         let structure = LearnArticle.howToPray.paragraphs.joined(separator: " ").lowercased()
-        for term in ["decade", "apostles", "hail mary", "mystery"]:
+        for term in ["decade", "apostles", "hail mary", "mystery", "fatima", "holy queen"]:
             XCTAssertTrue(structure.contains(term), term)
         XCTAssertEqual(LearnArticle.commonQuestions.map(\.title).count, Set(LearnArticle.commonQuestions.map(\.title)).count)
     }
