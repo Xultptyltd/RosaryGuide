@@ -744,6 +744,7 @@ private enum LearnDestination {
 
 enum LearnArticle: String, Identifiable {
     case whatIsRosary
+    case howToPray
     case beads
     case oneDecade
     case losePlace
@@ -753,7 +754,7 @@ enum LearnArticle: String, Identifiable {
 
     /// Common Questions on the Learn screen, in display order.
     static let commonQuestions: [LearnArticle] = [
-        .whatIsRosary, .beads, .oneDecade, .losePlace, .repetition, .meditate, .mary
+        .whatIsRosary, .howToPray, .beads, .oneDecade, .losePlace, .repetition, .meditate, .mary
     ]
 
     var id: String { rawValue }
@@ -761,6 +762,7 @@ enum LearnArticle: String, Identifiable {
     var title: String {
         switch self {
         case .whatIsRosary: "What is the Rosary?"
+        case .howToPray: "How do I pray the Rosary?"
         case .beads: "Do I need beads?"
         case .oneDecade: "Can I pray one decade?"
         case .losePlace: "What if I lose my place?"
@@ -781,9 +783,15 @@ enum LearnArticle: String, Identifiable {
         switch self {
         case .whatIsRosary:
             [
-                "The Rosary is the Gospel story told in prayer. Each decade honours a mystery in the life of Our Lord and His Blessed Mother.",
-                "A decade is one Our Father, ten Hail Marys and one Glory be. Five decades are usually prayed together, meditating on one set of mysteries.",
-                "Our Lady has often asked us to pray it against evil. United with her, we ask for the conversion of hearts and peace in the world."
+                "The Rosary grew from praying the Psalms. When many could not recite all 150, a simpler “Psalter of Mary” of Hail Marys took shape in their place.",
+                "In the Middle Ages it became a popular Western Christian devotion. Dominican friars helped spread it widely; later tradition associates the Rosary with St Dominic, though the form we know developed gradually over centuries.",
+                "It remains a Scripture-soaked prayer: each decade honours a mystery in the life of Our Lord and His Blessed Mother."
+            ]
+        case .howToPray:
+            [
+                "Begin with the Sign of the Cross and the Apostles’ Creed, then an Our Father, three Hail Marys, and a Glory Be.",
+                "A decade is one Our Father, ten Hail Marys, and a Glory Be—often with the Fatima prayer. Five decades make a full Rosary as you reflect on one set of mysteries: Joyful, Sorrowful, Glorious, or Luminous.",
+                "Announce the mystery at the start of each decade, then stay with that Gospel scene through the beads. Close with the Hail, Holy Queen."
             ]
         case .beads:
             [
