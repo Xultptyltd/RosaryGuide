@@ -184,62 +184,32 @@ enum ArtCatalog {
         return subject
     }
 
-    /// Share of the feast frame to keep as the file's own field above the figure,
-    /// when that field exists in the canvas. About a tenth of the height.
-    static let feastCoverTopInsetFraction: CGFloat = 0.10
-
-    /// Cover `frame` with one scale of the feast file. The window stays inside the
-    /// image, so the card is full-bleed: no side bars and no painted strip.
+    /// Cover `frame` with the whole feast file at one scale:
+    /// `max(frame.width / imageSize.width, frame.height / imageSize.height)`.
     ///
-    /// When the canvas has field above the figure, the figure begins up to
-    /// `feastCoverTopInsetFraction` of the frame below the top, and that air is
-    /// those source pixels. A short card crops the lower body before the face.
-    /// If the figure already touches the top of the file, the window starts at
-    /// the top of the file instead of inventing a gap. `focusX` stays inside the
-    /// window when the frame is narrower than the figure.
+    /// The window always starts at the top of the file, so any crop is from the
+    /// bottom. Top air is whatever field is already in those pixels; the scale
+    /// never tightens to the subject. When the scaled width is wider than the
+    /// frame, the window centers on `focusX` (held inside `subject`) and stays
+    /// inside the image. The card is full-bleed: no side bars and no painted strip.
     static func feastCover(imageSize: CGSize, frame: CGSize, subject: CGRect, focusX: CGFloat) -> FeastCover {
         guard imageSize.width > 1, imageSize.height > 1, frame.width > 1, frame.height > 1 else {
             return FeastCover(scale: 1, offset: .zero)
         }
+        let scale = max(frame.width / imageSize.width, frame.height / imageSize.height)
+        let scaledW = imageSize.width * scale
+        let maxVisX = max(0, scaledW - frame.width)
+
         let canvas = CGRect(origin: .zero, size: imageSize)
         let box = subject.intersection(canvas)
-        let region = (box.width > 1 && box.height > 1) ? box : canvas
-        let inset = frame.height * feastCoverTopInsetFraction
-
-        // The canvas must cover the frame, and the figure's width must cover it,
-        // so a portrait statue is not a small island inside the card.
-        var scale = max(
-            frame.width / imageSize.width,
-            frame.height / imageSize.height,
-            frame.width / region.width
-        )
-        let belowFigureTop = imageSize.height - region.minY
-        if belowFigureTop > 1 {
-            // Room to show the requested air and still reach the bottom of the file.
-            scale = max(scale, max(frame.height - inset, 1) / belowFigureTop)
+        let anchor: CGFloat
+        if box.width > 1, box.height > 1 {
+            anchor = min(max(focusX, box.minX), box.maxX)
+        } else {
+            anchor = min(max(focusX, 0), imageSize.width)
         }
-
-        let scaledW = imageSize.width * scale
-        let scaledH = imageSize.height * scale
-        let maxVisX = max(0, scaledW - frame.width)
-        let maxVisY = max(0, scaledH - frame.height)
-
-        let anchor = min(max(focusX, region.minX), region.maxX)
-        var visX = anchor * scale - frame.width / 2
-        let subjectMinX = region.minX * scale
-        let subjectMaxX = max(subjectMinX, region.maxX * scale - frame.width)
-        visX = min(max(visX, subjectMinX), subjectMaxX)
-        visX = min(max(visX, 0), maxVisX)
-
-        // Only count field that is actually in the file above the figure.
-        let availableAir = max(0, region.minY * scale)
-        let air = min(inset, availableAir)
-        var visY = region.minY * scale - air
-        if visY > maxVisY { visY = maxVisY }
-        let subjectTop = region.minY * scale
-        if visY > subjectTop { visY = subjectTop }
-        if visY < 0 { visY = 0 }
-        return FeastCover(scale: scale, offset: CGSize(width: -visX, height: -visY))
+        let visX = min(max(anchor * scale - frame.width / 2, 0), maxVisX)
+        return FeastCover(scale: scale, offset: CGSize(width: -visX, height: 0))
     }
 }
 
@@ -407,8 +377,8 @@ struct FocusedRasterImage: View {
     var focus: UnitPoint = UnitPoint(x: 0.5, y: 0.32)
     /// When set, the top of the visible crop is this far down the image (0...1).
     var cropTop: CGFloat? = nil
-    /// Feast heroes. Scales the figure to fill the frame. Air above the statue is
-    /// only field that already exists in the file; the image itself covers the card.
+    /// Feast heroes. Covers the card with the whole file, top-aligned.
+    /// Any crop is from the bottom; horizontal overflow follows the subject.
     var coversSubject: Bool = false
 
     var body: some View {

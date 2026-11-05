@@ -1184,7 +1184,7 @@ struct HomeView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                 MysteryArtworkView(set: mystery.set, mysteryNumber: mystery.number, slug: mystery.artSlug, kind: .plate, bottomFade: false, cardFraming: true)
-                    .aspectRatio(Self.mysteryDetailArtAspect, contentMode: .fit)
+                    .aspectRatio(AppTheme.Component.mysteryCardArtAspect, contentMode: .fit)
                     .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
 
@@ -1220,13 +1220,11 @@ struct HomeView: View {
         }
     }
 
-    /// Wide crop of the card art for the opened mystery, so the text starts above the fold.
-    static let mysteryDetailArtAspect: CGFloat = 2
-
     private func mysteryDetailSheetHeight(for mystery: Mystery) -> CGFloat {
         // One detent for the whole set, so swiping never resizes the sheet under the finger.
+        // Art uses the same aspect as the home mystery card.
         let pages = MysteryCatalog.mysteries(for: mystery.set)
-        let artHeight = (viewport.width - AppTheme.Space.lg - AppTheme.gutter * 2) / Self.mysteryDetailArtAspect
+        let artHeight = (viewport.width - AppTheme.Space.lg - AppTheme.gutter * 2) / AppTheme.Component.mysteryCardArtAspect
         let tallest = pages.map { page -> CGFloat in
             let title = page.title.primary(for: settings.language)
             let excerpt = MysteryScripture.display(for: page, translation: settings.rosaryConfig.translation, language: settings.language)
