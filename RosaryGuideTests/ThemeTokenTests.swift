@@ -539,26 +539,24 @@ final class FeastHeroFramingTests: XCTestCase {
         assertWindowFillsFrame(visibleX: visible.x, visibleY: visible.y, cover: cover, image: image, frame: frame)
     }
 
-    /// View-layer contract (FocusedRasterImage.topChromeInset): feastCover itself is
-    /// unchanged. Detail heroes cover-fill a shorter usable rect (frame.height - inset)
-    /// and place the scaled image at y = inset so heads clear translucent nav chrome.
-    /// Home cards pass inset 0. This documents the usable-size math only.
-    func testTopChromeInsetShortensUsableFrameWithoutChangingFeastCover() {
+    /// View-layer contract (FocusedRasterImage.topChromeInset): chrome clearance never
+    /// changes the cover scale. Christ the King 1280x720 in a 393x330 detail hero stays
+    /// height-driven (330/720), fills edge to edge, and is only shifted down after scaling.
+    func testTopChromeInsetKeepsFullFrameCoverScale() {
         let image = CGSize(width: 1280, height: 720)
         let frame = CGSize(width: 393, height: 330)
-        let inset: CGFloat = 59 + 44 // typical status + inline nav
-        let usable = CGSize(width: frame.width, height: max(1, frame.height - inset))
-        XCTAssertEqual(usable.height, 227, accuracy: 0.0001)
-
         let subject = CGRect(x: 0, y: 0, width: 1280, height: 720)
-        let full = ArtCatalog.feastCover(imageSize: image, frame: frame, subject: subject, focusX: 640)
-        let cleared = ArtCatalog.feastCover(imageSize: image, frame: usable, subject: subject, focusX: 640)
-        // Full-height detail is height-driven; the usable window is wider relative to height
-        // so scale drops and more of the file height fits under the chrome.
-        XCTAssertEqual(full.scale, frame.height / image.height, accuracy: 0.0001)
-        XCTAssertEqual(cleared.scale, max(usable.width / image.width, usable.height / image.height), accuracy: 0.0001)
-        XCTAssertEqual(cleared.offset.height, 0, accuracy: 0.0001)
-        XCTAssertLessThan(cleared.scale, full.scale)
+        let cover = ArtCatalog.feastCover(imageSize: image, frame: frame, subject: subject, focusX: 640)
+        XCTAssertEqual(cover.scale, frame.height / image.height, accuracy: 0.0001)
+        XCTAssertGreaterThanOrEqual(image.width * cover.scale, frame.width)
+        XCTAssertEqual(cover.offset.height, 0, accuracy: 0.0001)
+
+        // Shift is applied after scale and is bounded so the hero stays mostly artwork.
+        XCTAssertEqual(ArtCatalog.feastChromeShift(0, frameHeight: 330), 0)
+        XCTAssertEqual(ArtCatalog.feastChromeShift(8, frameHeight: 330), 8)
+        XCTAssertEqual(ArtCatalog.feastChromeShift(-20, frameHeight: 330), 0)
+        XCTAssertEqual(ArtCatalog.feastChromeShift(500, frameHeight: 330), 132, accuracy: 0.0001)
+        XCTAssertEqual(ArtCatalog.feastChromeShift(.infinity, frameHeight: 330), 0)
     }
 
     /// When the scaled file is wider than the frame, the window centers on the focus

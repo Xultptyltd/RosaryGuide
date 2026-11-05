@@ -192,6 +192,14 @@ enum ArtCatalog {
     /// never tightens to the subject. When the scaled width is wider than the
     /// frame, the window centers on `focusX` (held inside `subject`) and stays
     /// inside the image. The card is full-bleed: no side bars and no painted strip.
+    /// Downward shift for a feast hero whose frame top sits `overlap` points under
+    /// translucent chrome. Applied after the full-frame cover scale, never to it.
+    /// Capped so at least 60% of the frame still shows artwork.
+    static func feastChromeShift(_ overlap: CGFloat, frameHeight: CGFloat) -> CGFloat {
+        guard overlap.isFinite, frameHeight > 1 else { return 0 }
+        return min(max(overlap, 0), frameHeight * 0.4)
+    }
+
     static func feastCover(imageSize: CGSize, frame: CGSize, subject: CGRect, focusX: CGFloat) -> FeastCover {
         guard imageSize.width > 1, imageSize.height > 1, frame.width > 1, frame.height > 1 else {
             return FeastCover(scale: 1, offset: .zero)
@@ -380,9 +388,10 @@ struct FocusedRasterImage: View {
     /// Feast heroes. Covers the card with the whole file, top-aligned.
     /// Any crop is from the bottom; horizontal overflow follows the subject.
     var coversSubject: Bool = false
-    /// When > 0 (feast detail / secondary under a translucent nav), cover-fill only
-    /// the usable rect below this inset so heads clear status + inline nav chrome.
-    /// The strip above shows whatever is behind the banner (page fill). Home cards keep 0.
+    /// How far the top of this frame actually sits under translucent status / nav chrome.
+    /// The file still cover-fills the FULL frame (same scale as inset 0, no side gaps);
+    /// the scaled image is then shifted down by this amount so heads clear the chrome
+    /// and the extra overflow is cropped from the bottom. Home cards keep 0.
     var topChromeInset: CGFloat = 0
 
     var body: some View {
@@ -408,15 +417,14 @@ struct FocusedRasterImage: View {
     }
 
     private func subjectFill(_ image: UIImage, in frame: CGSize) -> some View {
-        // Clear translucent status + nav by covering only the usable window below
-        // `topChromeInset`. feastCover still top-aligns inside that window (offset.height 0),
-        // so any file crop remains from the bottom relative to the usable rect.
-        let inset = max(0, min(topChromeInset, max(frame.height - 1, 0)))
-        let usable = CGSize(width: frame.width, height: max(1, frame.height - inset))
+        // Scale always covers the FULL frame. Shrinking the frame for the chrome would
+        // drop the scale (Christ the King 1280x720 in 393x330 fell from 0.458 to width-fit)
+        // and leave the figure tiny under a tall empty band.
+        let inset = ArtCatalog.feastChromeShift(topChromeInset, frameHeight: frame.height)
         let subject = ArtCatalog.feastSubject(of: image)
         let cover = ArtCatalog.feastCover(
             imageSize: image.size,
-            frame: usable,
+            frame: frame,
             subject: subject.bounds,
             focusX: subject.focusX
         )
