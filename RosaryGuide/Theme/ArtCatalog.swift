@@ -184,33 +184,15 @@ enum ArtCatalog {
         return subject
     }
 
-    /// Cover `frame` with the whole feast file at one scale:
-    /// `max(frame.width / imageSize.width, frame.height / imageSize.height)`.
-    ///
-    /// The window always starts at the top of the file, so any crop is from the
-    /// bottom. Top air is whatever field is already in those pixels; the scale
-    /// never tightens to the subject. When the scaled width is wider than the
-    /// frame, the window centers on `focusX` (held inside `subject`) and stays
-    /// inside the image. The card is full-bleed: no side bars and no painted strip.
+    /// Fit the full width of a feast file and pin its top edge. Tall containers
+    /// leave room below the artwork instead of enlarging it and cropping faces.
     static func feastCover(imageSize: CGSize, frame: CGSize, subject: CGRect, focusX: CGFloat) -> FeastCover {
         guard imageSize.width > 1, imageSize.height > 1, frame.width > 1, frame.height > 1 else {
             return FeastCover(scale: 1, offset: .zero)
         }
-        let scale = max(frame.width / imageSize.width, frame.height / imageSize.height)
-        let scaledW = imageSize.width * scale
-        let maxVisX = max(0, scaledW - frame.width)
-
-        let canvas = CGRect(origin: .zero, size: imageSize)
-        let box = subject.intersection(canvas)
-        let anchor: CGFloat
-        if box.width > 1, box.height > 1 {
-            anchor = min(max(focusX, box.minX), box.maxX)
-        } else {
-            anchor = min(max(focusX, 0), imageSize.width)
-        }
-        let visX = min(max(anchor * scale - frame.width / 2, 0), maxVisX)
-        return FeastCover(scale: scale, offset: CGSize(width: -visX, height: 0))
+        return FeastCover(scale: frame.width / imageSize.width, offset: .zero)
     }
+
 }
 
 private var feastSubjectKey: UInt8 = 0
@@ -377,8 +359,8 @@ struct FocusedRasterImage: View {
     var focus: UnitPoint = UnitPoint(x: 0.5, y: 0.32)
     /// When set, the top of the visible crop is this far down the image (0...1).
     var cropTop: CGFloat? = nil
-    /// Feast heroes. Covers the card with the whole file, top-aligned.
-    /// Any crop is from the bottom; horizontal overflow follows the subject.
+    /// Feast heroes show the whole image width, top-aligned.
+    /// Short cards crop only the bottom; tall heroes never zoom into the scene.
     var coversSubject: Bool = false
 
     var body: some View {
@@ -419,8 +401,15 @@ struct FocusedRasterImage: View {
             .interpolation(.high)
             .frame(width: width, height: height)
             .fixedSize()
+            .overlay(alignment: .bottom) {
+                if height < frame.height {
+                    LinearGradient(colors: [.clear, palette.bg], startPoint: .top, endPoint: .bottom)
+                        .frame(height: height * AppTheme.FeastHero.bottomFade)
+                }
+            }
             .offset(x: cover.offset.width, y: cover.offset.height)
             .frame(width: frame.width, height: frame.height, alignment: .topLeading)
+            .background(palette.bg)
             .clipped()
     }
 }
