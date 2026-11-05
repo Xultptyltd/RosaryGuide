@@ -450,104 +450,153 @@ final class CompletionScreenTests: XCTestCase {
 }
 
 final class FeastHeroFramingTests: XCTestCase {
-    /// Home feast card (height 176): the whole file fits, pinned to the top.
-    /// Side slack is centered. A narrow subject does not zoom.
-    func testHomeCardFitsTheWholeFileFromTheTop() {
+    /// A narrow figure must not zoom the file. The card shows the whole canvas
+    /// from the top, and crops only the bottom.
+    func testNarrowSubjectUsesFullFileCoverFromTheTop() {
         let image = CGSize(width: 1280, height: 720)
         let frame = CGSize(width: 358, height: 176)
+        let subject = CGRect(x: 480, y: 0, width: 300, height: 720)
         let cover = ArtCatalog.feastCover(
             imageSize: image,
             frame: frame,
-            subject: CGRect(x: 480, y: 0, width: 300, height: 720),
+            subject: subject,
             focusX: 630
         )
-        assertFitsWholeFile(cover: cover, image: image, frame: frame)
-        XCTAssertEqual(cover.scale, frame.height / image.height, accuracy: 0.0001)
-        XCTAssertGreaterThan(cover.offset.width, 0)
-        XCTAssertLessThan(cover.scale, frame.width / 300)
+        assertFullFileCover(cover: cover, image: image, frame: frame)
+        XCTAssertLessThan(cover.scale, frame.width / subject.width)
+        let visible = visibleOrigin(cover, frame: frame)
+        XCTAssertEqual(visible.y, 0, accuracy: 0.0001)
+        XCTAssertEqual(visible.x, 0, accuracy: 0.5)
+        assertWindowFillsFrame(visibleX: visible.x, visibleY: visible.y, cover: cover, image: image, frame: frame)
+        let visibleBottom = visible.y + frame.height / cover.scale
+        XCTAssertGreaterThan(visibleBottom, subject.minY)
+        XCTAssertLessThan(visibleBottom, image.height)
     }
 
-    /// Detail banner is taller than the 16:9 file. Width fits, the full height
-    /// stays inside the frame, and the image stays pinned to the top.
-    func testTallBannerFitsTheWholeFileFromTheTop() {
+    /// A tall frame overflows horizontally and keeps the face inside the window.
+    /// The top of the file stays visible even when the figure starts lower.
+    func testTallFrameKeepsAFaceOnTheLeftInsideTheWindow() {
+        let focus: CGFloat = 314
         let image = CGSize(width: 1280, height: 720)
         let frame = CGSize(width: 393, height: 330)
+        let subject = CGRect(x: 12, y: 144, width: 1256, height: 540)
         let cover = ArtCatalog.feastCover(
             imageSize: image,
             frame: frame,
-            subject: CGRect(x: 12, y: 144, width: 1256, height: 540),
-            focusX: 314
+            subject: subject,
+            focusX: focus
         )
-        assertFitsWholeFile(cover: cover, image: image, frame: frame)
-        XCTAssertEqual(cover.scale, frame.width / image.width, accuracy: 0.0001)
-        XCTAssertEqual(cover.offset.width, 0, accuracy: 0.01)
-        XCTAssertLessThan(image.height * cover.scale, frame.height - 1)
+        assertFullFileCover(cover: cover, image: image, frame: frame)
+        XCTAssertEqual(cover.scale, frame.height / image.height, accuracy: 0.0001)
+        let visible = visibleOrigin(cover, frame: frame)
+        let visibleWidth = frame.width / cover.scale
+        XCTAssertEqual(visible.y, 0, accuracy: 0.0001)
+        XCTAssertGreaterThanOrEqual(focus, visible.x - 0.5)
+        XCTAssertLessThanOrEqual(focus, visible.x + visibleWidth + 0.5)
+        assertWindowFillsFrame(visibleX: visible.x, visibleY: visible.y, cover: cover, image: image, frame: frame)
     }
 
-    func testSecondaryBannerFitsTheWholeFile() {
+    func testWideCardCropsTheBottomOfAFullBleedHero() {
         let image = CGSize(width: 1280, height: 720)
-        let frame = CGSize(width: 393, height: 238)
+        let frame = CGSize(width: 358, height: 176)
+        let subject = CGRect(x: 0, y: 0, width: 1280, height: 720)
         let cover = ArtCatalog.feastCover(
             imageSize: image,
             frame: frame,
-            subject: CGRect(x: 0, y: 0, width: 1280, height: 720),
+            subject: subject,
             focusX: 640
         )
-        assertFitsWholeFile(cover: cover, image: image, frame: frame)
+        assertFullFileCover(cover: cover, image: image, frame: frame)
         XCTAssertEqual(cover.scale, frame.width / image.width, accuracy: 0.0001)
+        let visible = visibleOrigin(cover, frame: frame)
+        let visibleHeight = frame.height / cover.scale
+        XCTAssertEqual(visible.x, 0, accuracy: 0.5)
+        XCTAssertEqual(visible.y, 0, accuracy: 0.0001)
+        XCTAssertLessThan(visibleHeight, 700)
+        XCTAssertGreaterThan(visibleHeight, 1)
+        assertWindowFillsFrame(visibleX: visible.x, visibleY: visible.y, cover: cover, image: image, frame: frame)
     }
 
-    /// Subject bounds and focus never tighten the scale or slide the file into a crop.
-    func testSubjectAndFocusDoNotZoomOrCrop() {
+    /// Field above a lower figure stays in view because the window starts at y = 0.
+    /// A subject narrower than the file does not increase the scale.
+    func testLetterboxStaysInFrameWithoutSubjectZoom() {
+        let image = CGSize(width: 1280, height: 720)
+        let frame = CGSize(width: 358, height: 176)
+        let subject = CGRect(x: 240, y: 100, width: 800, height: 620)
+        let cover = ArtCatalog.feastCover(
+            imageSize: image,
+            frame: frame,
+            subject: subject,
+            focusX: 640
+        )
+        assertFullFileCover(cover: cover, image: image, frame: frame)
+        XCTAssertLessThan(cover.scale, frame.width / subject.width - 0.05)
+        let visible = visibleOrigin(cover, frame: frame)
+        XCTAssertEqual(visible.y, 0, accuracy: 0.0001)
+        XCTAssertEqual(visible.x, 0, accuracy: 0.5)
+        let visibleBottom = visible.y + frame.height / cover.scale
+        XCTAssertGreaterThan(visibleBottom, subject.minY)
+        assertWindowFillsFrame(visibleX: visible.x, visibleY: visible.y, cover: cover, image: image, frame: frame)
+    }
+
+    /// When the scaled file is wider than the frame, the window centers on the focus
+    /// and still lies entirely inside the image. The top edge stays at y = 0.
+    func testHorizontalOverflowCentersOnFocus() {
         let image = CGSize(width: 1280, height: 720)
         let frame = CGSize(width: 200, height: 400)
-        let wide = ArtCatalog.feastCover(
+        let subject = CGRect(x: 400, y: 80, width: 480, height: 600)
+        let focus: CGFloat = 640
+        let cover = ArtCatalog.feastCover(
             imageSize: image,
             frame: frame,
-            subject: CGRect(x: 0, y: 0, width: 1280, height: 720),
-            focusX: 640
+            subject: subject,
+            focusX: focus
         )
-        let tight = ArtCatalog.feastCover(
-            imageSize: image,
-            frame: frame,
-            subject: CGRect(x: 240, y: 100, width: 200, height: 400),
-            focusX: 80
-        )
-        let side = ArtCatalog.feastCover(
-            imageSize: image,
-            frame: frame,
-            subject: CGRect(x: 900, y: 40, width: 360, height: 640),
-            focusX: 1200
-        )
-        XCTAssertEqual(wide, tight)
-        XCTAssertEqual(wide, side)
-        assertFitsWholeFile(cover: wide, image: image, frame: frame)
-        XCTAssertEqual(wide.scale, frame.width / image.width, accuracy: 0.0001)
-        XCTAssertLessThan(wide.scale, frame.width / 200)
+        assertFullFileCover(cover: cover, image: image, frame: frame)
+        XCTAssertEqual(cover.scale, frame.height / image.height, accuracy: 0.0001)
+        let visible = visibleOrigin(cover, frame: frame)
+        let visibleWidth = frame.width / cover.scale
+        XCTAssertEqual(visible.y, 0, accuracy: 0.0001)
+        XCTAssertEqual(visible.x + visibleWidth / 2, focus, accuracy: 0.5)
+        XCTAssertGreaterThan(visible.x, 0)
+        assertWindowFillsFrame(visibleX: visible.x, visibleY: visible.y, cover: cover, image: image, frame: frame)
+
+        let leftSubject = CGRect(x: 0, y: 40, width: 400, height: 640)
+        let leftFocus: CGFloat = 80
+        let left = ArtCatalog.feastCover(imageSize: image, frame: frame, subject: leftSubject, focusX: leftFocus)
+        let leftVisible = visibleOrigin(left, frame: frame)
+        XCTAssertEqual(leftVisible.y, 0, accuracy: 0.0001)
+        XCTAssertEqual(leftVisible.x, 0, accuracy: 0.5)
+        XCTAssertLessThanOrEqual(leftFocus, leftVisible.x + frame.width / left.scale)
+
+        let rightFocus: CGFloat = 1200
+        let right = ArtCatalog.feastCover(imageSize: image, frame: frame, subject: CGRect(x: 900, y: 40, width: 360, height: 640), focusX: rightFocus)
+        let rightVisible = visibleOrigin(right, frame: frame)
+        let rightWidth = frame.width / right.scale
+        XCTAssertEqual(rightVisible.y, 0, accuracy: 0.0001)
+        XCTAssertGreaterThanOrEqual(rightFocus, rightVisible.x - 0.5)
+        XCTAssertLessThanOrEqual(rightFocus, rightVisible.x + rightWidth + 0.5)
+        assertWindowFillsFrame(visibleX: rightVisible.x, visibleY: rightVisible.y, cover: right, image: image, frame: frame)
     }
 
-    /// Scale is the fit ratio. The placed image is the entire file, inside the frame, top-pinned.
-    private func assertFitsWholeFile(cover: ArtCatalog.FeastCover, image: CGSize, frame: CGSize, file: StaticString = #filePath, line: UInt = #line) {
-        let scale = min(frame.width / image.width, frame.height / image.height)
+    private func visibleOrigin(_ cover: ArtCatalog.FeastCover, frame: CGSize) -> CGPoint {
+        CGPoint(x: -cover.offset.width / cover.scale, y: -cover.offset.height / cover.scale)
+    }
+
+    private func assertFullFileCover(cover: ArtCatalog.FeastCover, image: CGSize, frame: CGSize, file: StaticString = #filePath, line: UInt = #line) {
+        let scale = max(frame.width / image.width, frame.height / image.height)
         XCTAssertEqual(cover.scale, scale, accuracy: 0.0001, file: file, line: line)
         XCTAssertEqual(cover.offset.height, 0, accuracy: 0.0001, file: file, line: line)
-        let fittedW = image.width * cover.scale
-        let fittedH = image.height * cover.scale
-        XCTAssertLessThanOrEqual(fittedW, frame.width + 0.01, file: file, line: line)
-        XCTAssertLessThanOrEqual(fittedH, frame.height + 0.01, file: file, line: line)
-        XCTAssertTrue(
-            abs(fittedW - frame.width) < 0.01 || abs(fittedH - frame.height) < 0.01,
-            "fit meets the frame on width or height",
-            file: file,
-            line: line
-        )
-        let expectedX = max(0, (frame.width - fittedW) / 2)
-        XCTAssertEqual(cover.offset.width, expectedX, accuracy: 0.01, file: file, line: line)
-        let placed = CGRect(x: cover.offset.width, y: cover.offset.height, width: fittedW, height: fittedH)
-        XCTAssertGreaterThanOrEqual(placed.minX, -0.01, file: file, line: line)
-        XCTAssertEqual(placed.minY, 0, accuracy: 0.0001, file: file, line: line)
-        XCTAssertLessThanOrEqual(placed.maxX, frame.width + 0.01, file: file, line: line)
-        XCTAssertLessThanOrEqual(placed.maxY, frame.height + 0.01, file: file, line: line)
+    }
+
+    /// Every edge of the card is a pixel from the file.
+    private func assertWindowFillsFrame(visibleX: CGFloat, visibleY: CGFloat, cover: ArtCatalog.FeastCover, image: CGSize, frame: CGSize, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertGreaterThanOrEqual(visibleX, -0.5, file: file, line: line)
+        XCTAssertGreaterThanOrEqual(visibleY, -0.5, file: file, line: line)
+        XCTAssertLessThanOrEqual(visibleX + frame.width / cover.scale, image.width + 0.5, file: file, line: line)
+        XCTAssertLessThanOrEqual(visibleY + frame.height / cover.scale, image.height + 0.5, file: file, line: line)
+        XCTAssertGreaterThanOrEqual(image.width * cover.scale, frame.width - 0.5, file: file, line: line)
+        XCTAssertGreaterThanOrEqual(image.height * cover.scale, frame.height - 0.5, file: file, line: line)
     }
 
     func testDetectorFindsAMarkAtTheTopNotTheBottom() {
