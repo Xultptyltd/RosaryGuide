@@ -783,15 +783,20 @@ enum LearnArticle: String, Identifiable {
         switch self {
         case .whatIsRosary:
             [
-                "The Rosary grew from praying the Psalms. When many could not recite all 150, a simpler “Psalter of Mary” of Hail Marys took shape in their place.",
-                "In the Middle Ages it became a popular Western Christian devotion. Dominican friars helped spread it widely; later tradition associates the Rosary with St Dominic, though the form we know developed gradually over centuries.",
-                "It remains a Scripture-soaked prayer: each decade honours a mystery in the life of Our Lord and His Blessed Mother."
+                "The Rosary is a Catholic prayer that helps us reflect on the lives of Jesus and Mary.",
+                "It is rooted in centuries of Christian prayer and developed gradually during the Middle Ages. Christians were praying early forms of the Rosary long before the Protestant Reformation.",
+                "We repeat prayers such as the Our Father and Hail Mary while thinking about important events in the lives of Jesus and Mary. These events are called mysteries.",
+                "A typical Rosary has five sections, called decades. Each decade includes ten Hail Marys and focuses on one mystery. Rosary beads help us keep track of the prayers."
             ]
         case .howToPray:
             [
-                "Begin with the Sign of the Cross and the Apostles’ Creed, then an Our Father, three Hail Marys, and a Glory Be.",
-                "A decade is one Our Father, ten Hail Marys, and a Glory Be—often with the Fatima prayer. Five decades make a full Rosary as you reflect on one set of mysteries: Joyful, Sorrowful, Glorious, or Luminous.",
-                "Announce the mystery at the start of each decade, then stay with that Gospel scene through the beads. Close with the Hail, Holy Queen."
+                "You don’t need to know every prayer by heart. This app will guide you through each step.",
+                "1. Begin with the opening prayers: the Sign of the Cross, the Apostles’ Creed, one Our Father, three Hail Marys and one Glory Be.",
+                "2. Begin the first decade: read the first mystery and take a moment to think about it.",
+                "3. Pray one Our Father, ten Hail Marys and one Glory Be, reflecting on the mystery as you pray. The Fatima Prayer is often added after the Glory Be.",
+                "4. Repeat for the next four mysteries, following the same pattern.",
+                "5. Finish with the Hail, Holy Queen and the Sign of the Cross.",
+                "It’s natural for your mind to wander. When you notice, gently return your attention to the prayer or mystery."
             ]
         case .beads:
             [
