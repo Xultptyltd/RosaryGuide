@@ -105,7 +105,8 @@ enum ArtCatalog {
     static func cardFocus(set: MysterySetKind, number: Int) -> UnitPoint {
         let values: [CGFloat]
         switch set {
-        case .joyful: values = [0.15, 0.0, 0.28, 0.12, 0.20]
+        // Annunciation (0) sits at the top of the plate: dove, Gabriel, and Mary.
+        case .joyful: values = [0.0, 0.0, 0.28, 0.12, 0.20]
         case .luminous: values = [0.0, 0.12, 0.15, 0.0, 0.15]
         case .sorrowful: values = [0.15, 0.12, 0.0, 0.0, 0.0]
         case .glorious: values = [0.0, 0.0, 0.0, 0.0, 0.0]
@@ -183,22 +184,19 @@ enum ArtCatalog {
         return subject
     }
 
-    /// Share of the feast frame left as field above the figure.
-    /// Home cards and detail heroes both read this. About a tenth of the height:
-    /// enough air that a crown or face is not glued to the top edge, and still
-    /// inside the 8–12% band. Lower body is what gets cropped.
+    /// Share of the feast frame to keep as the file's own field above the figure,
+    /// when that field exists in the canvas. About a tenth of the height.
     static let feastCoverTopInsetFraction: CGFloat = 0.10
 
-    /// Cover `frame` with `subject` at one scale (no stretch). The figure begins
-    /// `feastCoverTopInsetFraction` of the frame below the top edge. Width always
-    /// covers, so the card does not grow side bars. When the frame is short, the
-    /// extra scale crops the lower body and leaves the face, crown, and dove.
-    /// `focusX` — the upper band, where the face is — stays inside the window
-    /// when the frame is narrower than the figure.
+    /// Cover `frame` with one scale of the feast file. The window stays inside the
+    /// image, so the card is full-bleed: no side bars and no painted strip.
     ///
-    /// The returned Y offset may place the image below the frame's top. That gap
-    /// is the field above a figure that already touches the file's top edge;
-    /// the view paints it with the image's own field colour.
+    /// When the canvas has field above the figure, the figure begins up to
+    /// `feastCoverTopInsetFraction` of the frame below the top, and that air is
+    /// those source pixels. A short card crops the lower body before the face.
+    /// If the figure already touches the top of the file, the window starts at
+    /// the top of the file instead of inventing a gap. `focusX` stays inside the
+    /// window when the frame is narrower than the figure.
     static func feastCover(imageSize: CGSize, frame: CGSize, subject: CGRect, focusX: CGFloat) -> FeastCover {
         guard imageSize.width > 1, imageSize.height > 1, frame.width > 1, frame.height > 1 else {
             return FeastCover(scale: 1, offset: .zero)
@@ -207,33 +205,45 @@ enum ArtCatalog {
         let box = subject.intersection(canvas)
         let region = (box.width > 1 && box.height > 1) ? box : canvas
         let inset = frame.height * feastCoverTopInsetFraction
-        let bodyHeight = max(frame.height - inset, 1)
-        // Cover the card's width, and cover everything below the air with the figure.
-        let scale = max(frame.width / region.width, bodyHeight / region.height)
+
+        // The canvas must cover the frame, and the figure's width must cover it,
+        // so a portrait statue is not a small island inside the card.
+        var scale = max(
+            frame.width / imageSize.width,
+            frame.height / imageSize.height,
+            frame.width / region.width
+        )
+        let belowFigureTop = imageSize.height - region.minY
+        if belowFigureTop > 1 {
+            // Room to show the requested air and still reach the bottom of the file.
+            scale = max(scale, max(frame.height - inset, 1) / belowFigureTop)
+        }
+
         let scaledW = imageSize.width * scale
         let scaledH = imageSize.height * scale
+        let maxVisX = max(0, scaledW - frame.width)
+        let maxVisY = max(0, scaledH - frame.height)
+
         let anchor = min(max(focusX, region.minX), region.maxX)
         var visX = anchor * scale - frame.width / 2
-        // Subject top lands on the inset. Negative means the file has no pixels
-        // above the figure, so the frame starts in the field above the image.
-        var visY = region.minY * scale - inset
         let subjectMinX = region.minX * scale
         let subjectMaxX = max(subjectMinX, region.maxX * scale - frame.width)
         visX = min(max(visX, subjectMinX), subjectMaxX)
-        visX = min(max(visX, 0), max(0, scaledW - frame.width))
-        // Never uncover the bottom. Pulling up can shrink the air, but the scale
-        // above keeps the figure tall enough to reach the bottom from the inset.
-        let maxVisY = scaledH - frame.height
+        visX = min(max(visX, 0), maxVisX)
+
+        // Only count field that is actually in the file above the figure.
+        let availableAir = max(0, region.minY * scale)
+        let air = min(inset, availableAir)
+        var visY = region.minY * scale - air
         if visY > maxVisY { visY = maxVisY }
-        // Never crop the top of the figure to manufacture the air.
         let subjectTop = region.minY * scale
         if visY > subjectTop { visY = subjectTop }
+        if visY < 0 { visY = 0 }
         return FeastCover(scale: scale, offset: CGSize(width: -visX, height: -visY))
     }
 }
 
 private var feastSubjectKey: UInt8 = 0
-private var feastFieldKey: UInt8 = 0
 
 private final class FeastSubjectBox: NSObject {
     let subject: ArtCatalog.FeastSubject
@@ -241,17 +251,6 @@ private final class FeastSubjectBox: NSObject {
 }
 
 private extension ArtCatalog {
-    /// Flat field behind a feast statue, sampled from the corners.
-    /// Used to paint the air above a figure that already touches the top of the file.
-    static func feastFieldColor(of image: UIImage) -> UIColor {
-        if let cached = objc_getAssociatedObject(image, &feastFieldKey) as? UIColor {
-            return cached
-        }
-        let color = sampleFieldColor(image) ?? UIColor(white: 1, alpha: 1)
-        objc_setAssociatedObject(image, &feastFieldKey, color, .OBJC_ASSOCIATION_RETAIN)
-        return color
-    }
-
     /// Sampled luminance, row 0 at the top of the image.
     static func detectFeastSubject(_ image: UIImage) -> FeastSubject? {
         let sampleW = 320
@@ -341,73 +340,6 @@ private extension ArtCatalog {
         return FeastSubject(bounds: bounds, focusX: focusX)
     }
 
-    /// Median corner colour. Marble files leave the field in the corners even when
-    /// a head or dove touches the top centre, so the air band matches the file.
-    static func sampleFieldColor(_ image: UIImage) -> UIColor? {
-        let width = 64
-        let height = 36
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        format.opaque = true
-        let rendered = UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format).image { _ in
-            image.draw(in: CGRect(x: 0, y: 0, width: width, height: height))
-        }
-        guard let cg = rendered.cgImage,
-              let data = cg.dataProvider?.data,
-              let bytes = CFDataGetBytePtr(data) else { return nil }
-        let bytesPerRow = cg.bytesPerRow
-        let bytesPerPixel = max(cg.bitsPerPixel / 8, 1)
-        let alpha = cg.alphaInfo
-        let order = cg.bitmapInfo.rawValue & CGBitmapInfo.byteOrderMask.rawValue
-        let little = order == CGBitmapInfo.byteOrder32Little.rawValue || order == 0
-        let alphaFirst = alpha == .premultipliedFirst || alpha == .first || alpha == .noneSkipFirst
-        var reds: [UInt8] = []
-        var greens: [UInt8] = []
-        var blues: [UInt8] = []
-        let corner = 8
-        func store(_ x: Int, _ y: Int) {
-            guard x >= 0, y >= 0, x < cg.width, y < cg.height else { return }
-            let origin = y * bytesPerRow + x * bytesPerPixel
-            let r: UInt8
-            let g: UInt8
-            let b: UInt8
-            if bytesPerPixel >= 4 && alphaFirst && little {
-                b = bytes[origin]
-                g = bytes[origin + 1]
-                r = bytes[origin + 2]
-            } else if bytesPerPixel >= 4 && alphaFirst {
-                r = bytes[origin + 1]
-                g = bytes[origin + 2]
-                b = bytes[origin + 3]
-            } else if bytesPerPixel >= 3 {
-                r = bytes[origin]
-                g = bytes[origin + 1]
-                b = bytes[origin + 2]
-            } else {
-                r = bytes[origin]
-                g = r
-                b = r
-            }
-            reds.append(r)
-            greens.append(g)
-            blues.append(b)
-        }
-        for y in 0..<corner {
-            for x in 0..<corner {
-                store(x, y)
-                store(cg.width - 1 - x, y)
-                store(x, cg.height - 1 - y)
-                store(cg.width - 1 - x, cg.height - 1 - y)
-            }
-        }
-        guard !reds.isEmpty else { return nil }
-        func median(_ values: [UInt8]) -> CGFloat {
-            let sorted = values.sorted()
-            return CGFloat(sorted[sorted.count / 2]) / 255
-        }
-        return UIColor(red: median(reds), green: median(greens), blue: median(blues), alpha: 1)
-    }
-
     /// Grayscale sample, row 0 at the top (UIKit coordinates).
     static func grayscale(_ image: UIImage, width: Int, height: Int) -> [UInt8]? {
         let format = UIGraphicsImageRendererFormat()
@@ -475,9 +407,8 @@ struct FocusedRasterImage: View {
     var focus: UnitPoint = UnitPoint(x: 0.5, y: 0.32)
     /// When set, the top of the visible crop is this far down the image (0...1).
     var cropTop: CGFloat? = nil
-    /// Feast heroes. Scales the figure (not the letterboxed canvas) to fill the frame,
-    /// leaving a band of the statue's own field above it so faces are not flush
-    /// with the card edge. One scale; the frame clips the lower body.
+    /// Feast heroes. Scales the figure to fill the frame. Air above the statue is
+    /// only field that already exists in the file; the image itself covers the card.
     var coversSubject: Bool = false
 
     var body: some View {
@@ -513,9 +444,6 @@ struct FocusedRasterImage: View {
         // Round up so a fractional scale cannot leave a hairline of the card along the edge.
         let width = max((image.size.width * cover.scale).rounded(.up), 1)
         let height = max((image.size.height * cover.scale).rounded(.up), 1)
-        // Field colour shows only where the figure already touched the top of the
-        // file and the inset sits above those pixels. Sides stay covered by the image.
-        let field = Color(uiColor: ArtCatalog.feastFieldColor(of: image))
         return Image(uiImage: image)
             .resizable()
             .interpolation(.high)
@@ -523,7 +451,6 @@ struct FocusedRasterImage: View {
             .fixedSize()
             .offset(x: cover.offset.width, y: cover.offset.height)
             .frame(width: frame.width, height: frame.height, alignment: .topLeading)
-            .background(field)
             .clipped()
     }
 }
