@@ -224,6 +224,22 @@ final class LearnScreenTests: XCTestCase {
         }
         XCTAssertEqual(LearnArticle.commonQuestions.map(\.title).count, Set(LearnArticle.commonQuestions.map(\.title)).count)
     }
+
+    func testWhatIsAndHowToPrayCommonQuestions() {
+        XCTAssertEqual(LearnArticle.commonQuestions.first, .whatIsRosary)
+        XCTAssertEqual(LearnArticle.commonQuestions[1], .howToPray)
+        XCTAssertEqual(LearnArticle.whatIsRosary.title, "What is the Rosary?")
+        XCTAssertEqual(LearnArticle.howToPray.title, "How do I pray the Rosary?")
+        XCTAssertEqual(LearnArticle.whatIsRosary.paragraphs.count, 3)
+        XCTAssertEqual(LearnArticle.howToPray.paragraphs.count, 3)
+        let history = LearnArticle.whatIsRosary.paragraphs.joined(separator: " ").lowercased()
+        for term in ["psalm", "middle ages", "dominican"]:
+            XCTAssertTrue(history.contains(term), term)
+        let structure = LearnArticle.howToPray.paragraphs.joined(separator: " ").lowercased()
+        for term in ["decade", "apostles", "hail mary", "mystery"]:
+            XCTAssertTrue(structure.contains(term), term)
+        XCTAssertEqual(LearnArticle.commonQuestions.map(\.title).count, Set(LearnArticle.commonQuestions.map(\.title)).count)
+    }
 }
 
 final class FeastSearchTests: XCTestCase {
