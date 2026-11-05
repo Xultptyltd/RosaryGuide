@@ -380,6 +380,10 @@ struct FocusedRasterImage: View {
     /// Feast heroes. Covers the card with the whole file, top-aligned.
     /// Any crop is from the bottom; horizontal overflow follows the subject.
     var coversSubject: Bool = false
+    /// When > 0 (feast detail / secondary under a translucent nav), cover-fill only
+    /// the usable rect below this inset so heads clear status + inline nav chrome.
+    /// The strip above shows whatever is behind the banner (page fill). Home cards keep 0.
+    var topChromeInset: CGFloat = 0
 
     var body: some View {
         GeometryReader { geo in
@@ -404,10 +408,15 @@ struct FocusedRasterImage: View {
     }
 
     private func subjectFill(_ image: UIImage, in frame: CGSize) -> some View {
+        // Clear translucent status + nav by covering only the usable window below
+        // `topChromeInset`. feastCover still top-aligns inside that window (offset.height 0),
+        // so any file crop remains from the bottom relative to the usable rect.
+        let inset = max(0, min(topChromeInset, max(frame.height - 1, 0)))
+        let usable = CGSize(width: frame.width, height: max(1, frame.height - inset))
         let subject = ArtCatalog.feastSubject(of: image)
         let cover = ArtCatalog.feastCover(
             imageSize: image.size,
-            frame: frame,
+            frame: usable,
             subject: subject.bounds,
             focusX: subject.focusX
         )
@@ -419,7 +428,7 @@ struct FocusedRasterImage: View {
             .interpolation(.high)
             .frame(width: width, height: height)
             .fixedSize()
-            .offset(x: cover.offset.width, y: cover.offset.height)
+            .offset(x: cover.offset.width, y: cover.offset.height + inset)
             .frame(width: frame.width, height: frame.height, alignment: .topLeading)
             .clipped()
     }

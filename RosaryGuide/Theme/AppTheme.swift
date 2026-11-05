@@ -1660,6 +1660,9 @@ extension AppTheme {
     enum FeastHero {
         /// Share of the image height, from the bottom, that fades into the page.
         static let bottomFade: CGFloat = 0.18
+        /// Inline navigation bar height contributed under the status-bar safe area
+        /// when feast detail heroes sit behind a translucent nav title.
+        static let inlineNavBarHeight: CGFloat = 44
     }
 
     enum PrayerPreview {
