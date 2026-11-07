@@ -445,13 +445,15 @@ struct GuideScrollActionButton: View {
                     } else {
                         Text(title)
                             .font(AppTheme.TypeRole.pillLabel())
-                            .minimumScaleFactor(0.75)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
                             .foregroundStyle(primary ? palette.primaryButtonText : palette.secondaryButtonText)
                             .transition(.identity)
                     }
                 }
                 .frame(maxWidth: showScroll ? side : .infinity)
-                .frame(width: showScroll ? side : nil, height: AppTheme.Component.pillHeight)
+                .frame(width: showScroll ? side : nil, height: showScroll ? side : nil)
+                .frame(minHeight: showScroll ? side : AppTheme.Component.pillHeight)
                 .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -483,13 +485,12 @@ struct PillButton: View {
             Text(title)
                 .font(AppTheme.TypeRole.pillLabel())
                 .foregroundStyle(onDark ? palette.todayPillText : filled ? palette.primaryButtonText : (tertiary ? palette.tertiaryButtonText : palette.learnMoreButtonText))
-                .lineLimit(2)
-                .minimumScaleFactor(0.7)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, compact ? AppTheme.Space.xs : 0)
-                .frame(minHeight: compact ? AppTheme.Component.compactPillHeight : AppTheme.Component.pillHeight,
-                       maxHeight: compact ? nil : AppTheme.Component.pillHeight)
+                .padding(.vertical, compact ? AppTheme.Space.xs : AppTheme.Space.sm)
+                .padding(.horizontal, AppTheme.Space.md)
+                .frame(minHeight: compact ? AppTheme.Component.compactPillHeight : AppTheme.Component.pillHeight)
                 .guideSurface(in: Capsule(), fill: onDark ? palette.todayPillFill : filled ? palette.primaryButtonFill : (tertiary ? palette.tertiaryButtonFill : palette.learnMoreButtonFill))
                 .contentShape(Capsule())
         }

@@ -343,8 +343,7 @@ struct HomeView: View {
                     .guideSymbol(size: 15, weight: .medium)
                 Text("Share Rosary Guide")
                     .font(AppTheme.TypeRole.callout)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(palette.tertiaryButtonText)
             .padding(.horizontal, AppTheme.Space.lg)
@@ -751,8 +750,7 @@ struct HomeView: View {
                 Text(assignment.set.shortName)
                     .font(isToday ? AppTheme.TypeRole.body(weight: .medium) : AppTheme.TypeRole.body)
                     .foregroundStyle(isToday ? palette.ink : palette.dim)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
+                    .fixedSize(horizontal: false, vertical: true)
                 // Fixed trailing slot keeps set names aligned whether or not the day is prayed.
                 PrayedTick(size: 18, color: palette.accent)
                     .opacity(prayed ? 1 : 0)
@@ -983,7 +981,7 @@ struct HomeView: View {
                                 .frame(width: cardWidth)
                                 .scrollTransition(.interactive, axis: .horizontal) { content, phase in
                                     content
-                                        .opacity(phase.isIdentity ? 1 : 0.86)
+                                        .opacity(reduceMotion || phase.isIdentity ? 1 : 0.86)
                                 }
                         }
                     }
@@ -1273,18 +1271,15 @@ struct HomeView: View {
                                         .tracking(1.2)
                                         .textCase(.uppercase)
                                         .foregroundStyle(palette.faint)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.5)
+                                        .fixedSize(horizontal: false, vertical: true)
                                 }
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.5)
-                                .frame(width: 44)
+                                .frame(minWidth: 44)
 
                                 HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.sm) {
                                     WordSafeText(item.feast.shortTitle, font: AppTheme.TypeRole.serifBodyUIFont, color: palette.ink)
                                         .multilineTextAlignment(.leading)
-                                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 5 : 2)
-                                        .minimumScaleFactor(0.92)
+                                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 3)
+                                        .fixedSize(horizontal: false, vertical: true)
                                     if Calendar.current.isDateInToday(item.date) {
                                         Text("Today")
                                             .font(AppTheme.TypeRole.caption(weight: .medium))
@@ -1321,6 +1316,8 @@ struct HomeView: View {
                     }
                     .buttonStyle(.plain)
                     .guideAccordion(isExpanded: isOpen)
+                    .accessibilityValue(isOpen ? "Expanded" : "Collapsed")
+                    .accessibilityHint(isOpen ? "Hides the feast summary" : "Shows the feast summary")
                     if index < upcomingMarian.count - 1 {
                         Hairline()
                     }

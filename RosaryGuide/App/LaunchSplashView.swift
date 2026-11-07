@@ -40,12 +40,13 @@ struct SignInTransitionCover: View {
 
 struct LaunchSplashView: View {
     @Environment(\.palette) private var palette
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var onFinished: () -> Void
 
     var body: some View {
         ZStack {
-            AppTheme.marianBlue
+            AppTheme.brandCanvas(colorScheme)
                 .ignoresSafeArea()
 
             if reduceMotion {
@@ -59,6 +60,7 @@ struct LaunchSplashView: View {
                     .accessibilityHidden(true)
             }
         }
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("Rosary Guide loading")
         .onAppear {
             guard reduceMotion else { return }

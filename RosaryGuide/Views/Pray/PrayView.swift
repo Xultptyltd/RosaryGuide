@@ -784,7 +784,7 @@ struct PrayView: View {
 
     /// Rosary bead map under the prayer text (same spacing in both templates).
     private func beadShelf(_ bead: BeadLocus) -> some View {
-        RosaryBeadMapView(locus: bead, animationPaused: beadTimelinePaused)
+        RosaryBeadMapView(locus: bead, animationPaused: beadTimelinePaused, onPrevious: { retreat() })
             .padding(.horizontal, AppTheme.Space.md)
             .padding(.top, AppTheme.Space.xl)
             .padding(.bottom, AppTheme.Space.sm)
@@ -843,13 +843,12 @@ struct PrayView: View {
                     .accessibilityLabel("Close")
             }
             progressNowLabel(step)
-                // Accessibility sizes: two lines at word boundaries instead of truncating.
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
-                .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 52)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(step.mystery.map { "\(step.stage.spokenName), \($0.title.english)" } ?? step.progressLabel)
-                .accessibilityAddTraits(.isStaticText)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityAction(named: "Previous prayer") { retreat() }
         }
         .padding(.horizontal, AppTheme.Space.lg)
         .padding(.top, AppTheme.Space.xs)

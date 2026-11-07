@@ -9,6 +9,14 @@ enum AppTheme {
     /// Apple semantic colors so Light/Dark, contrast, and accessibility modes
     /// can do their work at the system layer.
     static let marianBlue = Color(hex: 0x0054FF)
+
+    /// Full-bleed brand field for the launch splash and sign-in panel.
+    /// Light keeps Marian blue. Dark uses the page black so a selected dark
+    /// interface never opens on a bright blue screen. The light rosary mark
+    /// stays on top of either field.
+    static func brandCanvas(_ scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color(hex: 0x000000) : marianBlue
+    }
     static let marianBlueHighContrast = Color(hex: 0x0054FF)
     static let marianBlueDark = marianBlue
     static let marianBlueDarkHighContrast = marianBlueHighContrast
@@ -198,6 +206,9 @@ struct ThemePalette {
         // #6A6A6A: 4.5:1 on the light surface #EBEBED (#6E6E6E was 4.3:1).
         scheme == .light ? Color(hex: 0x6A6A6A) : Color(hex: 0xAEAEAE)
     }
+    /// Future journey-calendar numerals. Same ink as secondary text so they stay
+    /// quieter than a prayed day without dropping below 4.5:1.
+    var futureDayText: Color { textSecondary }
 
     /// The app's single grouped/elevated surface color.
     ///
@@ -925,6 +936,7 @@ private struct MorphingTitleWidthKey: PreferenceKey {
 /// Drawn as a page overlay (may extend below the toolbar); does not affect inset height.
 struct MorphingNavTitle: View {
     @Environment(\.palette) private var palette
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let title: String
     var progress: CGFloat
@@ -949,9 +961,10 @@ struct MorphingNavTitle: View {
                 t
             )
             let measured = titleWidth > 0 ? titleWidth : size * CGFloat(title.count) * 0.55
-            // Long titles shrink to fit between the gutters (short titles stay at 1).
+            // Long titles shrink to fit between the gutters at the default size.
+            // Accessibility sizes keep the Dynamic Type size and wrap instead.
             let available = max(1, geo.size.width - gutter * 2)
-            let fit = min(1, available / max(measured, 1))
+            let fit = dynamicTypeSize.isAccessibilitySize ? 1 : min(1, available / max(measured, 1))
             let xLeading = gutter + measured * fit * 0.5
             let xCenter = geo.size.width * 0.5
             let x = CollapsingTitleMetrics.lerp(xLeading, xCenter, t)
@@ -959,9 +972,9 @@ struct MorphingNavTitle: View {
             Text(title)
                 .font(AppTheme.TypeRole.h1(size))
                 .foregroundStyle(palette.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-                .fixedSize()
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: !dynamicTypeSize.isAccessibilitySize, vertical: true)
+                .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? available : nil)
                 .background(
                     GeometryReader { tg in
                         Color.clear.preference(key: MorphingTitleWidthKey.self, value: tg.size.width)
@@ -1519,11 +1532,21 @@ struct GuideSegmentedControl: ViewModifier {
             .pickerStyle(.segmented)
             .controlSize(.large)
             .font(AppTheme.TypeRole.segmentedControl)
-            .frame(height: AppTheme.Component.segmentedControlHeight)
+            .frame(minHeight: Self.height)
             .labelsHidden()
             #if canImport(UIKit)
             .background(SegmentedControlSchemeSync(dark: palette.scheme == .dark))
             #endif
+    }
+
+    /// 44pt at the default size. Accessibility sizes add room for the scaled label
+    /// instead of clipping it.
+    static var height: CGFloat {
+        #if canImport(UIKit)
+        max(AppTheme.Component.segmentedControlHeight, ceil(AppTheme.TypeRole.segmentedControlUIFont.lineHeight) + 18)
+        #else
+        AppTheme.Component.segmentedControlHeight
+        #endif
     }
 }
 
@@ -1677,39 +1700,24 @@ extension AppTheme {
     }
 
     /// Type roles — product style guide scale, with Instrument Sans / Newsreader pairing.
-    /// Every role scales with Dynamic Type. Display type and labels inside fixed-size
-    /// controls are capped (`Cap`) so very large sizes stay legible without breaking layout;
-    /// body and reading text is never capped. At the default Large size no cap applies.
+    /// Every role scales with Dynamic Type, including controls. Nothing is capped:
+    /// at the default Large size the design size is unchanged, and accessibility
+    /// sizes grow past 200% instead of shrinking labels to fit a fixed control.
     enum TypeRole {
-        /// Upper bounds for capped roles, as a multiple of the design size or in points.
-        enum Cap {
-            /// Large page and hero titles grow at most 30%.
-            static let displayScale: CGFloat = 1.3
-            /// Pill buttons keep their 52pt height; labels stop at 22pt and may wrap or shrink.
-            static let pillLabel: CGFloat = 22
-            /// Segmented controls keep their 44pt height; iOS offers the Large Content Viewer.
-            static let segmentedControl: CGFloat = 17
-            /// Text inside fixed 44pt day circles and the date column.
-            static let calendarDay: CGFloat = 22
-            static let calendarCaption: CGFloat = 15
-            /// Section headings (title-sized) inside cards.
-            static let heading: CGFloat = 44
-        }
-
-        /// Label inside a fixed-height pill button.
+        /// Label inside a pill button. The button grows and the words wrap.
         static func pillLabel(weight: Font.Weight = .regular) -> Font {
-            AppTheme.sans(16, weight: regularized(weight), relativeTo: .callout, maxPointSize: Cap.pillLabel)
+            AppTheme.sans(16, weight: regularized(weight), relativeTo: .callout)
         }
 
         static var display: Font { headingPrimary }
         /// H1: Home's mystery title face (Instrument Sans regular, scales with Large Title).
         /// Every large page title uses this; the size is chosen per place.
         static func h1(_ size: CGFloat) -> Font {
-            AppTheme.sans(size, weight: .regular, relativeTo: .largeTitle, maxPointSize: (size * Cap.displayScale).rounded())
+            AppTheme.sans(size, weight: .regular, relativeTo: .largeTitle)
         }
         #if canImport(UIKit)
         static func h1UIFont(_ size: CGFloat) -> UIFont {
-            FontRegistrar.sansUI(size, weight: .regular, textStyle: .largeTitle, maxPointSize: (size * Cap.displayScale).rounded())
+            FontRegistrar.sansUI(size, weight: .regular, textStyle: .largeTitle)
         }
         /// Size for UIKit large navigation titles (system large-title size).
         static let h1NavigationSize: CGFloat = 44
@@ -1718,7 +1726,7 @@ extension AppTheme {
         static var title2: Font { headingPrimary }
         static var title3: Font { headingSecondary }
         static var headline: Font { headingSecondary }
-        static var headingPrimary: Font { AppTheme.sans(32, weight: .regular, relativeTo: .largeTitle, maxPointSize: Cap.heading) }
+        static var headingPrimary: Font { AppTheme.sans(32, weight: .regular, relativeTo: .largeTitle) }
         static var headingSecondary: Font { AppTheme.sans(22, weight: .regular, relativeTo: .title2) }
         static func headline(weight: Font.Weight = .regular) -> Font {
             AppTheme.sans(22, weight: regularized(weight), relativeTo: .title2)
@@ -1735,7 +1743,7 @@ extension AppTheme {
         static var supportingLabel: Font { AppTheme.sans(15, relativeTo: .subheadline) }
         static var sectionHeading: Font { body }
         static var prayerPreviewSummary: Font { cardTitle }
-        static var rhythmSummary: Font { AppTheme.sans(32, relativeTo: .title, maxPointSize: Cap.heading) }
+        static var rhythmSummary: Font { AppTheme.sans(32, relativeTo: .title) }
         static func rhythmCaption(compact: Bool = false) -> Font {
             AppTheme.sans(compact ? 13 : 14, relativeTo: .subheadline)
         }
@@ -1748,7 +1756,7 @@ extension AppTheme {
         static var serifBody: Font { AppTheme.serif(20, opticalSize: 20, relativeTo: .body) }
         static var serifItalicBody: Font { AppTheme.serif(16, italic: true, opticalSize: 16, relativeTo: .body) }
         static var serifTitle: Font { AppTheme.serif(24, opticalSize: 28, relativeTo: .title3) }
-        static var serifDisplay: Font { AppTheme.serif(40, opticalSize: 44, relativeTo: .largeTitle, maxPointSize: (40 * Cap.displayScale).rounded()) }
+        static var serifDisplay: Font { AppTheme.serif(40, opticalSize: 44, relativeTo: .largeTitle) }
         /// Reference size for the shared prayer paragraph line-height calculation.
         static func prayerLineHeightReference(scale: CGFloat) -> CGFloat { 21 * scale }
         static func scriptureReference(isMystery: Bool) -> Font {
@@ -1778,17 +1786,17 @@ extension AppTheme {
         static var themeSummary: Font { callout }
         static var label: Font { caption }
         static func label(weight: Font.Weight = .regular) -> Font { caption(weight: weight) }
-        static var segmentedControl: Font { AppTheme.sans(14, weight: .medium, relativeTo: .callout, maxPointSize: Cap.segmentedControl) }
+        static var segmentedControl: Font { AppTheme.sans(14, weight: .medium, relativeTo: .callout) }
 #if canImport(UIKit)
-        static var segmentedControlUIFont: UIFont { FontRegistrar.sansUI(14, weight: .medium, maxPointSize: Cap.segmentedControl) }
+        static var segmentedControlUIFont: UIFont { FontRegistrar.sansUI(14, weight: .medium, textStyle: .callout) }
 #endif
-        /// Day number in the fixed 44pt calendar circle.
+        /// Day number. The circle grows with the text instead of shrinking the numeral.
         static func calendarDay(weight: Font.Weight = .regular) -> Font {
-            AppTheme.sans(16, weight: regularized(weight), relativeTo: .callout, maxPointSize: Cap.calendarDay)
+            AppTheme.sans(16, weight: regularized(weight), relativeTo: .callout)
         }
-        static var calendarCaption: Font { AppTheme.sans(12, relativeTo: .caption, maxPointSize: Cap.calendarCaption) }
-        static var calendarCaptionMedium: Font { AppTheme.sans(12, weight: .medium, relativeTo: .caption, maxPointSize: Cap.calendarCaption) }
-        static var calendarDateNumber: Font { AppTheme.sans(22, relativeTo: .title2, maxPointSize: 28) }
+        static var calendarCaption: Font { AppTheme.sans(12, relativeTo: .caption) }
+        static var calendarCaptionMedium: Font { AppTheme.sans(12, weight: .medium, relativeTo: .caption) }
+        static var calendarDateNumber: Font { AppTheme.sans(22, relativeTo: .title2) }
         static var sectionLabel: Font { caption }
         static var quoteAttribution: Font { caption }
         static var settingsRow: Font { body }
@@ -1878,8 +1886,6 @@ extension AppTheme {
         static let beadPulseFillOpacity: Double = 0.44
         static let profileRowHeight: CGFloat = 56
         static let profileDividerOpacity: Double = 0.72
-        static let profileTitleMinimumScale: CGFloat = 0.82
-        static let profileValueMinimumScale: CGFloat = 0.78
         /// Matches `GuideSectionLabel` tracking.
         static let sectionLabelTracking: CGFloat = 0
         static let hairline: CGFloat = 1 / 3

@@ -299,8 +299,16 @@ struct FeastsView: View {
                     .frame(maxWidth: .infinity)
             }
         }
-        .frame(height: AppTheme.Component.calendarWeekdayHeaderHeight)
+        .frame(minHeight: AppTheme.Component.calendarWeekdayHeaderHeight)
         .padding(.bottom, AppTheme.Space.sm)
+    }
+
+    private func toggleCalendarExpanded() {
+        if !calendarExpanded { expandedWeek = weekOffset }
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.28, extraBounce: 0)) {
+            calendarExpanded.toggle()
+            calendarDrag = nil
+        }
     }
 
     private var calendarHandle: some View {
@@ -317,9 +325,11 @@ struct FeastsView: View {
                 - AppTheme.Component.calendarHandleDotGap))
             .padding(.bottom, -(AppTheme.Accessibility.minHitTarget - AppTheme.Component.calendarHandleHeight) / 2)
             .zIndex(1)
-            .accessibilityLabel("Calendar handle")
+            .accessibilityLabel("Calendar")
             .accessibilityValue(calendarExpanded ? "Upcoming weeks" : "Week view")
-            .accessibilityHint("Drag down to expand the calendar, or up to collapse it")
+            .accessibilityHint(calendarExpanded ? "Shows this week" : "Shows the upcoming weeks")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { toggleCalendarExpanded() }
     }
 
     // Measure in a stationary coordinate space: the handle itself moves during a pull.
@@ -360,10 +370,8 @@ struct FeastsView: View {
                 }
                 Text(day.formatted(.dateTime.day()))
                     .font(AppTheme.TypeRole.calendarDay(weight: selected ? .semibold : .regular))
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
                     .foregroundStyle(selected ? palette.onAccent : palette.ink)
-                    .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                    .frame(minWidth: AppTheme.Accessibility.minHitTarget, minHeight: AppTheme.Accessibility.minHitTarget)
                     .background(selected ? palette.accent : .clear, in: Circle())
                     .overlay { if isToday && !selected { Circle().stroke(palette.accent, lineWidth: 1) } }
                 Circle()
@@ -374,7 +382,11 @@ struct FeastsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(day.formatted(date: .complete, time: .omitted) + (hasFeast ? ", feast day" : ""))
+        .accessibilityLabel(
+            day.formatted(date: .complete, time: .omitted)
+                + (isToday ? ", today" : "")
+                + (hasFeast ? ", feast day" : "")
+        )
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -407,7 +419,6 @@ struct FeastsView: View {
             } label: {
                 Text("Learn")
                     .font(AppTheme.TypeRole.pillLabel())
-                    .minimumScaleFactor(0.75)
                     .foregroundStyle(palette.learnMoreButtonText)
                     .frame(maxWidth: .infinity)
                     .frame(height: AppTheme.Component.pillHeight)
@@ -457,8 +468,7 @@ private struct FeastTimelineRow: View {
                 Text(item.date.formatted(.dateTime.month(.abbreviated)).uppercased())
                     .font(AppTheme.TypeRole.calendarCaptionMedium)
                     .tracking(AppTheme.Component.eyebrowTracking)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .fixedSize(horizontal: false, vertical: true)
                     .foregroundStyle(palette.dim)
             }
             .frame(width: 56)
@@ -508,7 +518,6 @@ struct FeastDetailView: View {
                     .font(AppTheme.TypeRole.screenTitle)
                     .foregroundStyle(palette.ink)
                     .lineLimit(3)
-                    .minimumScaleFactor(0.78)
                     .padding(.top, AppTheme.Space.sm)
 
                 Text(feast.summary)

@@ -291,8 +291,7 @@ struct PrayHubView: View {
                 Text(subtitle)
                     .font(AppTheme.TypeRole.caption)
                     .foregroundStyle(palette.dim)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "chevron.right")
                     .guideSymbol(size: 12, weight: .regular)
@@ -418,7 +417,6 @@ struct PrayHubView: View {
                 HStack {
                     Text("Begin walkthrough")
                         .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
-                        .minimumScaleFactor(0.75)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .foregroundStyle(palette.primaryButtonText)
@@ -545,7 +543,6 @@ struct PrayHubView: View {
                 HStack {
                     Text(cta)
                         .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
-                        .minimumScaleFactor(0.75)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .foregroundStyle(palette.secondaryButtonText)
@@ -1501,7 +1498,6 @@ private struct LearnMysteryDetailView: View {
                     HStack {
                         Text("Pray these mysteries")
                             .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
-                            .minimumScaleFactor(0.75)
                         .frame(maxWidth: .infinity, alignment: .center)
                     }
                     .foregroundStyle(palette.primaryButtonText)

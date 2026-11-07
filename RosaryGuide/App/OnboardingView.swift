@@ -169,6 +169,7 @@ struct OnboardingPageView: View {
                             Image(page.imageName)
                                 .resizable()
                                 .scaledToFill()
+                                .accessibilityHidden(true)
                                 .scaleEffect(reduceMotion ? 1 : 1.018)
                                 .offset(y: reduceMotion ? 0 : (imageDrift ? -5 : 5))
                                 // Scoped to the drift value: a withAnimation(repeatForever) here
@@ -276,6 +277,7 @@ private struct OnboardingSignInView: View {
     @Environment(AuthStore.self) private var auth
     @Environment(SettingsStore.self) private var settings
     @Environment(\.palette) private var palette
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Which button last started a sign-in, so only that one shows progress.
     @State private var lastProvider: OnboardingAuthButton.Provider?
@@ -300,10 +302,11 @@ private struct OnboardingSignInView: View {
             VStack(spacing: 0) {
                 // Marian blue panel behind the beads. It bleeds off the top of the screen and
                 // the strands start above the top edge, so the rosary hangs from off screen.
-                OnboardingPanel(fill: AppTheme.marianBlue, geo: geo) { panelHeight in
+                OnboardingPanel(fill: AppTheme.brandCanvas(colorScheme), geo: geo) { panelHeight in
                     // The beads sit in an overlay so their width (which can exceed the panel's,
                     // the sides being empty) doesn't widen the layout; the panel clips them.
                     RosaryBeadsFallPlayer(plays: !reduceMotion)
+                        .accessibilityHidden(true)
                         .aspectRatio(RosaryBeadsFallPlayer.aspectRatio, contentMode: .fit)
                         .frame(width: SignInLayout.beadsWidth(panelHeight: panelHeight))
                         .padding(.bottom, SignInLayout.loopBottomPadding)
@@ -380,8 +383,6 @@ private struct OnboardingSignInView: View {
                             .foregroundStyle(palette.dim)
                             .tint(palette.ink)
                             .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.8)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.top, AppTheme.Space.sm)
                     }
@@ -556,11 +557,12 @@ private struct OnboardingAuthButton: View {
 
                 Text(title)
                     .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
-                    .minimumScaleFactor(0.75)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(text)
             .frame(maxWidth: .infinity)
-            .frame(height: AppTheme.Component.pillHeight)
+            .frame(minHeight: AppTheme.Component.pillHeight)
             .background(fill, in: Capsule())
             .overlay {
                 if provider == .google {

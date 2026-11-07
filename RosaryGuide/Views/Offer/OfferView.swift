@@ -435,7 +435,6 @@ struct OfferView: View {
             if matchesLearnStyle {
                 Text(title)
                     .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
-                    .minimumScaleFactor(0.75)
                     .foregroundStyle(palette.secondaryButtonText)
                     .padding(.horizontal, 28)
                     .frame(maxWidth: .infinity)
@@ -451,7 +450,6 @@ struct OfferView: View {
                     Text(title)
                 }
                 .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
-                .minimumScaleFactor(0.75)
                 .foregroundStyle(isPrimary ? palette.primaryButtonText : palette.secondaryButtonText)
                 .frame(maxWidth: .infinity)
                 .multilineTextAlignment(.center)
@@ -884,8 +882,7 @@ private struct MyPrayerJourneySummaryCard: View {
                         .font(AppTheme.TypeRole.caption)
                         .foregroundStyle(calendar.isDateInToday(day) ? palette.ink : palette.dim)
                         // "Tu" / "Sa" stay on one line at accessibility sizes.
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
+                        .fixedSize(horizontal: false, vertical: true)
                     Circle()
                         .fill(prayed ? palette.accent : palette.hair)
                         .frame(width: 14, height: 14)
@@ -1207,7 +1204,6 @@ private struct CurrentIntentionHero: View {
                     VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                         WordSafeText(displayTitle, font: AppTheme.TypeRole.bodyUIFont(), color: titleColor)
                             .lineLimit(2)
-                            .minimumScaleFactor(0.88)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -1418,7 +1414,6 @@ private struct PapalIntentionDetailView: View {
                 } label: {
                     Text(added ? "Done" : "Add to my intentions")
                         .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
-                        .minimumScaleFactor(0.75)
                         .foregroundStyle(added ? palette.secondaryButtonText : palette.primaryButtonText)
                         .frame(maxWidth: .infinity)
                         .multilineTextAlignment(.center)
@@ -1474,7 +1469,6 @@ private struct PapalIntentionDetailView: View {
                 .textCase(.uppercase)
                 .foregroundStyle(palette.dim)
                 .lineLimit(2)
-                .minimumScaleFactor(0.85)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(item.title)
@@ -1482,7 +1476,6 @@ private struct PapalIntentionDetailView: View {
                 .foregroundStyle(palette.ink)
                 .multilineTextAlignment(.leading)
                 .lineLimit(3)
-                .minimumScaleFactor(0.82)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -1763,7 +1756,6 @@ private struct IntentionDetailView: View {
                     Button(action: onPray) {
                         Text("Offer a Rosary")
                             .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
-                            .minimumScaleFactor(0.75)
                             .foregroundStyle(palette.secondaryButtonText)
                             .frame(maxWidth: .infinity)
                             .multilineTextAlignment(.center)
@@ -2205,7 +2197,11 @@ struct OverflowMenuButton: View {
 
             if let intentionID, let offer, !offer.isArchived(intentionID) {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.25)) { offer.archive(id: intentionID) }
+                    if UIAccessibility.isReduceMotionEnabled {
+                        offer.archive(id: intentionID)
+                    } else {
+                        withAnimation(.easeInOut(duration: 0.25)) { offer.archive(id: intentionID) }
+                    }
                 } label: {
                     Label("Archive", systemImage: "archivebox")
                 }
@@ -2898,7 +2894,6 @@ struct IntentionEditorSheet: View {
                                 .font(AppTheme.TypeRole.caption(weight: .medium))
                                 .multilineTextAlignment(.center)
                                 .lineLimit(2)
-                                .minimumScaleFactor(0.72)
                         }
                         .foregroundStyle(palette.ink)
                         .frame(maxWidth: .infinity)
@@ -3696,8 +3691,12 @@ private struct PrayerJourneyView: View {
 
     private func shiftJourneyMonth(_ delta: Int) {
         guard let nextMonth = Calendar.current.date(byAdding: .month, value: delta, to: visibleMonth) else { return }
-        withAnimation(MotionTokens.selection) {
+        if UIAccessibility.isReduceMotionEnabled {
             visibleMonth = nextMonth
+        } else {
+            withAnimation(MotionTokens.selection) {
+                visibleMonth = nextMonth
+            }
         }
     }
 
@@ -3998,8 +3997,9 @@ private struct JourneyCalendarCell: View {
                     .opacity(day.prayed || day.partial || day.isToday ? 1 : 0)
 
                 Text("\(day.number)")
-                    .font(AppTheme.TypeRole.caption(weight: day.isToday || day.prayed || day.partial ? .semibold : .regular))
+                    .font(day.isToday || day.prayed || day.partial ? AppTheme.TypeRole.calendarCaptionMedium : AppTheme.TypeRole.calendarCaption)
                     .foregroundStyle(foreground(for: day))
+                    .fixedSize()
             }
         }
         .frame(maxWidth: .infinity, minHeight: 32)
@@ -4008,7 +4008,7 @@ private struct JourneyCalendarCell: View {
 
     private func foreground(for day: JourneyMonth.Day) -> Color {
         if day.prayed { return palette.onAccent }
-        if day.isFuture { return palette.dim.opacity(0.45) }
+        if day.isFuture { return palette.futureDayText }
         return palette.ink
     }
 
@@ -4060,15 +4060,13 @@ private struct JourneyInlineStat: View {
             Text(value)
                 .font(AppTheme.TypeRole.body(weight: .regular))
                 .foregroundStyle(palette.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
+                .fixedSize(horizontal: false, vertical: true)
                 .guideCountRoll(count ?? 0)
 
             Text(label)
                 .font(AppTheme.TypeRole.caption)
                 .foregroundStyle(palette.textSecondary)
                 .lineLimit(2)
-                .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -4226,8 +4224,7 @@ private struct JourneyHistoryRow: View {
                 Text(title)
                     .font(AppTheme.TypeRole.body(weight: .regular))
                     .foregroundStyle(palette.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(statusText)
                     .font(AppTheme.TypeRole.caption())
@@ -4687,7 +4684,11 @@ private struct ArchivedIntentionsView: View {
         ) { item in
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
-                withAnimation(.easeInOut(duration: 0.25)) { offer.delete(id: item.id) }
+                if UIAccessibility.isReduceMotionEnabled {
+                    offer.delete(id: item.id)
+                } else {
+                    withAnimation(.easeInOut(duration: 0.25)) { offer.delete(id: item.id) }
+                }
             }
         } message: { item in
             Text("This will delete “\(IntentionPrivacy.displayTitle(item, hidden: hideText))” from your intentions.")
@@ -4697,7 +4698,11 @@ private struct ArchivedIntentionsView: View {
     private func rowMenu(_ item: OfferIntention) -> some View {
         Menu {
             Button {
-                withAnimation(.easeInOut(duration: 0.25)) { offer.unarchive(id: item.id) }
+                if UIAccessibility.isReduceMotionEnabled {
+                    offer.unarchive(id: item.id)
+                } else {
+                    withAnimation(.easeInOut(duration: 0.25)) { offer.unarchive(id: item.id) }
+                }
             } label: {
                 Label("Unarchive", systemImage: "tray.and.arrow.up")
             }
