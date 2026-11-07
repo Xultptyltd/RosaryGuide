@@ -778,14 +778,13 @@ private struct SettingsRowChrome: View {
                     Text(title)
                         .font(AppTheme.TypeRole.settingsRow)
                         .foregroundStyle(tint)
-                        .lineLimit(1)
-                        .minimumScaleFactor(AppTheme.Component.profileTitleMinimumScale)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     if let subtitle {
                         Text(subtitle)
                             .font(AppTheme.TypeRole.settingsMeta)
                             .foregroundStyle(palette.dim)
-                            .lineLimit(1)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
@@ -796,8 +795,8 @@ private struct SettingsRowChrome: View {
                 Text(value)
                     .font(AppTheme.TypeRole.settingsRow)
                     .foregroundStyle(palette.dim)
-                    .lineLimit(1)
-                    .minimumScaleFactor(AppTheme.Component.profileValueMinimumScale)
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             switch accessory {
@@ -970,8 +969,7 @@ private struct AppIconHomePreview: View {
             Text(title)
                 .font(AppTheme.TypeRole.caption)
                 .foregroundStyle(palette.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

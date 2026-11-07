@@ -238,6 +238,28 @@ final class ContrastTokenTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(ratio(ThemePalette(scheme: .dark).tabSelected, Color(hex: 0x3D3E3F)), 4.5)
     }
 
+    func testDarkBrandCanvasIsPageBlack() {
+        XCTAssertEqual(UIColor(AppTheme.brandCanvas(.light)), UIColor(AppTheme.marianBlue))
+        XCTAssertEqual(UIColor(AppTheme.brandCanvas(.dark)), UIColor(Color(hex: 0x000000)))
+        XCTAssertNotEqual(UIColor(AppTheme.brandCanvas(.dark)), UIColor(AppTheme.marianBlue))
+    }
+
+    func testFutureDayTextMeetsContrast() {
+        for scheme in [ColorScheme.light, .dark] {
+            let palette = ThemePalette(scheme: scheme)
+            XCTAssertGreaterThanOrEqual(
+                ratio(palette.futureDayText, palette.bg),
+                4.5,
+                "future day \(scheme)"
+            )
+            XCTAssertGreaterThanOrEqual(
+                ratio(palette.futureDayText, palette.surface),
+                4.5,
+                "future day on surface \(scheme)"
+            )
+        }
+    }
+
     func testFillsKeepMarianBlue() {
         XCTAssertEqual(UIColor(ThemePalette(scheme: .dark).accent), UIColor(Color(hex: 0x0054FF)))
         XCTAssertEqual(UIColor(ThemePalette(scheme: .dark).accentText), UIColor(Color(hex: 0x3D7DFF)))

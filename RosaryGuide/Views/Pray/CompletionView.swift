@@ -241,8 +241,7 @@ struct CompletionView: View {
                 .font(AppTheme.TypeRole.screenTitle)
                 .foregroundStyle(palette.completionTitle)
                 .multilineTextAlignment(.center)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityLabel(mysterySet.name.english)
                 .padding(.top, 6)
 
@@ -263,9 +262,7 @@ struct CompletionView: View {
                 .foregroundStyle(palette.completionTitle.opacity(0.88))
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
-                // Longest quote (106 chars) needs 4 lines on narrow phones.
-                .lineLimit(4)
-                .minimumScaleFactor(0.9)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, AppTheme.Space.sm)
 
             Text(quote.attribution.uppercased())
@@ -419,7 +416,6 @@ struct CompletionView: View {
                 .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
                 .foregroundStyle(text)
                 .lineLimit(2)
-                .minimumScaleFactor(0.7)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 28)
                 .frame(maxWidth: .infinity)

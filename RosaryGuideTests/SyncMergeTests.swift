@@ -586,15 +586,16 @@ final class ReviewPromptGateTests: XCTestCase {
     }
 }
 
-/// Dynamic Type: every role scales, capped roles stop at their cap, and the default size is unchanged.
+/// Dynamic Type: reading text and controls scale past 200% at accessibility sizes.
+/// The default Large size stays the design size. Layout overlap is a device check.
 final class DynamicTypeScalingTests: XCTestCase {
     private let base = UIFont.systemFont(ofSize: 16)
 
     func testDefaultSizeIsTheDesignSize() {
         let body = FontRegistrar.scale(base, textStyle: .body, maxPointSize: nil, category: .large)
-        let capped = FontRegistrar.scale(base, textStyle: .callout, maxPointSize: AppTheme.TypeRole.Cap.pillLabel, category: .large)
+        let control = FontRegistrar.scale(base, textStyle: .callout, maxPointSize: nil, category: .large)
         XCTAssertEqual(body.pointSize, 16, accuracy: 0.01)
-        XCTAssertEqual(capped.pointSize, 16, accuracy: 0.01, "A cap never changes the default size")
+        XCTAssertEqual(control.pointSize, 16, accuracy: 0.01, "Controls keep the design size at Large")
     }
 
     func testReadingTextScalesWithoutLimit() {
@@ -604,12 +605,15 @@ final class DynamicTypeScalingTests: XCTestCase {
         XCTAssertGreaterThan(xl.pointSize, 16)
     }
 
-    func testCappedRolesStopAtTheirCap() {
-        let pill = FontRegistrar.scale(base, textStyle: .callout, maxPointSize: AppTheme.TypeRole.Cap.pillLabel, category: .accessibilityExtraExtraExtraLarge)
-        XCTAssertEqual(pill.pointSize, AppTheme.TypeRole.Cap.pillLabel, accuracy: 0.01)
-        let title = UIFont.systemFont(ofSize: 44)
-        let h1 = FontRegistrar.scale(title, textStyle: .largeTitle, maxPointSize: (44 * AppTheme.TypeRole.Cap.displayScale).rounded(), category: .accessibilityExtraExtraExtraLarge)
-        XCTAssertEqual(h1.pointSize, 57, accuracy: 0.01)
+    /// Apple's Larger Text label needs at least 200% (32pt from a 16pt control)
+    /// at accessibility sizes. The old 22pt pill ceiling failed that.
+    func testControlsReachAtLeastDoubleAtAccessibilitySizes() {
+        let pill = FontRegistrar.scale(base, textStyle: .callout, maxPointSize: nil, category: .accessibilityExtraExtraExtraLarge)
+        XCTAssertGreaterThanOrEqual(pill.pointSize, 32)
+        let segment = FontRegistrar.scale(UIFont.systemFont(ofSize: 14), textStyle: .callout, maxPointSize: nil, category: .accessibilityExtraExtraExtraLarge)
+        XCTAssertGreaterThanOrEqual(segment.pointSize, 28)
+        let day = FontRegistrar.scale(base, textStyle: .callout, maxPointSize: nil, category: .accessibilityExtraLarge)
+        XCTAssertGreaterThan(day.pointSize, 16)
     }
 }
 

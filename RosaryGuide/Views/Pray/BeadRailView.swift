@@ -10,6 +10,8 @@ struct RosaryBeadMapView: View {
     /// Set before leaving the closing prayer so the display-link timeline is
     /// not invalidated in the same turn as the finis screen.
     var animationPaused: Bool = false
+    /// VoiceOver action for stepping back. Swipe-back stays a touch shortcut.
+    var onPrevious: (() -> Void)? = nil
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -54,11 +56,30 @@ struct RosaryBeadMapView: View {
         .frame(height: 118)
         .accessibilityLabel("Rosary beads")
         .accessibilityValue(valueLabel)
+        .accessibilityHint("Shows the current prayer")
+        .accessibilityAddTraits(.updatesFrequently)
+        .modifier(PreviousPrayerAction(action: onPrevious))
     }
 
     private var valueLabel: String {
         locus?.spokenDescription ?? "Rosary"
     }
+}
+
+/// Previous prayer is a VoiceOver action on the bead map. Touch users still swipe.
+private struct PreviousPrayerAction: ViewModifier {
+    var action: (() -> Void)?
+
+    func body(content: Content) -> some View {
+        if let action {
+            content.accessibilityAction(named: "Previous prayer", action)
+        } else {
+            content
+        }
+    }
+}
+
+private extension RosaryBeadMapView {
 
     private func pulsePhase(at date: Date) -> CGFloat {
         guard !reduceMotion else { return 0 }
@@ -573,7 +594,9 @@ struct SevenStageTrack: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(stage.spokenName)
+                .accessibilityValue(stage == current ? "Current" : (stage.rawValue < current.rawValue ? "Completed" : "Not yet"))
                 .accessibilityHint(stage == current ? "Current section" : "Jumps to this section")
+                .accessibilityAddTraits(stage == current ? .isSelected : [])
             }
         }
         .frame(minHeight: AppTheme.Accessibility.minHitTarget)
