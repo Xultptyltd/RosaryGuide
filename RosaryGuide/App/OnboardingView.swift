@@ -140,8 +140,14 @@ struct OnboardingPageView: View {
     @State private var imageDrift = false
 
     /// Room for the page dots, Continue, and a gap after the last body line.
+    /// The overlay pill grows with Dynamic Type, so accessibility sizes keep a
+    /// second pill-height plus extra gap — 132 pt is only enough at default size.
     private var footerClearance: CGFloat {
-        controlsHeight + AppTheme.Space.xl + (dynamicTypeSize.isAccessibilitySize ? AppTheme.Space.xl : 0)
+        let chrome = controlsHeight + AppTheme.Space.xl
+        if dynamicTypeSize.isAccessibilitySize {
+            return chrome + AppTheme.Component.pillHeight + AppTheme.Space.xxl
+        }
+        return chrome
     }
 
     private var textBlock: some View {
