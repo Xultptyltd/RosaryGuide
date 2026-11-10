@@ -185,6 +185,7 @@ struct HomeView: View {
                 Color.clear
                     .onAppear { captureMetrics(geo) }
                     .onChange(of: geo.size) { _, _ in captureMetrics(geo) }
+                    .accessibilityHidden(true)
             }
         }
         .onAppear {

@@ -456,7 +456,7 @@ struct PrayView: View {
                     }
                     .background {
                         GeometryReader { geo in
-                            Color.clear.preference(key: PlateContentHeightKey.self, value: geo.size.height)
+                            Color.clear.preference(key: PlateContentHeightKey.self, value: geo.size.height).accessibilityHidden(true)
                         }
                     }
                 }
@@ -465,7 +465,7 @@ struct PrayView: View {
                 .scrollPosition($plateScrollPosition)
                 .background {
                     GeometryReader { geo in
-                        Color.clear.preference(key: PlateViewportHeightKey.self, value: geo.size.height)
+                        Color.clear.preference(key: PlateViewportHeightKey.self, value: geo.size.height).accessibilityHidden(true)
                     }
                 }
                 .onPreferenceChange(PlateContentHeightKey.self) { height in
@@ -574,7 +574,7 @@ struct PrayView: View {
         }
         .background {
             GeometryReader { geo in
-                Color.clear.preference(key: PlateChromeHeightKey.self, value: geo.size.height)
+                Color.clear.preference(key: PlateChromeHeightKey.self, value: geo.size.height).accessibilityHidden(true)
             }
         }
         .onPreferenceChange(PlateChromeHeightKey.self) { height in
@@ -693,7 +693,7 @@ struct PrayView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background {
                             GeometryReader { geo in
-                                Color.clear.preference(key: PrayerTextHeightKey.self, value: geo.size.height)
+                                Color.clear.preference(key: PrayerTextHeightKey.self, value: geo.size.height).accessibilityHidden(true)
                             }
                         }
                         if prayerUsesScrollTemplate, shouldShowBeads(step), let bead = step.bead {
@@ -702,8 +702,13 @@ struct PrayView: View {
                         }
                         if !pinTop { Spacer(minLength: 0) }
                         if prayerUsesScrollTemplate {
-                            Color.clear.frame(height: prayerScrollTail(step))
-                            Color.clear.frame(height: 1).id(PrayerScrollAnchor.bottom)
+                            Color.clear
+                                .frame(height: prayerScrollTail(step))
+                                .accessibilityHidden(true)
+                            Color.clear
+                                .frame(height: 1)
+                                .id(PrayerScrollAnchor.bottom)
+                                .accessibilityHidden(true)
                         }
                     }
                     .frame(minHeight: pinTop ? nil : scrollGeo.size.height, alignment: .top)
@@ -996,7 +1001,9 @@ struct PrayView: View {
                         }
 
                         // Room under the list so the last row clears the floating action.
-                        Color.clear.frame(height: intentionScrollTail)
+                        Color.clear
+                            .frame(height: intentionScrollTail)
+                            .accessibilityHidden(true)
                     }
                 }
                 .scrollIndicators(.hidden)
@@ -1259,6 +1266,9 @@ struct PrayView: View {
             }
         }
         .allowsHitTesting(anchor != nil && current?.isPlate != true)
+        // The overlay GeometryReader is a full-screen container; only the
+        // chips should appear in the accessibility tree, not the container.
+        .accessibilityElement(children: .contain)
         .accessibilityHidden(anchor == nil || current?.isPlate == true)
     }
 
@@ -1428,22 +1438,24 @@ struct PrayView: View {
                                 // Same content-to-action gap as every long prayer.
                                 Color.clear
                                     .frame(height: AppTheme.Component.prayerReadingScrollTail)
+                                    .accessibilityHidden(true)
                                 Color.clear
                                     .frame(height: 1)
                                     .id(MichaelScrollAnchor.bottom)
+                                    .accessibilityHidden(true)
                             }
                             .frame(minHeight: scrollGeo.size.height, alignment: .top)
                             .frame(maxWidth: .infinity)
                             .background {
                                 GeometryReader { geo in
-                                    Color.clear.preference(key: MichaelContentHeightKey.self, value: geo.size.height)
+                                    Color.clear.preference(key: MichaelContentHeightKey.self, value: geo.size.height).accessibilityHidden(true)
                                 }
                             }
                         }
                         .scrollIndicators(.hidden)
                         .background {
                             GeometryReader { geo in
-                                Color.clear.preference(key: MichaelViewportHeightKey.self, value: geo.size.height)
+                                Color.clear.preference(key: MichaelViewportHeightKey.self, value: geo.size.height).accessibilityHidden(true)
                             }
                         }
                         .scrollPosition($michaelScrollPosition)

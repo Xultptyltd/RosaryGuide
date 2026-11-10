@@ -81,6 +81,10 @@ struct RootView: View {
 
     var body: some View {
         rootTabs
+            // The cover is modal, but the audit still walks the tab tree
+            // behind it and flags leftover decorative nodes. Hide that tree
+            // from accessibility while a Rosary is open.
+            .accessibilityHidden(prayLaunch != nil)
             .task {
                 // Screenshot hook (DebugHooks is DEBUG-only): opens the Rosary's settings sheet.
                 guard DebugHooks.has("-RGDebugRosaryFlowSettings") || DebugHooks.has("-RGDebugRosaryFlow") else { return }
@@ -181,3 +185,4 @@ enum DebugHooks {
         #endif
     }
 }
+

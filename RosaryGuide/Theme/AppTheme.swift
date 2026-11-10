@@ -1648,6 +1648,24 @@ struct GuideChoiceControl<Selection: Hashable>: View {
     }
 }
 
+/// A 0-pt `safeAreaInset` still creates a UIKit `TouchBlocker` (440×0) at the
+/// bottom of the screen, which the accessibility audit flags as a too-small
+/// unlabelled hit target. Only install the inset when there is height to reserve.
+private struct OptionalBottomClearanceInset: ViewModifier {
+    var extra: CGFloat
+    func body(content: Content) -> some View {
+        if extra > 0 {
+            content.safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear
+                    .frame(height: extra)
+                    .accessibilityHidden(true)
+            }
+        } else {
+            content
+        }
+    }
+}
+
 /// Apply this to a `ScrollView` (not its inner stack). The system tab-bar
 /// safe area already keeps content out of the bar; this extra content margin
 /// lets the last card scroll fully clear of it, including at accessibility sizes.
@@ -1657,16 +1675,7 @@ private struct GuideTabBarClearance: ViewModifier {
     func body(content: Content) -> some View {
         content
             .contentMargins(.bottom, AppTheme.Space.xl + extra, for: .scrollContent)
-            // A 0-pt inset still appears in the accessibility tree as an
-            // unlabelled, zero-height hit target, so only reserve extra space
-            // when there is some.
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if extra > 0 {
-                    Color.clear
-                        .frame(height: extra)
-                        .accessibilityHidden(true)
-                }
-            }
+            .modifier(OptionalBottomClearanceInset(extra: extra))
     }
 }
 
@@ -2275,6 +2284,11 @@ struct GuideWrappingText: UIViewRepresentable {
         label.lineBreakMode = .byWordWrapping
         label.lineBreakStrategy = []
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        // VoiceOver uses the SwiftUI label on `WordSafeText`. The representable
+        // itself must not be an unlabelled (or undersized) hit target.
+        label.isAccessibilityElement = false
+        label.accessibilityElementsHidden = true
+        label.isUserInteractionEnabled = false
         return label
     }
 
@@ -2293,7 +2307,8 @@ struct GuideWrappingText: UIViewRepresentable {
             .paragraphStyle: paragraph
         ])
         label.lineBreakMode = numberOfLines > 0 ? .byTruncatingTail : .byWordWrapping
-        label.accessibilityLabel = text
+        label.isAccessibilityElement = false
+        label.accessibilityElementsHidden = true
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UILabel, context: Context) -> CGSize? {
@@ -2322,20 +2337,25 @@ struct WordSafeText: View {
     }
 
     var body: some View {
-        if dynamicTypeSize.isAccessibilitySize {
-            // ViewThatFits takes the first size whose longest word fits the width.
-            ViewThatFits(in: .horizontal) {
-                ForEach(Self.scales(down: minimumScale), id: \.self) { scale in
-                    let sized = scale == 1 ? font : font.withSize(font.pointSize * scale)
-                    LongestWordWidth(width: Self.longestWordWidth(text, font: sized)) {
-                        GuideWrappingText(text: text, font: sized, color: color, numberOfLines: lineLimit ?? 0, alignment: textAlignment)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                // ViewThatFits takes the first size whose longest word fits the width.
+                ViewThatFits(in: .horizontal) {
+                    ForEach(Self.scales(down: minimumScale), id: \.self) { scale in
+                        let sized = scale == 1 ? font : font.withSize(font.pointSize * scale)
+                        LongestWordWidth(width: Self.longestWordWidth(text, font: sized)) {
+                            GuideWrappingText(text: text, font: sized, color: color, numberOfLines: lineLimit ?? 0, alignment: textAlignment)
+                        }
                     }
                 }
+            } else {
+                GuideWrappingText(text: text, font: font, color: color, numberOfLines: lineLimit ?? 0, alignment: textAlignment)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-        } else {
-            GuideWrappingText(text: text, font: font, color: color, numberOfLines: lineLimit ?? 0, alignment: textAlignment)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
+        .accessibilityAddTraits(.isStaticText)
     }
 
     static func scales(down minimum: CGFloat) -> [CGFloat] {
