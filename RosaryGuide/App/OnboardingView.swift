@@ -192,13 +192,14 @@ struct OnboardingPageView: View {
                         .clipped()
                 }
 
-                Spacer(minLength: AppTheme.Space.lg)
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Spacer(minLength: AppTheme.Space.lg)
+                }
 
                 if scrollsText {
                     if dynamicTypeSize.isAccessibilitySize {
-                        // Always scroll at AX sizes. ViewThatFits can choose the
-                        // non-scrolling candidate before custom fonts finish scaling,
-                        // which clipped the last body line.
+                        // Do not put Spacers around this: they were shrinking the
+                        // scroll view to a sliver under a tall reserved footer.
                         ScrollView(.vertical, showsIndicators: false) { textBlock }
                             .frame(maxHeight: .infinity, alignment: .top)
                     } else {
@@ -212,7 +213,9 @@ struct OnboardingPageView: View {
                     textBlock
                 }
 
-                Spacer(minLength: AppTheme.Space.lg)
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Spacer(minLength: AppTheme.Space.lg)
+                }
 
                 // Room for the dots, a gap after the body, and the Continue button overlay.
                 Color.clear.frame(height: footerClearance)
