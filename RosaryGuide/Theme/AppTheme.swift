@@ -1541,7 +1541,13 @@ struct GuideSegmentedControl: ViewModifier {
             .frame(minHeight: Self.height)
             .labelsHidden()
             #if canImport(UIKit)
-            .background(SegmentedControlSchemeSync(dark: palette.scheme == .dark))
+            // The probe is a zero-size UIView behind the segmented control.
+            // Hide it from VoiceOver and the audit; it is not a control.
+            .background(
+                SegmentedControlSchemeSync(dark: palette.scheme == .dark)
+                    .accessibilityHidden(true)
+                    .allowsHitTesting(false)
+            )
             #endif
     }
 
@@ -1577,6 +1583,8 @@ private struct SegmentedControlSchemeSync: UIViewRepresentable {
         override init(frame: CGRect) {
             super.init(frame: frame)
             isUserInteractionEnabled = false
+            isAccessibilityElement = false
+            accessibilityElementsHidden = true
             backgroundColor = .clear
         }
 

@@ -15,6 +15,7 @@ private struct PrayChromeButton: View {
             content
                 .foregroundStyle(palette.ink)
                 .frame(width: AppTheme.controlSize, height: AppTheme.controlSize)
+                .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -212,8 +213,15 @@ struct PrayView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) { showCompletionScreen() }
             }
             if case .fresh(let set, _, _) = launch, sessionStore.resumableSession != nil {
-                freshSetPending = set
-                confirmReplace = true
+                // `-RGDebugReplaceSavedRosary` (with `-RGDebugRosaryFlow`): start
+                // fresh without the "Start a new rosary?" alert, so UI tests do
+                // not have to query that sheet at accessibility sizes.
+                if DebugHooks.has("-RGDebugReplaceSavedRosary") {
+                    configure()
+                } else {
+                    freshSetPending = set
+                    confirmReplace = true
+                }
             } else {
                 configure()
             }
@@ -1207,25 +1215,50 @@ struct PrayView: View {
     /// the short-prayer footer and the long-prayer floating chrome (e.g. when
     /// Both makes the text long) does not recreate the segmented control and
     /// kill its sliding animation.
+    /// Reserves the toggle's size without embedding a second `Picker` (and its
+    /// zero-size UIKit scheme-sync probe) in the accessibility tree. The visible
+    /// control is the overlaid copy from `stableLanguageChips()`.
     private var languageChipsSlot: some View {
-        languageChips
-            .hidden()
-            // The visible control is the overlaid copy; this spacer must stay
-            // out of the accessibility tree so it is not audited as a zero-size hit target.
+        languageChipSizePlaceholder
             .accessibilityHidden(true)
+            .allowsHitTesting(false)
             .anchorPreference(key: LanguageChipsAnchorKey.self, value: .bounds) { $0 }
+    }
+
+    @ViewBuilder
+    private var languageChipSizePlaceholder: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(spacing: AppTheme.Space.sm) {
+                ForEach(PrayerLanguage.allCases, id: \.self) { option in
+                    Text(option.title)
+                        .font(AppTheme.TypeRole.segmentedControl)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppTheme.Space.md)
+                        .padding(.horizontal, AppTheme.Space.lg)
+                        .hidden()
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            Color.clear
+                .frame(width: 220, height: GuideSegmentedControl.height, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     private func stableLanguageChips(_ anchor: Anchor<CGRect>?) -> some View {
         GeometryReader { proxy in
-            let rect = anchor.map { proxy[$0] } ?? .zero
-            languageChips
-                .frame(width: rect.width, height: rect.height)
-                .offset(x: rect.minX, y: rect.minY)
-                .opacity(anchor == nil ? 0 : 1)
-                .allowsHitTesting(anchor != nil)
-                .accessibilityHidden(anchor == nil || current?.isPlate == true)
+            if let anchor {
+                let rect = proxy[anchor]
+                languageChips
+                    .frame(width: rect.width, height: rect.height, alignment: .topLeading)
+                    .offset(x: rect.minX, y: rect.minY)
+            }
         }
+        .allowsHitTesting(anchor != nil && current?.isPlate != true)
+        .accessibilityHidden(anchor == nil || current?.isPlate == true)
     }
 
     private var languageChips: some View {
