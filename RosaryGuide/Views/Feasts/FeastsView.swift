@@ -177,9 +177,9 @@ struct FeastsView: View {
                 }
                 .padding(.horizontal, AppTheme.gutter)
                 .padding(.top, GuideRootChrome.contentTop)
-                .guideTabBarPadding()
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .guideTabBarPadding()
             .scrollDisabled(calendarDrag != nil)
             .tint(palette.accent)
             .guideRootChrome("Feasts", ambientBackground: true)
@@ -536,10 +536,10 @@ struct FeastDetailView: View {
                 Spacer(minLength: 40)
             }
             .padding(.horizontal, AppTheme.gutter)
-            .padding(.bottom, 108)
             .frame(maxWidth: .infinity, alignment: .leading)
             .coordinateSpace(name: FeastHeroChrome.contentSpace)
         }
+        .guideTabBarPadding()
         // Plain page colour over the ambient layer; glass cards stay on.
         .guidePlainPageBackground()
         .guidePageChrome(ambientBackground: true)
@@ -1362,10 +1362,10 @@ private struct FeastSecondaryPage<Content: View>: View {
                 Spacer(minLength: 34)
             }
             .padding(.horizontal, AppTheme.gutter)
-            .padding(.bottom, 108)
             .frame(maxWidth: .infinity, alignment: .leading)
             .coordinateSpace(name: FeastHeroChrome.contentSpace)
         }
+        .guideTabBarPadding()
         // Plain page colour over the ambient layer; glass cards stay on.
         .guidePlainPageBackground()
         .guidePageChrome(ambientBackground: true)

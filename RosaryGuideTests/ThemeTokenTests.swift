@@ -264,7 +264,7 @@ final class ContrastTokenTests: XCTestCase {
         XCTAssertEqual(UIColor(ThemePalette(scheme: .dark).accent), UIColor(Color(hex: 0x0054FF)))
         XCTAssertEqual(UIColor(ThemePalette(scheme: .dark).accentText), UIColor(Color(hex: 0x3D7DFF)))
         XCTAssertEqual(UIColor(ThemePalette(scheme: .light).accentText), UIColor(Color(hex: 0x0054FF)))
-        XCTAssertEqual(UIColor(ThemePalette(scheme: .light).textSecondary), UIColor(Color(hex: 0x6A6A6A)))
+        XCTAssertEqual(UIColor(ThemePalette(scheme: .light).textSecondary), UIColor(Color(hex: 0x5C5C5C)))
         XCTAssertEqual(UIColor(ThemePalette(scheme: .light).destructive), UIColor(Color(hex: 0xC92E25)))
     }
 }

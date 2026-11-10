@@ -81,8 +81,6 @@ enum AppTheme {
     static let controlSize: CGFloat = 40
     /// Reserved bottom clearance for content behind the liquid tab bar.
     static let tabBarContentClearance: CGFloat = 108
-    /// Extra room under the last row when the tab bar grows with accessibility text.
-    static let tabBarAccessibilityExtraClearance: CGFloat = 88
 
     static func gutter(for width: CGFloat) -> CGFloat {
         // Single source of truth: always `gutter` (16pt), including compact widths.
@@ -205,8 +203,10 @@ struct ThemePalette {
     /// The app's single secondary grey. Use this for all supporting,
     /// disabled-looking, metadata, and explanatory copy.
     var textSecondary: Color {
-        // #6A6A6A: 4.5:1 on the light surface #EBEBED (#6E6E6E was 4.3:1).
-        scheme == .light ? Color(hex: 0x6A6A6A) : Color(hex: 0xAEAEAE)
+        // #5C5C5C stays at or above 4.5:1 on the light page (#F8F8FA) and
+        // surface (#EBEBED) after glyph antialiasing. #6A6A6A met 4.5:1 on
+        // the surface only and failed the accessibility contrast audit on Home.
+        scheme == .light ? Color(hex: 0x5C5C5C) : Color(hex: 0xAEAEAE)
     }
     /// Future journey-calendar numerals. Same ink as secondary text so they stay
     /// quieter than a prayed day without dropping below 4.5:1.
@@ -1224,6 +1224,8 @@ struct GuideDisplayTitle: View {
         Text(text)
             .font(AppTheme.TypeRole.h1(size))
             .foregroundStyle(color)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(text)
             .accessibilityAddTraits(.isHeader)
         #endif
     }
@@ -1237,6 +1239,8 @@ struct GuideDisplayTitle: View {
             .lineSpacing(extra)
             .foregroundStyle(color)
             .fixedSize(horizontal: false, vertical: true)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(text)
             .accessibilityAddTraits(.isHeader)
     }
     #endif
@@ -1665,17 +1669,20 @@ struct GuideChoiceControl<Selection: Hashable>: View {
     }
 }
 
-private struct GuideTabBarPadding: ViewModifier {
+/// Apply this to a `ScrollView` (not its inner stack). The system tab-bar
+/// safe area already keeps content out of the bar; this extra content margin
+/// lets the last card scroll fully clear of it, including at accessibility sizes.
+private struct GuideTabBarClearance: ViewModifier {
     var extra: CGFloat = 0
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     func body(content: Content) -> some View {
-        content.padding(
-            .bottom,
-            AppTheme.tabBarContentClearance
-                + extra
-                + (dynamicTypeSize.isAccessibilitySize ? AppTheme.tabBarAccessibilityExtraClearance : 0)
-        )
+        content
+            .contentMargins(.bottom, AppTheme.Space.xl + extra, for: .scrollContent)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear
+                    .frame(height: extra)
+                    .accessibilityHidden(true)
+            }
     }
 }
 
@@ -1685,7 +1692,7 @@ extension View {
     }
 
     func guideTabBarPadding(extra: CGFloat = 0) -> some View {
-        modifier(GuideTabBarPadding(extra: extra))
+        modifier(GuideTabBarClearance(extra: extra))
     }
 
     func guidePressable() -> some View {

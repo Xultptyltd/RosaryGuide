@@ -276,7 +276,6 @@ struct OfferView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideRootChrome.contentTop)
-            .guideTabBarPadding()
             // Reuses the onboarding sign-in step. Held here, not on the backup card: the card
             // goes the moment the account exists, which used to close this before its tick.
             .fullScreenCover(isPresented: $showSignIn, onDismiss: {
@@ -298,6 +297,7 @@ struct OfferView: View {
                 }
             }
         }
+        .guideTabBarPadding()
         #if DEBUG
         // `-RGDebugProfileBackup`: scrolls to the create-account card for screenshots.
         .task {
@@ -419,8 +419,8 @@ struct OfferView: View {
                 .padding(.top, AppTheme.Space.lg)
             }
             .padding(.top, GuideRootChrome.contentTop)
-            .padding(.bottom, 108)
         }
+        .guideTabBarPadding()
     }
 
     private func addIntentionButton(
@@ -747,8 +747,8 @@ struct OfferView: View {
             .padding(.horizontal, AppTheme.gutter)
             // Same top breathing room as FeastsView before its title/control block.
             .padding(.top, GuideRootChrome.contentTop)
-            .padding(.bottom, 108)
         }
+        .guideTabBarPadding()
     }
 
     @ViewBuilder
@@ -1429,8 +1429,8 @@ private struct PapalIntentionDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, 18)
-            .padding(.bottom, 108)
         }
+        .guideTabBarPadding()
         .guideDetailChrome("Holy Father’s intention")
         .toolbar {
             if added {
@@ -1560,8 +1560,8 @@ private struct AllIntentionsView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideDetailChrome.contentTop)
-            .padding(.bottom, 108)
         }
+        .guideTabBarPadding()
         // Standard level-2 chrome: native inline title, system back button and edge swipe.
         .guideDetailChrome("All intentions")
         .toolbar {
@@ -1700,6 +1700,7 @@ private struct IntentionDetailView: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let intention: OfferIntention
     var hideText: Bool = false
@@ -1759,19 +1760,19 @@ private struct IntentionDetailView: View {
                             .foregroundStyle(palette.secondaryButtonText)
                             .frame(maxWidth: .infinity)
                             .multilineTextAlignment(.center)
-                            .frame(height: AppTheme.Component.pillHeight)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.vertical, AppTheme.Space.sm)
+                            .frame(minHeight: AppTheme.Component.pillHeight)
                             .background(palette.secondaryButtonFill, in: Capsule())
                     }
                     .buttonStyle(.plain)
                     .padding(.top, AppTheme.Space.xl)
                 }
                 .padding(.top, shouldShowNotesField ? AppTheme.Space.lg - AppTheme.Space.md : 0)
-
-                Spacer(minLength: 80)
             }
             .padding(.horizontal, AppTheme.gutter)
-            .padding(.bottom, 108)
         }
+        .guideTabBarPadding()
         .toolbar {
             if intention.isPapal {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -1824,26 +1825,40 @@ private struct IntentionDetailView: View {
     }
 
     private var statsCard: some View {
-        HStack(spacing: 0) {
-            stat("\(intention.timesCarried)", intention.timesCarried == 1 ? "Rosary prayed" : "Rosaries prayed")
-            Divider().opacity(0.4)
-            stat(lastPrayedRelative, "Last prayed")
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: AppTheme.Space.lg) {
+                    stat("\(intention.timesCarried)", intention.timesCarried == 1 ? "Rosary prayed" : "Rosaries prayed")
+                    Divider().opacity(0.4)
+                    stat(lastPrayedRelative, "Last prayed")
+                }
+                .padding(.vertical, AppTheme.Space.md)
+            } else {
+                HStack(spacing: 0) {
+                    stat("\(intention.timesCarried)", intention.timesCarried == 1 ? "Rosary prayed" : "Rosaries prayed")
+                    Divider().opacity(0.4)
+                    stat(lastPrayedRelative, "Last prayed")
+                }
+                .frame(minHeight: 80)
+            }
         }
-        .frame(height: 80)
         .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
     }
 
     private func stat(_ value: String, _ label: String) -> some View {
-        VStack(spacing: AppTheme.Space.xs) {
+        VStack(alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .center, spacing: AppTheme.Space.xs) {
             Text(value)
                 .font(AppTheme.TypeRole.body(weight: .semibold))
                 .foregroundStyle(palette.ink)
+                .fixedSize(horizontal: false, vertical: true)
             Text(label)
                 .font(AppTheme.TypeRole.caption)
                 .foregroundStyle(palette.dim)
-                .multilineTextAlignment(.center)
+                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .center)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .center)
+        .padding(.horizontal, dynamicTypeSize.isAccessibilitySize ? AppTheme.Space.lg : 0)
     }
 
     private var lastPrayedRelative: String {
@@ -1965,17 +1980,35 @@ private struct IntentionDetailView: View {
     }
 
     private func detailRow(_ title: String, value: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
-            Text(title)
-                .font(AppTheme.TypeRole.themeSummary)
-                .foregroundStyle(palette.ink)
-            Spacer()
-            Text(value)
-                .font(AppTheme.TypeRole.label)
-                .foregroundStyle(palette.dim)
-                .multilineTextAlignment(.trailing)
-                .lineLimit(2)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                    Text(title)
+                        .font(AppTheme.TypeRole.themeSummary)
+                        .foregroundStyle(palette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(value)
+                        .font(AppTheme.TypeRole.label)
+                        .foregroundStyle(palette.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Space.md) {
+                    Text(title)
+                        .font(AppTheme.TypeRole.themeSummary)
+                        .foregroundStyle(palette.ink)
+                        .fixedSize(horizontal: true, vertical: true)
+                    Spacer(minLength: AppTheme.Space.md)
+                    Text(value)
+                        .font(AppTheme.TypeRole.label)
+                        .foregroundStyle(palette.dim)
+                        .multilineTextAlignment(.trailing)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, AppTheme.Space.lg)
         .padding(.vertical, 15)
     }
@@ -3559,8 +3592,8 @@ private struct PrayerJourneyView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideDetailChrome.contentTop)
-            .guideTabBarPadding(extra: AppTheme.Space.xs)
         }
+        .guideTabBarPadding(extra: AppTheme.Space.xs)
         .scrollContentBackground(.hidden)
         // DEBUG `-RGDebugJourneyScrollEnd`: opens scrolled to the end so screenshots show Show more.
         .defaultScrollAnchor(DebugHooks.has("-RGDebugJourneyScrollEnd") ? .bottom : nil)
@@ -4680,8 +4713,8 @@ private struct ArchivedIntentionsView: View {
                     }
                     .padding(.horizontal, AppTheme.gutter)
                     .padding(.top, GuideDetailChrome.contentTop)
-                    .padding(.bottom, 108)
                 }
+                .guideTabBarPadding()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

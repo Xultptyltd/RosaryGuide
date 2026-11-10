@@ -131,11 +131,13 @@ struct HomeView: View {
                             .frame(width: viewport.width)
                     }
                     .frame(width: viewport.width, alignment: .top)
-                    // Match Feasts/Learn/Intentions: clear the tab bar and allow
-                    // scrolled content to show through liquid glass.
-                    .guideTabBarPadding()
                 }
-                .scrollBounceBehavior(.basedOnSize, axes: .vertical)
+                // System tab-bar safe area plus a content margin, so the last card can
+                // scroll fully clear of the liquid tab bar.
+                .guideTabBarPadding()
+                // Always allow scrolling so content margins can carry the last
+                // card clear of the tab bar. `.basedOnSize` treated short AX
+                // layouts as fitting and pinned the mystery rail under the bar.
                 .onChange(of: completionScrollReset) { _, _ in
                     // Feast details can also launch the flow from this tab; preserve that destination.
                     guard navigationPath.isEmpty else { return }

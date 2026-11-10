@@ -53,7 +53,6 @@ struct PrayHubView: View {
                 }
                 .padding(.horizontal, pageGutter)
                 .padding(.top, GuideRootChrome.contentTop)
-                .padding(.bottom, 108)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .background {
                     GeometryReader { proxy in
@@ -63,7 +62,7 @@ struct PrayHubView: View {
                     }
                 }
             }
-            .scrollBounceBehavior(.basedOnSize)
+            .guideTabBarPadding()
             #if DEBUG
             // `-RGDebugIntro`: opens the Rosary introduction for screenshots.
             .task {
@@ -135,8 +134,8 @@ struct PrayHubView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideDetailChrome.contentTop)
-            .guideTabBarPadding()
         }
+        .guideTabBarPadding()
         // Plain page colour over the ambient layer; glass cards stay on.
         .guidePlainPageBackground()
         .guideDetailChrome("Rosary prayers")
@@ -846,8 +845,8 @@ private struct LearnArticleView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, AppTheme.Space.xxl)
-            .padding(.bottom, 80)
         }
+        .guideTabBarPadding()
         .guideDetailChrome(article.title)
     }
 }
@@ -903,8 +902,8 @@ private struct AllPrayersView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideDetailChrome.contentTop)
-            .guideTabBarPadding()
         }
+        .guideTabBarPadding()
         .scrollDismissesKeyboard(.interactively)
         // Plain page colour over the ambient layer; glass cards stay on.
         .guidePlainPageBackground()
@@ -1262,8 +1261,8 @@ private struct DevotionDetailView: View {
             .padding(.horizontal, AppTheme.gutter)
             .frame(maxWidth: .infinity)
             .padding(.top, AppTheme.Space.xl)
-            .guideTabBarPadding()
         }
+        .guideTabBarPadding()
         .guideDetailChrome(devotion.eyebrow)
     }
 
@@ -1495,8 +1494,8 @@ private struct LearnMysteryDetailView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, AppTheme.Space.xl)
-            .padding(.bottom, 80)
         }
+        .guideTabBarPadding()
         .guideDetailChrome(set.shortName)
     }
 

@@ -127,7 +127,7 @@ struct OnboardingPageView: View {
     var index: Int
     var pageCount: Int
     /// Lets longer copy (e.g. the Rosary introduction) scroll at large text sizes.
-    var scrollsText = false
+    var scrollsText = true
     /// Footer space kept clear below the copy (taller when a page has two buttons).
     var controlsHeight: CGFloat = OnboardingLayout.controlsHeight
     /// Callers pass palette tokens; the art panel stays black in both appearances.
@@ -136,7 +136,13 @@ struct OnboardingPageView: View {
     var pageColor: Color
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var imageDrift = false
+
+    /// Room for the page dots, Continue, and a gap after the last body line.
+    private var footerClearance: CGFloat {
+        controlsHeight + AppTheme.Space.xl + (dynamicTypeSize.isAccessibilitySize ? AppTheme.Space.xl : 0)
+    }
 
     private var textBlock: some View {
             VStack(alignment: .center, spacing: AppTheme.Space.lg) {
@@ -157,6 +163,7 @@ struct OnboardingPageView: View {
             }
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.horizontal, AppTheme.gutter)
+            .padding(.bottom, AppTheme.Space.xl)
     }
 
     var body: some View {
@@ -194,8 +201,8 @@ struct OnboardingPageView: View {
 
                 Spacer(minLength: AppTheme.Space.lg)
 
-                // Room for the dots and Continue button, which OnboardingView draws on top.
-                Color.clear.frame(height: controlsHeight)
+                // Room for the dots, a gap after the body, and the Continue button overlay.
+                Color.clear.frame(height: footerClearance)
             }
         }
         .background(pageColor)
