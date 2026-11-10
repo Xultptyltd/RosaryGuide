@@ -1711,7 +1711,7 @@ private struct SettingsLegalDocumentScreen: View {
             .padding(.horizontal, AppTheme.gutter)
             .frame(maxWidth: .infinity)
             .padding(.top, GuideDetailChrome.contentTop)
-            .padding(.bottom, AppTheme.tabBarContentClearance)
+            .guideTabBarPadding()
         }
         .background(palette.bg)
         .tint(palette.ink)

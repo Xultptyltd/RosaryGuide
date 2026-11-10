@@ -135,7 +135,7 @@ struct PrayHubView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideDetailChrome.contentTop)
-            .padding(.bottom, AppTheme.tabBarContentClearance)
+            .guideTabBarPadding()
         }
         // Plain page colour over the ambient layer; glass cards stay on.
         .guidePlainPageBackground()
@@ -411,22 +411,9 @@ struct PrayHubView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button {
+            PillButton(title: "Begin walkthrough") {
                 showingWalkthrough = true
-            } label: {
-                HStack {
-                    Text("Begin walkthrough")
-                        .font(AppTheme.TypeRole.pillLabel(weight: .semibold))
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
-                .foregroundStyle(palette.primaryButtonText)
-                .padding(.horizontal, AppTheme.Space.lg)
-                .multilineTextAlignment(.center)
-                .frame(height: AppTheme.Component.pillHeight)
-                .background(palette.primaryButtonFill, in: Capsule())
             }
-            .buttonStyle(.plain)
-            .guidePressable()
         }
         .padding(AppTheme.Space.xl)
         .guideCard(radius: AppTheme.containerRadius, fill: palette.surface)
@@ -916,7 +903,7 @@ private struct AllPrayersView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideDetailChrome.contentTop)
-            .padding(.bottom, AppTheme.tabBarContentClearance)
+            .guideTabBarPadding()
         }
         .scrollDismissesKeyboard(.interactively)
         // Plain page colour over the ambient layer; glass cards stay on.
@@ -954,14 +941,11 @@ struct PrayerReaderBlock: View {
             }
 
             if prayer.text.hasDistinctLatin {
-                Picker("Language", selection: $language) {
-                    Text("English").tag(PrayerLanguage.english)
-                    Text("Latin").tag(PrayerLanguage.latin)
-                    Text("Both").tag(PrayerLanguage.bilingual)
-                }
-                .guideSegmentedControl()
-                .labelsHidden()
-                .accessibilityLabel("Prayer language")
+                GuideChoiceControl(
+                    title: "Prayer language",
+                    selection: $language,
+                    options: [PrayerLanguage.english, .latin, .bilingual]
+                ) { $0.title }
             }
 
             prayerReader
@@ -1278,7 +1262,7 @@ private struct DevotionDetailView: View {
             .padding(.horizontal, AppTheme.gutter)
             .frame(maxWidth: .infinity)
             .padding(.top, AppTheme.Space.xl)
-            .padding(.bottom, AppTheme.tabBarContentClearance)
+            .guideTabBarPadding()
         }
         .guideDetailChrome(devotion.eyebrow)
     }

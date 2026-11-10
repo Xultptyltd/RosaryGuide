@@ -81,6 +81,7 @@ struct FeastsView: View {
     @Binding var prayLaunch: PrayLaunch?
     @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var calendarExpanded = false
     @State private var calendarDrag: CGFloat?
     @State private var filter: FeastScope = .all
@@ -104,10 +105,7 @@ struct FeastsView: View {
         NavigationStack(path: $navigationPath) {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Picker("Scope", selection: $filter) {
-                        ForEach(FeastScope.allCases) { Text($0.title).tag($0) }
-                    }
-                    .guideSegmentedControl()
+                    GuideChoiceControl(title: "Scope", selection: $filter, options: FeastScope.allCases) { $0.title }
                     // Keep "today" selected when the day rolls over.
                     .onChange(of: dayClock.today) { oldDay, newDay in
                         if calendar.isDate(selectedDay, inSameDayAs: oldDay) { selectedDay = newDay }
@@ -179,7 +177,7 @@ struct FeastsView: View {
                 }
                 .padding(.horizontal, AppTheme.gutter)
                 .padding(.top, GuideRootChrome.contentTop)
-                .padding(.bottom, AppTheme.tabBarContentClearance)
+                .guideTabBarPadding()
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollDisabled(calendarDrag != nil)
@@ -233,7 +231,7 @@ struct FeastsView: View {
                                 dayButton(day, hasFeast: feastDays.contains(calendar.startOfDay(for: day)), showsWeekday: false)
                             }
                         }
-                        .frame(height: AppTheme.Component.feastCalendarDayHeight)
+                        .frame(minHeight: calendarDayRowHeight)
                     }
                 }
                 .tag(offset)
@@ -259,7 +257,7 @@ struct FeastsView: View {
                             dayButton(day, hasFeast: feastDays.contains(calendar.startOfDay(for: day)), showsWeekday: false)
                         }
                     }
-                    .frame(height: AppTheme.Component.feastCalendarDayHeight)
+                    .frame(minHeight: calendarDayRowHeight)
                     .id(offset)
                 }
             }
@@ -276,13 +274,18 @@ struct FeastsView: View {
         .frame(height: expandedCalendarHeight)
     }
 
+    /// One week row. Accessibility text needs more than the 52pt design row.
+    private var calendarDayRowHeight: CGFloat {
+        dynamicTypeSize.isAccessibilitySize ? 96 : AppTheme.Component.feastCalendarDayHeight
+    }
+
     private var expandedCalendarHeight: CGFloat {
         let rows = AppTheme.Component.feastCalendarWeekCount
-        return CGFloat(rows) * AppTheme.Component.feastCalendarDayHeight + CGFloat(rows - 1) * AppTheme.Space.xs
+        return CGFloat(rows) * calendarDayRowHeight + CGFloat(rows - 1) * AppTheme.Space.xs
     }
 
     private var revealedCalendarHeight: CGFloat {
-        let collapsed = AppTheme.Component.feastCalendarDayHeight
+        let collapsed = calendarDayRowHeight
         let base = calendarExpanded ? expandedCalendarHeight : collapsed
         return min(expandedCalendarHeight, max(collapsed, base + (calendarDrag ?? 0)))
     }

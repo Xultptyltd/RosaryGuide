@@ -276,7 +276,7 @@ struct OfferView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideRootChrome.contentTop)
-            .padding(.bottom, AppTheme.tabBarContentClearance)
+            .guideTabBarPadding()
             // Reuses the onboarding sign-in step. Held here, not on the backup card: the card
             // goes the moment the account exists, which used to close this before its tick.
             .fullScreenCover(isPresented: $showSignIn, onDismiss: {
@@ -2312,16 +2312,20 @@ private enum RetentionChoice: String, CaseIterable, Identifiable {
 /// UISegmentedControl and sets only its selected state (`emphasisSegmentThumb` / `Title`).
 private struct IntentionKindSelector: View {
     @Environment(\.palette) private var palette
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Binding var selection: IntentionKindChoice
 
     var body: some View {
-        Picker("Category", selection: $selection) {
-            ForEach(IntentionKindChoice.allCases) { option in
-                Text(option.title).tag(option)
+        GuideChoiceControl(
+            title: "Category",
+            selection: $selection,
+            options: IntentionKindChoice.allCases
+        ) { $0.title }
+        .background {
+            if !dynamicTypeSize.isAccessibilitySize {
+                SegmentedSelectedColors(thumb: UIColor(palette.emphasisSegmentThumb), title: UIColor(palette.emphasisSegmentTitle))
             }
         }
-        .guideSegmentedControl()
-        .background(SegmentedSelectedColors(thumb: UIColor(palette.emphasisSegmentThumb), title: UIColor(palette.emphasisSegmentTitle)))
     }
 }
 
@@ -2897,7 +2901,8 @@ struct IntentionEditorSheet: View {
                         }
                         .foregroundStyle(palette.ink)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 80)
+                        .frame(minHeight: 80)
+                        .padding(.vertical, AppTheme.Space.sm)
                         .background(selected ? palette.accentTint : palette.surface, in: RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous))
                         .overlay {
                             RoundedRectangle(cornerRadius: AppTheme.nestedRadius, style: .continuous)
@@ -2928,12 +2933,11 @@ struct IntentionEditorSheet: View {
     private var retentionCard: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
             GuideSectionLabel(text: "Keep intention", prominence: .strong)
-            Picker("Duration", selection: $retention) {
-                ForEach(RetentionChoice.allCases) { option in
-                    Text(option.title).tag(option)
-                }
-            }
-            .pickerStyle(.segmented)
+            GuideChoiceControl(
+                title: "Duration",
+                selection: $retention,
+                options: RetentionChoice.allCases
+            ) { $0.title }
             if retention == .untilDate {
                 DatePicker(
                     "End date",
@@ -3468,6 +3472,7 @@ private struct JourneySelectedDay: Identifiable {
 private struct PrayerJourneyView: View {
     @Environment(SessionStore.self) private var sessionStore
     @Environment(\.palette) private var palette
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var visibleMonth: Date = Date()
     @State private var selectedDay: JourneySelectedDay?
@@ -3530,13 +3535,17 @@ private struct PrayerJourneyView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                Picker("View", selection: $tab.animation(reduceMotion ? nil : MotionTokens.selection)) {
-                    ForEach(JourneyTab.allCases) { option in
-                        Text(option.title).tag(option)
+                GuideChoiceControl(
+                    title: "View",
+                    selection: $tab,
+                    options: JourneyTab.allCases
+                ) { $0.title }
+                .animation(reduceMotion ? nil : MotionTokens.selection, value: tab)
+                .background {
+                    if !dynamicTypeSize.isAccessibilitySize {
+                        SegmentedSelectedColors(thumb: UIColor(palette.emphasisSegmentThumb), title: UIColor(palette.emphasisSegmentTitle))
                     }
                 }
-                .guideSegmentedControl()
-                .background(SegmentedSelectedColors(thumb: UIColor(palette.emphasisSegmentThumb), title: UIColor(palette.emphasisSegmentTitle)))
                 .padding(.bottom, AppTheme.Space.xl)
 
                 switch tab {
@@ -3550,7 +3559,7 @@ private struct PrayerJourneyView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.top, GuideDetailChrome.contentTop)
-            .padding(.bottom, AppTheme.tabBarContentClearance + AppTheme.Space.xs)
+            .guideTabBarPadding(extra: AppTheme.Space.xs)
         }
         .scrollContentBackground(.hidden)
         // DEBUG `-RGDebugJourneyScrollEnd`: opens scrolled to the end so screenshots show Show more.

@@ -79,7 +79,7 @@ private struct PreviousPrayerAction: ViewModifier {
     }
 }
 
-private extension RosaryBeadMapView {
+extension RosaryBeadMapView {
 
     private func pulsePhase(at date: Date) -> CGFloat {
         guard !reduceMotion else { return 0 }

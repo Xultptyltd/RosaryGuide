@@ -220,11 +220,13 @@ enum OnboardingLayout {
 struct OnboardingPanel<Content: View>: View {
     var fill: Color
     var geo: GeometryProxy
+    var compact: Bool = false
     @ViewBuilder var content: (_ panelHeight: CGFloat) -> Content
 
     var body: some View {
         let panelHeight = SignInLayout.panelHeight(
-            screenHeight: geo.size.height + geo.safeAreaInsets.top + geo.safeAreaInsets.bottom)
+            screenHeight: geo.size.height + geo.safeAreaInsets.top + geo.safeAreaInsets.bottom,
+            compact: compact)
         fill
             .frame(height: panelHeight)
             .overlay { content(panelHeight) }
@@ -257,8 +259,15 @@ enum SignInLayout {
     static let panelInset: CGFloat = 24
     /// Panel height measured from the screen's top edge: half the screen, or a little less on
     /// short phones (SE/mini) so the quote and buttons below don't crowd.
-    static func panelHeight(screenHeight: CGFloat) -> CGFloat {
-        (screenHeight * (screenHeight < 820 ? 0.45 : 0.5)).rounded()
+    static func panelHeight(screenHeight: CGFloat, compact: Bool = false) -> CGFloat {
+        let fraction: CGFloat
+        if compact {
+            // Leave most of the screen for the quote and sign-in buttons at accessibility sizes.
+            fraction = screenHeight < 820 ? 0.28 : 0.32
+        } else {
+            fraction = screenHeight < 820 ? 0.45 : 0.5
+        }
+        return (screenHeight * fraction).rounded()
     }
     /// Beads width that fills the panel: the strands start `strandOverflow` above the screen's
     /// top edge and the loop sits `loopBottomPadding` above the panel's bottom edge.
@@ -279,6 +288,7 @@ private struct OnboardingSignInView: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     /// Which button last started a sign-in, so only that one shows progress.
     @State private var lastProvider: OnboardingAuthButton.Provider?
     @State private var succeeded = false
@@ -286,6 +296,89 @@ private struct OnboardingSignInView: View {
     /// After a sign-in: this screen is fading to the plain cover.
     @State private var leaving: SignInTransition.Style?
     @State private var handedOff = false
+
+
+    @ViewBuilder
+    private func signInLowerContent(spacious: Bool) -> some View {
+        VStack(spacing: 0) {
+            // Hero text: the quote alone, centred between the beads and the buttons.
+            VStack(spacing: AppTheme.Space.md) {
+                GuideDisplayTitle(
+                    text: OnboardingCopy.signInQuote,
+                    size: SignInLayout.quoteSize,
+                    color: palette.ink
+                )
+                Text(OnboardingCopy.signInQuoteAttribution)
+                    .font(AppTheme.TypeRole.body)
+                    .foregroundStyle(palette.dim)
+            }
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, AppTheme.gutter)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(OnboardingCopy.signInQuoteAccessibilityLabel)
+            .guideReveal(delay: 0.05)
+
+            if spacious {
+                Spacer(minLength: AppTheme.Space.xl)
+            } else {
+                Color.clear.frame(height: AppTheme.Space.xl)
+            }
+
+            VStack(spacing: AppTheme.Space.md) {
+                OnboardingAuthButton(title: auth.isSigningInWithApple ? "Signing in" : "Continue with Apple", systemImage: "apple.logo", provider: .apple, status: buttonState(.apple)) {
+                    lastProvider = .apple
+                    auth.signInWithApple()
+                }
+                .modifier(GuideShakeEffect(animatableData: lastProvider == .apple ? shakes : 0))
+                .disabled(auth.isWorking || succeeded || leaving != nil)
+                .accessibilityLabel(auth.isSigningInWithApple ? "Signing in with Apple" : "Continue with Apple")
+
+                OnboardingAuthButton(title: auth.isSigningInWithGoogle ? "Signing in" : "Continue with Google", assetImage: "GoogleG", provider: .google, status: buttonState(.google)) {
+                    lastProvider = .google
+                    auth.signInWithGoogle()
+                }
+                .modifier(GuideShakeEffect(animatableData: lastProvider == .google ? shakes : 0))
+                .disabled(auth.isWorking || succeeded || leaving != nil)
+                .accessibilityLabel(auth.isSigningInWithGoogle ? "Signing in with Google" : "Continue with Google")
+
+                if let message = auth.errorMessage {
+                    Text(message)
+                        .font(AppTheme.TypeRole.caption())
+                        .foregroundStyle(palette.dim)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                        .padding(.top, AppTheme.Space.xs)
+                        .transition(.opacity)
+                }
+
+                GuideTextButton(
+                    title: OnboardingCopy.continueAsGuest,
+                    accessibilityLabel: "Continue as guest. You can sign in later in Settings",
+                    alignment: .center
+                ) {
+                    HapticService.play(.light, enabled: settings.hapticsEnabled)
+                    auth.errorMessage = nil
+                    continueAsGuest()
+                }
+                .disabled(auth.isWorking || leaving != nil)
+                .padding(.top, AppTheme.Space.xs)
+
+                Text(OnboardingCopy.legalNotice)
+                    .font(AppTheme.TypeRole.caption())
+                    .foregroundStyle(palette.dim)
+                    .tint(palette.ink)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, AppTheme.Space.sm)
+            }
+            .padding(.horizontal, AppTheme.gutter)
+            .padding(.bottom, AppTheme.Space.xl)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: auth.errorMessage)
+            .guideReveal(delay: 0.14)
+        }
+        .frame(maxWidth: .infinity)
+    }
 
     private func buttonState(_ provider: OnboardingAuthButton.Provider) -> OnboardingAuthButton.Status {
         guard lastProvider == provider else { return .idle }
@@ -302,7 +395,12 @@ private struct OnboardingSignInView: View {
             VStack(spacing: 0) {
                 // Marian blue panel behind the beads. It bleeds off the top of the screen and
                 // the strands start above the top edge, so the rosary hangs from off screen.
-                OnboardingPanel(fill: AppTheme.brandCanvas(colorScheme), geo: geo) { panelHeight in
+                // At accessibility sizes the panel shrinks so the quote and buttons stay reachable.
+                OnboardingPanel(
+                    fill: AppTheme.brandCanvas(colorScheme),
+                    geo: geo,
+                    compact: dynamicTypeSize.isAccessibilitySize
+                ) { panelHeight in
                     // The beads sit in an overlay so their width (which can exceed the panel's,
                     // the sides being empty) doesn't widen the layout; the panel clips them.
                     RosaryBeadsFallPlayer(plays: !reduceMotion)
@@ -313,83 +411,18 @@ private struct OnboardingSignInView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 }
 
-                Spacer(minLength: AppTheme.Space.lg)
-
-                // Hero text: the quote alone, centred between the beads and the buttons.
-                VStack(spacing: AppTheme.Space.md) {
-                    // Same title style as Home's mystery-set title: H1 at the Home title size,
-                    // using its compact step so the quote stays on two lines on every width.
-                    GuideDisplayTitle(
-                        text: OnboardingCopy.signInQuote,
-                        size: SignInLayout.quoteSize,
-                        color: palette.ink
-                    )
-                    Text(OnboardingCopy.signInQuoteAttribution)
-                        .font(AppTheme.TypeRole.body)
-                        .foregroundStyle(palette.dim)
-                }
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, AppTheme.gutter)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(OnboardingCopy.signInQuoteAccessibilityLabel)
-                .guideReveal(delay: 0.05)
-
-                Spacer(minLength: AppTheme.Space.xl)
-
-                    VStack(spacing: AppTheme.Space.md) {
-                        OnboardingAuthButton(title: auth.isSigningInWithApple ? "Signing in" : "Continue with Apple", systemImage: "apple.logo", provider: .apple, status: buttonState(.apple)) {
-                            lastProvider = .apple
-                            auth.signInWithApple()
+                Group {
+                    if dynamicTypeSize.isAccessibilitySize {
+                        ScrollView(.vertical, showsIndicators: false) {
+                            signInLowerContent(spacious: false)
+                                .padding(.top, AppTheme.Space.lg)
                         }
-                        .modifier(GuideShakeEffect(animatableData: lastProvider == .apple ? shakes : 0))
-                        .disabled(auth.isWorking || succeeded || leaving != nil)
-                        .accessibilityLabel(auth.isSigningInWithApple ? "Signing in with Apple" : "Continue with Apple")
-
-                        OnboardingAuthButton(title: auth.isSigningInWithGoogle ? "Signing in" : "Continue with Google", assetImage: "GoogleG", provider: .google, status: buttonState(.google)) {
-                            lastProvider = .google
-                            auth.signInWithGoogle()
-                        }
-                        .modifier(GuideShakeEffect(animatableData: lastProvider == .google ? shakes : 0))
-                        .disabled(auth.isWorking || succeeded || leaving != nil)
-                        .accessibilityLabel(auth.isSigningInWithGoogle ? "Signing in with Google" : "Continue with Google")
-
-                        if let message = auth.errorMessage {
-                            Text(message)
-                                .font(AppTheme.TypeRole.caption())
-                                .foregroundStyle(palette.dim)
-                                .multilineTextAlignment(.center)
-                                .lineSpacing(4)
-                                .padding(.top, AppTheme.Space.xs)
-                                .transition(.opacity)
-                        }
-
-                        // Sign-in is optional: everything works on this device without an account.
-                        // Always the last action, an underlined text button under the sign-in pills.
-                        GuideTextButton(
-                            title: OnboardingCopy.continueAsGuest,
-                            accessibilityLabel: "Continue as guest. You can sign in later in Settings",
-                            alignment: .center
-                        ) {
-                            HapticService.play(.light, enabled: settings.hapticsEnabled)
-                            auth.errorMessage = nil
-                            continueAsGuest()
-                        }
-                        .disabled(auth.isWorking || leaving != nil)
-                        .padding(.top, AppTheme.Space.xs)
-
-                        Text(OnboardingCopy.legalNotice)
-                            .font(AppTheme.TypeRole.caption())
-                            .foregroundStyle(palette.dim)
-                            .tint(palette.ink)
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.top, AppTheme.Space.sm)
+                    } else {
+                        Spacer(minLength: AppTheme.Space.lg)
+                        signInLowerContent(spacious: true)
                     }
-                    .padding(.horizontal, AppTheme.gutter)
-                    .padding(.bottom, AppTheme.Space.xl)
-                    .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: auth.errorMessage)
-                    .guideReveal(delay: 0.14)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
         }

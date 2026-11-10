@@ -387,7 +387,9 @@ struct PrayView: View {
         let heroSpacer = max(0, textTop - scrollTop - textTopPadding)
         let readingBottomPad = AppTheme.RosaryFlow.readingBottomPadding
         // Floating action top sits pill height + its bottom padding above the scroll bottom.
+        // Accessibility text is taller than that design gap, so the last line stays above the control.
         let plateActionClearance = AppTheme.Component.pillHeight + AppTheme.Space.lg
+            + (dynamicTypeSize.isAccessibilitySize ? 72 : 0)
         let plateTextToActionGap = AppTheme.Component.prayerReadingContentToActionGap
         let plateBottomAnchorHeight: CGFloat = 1
         let plateEndSpacer = max(
@@ -772,7 +774,7 @@ struct PrayView: View {
     private func prayerScrollTail(_ step: RosaryStep) -> CGFloat {
         let showsBeads = shouldShowBeads(step) && step.bead != nil
         let base = AppTheme.Component.readingScrollTail(
-            actionClearance: AppTheme.Component.prayerReadingActionClearance,
+            actionClearance: max(AppTheme.Component.prayerReadingActionClearance, prayerFooterHeight),
             contentBottomPadding: showsBeads ? AppTheme.Space.sm : AppTheme.Space.lg,
             anchorHeight: 1
         )
@@ -924,6 +926,8 @@ struct PrayView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(step.spokenProgress)
             .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("spoken-prayer")
+            .accessibilityAction(named: "Previous prayer") { retreat() }
             if !step.isPlate, language == .bilingual {
                 Text(step.title.latin)
                     .font(AppTheme.TypeRole.bodySmall)
@@ -1223,15 +1227,14 @@ struct PrayView: View {
 
     private var languageChips: some View {
         // Web phone `.lang`: left-aligned under Next, fixed width (~13.25rem), shorter than Next.
-        Picker("Language", selection: languageSelection) {
-            ForEach(PrayerLanguage.allCases) { option in
-                Text(option.chip).tag(option)
-            }
-        }
-        .guideSegmentedControl()
-        .frame(width: 220)
+        // Accessibility sizes use the full words on their own rows so "Eng" never becomes "E…".
+        GuideChoiceControl(
+            title: "Prayer language",
+            selection: languageSelection,
+            options: PrayerLanguage.allCases
+        ) { dynamicTypeSize.isAccessibilitySize ? $0.title : $0.chip }
+        .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : 220, alignment: .leading)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .labelsHidden()
         .accessibilityLabel("Prayer language")
     }
 

@@ -81,6 +81,8 @@ enum AppTheme {
     static let controlSize: CGFloat = 40
     /// Reserved bottom clearance for content behind the liquid tab bar.
     static let tabBarContentClearance: CGFloat = 108
+    /// Extra room under the last row when the tab bar grows with accessibility text.
+    static let tabBarAccessibilityExtraClearance: CGFloat = 88
 
     static func gutter(for width: CGFloat) -> CGFloat {
         // Single source of truth: always `gutter` (16pt), including compact widths.
@@ -1617,9 +1619,73 @@ private struct SegmentedControlSchemeSync: UIViewRepresentable {
 }
 #endif
 
+/// Segmented picker at the design size. At accessibility sizes the same choices
+/// become full-width buttons so the words wrap instead of truncating in a segment.
+struct GuideChoiceControl<Selection: Hashable>: View {
+    var title: String
+    @Binding var selection: Selection
+    var options: [Selection]
+    var label: (Selection) -> String
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(spacing: AppTheme.Space.sm) {
+                ForEach(options, id: \.self) { option in
+                    let selected = selection == option
+                    Button {
+                        selection = option
+                    } label: {
+                        Text(label(option))
+                            .font(AppTheme.TypeRole.segmentedControl)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, AppTheme.Space.md)
+                            .padding(.horizontal, AppTheme.Space.lg)
+                            .foregroundStyle(selected ? palette.onAccent : palette.ink)
+                            .background(selected ? palette.accent : palette.surface, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(label(option))
+                    .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(title)
+        } else {
+            Picker(title, selection: $selection) {
+                ForEach(options, id: \.self) { option in
+                    Text(label(option)).tag(option)
+                }
+            }
+            .guideSegmentedControl()
+        }
+    }
+}
+
+private struct GuideTabBarPadding: ViewModifier {
+    var extra: CGFloat = 0
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    func body(content: Content) -> some View {
+        content.padding(
+            .bottom,
+            AppTheme.tabBarContentClearance
+                + extra
+                + (dynamicTypeSize.isAccessibilitySize ? AppTheme.tabBarAccessibilityExtraClearance : 0)
+        )
+    }
+}
+
 extension View {
     func guideSegmentedControl() -> some View {
         modifier(GuideSegmentedControl())
+    }
+
+    func guideTabBarPadding(extra: CGFloat = 0) -> some View {
+        modifier(GuideTabBarPadding(extra: extra))
     }
 
     func guidePressable() -> some View {

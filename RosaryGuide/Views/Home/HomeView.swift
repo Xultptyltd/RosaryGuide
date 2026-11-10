@@ -133,7 +133,7 @@ struct HomeView: View {
                     .frame(width: viewport.width, alignment: .top)
                     // Match Feasts/Learn/Intentions: clear the tab bar and allow
                     // scrolled content to show through liquid glass.
-                    .padding(.bottom, AppTheme.tabBarContentClearance)
+                    .guideTabBarPadding()
                 }
                 .scrollBounceBehavior(.basedOnSize, axes: .vertical)
                 .onChange(of: completionScrollReset) { _, _ in
@@ -923,29 +923,33 @@ struct HomeView: View {
     /// Glass, sliding thumb). UIKit segments are equal width, so the weekday dot is overlaid on
     /// its segment: bright while that set is showing, faint otherwise.
     private var setPicker: some View {
-        Picker("Mystery set", selection: mysterySetSelection) {
-            ForEach(MysterySetKind.displayOrder) { set in
-                Text(set.shortName).tag(set)
-            }
+        GuideChoiceControl(
+            title: "Mystery set",
+            selection: mysterySetSelection,
+            options: MysterySetKind.displayOrder
+        ) { set in
+            set == assignment.pickerDotSet ? "\(set.shortName), today" : set.shortName
         }
-        .guideSegmentedControl()
         .overlay {
-            HStack(spacing: 0) {
-                ForEach(MysterySetKind.displayOrder) { set in
-                    VStack {
-                        if set == assignment.pickerDotSet {
-                            Circle()
-                                .fill(currentSet == set ? palette.ink : palette.faint)
-                                .frame(width: AppTheme.Space.xs, height: AppTheme.Space.xs)
-                                .padding(.top, AppTheme.Space.sm)
+            // Weekday dot only fits the equal-width segmented control.
+            if !dynamicTypeSize.isAccessibilitySize {
+                HStack(spacing: 0) {
+                    ForEach(MysterySetKind.displayOrder) { set in
+                        VStack {
+                            if set == assignment.pickerDotSet {
+                                Circle()
+                                    .fill(currentSet == set ? palette.ink : palette.faint)
+                                    .frame(width: AppTheme.Space.xs, height: AppTheme.Space.xs)
+                                    .padding(.top, AppTheme.Space.sm)
+                            }
+                            Spacer(minLength: 0)
                         }
-                        Spacer(minLength: 0)
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
                 }
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
             }
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
         }
         .accessibilityLabel("Mystery set")
         .accessibilityHint("Today's weekday set is the \(assignment.pickerDotSet.shortName) Mysteries")
