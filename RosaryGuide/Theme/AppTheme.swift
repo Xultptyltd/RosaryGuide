@@ -1791,6 +1791,29 @@ private struct GuideScaledPadding: ViewModifier {
     }
 }
 
+#if canImport(UIKit)
+extension DynamicTypeSize {
+    /// Maps SwiftUI Dynamic Type sizes onto the UIKit categories `UIFontMetrics` expects.
+    var guideContentSizeCategory: UIContentSizeCategory {
+        switch self {
+        case .xSmall: return .extraSmall
+        case .small: return .small
+        case .medium: return .medium
+        case .large: return .large
+        case .xLarge: return .extraLarge
+        case .xxLarge: return .extraExtraLarge
+        case .xxxLarge: return .extraExtraExtraLarge
+        case .accessibility1: return .accessibilityMedium
+        case .accessibility2: return .accessibilityLarge
+        case .accessibility3: return .accessibilityExtraLarge
+        case .accessibility4: return .accessibilityExtraExtraLarge
+        case .accessibility5: return .accessibilityExtraExtraExtraLarge
+        @unknown default: return .large
+        }
+    }
+}
+#endif
+
 // MARK: - Design token scale (consistency layer)
 
 extension AppTheme {
