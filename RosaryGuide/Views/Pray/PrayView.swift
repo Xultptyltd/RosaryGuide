@@ -1210,6 +1210,9 @@ struct PrayView: View {
     private var languageChipsSlot: some View {
         languageChips
             .hidden()
+            // The visible control is the overlaid copy; this spacer must stay
+            // out of the accessibility tree so it is not audited as a zero-size hit target.
+            .accessibilityHidden(true)
             .anchorPreference(key: LanguageChipsAnchorKey.self, value: .bounds) { $0 }
     }
 
