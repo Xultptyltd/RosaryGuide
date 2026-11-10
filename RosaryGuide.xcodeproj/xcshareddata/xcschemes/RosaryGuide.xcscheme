@@ -34,6 +34,20 @@
                ReferencedContainer = "container:RosaryGuide.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A11Y0001C0DE000000000007"
+               BuildableName = "RosaryGuideUITests.xctest"
+               BlueprintName = "RosaryGuideUITests"
+               ReferencedContainer = "container:RosaryGuide.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -51,6 +65,17 @@
                BlueprintIdentifier = "F8B5E1CE71E4B6834D8C227D"
                BuildableName = "RosaryGuideTests.xctest"
                BlueprintName = "RosaryGuideTests"
+               ReferencedContainer = "container:RosaryGuide.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A11Y0001C0DE000000000007"
+               BuildableName = "RosaryGuideUITests.xctest"
+               BlueprintName = "RosaryGuideUITests"
                ReferencedContainer = "container:RosaryGuide.xcodeproj">
             </BuildableReference>
          </TestableReference>

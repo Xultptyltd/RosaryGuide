@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A11Y0001C0DE000000000004 /* AccessibilityAuditUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11Y0001C0DE000000000001 /* AccessibilityAuditUITests.swift */; };
 		004406578DA6DEABB8614015 /* PrayHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D14D5C74E932FBB6FE0784F /* PrayHubView.swift */; };
 		05F066B261AA1E475873C6F3 /* MysteryCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */; };
 		082CF909021C6EBA3FBB2D68 /* FeastCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */; };
@@ -85,6 +86,13 @@
 			remoteGlobalIDString = ACC9652797AB670E77D9DAEA;
 			remoteInfo = RosaryGuide;
 		};
+		A11Y0001C0DE000000000009 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ACC9652797AB670E77D9DAEA;
+			remoteInfo = RosaryGuide;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -95,6 +103,8 @@
 		25608D422A64031222D47189 /* RosaryStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosaryStep.swift; sourceTree = "<group>"; };
 		2B45CCA2BDAA20E92DEB2807 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		2DBAFB5B71D685FEA27E4316 /* RosaryGuideTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RosaryGuideTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A11Y0001C0DE000000000001 /* AccessibilityAuditUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityAuditUITests.swift; sourceTree = "<group>"; };
+		A11Y0001C0DE000000000002 /* RosaryGuideUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RosaryGuideUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		34466A78C6540AD21AB52567 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		34B7278C515BF0D95EE40796 /* HowToPrayContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToPrayContent.swift; sourceTree = "<group>"; };
 		4019C8E56EEFC74D6BD9D92D /* PrayerCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerCatalog.swift; sourceTree = "<group>"; };
@@ -177,6 +187,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A11Y0001C0DE000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -208,6 +225,7 @@
 			children = (
 				D36540CDAA07DF7F5828251E /* RosaryGuide */,
 				A917D4D14E1517E067A3727C /* RosaryGuideTests */,
+				A11Y0001C0DE000000000003 /* RosaryGuideUITests */,
 				1D5F545FBA1B7116946BB4C6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -217,6 +235,7 @@
 			children = (
 				F91288DB192297DC903FE08C /* RosaryGuide.app */,
 				2DBAFB5B71D685FEA27E4316 /* RosaryGuideTests.xctest */,
+				A11Y0001C0DE000000000002 /* RosaryGuideUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -380,6 +399,14 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
+		A11Y0001C0DE000000000003 /* RosaryGuideUITests */ = {
+			isa = PBXGroup;
+			children = (
+				A11Y0001C0DE000000000001 /* AccessibilityAuditUITests.swift */,
+			);
+			path = RosaryGuideUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -425,6 +452,23 @@
 			productReference = 2DBAFB5B71D685FEA27E4316 /* RosaryGuideTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		A11Y0001C0DE000000000007 /* RosaryGuideUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A11Y0001C0DE00000000000C /* Build configuration list for PBXNativeTarget "RosaryGuideUITests" */;
+			buildPhases = (
+				A11Y0001C0DE000000000005 /* Sources */,
+				A11Y0001C0DE000000000006 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A11Y0001C0DE000000000008 /* PBXTargetDependency */,
+			);
+			name = RosaryGuideUITests;
+			productName = RosaryGuideUITests;
+			productReference = A11Y0001C0DE000000000002 /* RosaryGuideUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -439,6 +483,10 @@
 						CreatedOnToolsVersion = 15.4;
 					};
 					F8B5E1CE71E4B6834D8C227D = {
+						CreatedOnToolsVersion = 15.4;
+						TestTargetID = ACC9652797AB670E77D9DAEA;
+					};
+					A11Y0001C0DE000000000007 = {
 						CreatedOnToolsVersion = 15.4;
 						TestTargetID = ACC9652797AB670E77D9DAEA;
 					};
@@ -464,6 +512,7 @@
 			targets = (
 				ACC9652797AB670E77D9DAEA /* RosaryGuide */,
 				F8B5E1CE71E4B6834D8C227D /* RosaryGuideTests */,
+				A11Y0001C0DE000000000007 /* RosaryGuideUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -555,6 +604,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A11Y0001C0DE000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A11Y0001C0DE000000000004 /* AccessibilityAuditUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -562,6 +619,11 @@
 			isa = PBXTargetDependency;
 			target = ACC9652797AB670E77D9DAEA /* RosaryGuide */;
 			targetProxy = A62837F87C260EFB1DDB5E88 /* PBXContainerItemProxy */;
+		};
+		A11Y0001C0DE000000000008 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ACC9652797AB670E77D9DAEA /* RosaryGuide */;
+			targetProxy = A11Y0001C0DE000000000009 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -797,6 +859,40 @@
 			};
 			name = Debug;
 		};
+		A11Y0001C0DE00000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 10;
+				DEVELOPMENT_TEAM = 72VH98LBZA;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.589;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shasasmith.RosaryGuideUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = RosaryGuide;
+			};
+			name = Debug;
+		};
+		A11Y0001C0DE00000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 10;
+				DEVELOPMENT_TEAM = 72VH98LBZA;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.589;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shasasmith.RosaryGuideUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = RosaryGuide;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -823,6 +919,15 @@
 			buildConfigurations = (
 				C18C42856B8EAD25030A3725 /* Debug */,
 				7DEAC68F2AB1D6A9ED5688FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A11Y0001C0DE00000000000C /* Build configuration list for PBXNativeTarget "RosaryGuideUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A11Y0001C0DE00000000000A /* Debug */,
+				A11Y0001C0DE00000000000B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
