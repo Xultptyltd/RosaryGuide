@@ -196,7 +196,7 @@ struct PrayView: View {
         }
         .foregroundStyle(palette.ink)
         // Beads toggled live (in-Rosary sheet): a calm fade, not a jump.
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: settings.currentRosaryConfig.showBeads)
+        .guideAnimation(.easeInOut(duration: 0.22), value: settings.currentRosaryConfig.showBeads)
         .onChange(of: settings.currentRosaryConfig) { _, config in
             applyLiveConfig(config)
         }
@@ -534,7 +534,7 @@ struct PrayView: View {
                         let maxOffset = max(0, contentH - viewH)
                         let distanceFromBottom = maxOffset - plateScrollY
                         plateArrowArmed = distanceFromBottom > 8
-                        withAnimation(reduceMotion ? nil : MotionTokens.reveal, completionCriteria: .logicallyComplete) {
+                        withAnimation(Motion.animation(MotionTokens.reveal, completionCriteria: .logicallyComplete, reduceMotion: reduceMotion)) {
                             plateActionLockedToNext = true
                             if distanceFromBottom > 8 {
                                 plateScrollPosition.scrollTo(y: maxOffset)
@@ -683,7 +683,7 @@ struct PrayView: View {
                             .id(language)
                             .transition(.opacity)
                         }
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: language)
+                        .guideAnimation(.easeInOut(duration: 0.22), value: language)
                         .padding(.horizontal, AppTheme.gutter)
                         // At least 48pt from the close button to this title.
                         // The in-flow stage track already covers most of that;
@@ -1527,7 +1527,7 @@ struct PrayView: View {
                                 // expanded Done without moving. Setting the offset again
                                 // still scrolls. Already-at-bottom just expands.
                                 michaelArrowArmed = distanceFromBottom > 8
-                                withAnimation(reduceMotion ? nil : MotionTokens.reveal, completionCriteria: .logicallyComplete) {
+                                withAnimation(Motion.animation(MotionTokens.reveal, completionCriteria: .logicallyComplete, reduceMotion: reduceMotion)) {
                                     michaelActionLocked = true
                                     if distanceFromBottom > 8 {
                                         michaelScrollPosition.scrollTo(y: maxOffset)
@@ -1695,7 +1695,7 @@ struct PrayView: View {
         let maxOffset = max(0, contentH - viewH)
         let distanceFromBottom = maxOffset - prayerScrollY
         prayerArrowArmed = distanceFromBottom > 8
-        withAnimation(reduceMotion ? nil : MotionTokens.reveal, completionCriteria: .logicallyComplete) {
+        withAnimation(Motion.animation(MotionTokens.reveal, completionCriteria: .logicallyComplete, reduceMotion: reduceMotion)) {
             prayerActionLocked = true
             if distanceFromBottom > 8 {
                 prayerScrollPosition.scrollTo(y: maxOffset)
@@ -1943,7 +1943,7 @@ struct PrayView: View {
             return
         }
         if current?.kind == .signOfTheCross, current?.stage == .opening, activeConfig.intentionsStep, index < steps.count - 1 {
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+            withAnimation(Motion.animation(.easeInOut(duration: 0.22, reduceMotion: reduceMotion))) {
                 showingIntentionStep = true
             }
             playHaptic()
@@ -2035,7 +2035,7 @@ struct PrayView: View {
     private func retreat() {
         guard !showingCompletion else { return }
         if showingIntentionStep {
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+            withAnimation(Motion.animation(.easeInOut(duration: 0.22, reduceMotion: reduceMotion))) {
                 showingIntentionStep = false
             }
             // Same haptic as every other step change.
@@ -2076,7 +2076,7 @@ struct PrayView: View {
         if freshSetPending != nil, next > 0 {
             freshSetPending = nil
         }
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+        withAnimation(Motion.animation(.easeInOut(duration: 0.22, reduceMotion: reduceMotion))) {
             showingIntentionStep = false
             index = next
         }

@@ -38,6 +38,12 @@ enum AppTheme {
     static let destructiveLightHighContrast = Color(hex: 0xD70015)
     static let destructiveDark = Color(hex: 0xFF453A)
     static let destructiveDarkHighContrast = Color(hex: 0xFF6961)
+    /// Toggle / success tint, matching system green so existing toggles
+    /// stay the same at the default appearance.
+    static let successLight = Color(hex: 0x34C759)
+    static let successDark = Color(hex: 0x30D158)
+    static let successLightHighContrast = Color(hex: 0x248A3D)
+    static let successDarkHighContrast = Color(hex: 0x30DB5B)
     /// Intention category avatar fills (same in light and dark).
     static let intentionPersonal = Color(hex: 0x00C895)
     static let intentionSomeoneElse = Color(hex: 0x5EA1FF)
@@ -289,6 +295,16 @@ struct ThemePalette {
         }
     }
 
+    /// Toggle tint, matching system green in each appearance.
+    var success: Color {
+        switch (scheme, contrast) {
+        case (.light, .increased): AppTheme.successLightHighContrast
+        case (.dark, .increased): AppTheme.successDarkHighContrast
+        case (.dark, _): AppTheme.successDark
+        default: AppTheme.successLight
+        }
+    }
+
     var buttonPrimaryFill: Color { accent }
     var buttonPrimaryText: Color { onAccent }
     var buttonSecondaryFill: Color { scheme == .dark ? Color.white : Color.black }
@@ -467,7 +483,7 @@ enum AppearanceWindowStyle {
     /// Fade the old rendered appearance away after SwiftUI has drawn the new palette.
     static func transition(_ update: () -> Void) {
         #if canImport(UIKit)
-        guard !UIAccessibility.isReduceMotionEnabled,
+        guard !Motion.isReduceMotionEnabled,
               let window = UIApplication.shared.connectedScenes
                 .compactMap({ $0 as? UIWindowScene })
                 .filter({ $0.activationState == .foregroundActive })
@@ -1339,15 +1355,40 @@ enum MotionTokens {
     static let pressScale: CGFloat = 0.97
 }
 
+/// Central Reduce Motion gate. Prefer `guideAnimation(_:value:)` in views,
+/// or `Motion.animation(_:reduceMotion:)` when a local flag is already in hand.
+enum Motion {
+    static func animation(_ animation: Animation?, reduceMotion: Bool) -> Animation? {
+        reduceMotion ? nil : animation
+    }
+
+    static var isReduceMotionEnabled: Bool {
+        #if canImport(UIKit)
+        UIAccessibility.isReduceMotionEnabled
+        #else
+        false
+        #endif
+    }
+}
+
+private struct GuideAnimationModifier<Value: Equatable>: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var animation: Animation?
+    var value: Value
+
+    func body(content: Content) -> some View {
+        content.animation(Motion.animation(animation, reduceMotion: reduceMotion), value: value)
+    }
+}
+
 /// Scope expansion animation to its row so unrelated page text does not crossfade.
 struct GuideAccordionMotion: ViewModifier {
     let isExpanded: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
             .contentTransition(.identity)
-            .animation(reduceMotion ? nil : MotionTokens.accordion, value: isExpanded)
+            .guideAnimation(MotionTokens.accordion, value: isExpanded)
     }
 }
 
@@ -1366,7 +1407,7 @@ struct GuideSymbolSwap<Value: Equatable>: ViewModifier {
     func body(content: Content) -> some View {
         content
             .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace.downUp))
-            .animation(reduceMotion ? nil : MotionTokens.selection, value: value)
+            .guideAnimation(MotionTokens.selection, value: value)
     }
 }
 
@@ -1393,9 +1434,11 @@ struct GuidePressStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .frame(minWidth: AppTheme.Accessibility.minHitTarget, minHeight: AppTheme.Accessibility.minHitTarget)
+            .contentShape(Rectangle())
             .scaleEffect(configuration.isPressed && !reduceMotion ? MotionTokens.pressScale : 1)
             .opacity(configuration.isPressed ? 0.92 : 1)
-            .animation(reduceMotion ? nil : MotionTokens.press, value: configuration.isPressed)
+            .guideAnimation(MotionTokens.press, value: configuration.isPressed)
     }
 }
 
@@ -1692,6 +1735,10 @@ extension View {
         buttonStyle(GuidePressStyle())
     }
 
+    func guideAnimation<Value: Equatable>(_ animation: Animation?, value: Value) -> some View {
+        modifier(GuideAnimationModifier(animation: animation, value: value))
+    }
+
     func guideReveal(delay: Double = 0) -> some View {
         modifier(GuideReveal(delay: delay))
     }
@@ -1853,6 +1900,11 @@ extension AppTheme {
         /// End-of-Rosary quote uses the shared 16pt body style.
         static var completionQuote: Font { body }
         static var caption: Font { AppTheme.sans(12, weight: .regular, relativeTo: .caption) }
+        /// Decorative glyph in a clipped, fixed-size mock (Settings icon grid).
+        /// Capped at the design size so the 52 pt tiles do not overflow.
+        static func decorativeGridIcon(size: CGFloat) -> Font {
+            AppTheme.sans(size, weight: .regular, relativeTo: .body, maxPointSize: size)
+        }
         static func caption(weight: Font.Weight = .regular) -> Font {
             AppTheme.sans(12, weight: regularized(weight), relativeTo: .caption)
         }

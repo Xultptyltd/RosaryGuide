@@ -68,7 +68,7 @@ struct OnboardingView: View {
                             if selection == pages.count - 1 && !includesSignIn {
                                 onComplete()
                             } else {
-                                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.24)) {
+                                withAnimation(Motion.animation(.easeOut(duration: 0.24, reduceMotion: reduceMotion))) {
                                     selection += 1
                                 }
                             }
@@ -85,7 +85,7 @@ struct OnboardingView: View {
         // under the status bar, so light mode hides the bar's dark icons, like the Rosary
         // introduction.
         .statusBarHidden(palette.scheme == .light)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.28), value: selection)
+        .guideAnimation(.easeOut(duration: 0.28), value: selection)
     }
 
     private var pageCount: Int {
@@ -187,7 +187,7 @@ struct OnboardingPageView: View {
                                 .offset(y: reduceMotion ? 0 : (imageDrift ? -5 : 5))
                                 // Scoped to the drift value: a withAnimation(repeatForever) here
                                 // used to capture the page's own layout, so the screen slid.
-                                .animation(reduceMotion ? nil : .easeInOut(duration: 7.5).repeatForever(autoreverses: true), value: imageDrift)
+                                .guideAnimation(.easeInOut(duration: 7.5).repeatForever(autoreverses: true), value: imageDrift)
                         }
                         .clipped()
                 }
@@ -397,7 +397,7 @@ private struct OnboardingSignInView: View {
             }
             .padding(.horizontal, AppTheme.gutter)
             .padding(.bottom, AppTheme.Space.xl)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: auth.errorMessage)
+            .guideAnimation(.easeOut(duration: 0.2), value: auth.errorMessage)
             .guideReveal(delay: 0.14)
         }
         .frame(maxWidth: .infinity)
@@ -511,7 +511,7 @@ private struct OnboardingSignInView: View {
     private func completeAfterSuccess() {
         guard !succeeded else { return }
         HapticService.play(.success, enabled: settings.hapticsEnabled)
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { succeeded = true }
+        withAnimation(Motion.animation(.easeOut(duration: 0.2, reduceMotion: reduceMotion))) { succeeded = true }
         withTransaction(AppLanding.still) { AppLanding.shared.buildsHomeEarly = true }
         let style: SignInTransition.Style = reduceMotion ? .reduced : .standard
         DispatchQueue.main.asyncAfter(deadline: .now() + SignInTransition.tick) {

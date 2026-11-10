@@ -375,7 +375,7 @@ struct IntentionRadioRow: View {
                             .multilineTextAlignment(.leading)
                         if item.isPinned, !multiSelect {
                             Image(systemName: "pin.fill")
-                                .font(.caption2)
+                                .font(AppTheme.TypeRole.caption)
                                 .foregroundStyle(palette.accentText)
                         }
                     }

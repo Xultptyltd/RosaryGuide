@@ -534,7 +534,7 @@ struct PrayHubView: View {
                 .foregroundStyle(palette.secondaryButtonText)
                 .padding(.horizontal, AppTheme.Space.lg)
                 .multilineTextAlignment(.center)
-                .frame(height: AppTheme.Component.pillHeight)
+                .frame(minHeight: AppTheme.Component.pillHeight)
                 .background(palette.secondaryButtonFill, in: Capsule())
             }
             .buttonStyle(.plain)
@@ -1486,7 +1486,7 @@ private struct LearnMysteryDetailView: View {
                     .foregroundStyle(palette.primaryButtonText)
                     .padding(.horizontal, AppTheme.Space.lg)
                     .multilineTextAlignment(.center)
-                    .frame(height: AppTheme.Component.pillHeight)
+                    .frame(minHeight: AppTheme.Component.pillHeight)
                     .background(palette.primaryButtonFill, in: Capsule())
                 }
                 .buttonStyle(.plain)

@@ -85,7 +85,7 @@ struct RosaryGuideApp: App {
 
                     if isShowingSplash {
                         LaunchSplashView {
-                            if UIAccessibility.isReduceMotionEnabled {
+                            if Motion.isReduceMotionEnabled {
                                 isShowingSplash = false
                             } else {
                                 withAnimation(.easeOut(duration: 0.28)) {

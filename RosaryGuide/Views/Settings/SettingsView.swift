@@ -940,7 +940,7 @@ private struct AppIconHomePreview: View {
                         .frame(width: tile, height: tile)
                         .overlay {
                             Image(systemName: app.symbol)
-                                .font(.system(size: tile * 0.42, weight: .regular))
+                                .font(AppTheme.TypeRole.decorativeGridIcon(size: tile * 0.42))
                                 .foregroundStyle(palette.dim)
                         }
                 }
@@ -1133,7 +1133,7 @@ private struct SettingsToggleRow: View {
                         WordSafeText(title, font: AppTheme.TypeRole.settingsRowUIFont, color: palette.ink)
                     }
                 }
-                .tint(Color(uiColor: .systemGreen))
+                .tint(palette.success)
                 .frame(minHeight: AppTheme.Component.profileRowHeight)
             }
         }

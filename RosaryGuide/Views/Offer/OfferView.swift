@@ -439,7 +439,7 @@ struct OfferView: View {
                     .padding(.horizontal, 28)
                     .frame(maxWidth: .infinity)
                     .multilineTextAlignment(.center)
-                    .frame(height: AppTheme.Component.pillHeight)
+                    .frame(minHeight: AppTheme.Component.pillHeight)
                     .background(palette.secondaryButtonFill, in: Capsule())
             } else {
                 HStack(spacing: AppTheme.Space.sm) {
@@ -453,7 +453,7 @@ struct OfferView: View {
                 .foregroundStyle(isPrimary ? palette.primaryButtonText : palette.secondaryButtonText)
                 .frame(maxWidth: .infinity)
                 .multilineTextAlignment(.center)
-                .frame(height: AppTheme.Component.pillHeight)
+                .frame(minHeight: AppTheme.Component.pillHeight)
                 .background(isPrimary ? palette.primaryButtonFill : palette.secondaryButtonFill, in: AppTheme.capsule)
             }
         }
@@ -1024,7 +1024,7 @@ private struct NextRosaryIntentionCard: View {
 /// delete. Reduce Motion applies the change at once.
 @MainActor
 func animateIntentionChange(_ body: () -> Void) {
-    if UIAccessibility.isReduceMotionEnabled {
+    if Motion.isReduceMotionEnabled {
         body()
     } else {
         withAnimation(MotionTokens.selection, body)
@@ -1417,7 +1417,7 @@ private struct PapalIntentionDetailView: View {
                         .foregroundStyle(added ? palette.secondaryButtonText : palette.primaryButtonText)
                         .frame(maxWidth: .infinity)
                         .multilineTextAlignment(.center)
-                        .frame(height: AppTheme.Component.pillHeight)
+                        .frame(minHeight: AppTheme.Component.pillHeight)
                         .background(added ? palette.secondaryButtonFill : palette.primaryButtonFill, in: Capsule())
                 }
                 .buttonStyle(.plain)
@@ -2230,7 +2230,7 @@ struct OverflowMenuButton: View {
 
             if let intentionID, let offer, !offer.isArchived(intentionID) {
                 Button {
-                    if UIAccessibility.isReduceMotionEnabled {
+                    if Motion.isReduceMotionEnabled {
                         offer.archive(id: intentionID)
                     } else {
                         withAnimation(.easeInOut(duration: 0.25)) { offer.archive(id: intentionID) }
@@ -2652,7 +2652,7 @@ struct IntentionEditorSheet: View {
                             .font(AppTheme.TypeRole.bodySmall(weight: .medium))
                             .foregroundStyle(palette.ink)
                     }
-                    .tint(Color(uiColor: .systemGreen))
+                    .tint(palette.success)
                     .padding(.horizontal, AppTheme.Space.lg)
                     .padding(.vertical, AppTheme.Space.md)
                     .guideCard(
@@ -2768,7 +2768,7 @@ struct IntentionEditorSheet: View {
 
     private func settleEditorAction(_ proxy: ScrollViewProxy) {
         guard !editorActionExpanded else { return }
-        withAnimation(reduceMotion ? nil : Self.editorActionMorph) {
+        withAnimation(Motion.animation(Self.editorActionMorph, reduceMotion: reduceMotion)) {
             editorActionExpanded = true
             proxy.scrollTo(EditorSheetScrollAnchor.bottom, anchor: .bottom)
         }
@@ -2807,7 +2807,7 @@ struct IntentionEditorSheet: View {
                     .opacity(showCompact ? 0 : 1)
             }
             .frame(minWidth: side, maxWidth: showCompact ? side : .infinity)
-            .frame(height: AppTheme.Component.pillHeight)
+            .frame(minHeight: AppTheme.Component.pillHeight)
             .background(palette.secondaryButtonFill, in: Capsule())
             .clipShape(Capsule())
             .contentShape(Capsule())
@@ -2824,7 +2824,7 @@ struct IntentionEditorSheet: View {
         .padding(.bottom, AppTheme.Space.lg)
         .guideFooterBackdrop(visible: !showCompact)
         // After the footer fill, so the fill fades on the same spring as the capsule.
-        .animation(reduceMotion ? nil : Self.editorActionMorph, value: showCompact)
+        .guideAnimation(Self.editorActionMorph, value: showCompact)
     }
 
     private var editingItem: OfferIntention? {
@@ -3195,7 +3195,7 @@ private struct IntentionIconPickerSheet: View {
                             .frame(width: geo.size.width, height: side)
                         }
                         .multilineTextAlignment(.center)
-                        .frame(height: AppTheme.Component.pillHeight)
+                        .frame(minHeight: AppTheme.Component.pillHeight)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, horizontalPad)
@@ -3213,7 +3213,7 @@ private struct IntentionIconPickerSheet: View {
                     commitAndDismiss()
                 }
                 .multilineTextAlignment(.center)
-                .frame(height: AppTheme.Component.pillHeight)
+                .frame(minHeight: AppTheme.Component.pillHeight)
                 .padding(.horizontal, horizontalPad)
                 .padding(.top, 6)
                 .padding(.bottom, 18) // ~12pt higher above the keyboard
@@ -3478,7 +3478,7 @@ private struct JourneyCardButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
                     .fill(palette.ink.opacity(configuration.isPressed ? 0.06 : 0))
             }
-            .animation(reduceMotion ? nil : MotionTokens.press, value: configuration.isPressed)
+            .guideAnimation(MotionTokens.press, value: configuration.isPressed)
     }
 }
 
@@ -3573,7 +3573,7 @@ private struct PrayerJourneyView: View {
                     selection: $tab,
                     options: JourneyTab.allCases
                 ) { $0.title }
-                .animation(reduceMotion ? nil : MotionTokens.selection, value: tab)
+                .guideAnimation(MotionTokens.selection, value: tab)
                 .background {
                     if !dynamicTypeSize.isAccessibilitySize {
                         SegmentedSelectedColors(thumb: UIColor(palette.emphasisSegmentThumb), title: UIColor(palette.emphasisSegmentTitle))
@@ -3733,7 +3733,7 @@ private struct PrayerJourneyView: View {
 
     private func shiftJourneyMonth(_ delta: Int) {
         guard let nextMonth = Calendar.current.date(byAdding: .month, value: delta, to: visibleMonth) else { return }
-        if UIAccessibility.isReduceMotionEnabled {
+        if Motion.isReduceMotionEnabled {
             visibleMonth = nextMonth
         } else {
             withAnimation(MotionTokens.selection) {
@@ -4726,7 +4726,7 @@ private struct ArchivedIntentionsView: View {
         ) { item in
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
-                if UIAccessibility.isReduceMotionEnabled {
+                if Motion.isReduceMotionEnabled {
                     offer.delete(id: item.id)
                 } else {
                     withAnimation(.easeInOut(duration: 0.25)) { offer.delete(id: item.id) }
@@ -4740,7 +4740,7 @@ private struct ArchivedIntentionsView: View {
     private func rowMenu(_ item: OfferIntention) -> some View {
         Menu {
             Button {
-                if UIAccessibility.isReduceMotionEnabled {
+                if Motion.isReduceMotionEnabled {
                     offer.unarchive(id: item.id)
                 } else {
                     withAnimation(.easeInOut(duration: 0.25)) { offer.unarchive(id: item.id) }

@@ -129,6 +129,7 @@ struct PlateArtView: View {
     var wide: Bool = true
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.palette) private var palette
 
     var body: some View {
         let path = ArtCatalog.platePath(
@@ -161,7 +162,7 @@ struct PlateArtView: View {
     }
 
     private var scrim: Color {
-        Color(uiColor: .systemBackground)
+        palette.background
     }
 }
 
@@ -459,7 +460,7 @@ struct GuideScrollActionButton: View {
             .buttonStyle(.plain)
             .accessibilityLabel(showScroll ? scrollLabel : title)
         }
-        .animation(reduceMotion ? nil : MotionTokens.reveal, value: showScroll)
+        .guideAnimation(MotionTokens.reveal, value: showScroll)
     }
 }
 
@@ -544,7 +545,7 @@ struct GuidePageDots: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: alignment)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: current)
+        .guideAnimation(.easeOut(duration: 0.22), value: current)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Screen \(current + 1) of \(count)")
     }

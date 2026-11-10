@@ -86,7 +86,7 @@ struct RosaryWalkthroughView: View {
                         if page == pages.count - 1 {
                             onBegin()
                         } else {
-                            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.24)) { page += 1 }
+                            withAnimation(Motion.animation(.easeOut(duration: 0.24, reduceMotion: reduceMotion))) { page += 1 }
                         }
                     }
                     .accessibilityLabel(page == pages.count - 1 ? "Begin Rosary with today’s mysteries, page \(page + 1) of \(pages.count)" : "Continue, page \(page + 1) of \(pages.count)")
@@ -124,7 +124,7 @@ struct RosaryWalkthroughView: View {
         // Follows the app's appearance. The artwork panel stays black (the art is painted on
         // black) and runs under the status bar, so light mode hides the bar's dark icons.
         .statusBarHidden(palette.scheme == .light)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.28), value: page)
+        .guideAnimation(.easeOut(duration: 0.28), value: page)
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
     }
@@ -262,7 +262,7 @@ private struct GuideWalkthroughPage<Content: View>: View {
         guard Date().timeIntervalSince(lastDrag) > 0.25 else { return }
         HapticService.play(.light, enabled: settings.hapticsEnabled)
         arrowArmed = maxOffset - scrollY > ScrollMorph.minimumOffset
-        withAnimation(reduceMotion ? nil : MotionTokens.reveal, completionCriteria: .logicallyComplete) {
+        withAnimation(Motion.animation(MotionTokens.reveal, completionCriteria: .logicallyComplete, reduceMotion: reduceMotion)) {
             actionLocked = true
             scrollPosition.scrollTo(edge: .bottom)
         } completion: {

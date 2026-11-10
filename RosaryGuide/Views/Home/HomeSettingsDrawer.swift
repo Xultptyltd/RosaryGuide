@@ -41,7 +41,7 @@ struct HomeSettingsDrawer: View {
         }
         .presentationBackground(.clear)
         .onAppear {
-            withAnimation(reduceMotion ? nil : MotionTokens.selection) {
+            withAnimation(Motion.animation(MotionTokens.selection, reduceMotion: reduceMotion)) {
                 revealed = true
             }
         }
@@ -59,7 +59,7 @@ struct HomeSettingsDrawer: View {
     }
 
     private func dismiss() {
-        withAnimation(reduceMotion ? nil : MotionTokens.selection) {
+        withAnimation(Motion.animation(MotionTokens.selection, reduceMotion: reduceMotion)) {
             revealed = false
             dragOffset = 0
         }
@@ -91,7 +91,7 @@ struct HomeSettingsDrawer: View {
                 if value.translation.width > threshold || predicted > width * 0.4 {
                     dismiss()
                 } else {
-                    withAnimation(reduceMotion ? nil : MotionTokens.selection) {
+                    withAnimation(Motion.animation(MotionTokens.selection, reduceMotion: reduceMotion)) {
                         dragOffset = 0
                     }
                 }

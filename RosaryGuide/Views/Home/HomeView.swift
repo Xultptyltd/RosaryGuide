@@ -375,7 +375,7 @@ struct HomeView: View {
                 color: palette.ink
             )
             .contentTransition(reduceMotion ? .identity : .opacity)
-            .animation(reduceMotion ? nil : MotionTokens.selection, value: currentSet)
+            .guideAnimation(MotionTokens.selection, value: currentSet)
 
             // On a feast with its own set, the feast paragraph takes the subtitle's place.
             // Advent and Lent Sundays use the same paragraph.
@@ -387,7 +387,7 @@ struct HomeView: View {
                     .guideThemeSummaryStyle()
                     .padding(.top, AppTheme.Space.md)
                     .contentTransition(reduceMotion ? .identity : .opacity)
-                    .animation(reduceMotion ? nil : MotionTokens.selection, value: currentSet)
+                    .guideAnimation(MotionTokens.selection, value: currentSet)
             }
 
             setPicker
@@ -916,7 +916,7 @@ struct HomeView: View {
 
     private func chooseFeastSet(_ feastSet: Bool) {
         HapticService.play(.light, enabled: settings.hapticsEnabled)
-        withAnimation(reduceMotion ? nil : MotionTokens.selection) {
+        withAnimation(Motion.animation(MotionTokens.selection, reduceMotion: reduceMotion)) {
             selectedSet = nil
             dayClock.prefersWeekdaySet = !feastSet
         }
@@ -963,7 +963,7 @@ struct HomeView: View {
             get: { currentSet },
             set: { newValue in
                 HapticService.play(.light, enabled: settings.hapticsEnabled)
-                withAnimation(reduceMotion ? nil : MotionTokens.selection) {
+                withAnimation(Motion.animation(MotionTokens.selection, reduceMotion: reduceMotion)) {
                     selectedSet = newValue
                 }
             }

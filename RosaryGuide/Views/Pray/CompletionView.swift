@@ -321,7 +321,7 @@ struct CompletionView: View {
                             .frame(width: 6, height: 6)
                     }
                 }
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: cardID)
+                .guideAnimation(.easeOut(duration: 0.2), value: cardID)
                 .accessibilityElement()
                 .accessibilityLabel("Page \((rows.firstIndex { $0.id == (cardID ?? rows[0].id) } ?? 0) + 1) of \(rows.count)")
             }

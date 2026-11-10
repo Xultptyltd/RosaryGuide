@@ -119,7 +119,7 @@ struct FeastsView: View {
                         if weekOffset != 0 || !calendar.isDate(selectedDay, inSameDayAs: today) {
                             GuideTextButton(title: "Today", alignment: nil) {
                                 selectedDay = today
-                                withAnimation(reduceMotion ? nil : MotionTokens.calendarReturn) {
+                                withAnimation(Motion.animation(MotionTokens.calendarReturn, reduceMotion: reduceMotion)) {
                                     if calendarExpanded {
                                         expandedWeek = 0
                                     } else {
@@ -308,7 +308,7 @@ struct FeastsView: View {
 
     private func toggleCalendarExpanded() {
         if !calendarExpanded { expandedWeek = weekOffset }
-        withAnimation(reduceMotion ? nil : .snappy(duration: 0.28, extraBounce: 0)) {
+        withAnimation(Motion.animation(.snappy(duration: 0.28, extraBounce: 0, reduceMotion: reduceMotion))) {
             calendarExpanded.toggle()
             calendarDrag = nil
         }
@@ -354,7 +354,7 @@ struct FeastsView: View {
                         ? !(distance < -threshold || projected < -threshold)
                         : distance > threshold || projected > threshold
                     if expanded && !calendarExpanded { expandedWeek = weekOffset }
-                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.28, extraBounce: 0)) {
+                    withAnimation(Motion.animation(.snappy(duration: 0.28, extraBounce: 0, reduceMotion: reduceMotion))) {
                         calendarExpanded = expanded
                         calendarDrag = nil
                     }
@@ -424,7 +424,7 @@ struct FeastsView: View {
                     .font(AppTheme.TypeRole.pillLabel())
                     .foregroundStyle(palette.learnMoreButtonText)
                     .frame(maxWidth: .infinity)
-                    .frame(height: AppTheme.Component.pillHeight)
+                    .frame(minHeight: AppTheme.Component.pillHeight)
                     .background(palette.learnMoreButtonFill, in: Capsule())
                     .contentShape(Capsule())
             }
