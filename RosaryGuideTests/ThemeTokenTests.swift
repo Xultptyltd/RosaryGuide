@@ -733,3 +733,103 @@ final class ScaledSpaceTests: XCTestCase {
         XCTAssertEqual(DynamicTypeSize.large.guideContentSizeCategory, .large)
     }
 }
+
+final class DesignSystemGuardTests: XCTestCase {
+    /// Scans `RosaryGuide/` Swift sources for design-token bypasses.
+    /// Each allowlist entry must name the file, a unique snippet, and why it is kept.
+    private struct Allow {
+        let file: String
+        let snippet: String
+        let reason: String
+    }
+
+    private let allowlist: [Allow] = [
+        // FontRegistrar is the TypeRole backend. It may fall back to the system
+        // serif/sans face when the bundled variable font is missing.
+        Allow(file: "App/FontRegistrar.swift", snippet: "UIFont.systemFont(ofSize:", reason: "Fallback when the custom face cannot be instantiated."),
+        // Plate-art and other UIKit bridges may wrap a palette colour.
+        // Color(uiColor: .system…) is not allowed; wrapping a token is.
+        Allow(file: "Views/Offer/OfferView.swift", snippet: "UIColor(AppTheme.destructiveMenuRed)", reason: "UIKit menu title uses the palette destructive token."),
+        Allow(file: "Views/Offer/OfferView.swift", snippet: "UIColor(palette.emphasisSegmentThumb)", reason: "UIKit segmented control uses palette tokens."),
+        Allow(file: "Views/Offer/OfferView.swift", snippet: "UIColor(palette.emphasisSegmentTitle)", reason: "UIKit segmented control uses palette tokens."),
+        Allow(file: "Views/Offer/OfferView.swift", snippet: "UIColor(palette.primaryButtonFill)", reason: "UIKit button configuration uses palette tokens."),
+        Allow(file: "Views/Offer/OfferView.swift", snippet: "UIColor(palette.primaryButtonText)", reason: "UIKit button configuration uses palette tokens."),
+        Allow(file: "Views/Pray/BeadRailView.swift", snippet: "UIColor(fg)", reason: "Converts a palette colour for Core Graphics, not a system colour."),
+        Allow(file: "Views/Pray/BeadRailView.swift", snippet: "UIColor(bg)", reason: "Converts a palette colour for Core Graphics, not a system colour."),
+        Allow(file: "Views/Pray/RosaryTickPlayer.swift", snippet: "UIColor(palette.completionTick)", reason: "Lottie colour comes from the palette."),
+        Allow(file: "Views/Pray/RosaryTickPlayer.swift", snippet: "UIColor(palette.completionGlow)", reason: "Lottie colour comes from the palette."),
+        Allow(file: "Theme/AppPageBackground.swift", snippet: "UIColor(white: shade, alpha: 1)", reason: "Procedural paper grain, not a UI colour token."),
+    ]
+
+    func testSourcesDoNotBypassDesignTokens() throws {
+        let testsDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let root = testsDir.deletingLastPathComponent().appendingPathComponent("RosaryGuide")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: root.path), "expected sources at \(root.path)")
+
+        let systemFontStyles = [
+            ".font(.largeTitle)", ".font(.title)", ".font(.title2)", ".font(.title3)",
+            ".font(.headline)", ".font(.subheadline)", ".font(.body)", ".font(.callout)",
+            ".font(.footnote)", ".font(.caption)", ".font(.caption2)",
+        ]
+
+        var failures: [String] = []
+        let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)!
+        while let url = enumerator.nextObject() as? URL {
+            guard url.pathExtension == "swift" else { continue }
+            let relative = url.path.replacingOccurrences(of: root.path + "/", with: "")
+            let isTheme = relative == "Theme/AppTheme.swift"
+            let source = try String(contentsOf: url, encoding: .utf8)
+            for (lineNumber, line) in source.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
+                let raw = String(line)
+                let trimmed = raw.trimmingCharacters(in: .whitespaces)
+
+                func allowed(_ snippet: String) -> Bool {
+                    allowlist.contains { $0.file == relative && raw.contains($0.snippet) }
+                }
+
+                if raw.contains(".font(.system(size:") {
+                    failures.append("\(relative):\(lineNumber + 1): .font(.system(size: is not a TypeRole — \(trimmed)")
+                }
+                if raw.contains("Font.custom("), !raw.contains("relativeTo") {
+                    failures.append("\(relative):\(lineNumber + 1): Font.custom without relativeTo — \(trimmed)")
+                }
+                if raw.contains("Color(hex:"), !isTheme {
+                    failures.append("\(relative):\(lineNumber + 1): Color(hex:) must live in AppTheme.swift — \(trimmed)")
+                }
+                if raw.contains(".frame(height: AppTheme.Component.pillHeight)") || raw.contains(".frame(height: Component.pillHeight)") {
+                    failures.append("\(relative):\(lineNumber + 1): use minHeight for Component.pillHeight — \(trimmed)")
+                }
+                if !isTheme {
+                    for style in systemFontStyles where raw.contains(style) {
+                        failures.append("\(relative):\(lineNumber + 1): system style \(style) should be a TypeRole — \(trimmed)")
+                    }
+                }
+                if raw.contains("Color(uiColor: .system") || raw.contains("Color(uiColor:.system") {
+                    if !allowed("Color(uiColor: .system") {
+                        failures.append("\(relative):\(lineNumber + 1): Color(uiColor: .system…) should be a palette token — \(trimmed)")
+                    }
+                }
+                // Catch leftover systemGreen / systemBackground as Color(uiColor:)
+                // already covered. Also flag .tint(Color(uiColor: .system…
+            }
+        }
+
+        if !failures.isEmpty {
+            XCTFail("Design-token bypasses:\n" + failures.joined(separator: "\n"))
+        }
+    }
+
+    func testAllowlistReasonsAreDocumented() {
+        for item in allowlist {
+            XCTAssertFalse(item.reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, item.file)
+            XCTAssertFalse(item.snippet.isEmpty, item.file)
+        }
+    }
+}
+
+extension ContrastTokenTests {
+    func testSuccessMatchesSystemGreen() {
+        XCTAssertEqual(UIColor(ThemePalette(scheme: .light).success), UIColor(Color(hex: 0x34C759)))
+        XCTAssertEqual(UIColor(ThemePalette(scheme: .dark).success), UIColor(Color(hex: 0x30D158)))
+    }
+}
