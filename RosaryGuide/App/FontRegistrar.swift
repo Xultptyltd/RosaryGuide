@@ -19,14 +19,24 @@ final class DynamicTypeObserver {
 
     private init() {
         category = UIApplication.shared.preferredContentSizeCategory
-        token = NotificationCenter.default.addObserver(
-            forName: UIContentSizeCategory.didChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
+        let refresh: (Notification) -> Void = { [weak self] _ in
             let next = UIApplication.shared.preferredContentSizeCategory
             if self?.category != next { self?.category = next }
         }
+        token = NotificationCenter.default.addObserver(
+            forName: UIContentSizeCategory.didChangeNotification,
+            object: nil,
+            queue: .main,
+            using: refresh
+        )
+        // Init can run before UIKit has applied the system size (for example a
+        // simulator launched with an accessibility category). Re-read when active.
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main,
+            using: refresh
+        )
     }
 }
 #endif
