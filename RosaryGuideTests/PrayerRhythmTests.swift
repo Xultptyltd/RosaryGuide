@@ -577,6 +577,54 @@ final class PapalIntentionTests: XCTestCase {
         XCTAssertTrue(PapalIntention.isPapal("pope-2026-10"))
         XCTAssertFalse(PapalIntention.isPapal(nil))
     }
+
+    func testPickerOmitsPopeIntentionUntilItIsAdded() {
+        let suggestion = SuggestedIntention(
+            id: "pope-2026-11",
+            title: "For the proper use of wealth",
+            sourceLabel: "Holy Father’s Intention",
+            monthLabel: "November 2026"
+        )
+        let personal = OfferIntention(title: "For Grandma’s recovery")
+
+        XCTAssertFalse(PapalIntention.isAdded(suggestion, among: [personal]))
+        let before = PapalIntention.pickerIntentions(saved: [personal])
+        XCTAssertEqual(before.map(\.title), [personal.title])
+        XCTAssertFalse(before.contains(where: \.isPapal))
+
+        let added = OfferIntention(
+            title: suggestion.title,
+            sourceId: suggestion.id,
+            category: .world,
+            accent: .purple,
+            emoji: "✝️"
+        )
+        XCTAssertTrue(PapalIntention.isAdded(suggestion, among: [personal, added]))
+        let after = PapalIntention.pickerIntentions(saved: [personal, added])
+        XCTAssertEqual(after.filter(\.isPapal).count, 1)
+        XCTAssertEqual(after.first(where: \.isPapal)?.sourceId, "pope-2026-11")
+    }
+
+    func testHandTypedTitleCountsAsAddedButEarlierMonthDoesNot() {
+        let november = SuggestedIntention(
+            id: "pope-2026-11",
+            title: "For the proper use of wealth",
+            sourceLabel: "Holy Father’s Intention"
+        )
+        let typed = OfferIntention(title: "for the proper use of wealth")
+        XCTAssertTrue(PapalIntention.isAdded(november, among: [typed]))
+        XCTAssertTrue(PapalIntention.pickerIntentions(saved: [typed]).contains { $0.id == typed.id })
+
+        let october = OfferIntention(
+            title: "For the proper use of wealth",
+            sourceId: "pope-2026-10",
+            category: .world
+        )
+        XCTAssertFalse(PapalIntention.isAdded(november, among: [october]))
+        // October's saved Holy Father intention still appears, because the user added it.
+        let rows = PapalIntention.pickerIntentions(saved: [october])
+        XCTAssertEqual(rows.map(\.sourceId), ["pope-2026-10"])
+    }
 }
 
 /// Sundays are always Glorious, so the repeating Sunday reminder can name the set.

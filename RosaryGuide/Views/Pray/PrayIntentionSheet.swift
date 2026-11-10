@@ -13,30 +13,13 @@ struct PrayIntentionSheet: View {
     /// Mystery set for the Rosary being prayed — drives ordering for this Rosary.
     var mysterySet: MysterySetKind
 
-    @State private var popeStore = PopeIntentionStore.shared
     @State private var editorRoute: EditorRoute?
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
 
-    private var suggestions: [SuggestedIntention] { IntentionSuggestions.forDay(popeStore: popeStore) }
-
-    private var papalSuggestions: [SuggestedIntention] {
-        suggestions.filter(\.isPapal)
-    }
-
-    /// Your intentions for this set, pinned/current first (via OfferStore sort), then suggested, then recent.
-    /// Includes adopted papal intentions so they can be pinned/edited like any other row.
+    /// Your intentions for this set, pinned first (via OfferStore sort).
+    /// The Pope's monthly intention appears only after the user has added it.
     private var listedIntentions: [OfferIntention] {
-        offer.sortedIntentions(for: mysterySet)
-    }
-
-    /// Papal suggestion cards only when not yet saved — once adopted, they appear in `listedIntentions`.
-    private var unadoptedPapalSuggestions: [SuggestedIntention] {
-        papalSuggestions.filter { suggestion in
-            !offer.sortedIntentions.contains {
-                $0.sourceId == suggestion.id
-                    || $0.title.compare(suggestion.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
-            }
-        }
+        PapalIntention.pickerIntentions(saved: offer.sortedIntentions(for: mysterySet))
     }
 
     private var noneSelected: Bool { chosenId == nil && chosenTitle.isEmpty }
@@ -83,11 +66,6 @@ struct PrayIntentionSheet: View {
                             onDelete: { deleteIntention(item) },
                             allowsArchive: true
                         )
-                    }
-
-                    // Not yet added by the user: the Holy Father's intention sits last, above "No specific intention".
-                    ForEach(unadoptedPapalSuggestions) { item in
-                        papalRadioCard(item)
                     }
 
                     radioCard(
@@ -157,58 +135,6 @@ struct PrayIntentionSheet: View {
         }
         .accessibilityLabel("Add an intention")
         .padding(.top, 6)
-    }
-
-    private func papalRadioCard(_ item: SuggestedIntention) -> some View {
-        let existing = offer.sortedIntentions.first(where: {
-            $0.title.compare(item.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
-        })
-        let selected = existing.map { chosenId == $0.id }
-            ?? (chosenTitle.compare(item.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame)
-
-        return Button {
-            adoptSuggestion(item)
-        } label: {
-            HStack(alignment: .center, spacing: AppTheme.Space.md) {
-                Image(systemName: selected ? "circle.inset.filled" : "circle")
-                    .guideSymbol(size: 22, weight: .regular)
-                    .foregroundStyle(selected ? palette.accentText : palette.ink.opacity(0.45))
-                    .frame(width: 24, height: 24)
-                    .guideSymbolSwap(value: selected)
-
-                IntentionIconView(
-                    accent: .purple,
-                    emoji: "✝️",
-                    size: 40,
-                    usesPopePortrait: true
-                )
-
-                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    WordSafeText(item.title, font: AppTheme.TypeRole.bodyUIFont(weight: .semibold), color: palette.ink)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(item.monthLabel ?? Date().formatted(.dateTime.month(.wide).year()))
-                        .font(AppTheme.TypeRole.label)
-                        .foregroundStyle(palette.dim)
-                        .multilineTextAlignment(.leading)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 14)
-            .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
-            .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .strokeBorder(
-                        selected ? palette.accent.opacity(0.45) : Color.clear,
-                        lineWidth: 1
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityLabel("Holy Father: \(item.title)")
     }
 
     private func radioCard(
@@ -284,35 +210,6 @@ struct PrayIntentionSheet: View {
         dismiss()
     }
 
-    private func adoptSuggestion(_ item: SuggestedIntention) {
-        let papal = item.isPapal
-        if let existing = offer.sortedIntentions.first(where: {
-            $0.title.compare(item.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
-        }) {
-            if papal, existing.sourceId == nil {
-                var locked = existing
-                locked.sourceId = item.id
-                locked.category = .world
-                offer.update(locked)
-            }
-            chosenId = existing.id
-            chosenTitle = existing.title
-            chosenNote = existing.note ?? item.note ?? ""
-        } else {
-            let created = offer.add(
-                title: item.title,
-                note: item.note,
-                sourceId: papal ? item.id : nil,
-                category: papal ? .world : .personal,
-                accent: papal ? .purple : .mintGreen,
-                emoji: papal ? "✝️" : nil
-            )
-            chosenId = created.id
-            chosenTitle = created.title
-            chosenNote = created.note ?? ""
-        }
-        dismiss()
-    }
 }
 
 /// Intention radio row with trailing overflow outside the select Button so menu taps
@@ -438,8 +335,9 @@ struct IntentionRadioRow: View {
 }
 
 /// Multi-select intention list for the "Offer this Rosary for" prayer step.
-/// Holy Father + saved intentions, up to `PrayerSession.maxIntentions`; at the limit the
-/// unselected rows dim and disable. "No specific intention" clears every selection.
+/// Saved intentions only — the Pope's monthly intention appears once the user has
+/// added it — up to `PrayerSession.maxIntentions`; at the limit the unselected
+/// rows dim and disable. "No specific intention" clears every selection.
 struct IntentionMultiSelectList: View {
     @Environment(OfferStore.self) private var offer
     @Environment(\.palette) private var palette
@@ -451,7 +349,6 @@ struct IntentionMultiSelectList: View {
     /// Each change opens the new-intention editor, so a host button can drive it.
     var addRequests = 0
 
-    @State private var popeStore = PopeIntentionStore.shared
     @State private var editorRoute: EditorRoute?
     @AppStorage("offer.hideIntentionText") private var hideIntentionText = false
 
@@ -459,22 +356,13 @@ struct IntentionMultiSelectList: View {
     private var limit: Int { PrayerSession.maxIntentions }
     private var atLimit: Bool { selectedIds.count >= limit }
 
-    private var papalSuggestions: [SuggestedIntention] {
-        IntentionSuggestions.forDay(popeStore: popeStore).filter(\.isPapal)
-    }
-
-    private var unadoptedPapalSuggestions: [SuggestedIntention] {
-        papalSuggestions.filter { suggestion in
-            !offer.sortedIntentions.contains {
-                $0.sourceId == suggestion.id
-                    || $0.title.compare(suggestion.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
-            }
-        }
+    private var listedIntentions: [OfferIntention] {
+        PapalIntention.pickerIntentions(saved: offer.sortedIntentions(for: mysterySet))
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-            ForEach(offer.sortedIntentions(for: mysterySet)) { item in
+            ForEach(listedIntentions) { item in
                 let selected = selectedIds.contains(item.id)
                 IntentionRadioRow(
                     item: item,
@@ -494,21 +382,6 @@ struct IntentionMultiSelectList: View {
                 )
                 .disabled(atLimit && !selected)
                 .opacity(atLimit && !selected ? 0.4 : 1)
-            }
-
-            // Not yet added by the user: the Holy Father's intention sits last, above "No specific intention".
-            ForEach(unadoptedPapalSuggestions) { item in
-                selectCard(
-                    title: item.title,
-                    subtitle: item.monthLabel ?? Date().formatted(.dateTime.month(.wide).year()),
-                    showsPope: true,
-                    selected: false
-                ) {
-                    adoptSuggestion(item)
-                }
-                .disabled(atLimit)
-                .opacity(atLimit ? 0.4 : 1)
-                .accessibilityLabel("Holy Father: \(item.title)")
             }
 
             selectCard(
@@ -557,32 +430,6 @@ struct IntentionMultiSelectList: View {
             selectedIds.remove(at: index)
         } else if selectedIds.count < limit {
             selectedIds.append(id)
-        }
-    }
-
-    /// Saves the Holy Father's intention (locked as papal) and selects it.
-    private func adoptSuggestion(_ item: SuggestedIntention) {
-        guard selectedIds.count < limit else { return }
-        if let existing = offer.sortedIntentions.first(where: {
-            $0.title.compare(item.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
-        }) {
-            if existing.sourceId == nil {
-                var locked = existing
-                locked.sourceId = item.id
-                locked.category = .world
-                offer.update(locked)
-            }
-            if !selectedIds.contains(existing.id) { selectedIds.append(existing.id) }
-        } else {
-            let created = offer.add(
-                title: item.title,
-                note: item.note,
-                sourceId: item.id,
-                category: .world,
-                accent: .purple,
-                emoji: "✝️"
-            )
-            selectedIds.append(created.id)
         }
     }
 
