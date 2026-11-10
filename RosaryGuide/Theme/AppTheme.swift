@@ -340,7 +340,7 @@ struct ThemePalette {
     /// Unselected segmented-control track. Keep this on the shared surface
     /// pathway so UIKit and custom segmented controls render the same surface.
     var segmentedControlTrack: Color { surface }
-    var selectedControlFill: Color { Color(uiColor: .systemBackground) }
+    var selectedControlFill: Color { background }
     /// Emphasised pickers (Profile's History/Milestones, intention kind): a white thumb with
     /// ink text in light; in dark an ink (white) thumb with page-colour text.
     var emphasisSegmentThumb: Color { scheme == .light ? Color.white : textPrimary }
