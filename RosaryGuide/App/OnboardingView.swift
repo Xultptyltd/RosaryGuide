@@ -195,14 +195,19 @@ struct OnboardingPageView: View {
                 Spacer(minLength: AppTheme.Space.lg)
 
                 if scrollsText {
-                    // Choose by the copy's ideal height. A maxHeight: .infinity frame
-                    // made ViewThatFits treat the text as always fitting, which clipped
-                    // the last body line under Continue at accessibility sizes.
-                    ViewThatFits(in: .vertical) {
-                        textBlock
+                    if dynamicTypeSize.isAccessibilitySize {
+                        // Always scroll at AX sizes. ViewThatFits can choose the
+                        // non-scrolling candidate before custom fonts finish scaling,
+                        // which clipped the last body line.
                         ScrollView(.vertical, showsIndicators: false) { textBlock }
+                            .frame(maxHeight: .infinity, alignment: .top)
+                    } else {
+                        ViewThatFits(in: .vertical) {
+                            textBlock
+                            ScrollView(.vertical, showsIndicators: false) { textBlock }
+                        }
+                        .frame(maxHeight: .infinity, alignment: .center)
                     }
-                    .frame(maxHeight: .infinity, alignment: .center)
                 } else {
                     textBlock
                 }
