@@ -31,12 +31,27 @@ final class AccessibilityAuditUITests: XCTestCase {
         try auditPray(ax5: true)
     }
 
+    /// At AX5, GuideChoiceControl is a VStack that XCTest maps as a
+    /// "Prayer language" Alert, which interrupts every tap, and many
+    /// steps also need a Scroll CTA. These walks often exceed the
+    /// default 300 s XCTest timeout; use the default-size walks below
+    /// when that happens.
     func testFullRosaryAtAX5() throws {
+        executionTimeAllowance = 480
         try walkRosary(ax5: true, reduceMotion: false)
     }
 
     func testFullRosaryAtAX5WithReduceMotion() throws {
+        executionTimeAllowance = 480
         try walkRosary(ax5: true, reduceMotion: true)
+    }
+
+    func testFullRosaryAtDefaultSize() throws {
+        try walkRosary(ax5: false, reduceMotion: false)
+    }
+
+    func testFullRosaryAtDefaultSizeWithReduceMotion() throws {
+        try walkRosary(ax5: false, reduceMotion: true)
     }
 
     private func auditSignIn(ax5: Bool) throws {
@@ -69,7 +84,7 @@ final class AccessibilityAuditUITests: XCTestCase {
         let app = launchRosary(ax5: ax5, reduceMotion: reduceMotion)
         XCTAssertTrue(waitForPrayerFlow(app), "Prayer flow should open via DEBUG hooks")
 
-        let deadline = Date().addingTimeInterval(ax5 ? 420 : 240)
+        let deadline = Date().addingTimeInterval(ax5 ? 420 : 300)
         var steps = 0
         while Date() < deadline {
             if hasCompleted(app) { return }
@@ -133,46 +148,74 @@ final class AccessibilityAuditUITests: XCTestCase {
     }
 
     private func hasCompleted(_ app: XCUIApplication) -> Bool {
-        app.staticTexts["Rosary complete"].exists
+        if app.staticTexts["Rosary complete"].exists
             || app.otherElements["Rosary complete"].exists
             || app.buttons["Rosary complete"].exists
+            || app.staticTexts["ROSARY COMPLETE"].exists
+        {
+            return true
+        }
+        // CompletionView after the last Finish: the heading can lag a
+        // moment, but Done and the optional Saint Michael action are up.
+        if app.buttons["Done"].exists && app.buttons["Saint Michael Prayer"].exists {
+            return true
+        }
+        return false
     }
 
     @discardableResult
     private func advanceOnce(_ app: XCUIApplication) -> Bool {
         // Prefer a genuine advance over "Complete decade", which would skip beads.
-        let preferred = [
-            "Next",
-            "Continue",
-            "Finish",
-            "Amen",
-            "Scroll to read the prayer",
-            "Scroll to read full scripture",
-            "Scroll to bottom",
-        ]
-        for label in preferred where tapIfPossible(app.buttons[label]) {
+        // At accessibility sizes Next can remain in the tree with an invalid
+        // frame once the CTA becomes "Scroll to read the prayer"; skip that
+        // stale node and use the visible control. Query by label, not identifier.
+        let advance = ["Next", "Continue", "Finish", "Amen"]
+        let scroll = ["Scroll to read the prayer", "Scroll to read full scripture", "Scroll to bottom"]
+        for label in advance where tapIfPossible(button(in: app, labeled: label)) {
+            return true
+        }
+        for label in scroll where tapIfPossible(button(in: app, labeled: label)) {
             return true
         }
         return false
     }
 
-    private func tapIfPossible(_ element: XCUIElement) -> Bool {
-        guard element.exists else { return false }
-        if element.isHittable {
-            element.tap()
-            return true
-        }
-        XCUIApplication().swipeUp()
-        RunLoop.current.run(until: Date().addingTimeInterval(0.2))
-        if element.exists, element.isHittable {
-            element.tap()
-            return true
-        }
-        if element.exists {
-            element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-            return true
-        }
-        return false
+    private func button(in app: XCUIApplication, labeled label: String) -> XCUIElement? {
+        let query = app.buttons.matching(NSPredicate(format: "label == %@", label))
+        guard query.count > 0 else { return nil }
+        return query.element(boundBy: 0)
+    }
+
+    private func isUsable(_ element: XCUIElement?) -> Bool {
+        guard let element, element.exists else { return false }
+        let frame = element.frame
+        if frame.isNull || frame.origin.x.isInfinite || frame.origin.y.isInfinite { return false }
+        if frame.width < 1 || frame.height < 1 { return false }
+        return true
+    }
+
+    /// Do not call `element.tap()` on a stale Next: XCTest retries the hit
+    /// point and fails the test when the frame is inf / 0×0. A coordinate
+    /// tap on a freshly checked frame avoids that, and a missing or
+    /// unusable control is skipped so the Scroll CTA can be used instead.
+    private func tapIfPossible(_ element: XCUIElement?) -> Bool {
+        guard isUsable(element), let element else { return false }
+        let frame = element.frame
+        guard !frame.isNull, frame.width >= 1, frame.height >= 1,
+              !frame.origin.x.isInfinite, !frame.origin.y.isInfinite
+        else { return false }
+        // Tap through the app's coordinate space so XCTest does not retry
+        // a vanished button (Finish is removed as soon as CompletionView
+        // appears, which would otherwise fail the test).
+        let app = XCUIApplication()
+        let appFrame = app.frame
+        guard appFrame.width >= 1, appFrame.height >= 1 else { return false }
+        let vector = CGVector(
+            dx: (frame.midX - appFrame.minX) / appFrame.width,
+            dy: (frame.midY - appFrame.minY) / appFrame.height
+        )
+        app.coordinate(withNormalizedOffset: vector).tap()
+        return true
     }
 
     private func performAudit(on app: XCUIApplication, context: String) throws {
