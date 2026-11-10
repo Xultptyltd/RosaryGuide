@@ -86,7 +86,7 @@ struct RosaryWalkthroughView: View {
                         if page == pages.count - 1 {
                             onBegin()
                         } else {
-                            withAnimation(Motion.animation(.easeOut(duration: 0.24, reduceMotion: reduceMotion))) { page += 1 }
+                            withAnimation(Motion.animation(.easeOut(duration: 0.24), reduceMotion: reduceMotion)) { page += 1 }
                         }
                     }
                     .accessibilityLabel(page == pages.count - 1 ? "Begin Rosary with today’s mysteries, page \(page + 1) of \(pages.count)" : "Continue, page \(page + 1) of \(pages.count)")
@@ -262,7 +262,7 @@ private struct GuideWalkthroughPage<Content: View>: View {
         guard Date().timeIntervalSince(lastDrag) > 0.25 else { return }
         HapticService.play(.light, enabled: settings.hapticsEnabled)
         arrowArmed = maxOffset - scrollY > ScrollMorph.minimumOffset
-        withAnimation(Motion.animation(MotionTokens.reveal, completionCriteria: .logicallyComplete, reduceMotion: reduceMotion)) {
+        withAnimation(Motion.animation(MotionTokens.reveal, reduceMotion: reduceMotion), completionCriteria: .logicallyComplete) {
             actionLocked = true
             scrollPosition.scrollTo(edge: .bottom)
         } completion: {

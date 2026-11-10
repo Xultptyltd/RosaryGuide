@@ -68,7 +68,7 @@ struct OnboardingView: View {
                             if selection == pages.count - 1 && !includesSignIn {
                                 onComplete()
                             } else {
-                                withAnimation(Motion.animation(.easeOut(duration: 0.24, reduceMotion: reduceMotion))) {
+                                withAnimation(Motion.animation(.easeOut(duration: 0.24), reduceMotion: reduceMotion)) {
                                     selection += 1
                                 }
                             }
@@ -511,7 +511,7 @@ private struct OnboardingSignInView: View {
     private func completeAfterSuccess() {
         guard !succeeded else { return }
         HapticService.play(.success, enabled: settings.hapticsEnabled)
-        withAnimation(Motion.animation(.easeOut(duration: 0.2, reduceMotion: reduceMotion))) { succeeded = true }
+        withAnimation(Motion.animation(.easeOut(duration: 0.2), reduceMotion: reduceMotion)) { succeeded = true }
         withTransaction(AppLanding.still) { AppLanding.shared.buildsHomeEarly = true }
         let style: SignInTransition.Style = reduceMotion ? .reduced : .standard
         DispatchQueue.main.asyncAfter(deadline: .now() + SignInTransition.tick) {

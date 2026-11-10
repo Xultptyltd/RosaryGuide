@@ -308,7 +308,7 @@ struct FeastsView: View {
 
     private func toggleCalendarExpanded() {
         if !calendarExpanded { expandedWeek = weekOffset }
-        withAnimation(Motion.animation(.snappy(duration: 0.28, extraBounce: 0, reduceMotion: reduceMotion))) {
+        withAnimation(Motion.animation(.snappy(duration: 0.28, extraBounce: 0), reduceMotion: reduceMotion)) {
             calendarExpanded.toggle()
             calendarDrag = nil
         }
@@ -354,7 +354,7 @@ struct FeastsView: View {
                         ? !(distance < -threshold || projected < -threshold)
                         : distance > threshold || projected > threshold
                     if expanded && !calendarExpanded { expandedWeek = weekOffset }
-                    withAnimation(Motion.animation(.snappy(duration: 0.28, extraBounce: 0, reduceMotion: reduceMotion))) {
+                    withAnimation(Motion.animation(.snappy(duration: 0.28, extraBounce: 0), reduceMotion: reduceMotion)) {
                         calendarExpanded = expanded
                         calendarDrag = nil
                     }

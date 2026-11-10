@@ -534,7 +534,7 @@ struct PrayView: View {
                         let maxOffset = max(0, contentH - viewH)
                         let distanceFromBottom = maxOffset - plateScrollY
                         plateArrowArmed = distanceFromBottom > 8
-                        withAnimation(Motion.animation(MotionTokens.reveal, completionCriteria: .logicallyComplete, reduceMotion: reduceMotion)) {
+                        withAnimation(Motion.animation(MotionTokens.reveal, reduceMotion: reduceMotion), completionCriteria: .logicallyComplete) {
                             plateActionLockedToNext = true
                             if distanceFromBottom > 8 {
                                 plateScrollPosition.scrollTo(y: maxOffset)
@@ -1527,7 +1527,7 @@ struct PrayView: View {
                                 // expanded Done without moving. Setting the offset again
                                 // still scrolls. Already-at-bottom just expands.
                                 michaelArrowArmed = distanceFromBottom > 8
-                                withAnimation(Motion.animation(MotionTokens.reveal, completionCriteria: .logicallyComplete, reduceMotion: reduceMotion)) {
+                                withAnimation(Motion.animation(MotionTokens.reveal, reduceMotion: reduceMotion), completionCriteria: .logicallyComplete) {
                                     michaelActionLocked = true
                                     if distanceFromBottom > 8 {
                                         michaelScrollPosition.scrollTo(y: maxOffset)
@@ -1695,7 +1695,7 @@ struct PrayView: View {
         let maxOffset = max(0, contentH - viewH)
         let distanceFromBottom = maxOffset - prayerScrollY
         prayerArrowArmed = distanceFromBottom > 8
-        withAnimation(Motion.animation(MotionTokens.reveal, completionCriteria: .logicallyComplete, reduceMotion: reduceMotion)) {
+        withAnimation(Motion.animation(MotionTokens.reveal, reduceMotion: reduceMotion), completionCriteria: .logicallyComplete) {
             prayerActionLocked = true
             if distanceFromBottom > 8 {
                 prayerScrollPosition.scrollTo(y: maxOffset)
@@ -1943,7 +1943,7 @@ struct PrayView: View {
             return
         }
         if current?.kind == .signOfTheCross, current?.stage == .opening, activeConfig.intentionsStep, index < steps.count - 1 {
-            withAnimation(Motion.animation(.easeInOut(duration: 0.22, reduceMotion: reduceMotion))) {
+            withAnimation(Motion.animation(.easeInOut(duration: 0.22), reduceMotion: reduceMotion)) {
                 showingIntentionStep = true
             }
             playHaptic()
@@ -2035,7 +2035,7 @@ struct PrayView: View {
     private func retreat() {
         guard !showingCompletion else { return }
         if showingIntentionStep {
-            withAnimation(Motion.animation(.easeInOut(duration: 0.22, reduceMotion: reduceMotion))) {
+            withAnimation(Motion.animation(.easeInOut(duration: 0.22), reduceMotion: reduceMotion)) {
                 showingIntentionStep = false
             }
             // Same haptic as every other step change.
@@ -2076,7 +2076,7 @@ struct PrayView: View {
         if freshSetPending != nil, next > 0 {
             freshSetPending = nil
         }
-        withAnimation(Motion.animation(.easeInOut(duration: 0.22, reduceMotion: reduceMotion))) {
+        withAnimation(Motion.animation(.easeInOut(duration: 0.22), reduceMotion: reduceMotion)) {
             showingIntentionStep = false
             index = next
         }
