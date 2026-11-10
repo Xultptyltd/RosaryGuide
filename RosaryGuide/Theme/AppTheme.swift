@@ -511,33 +511,39 @@ enum AppearanceWindowStyle {
     }
 }
 
-/// iOS 26 SwiftUI navigation bars don't pick up `UINavigationBar.appearance()` title fonts
-/// (the large title rendered as `.SFUI-Bold`), so set the H1 font on the hosting bar itself.
 #if canImport(UIKit)
-private struct GuideH1NavigationFont: UIViewControllerRepresentable {
-    final class Probe: UIViewController {
-        override func viewWillAppear(_ animated: Bool) { super.viewWillAppear(animated); apply() }
-        override func didMove(toParent parent: UIViewController?) { super.didMove(toParent: parent); apply() }
-        func apply() {
-            guard let bar = navigationController?.navigationBar else { return }
-            let font = AppTheme.TypeRole.h1UIFont(AppTheme.TypeRole.h1NavigationSize)
-            let inlineFont = AppTheme.TypeRole.navigationTitleUIFont
-            func fix(_ a: UINavigationBarAppearance?) -> UINavigationBarAppearance? {
-                guard let a = a?.copy() else { return nil }
-                a.largeTitleTextAttributes[.font] = font
-                a.titleTextAttributes[.font] = inlineFont
-                return a
-            }
+/// iOS 26 SwiftUI navigation bars don't pick up `UINavigationBar.appearance()` title fonts
+/// (the large title rendered as `.SFUI-Bold`), so set the H1 font on each bar itself.
+/// Applied from `onAppear` rather than a 0×0 UIViewController probe, which the
+/// accessibility audit flagged as an unlabelled, zero-size hit target.
+enum GuideH1NavigationFont {
+    static func apply() {
+        let font = AppTheme.TypeRole.h1UIFont(AppTheme.TypeRole.h1NavigationSize)
+        let inlineFont = AppTheme.TypeRole.navigationTitleUIFont
+        func fix(_ a: UINavigationBarAppearance?) -> UINavigationBarAppearance? {
+            guard let a = a?.copy() else { return nil }
+            a.largeTitleTextAttributes[.font] = font
+            a.titleTextAttributes[.font] = inlineFont
+            return a
+        }
+        func apply(to bar: UINavigationBar) {
             bar.standardAppearance = fix(bar.standardAppearance) ?? bar.standardAppearance
             bar.scrollEdgeAppearance = fix(bar.scrollEdgeAppearance)
-            for item in [parent?.navigationItem, navigationController?.topViewController?.navigationItem].compactMap({ $0 }) {
+            if let item = bar.topItem {
                 item.standardAppearance = fix(item.standardAppearance ?? bar.standardAppearance)
                 item.scrollEdgeAppearance = fix(item.scrollEdgeAppearance ?? bar.scrollEdgeAppearance ?? bar.standardAppearance)
             }
         }
+        func walk(_ view: UIView) {
+            if let bar = view as? UINavigationBar { apply(to: bar) }
+            view.subviews.forEach(walk)
+        }
+        let windows = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+        windows.forEach(walk)
+        DispatchQueue.main.async { windows.forEach(walk) }
     }
-    func makeUIViewController(context: Context) -> Probe { Probe() }
-    func updateUIViewController(_ vc: Probe, context: Context) { vc.apply() }
 }
 #endif
 
@@ -545,7 +551,7 @@ extension View {
     /// Routes the UIKit large navigation title through the shared H1 token.
     func guideH1NavigationTitleFont() -> some View {
         #if canImport(UIKit)
-        background(GuideH1NavigationFont().frame(width: 0, height: 0).accessibilityHidden(true))
+        onAppear { GuideH1NavigationFont.apply() }
         #else
         self
         #endif
@@ -1541,13 +1547,13 @@ struct GuideSegmentedControl: ViewModifier {
             .frame(minHeight: Self.height)
             .labelsHidden()
             #if canImport(UIKit)
-            // The probe is a zero-size UIView behind the segmented control.
-            // Hide it from VoiceOver and the audit; it is not a control.
-            .background(
-                SegmentedControlSchemeSync(dark: palette.scheme == .dark)
-                    .accessibilityHidden(true)
-                    .allowsHitTesting(false)
-            )
+            // Apply the palette's Light/Dark style to the backing control
+            // without a UIViewRepresentable probe — that probe was a 0-pt
+            // unlabelled hit target in the accessibility tree.
+            .onAppear { SegmentedControlSchemeSync.apply(dark: palette.scheme == .dark) }
+            .onChange(of: palette.scheme) { _, scheme in
+                SegmentedControlSchemeSync.apply(dark: scheme == .dark)
+            }
             #endif
     }
 
@@ -1563,70 +1569,35 @@ struct GuideSegmentedControl: ViewModifier {
 }
 
 #if canImport(UIKit)
-/// Pins the backing UISegmentedControl's interface style to the app palette. Its colours are
-/// dynamic (`GuideChrome.dynamic`), but they resolve against the control's own traits, and a
-/// hosting controller (notably a sheet) can keep the previous Light/Dark style after the app
-/// switches, leaving a light track and wrong label colours on a dark page.
-private struct SegmentedControlSchemeSync: UIViewRepresentable {
-    let dark: Bool
-
-    func makeUIView(context: Context) -> Probe { Probe() }
-
-    func updateUIView(_ view: Probe, context: Context) {
-        view.dark = dark
-        view.sync()
+/// Pins UISegmentedControl interface style to the app palette. Its colours are
+/// dynamic (`GuideChrome.dynamic`), but they resolve against the control's own
+/// traits, and a hosting controller (notably a sheet) can keep the previous
+/// Light/Dark style after the app switches, leaving a light track and wrong
+/// label colours on a dark page.
+enum SegmentedControlSchemeSync {
+    static func apply(dark: Bool) {
+        let style: UIUserInterfaceStyle = dark ? .dark : .light
+        let windows = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+        for window in windows {
+            apply(style, in: window)
+        }
+        // The control may not be in the window until the next layout pass.
+        DispatchQueue.main.async {
+            for window in UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .flatMap({ $0.windows }) {
+                apply(style, in: window)
+            }
+        }
     }
 
-    final class Probe: UIView {
-        var dark = false
-
-        override init(frame: CGRect) {
-            super.init(frame: frame)
-            isUserInteractionEnabled = false
-            isAccessibilityElement = false
-            accessibilityElementsHidden = true
-            backgroundColor = .clear
+    private static func apply(_ style: UIUserInterfaceStyle, in view: UIView) {
+        if let control = view as? UISegmentedControl, control.overrideUserInterfaceStyle != style {
+            control.overrideUserInterfaceStyle = style
         }
-
-        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-        override func didMoveToWindow() {
-            super.didMoveToWindow()
-            sync()
-        }
-
-        override func layoutSubviews() {
-            super.layoutSubviews()
-            sync()
-        }
-
-        func sync() {
-            guard let control = overlappingSegmentedControl() else { return }
-            let style: UIUserInterfaceStyle = dark ? .dark : .light
-            if control.overrideUserInterfaceStyle != style { control.overrideUserInterfaceStyle = style }
-        }
-
-        /// The segmented control drawn over this probe (same frame), so a screen with
-        /// several pickers never restyles the wrong one.
-        private func overlappingSegmentedControl() -> UISegmentedControl? {
-            guard window != nil else { return nil }
-            let mine = convert(bounds, to: nil)
-            var ancestor = superview
-            var depth = 0
-            while let current = ancestor, depth < 6 {
-                var stack: [UIView] = [current]
-                while let view = stack.popLast() {
-                    if let control = view as? UISegmentedControl,
-                       control.convert(control.bounds, to: nil).intersects(mine) {
-                        return control
-                    }
-                    stack.append(contentsOf: view.subviews)
-                }
-                ancestor = current.superview
-                depth += 1
-            }
-            return nil
-        }
+        view.subviews.forEach { apply(style, in: $0) }
     }
 }
 #endif
@@ -1686,10 +1657,15 @@ private struct GuideTabBarClearance: ViewModifier {
     func body(content: Content) -> some View {
         content
             .contentMargins(.bottom, AppTheme.Space.xl + extra, for: .scrollContent)
+            // A 0-pt inset still appears in the accessibility tree as an
+            // unlabelled, zero-height hit target, so only reserve extra space
+            // when there is some.
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                Color.clear
-                    .frame(height: extra)
-                    .accessibilityHidden(true)
+                if extra > 0 {
+                    Color.clear
+                        .frame(height: extra)
+                        .accessibilityHidden(true)
+                }
             }
     }
 }

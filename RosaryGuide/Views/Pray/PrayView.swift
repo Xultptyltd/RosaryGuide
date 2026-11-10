@@ -709,6 +709,7 @@ struct PrayView: View {
                     .frame(minHeight: pinTop ? nil : scrollGeo.size.height, alignment: .top)
                     .frame(maxWidth: .infinity)
                 }
+                .scrollIndicators(.hidden)
                 .scrollPosition($prayerScrollPosition)
                 .onScrollGeometryChange(for: Bool.self) { geometry in
                     geometry.contentOffset.y + geometry.contentInsets.top > 1
@@ -1439,6 +1440,7 @@ struct PrayView: View {
                                 }
                             }
                         }
+                        .scrollIndicators(.hidden)
                         .background {
                             GeometryReader { geo in
                                 Color.clear.preference(key: MichaelViewportHeightKey.self, value: geo.size.height)
