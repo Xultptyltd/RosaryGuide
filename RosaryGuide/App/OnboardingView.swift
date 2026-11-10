@@ -195,12 +195,14 @@ struct OnboardingPageView: View {
                 Spacer(minLength: AppTheme.Space.lg)
 
                 if scrollsText {
-                    // Centre the copy between the art and the controls; scroll only if it overflows.
+                    // Choose by the copy's ideal height. A maxHeight: .infinity frame
+                    // made ViewThatFits treat the text as always fitting, which clipped
+                    // the last body line under Continue at accessibility sizes.
                     ViewThatFits(in: .vertical) {
-                        textBlock.frame(maxHeight: .infinity, alignment: .center)
+                        textBlock
                         ScrollView(.vertical, showsIndicators: false) { textBlock }
-                            .scrollBounceBehavior(.basedOnSize)
                     }
+                    .frame(maxHeight: .infinity, alignment: .center)
                 } else {
                     textBlock
                 }
