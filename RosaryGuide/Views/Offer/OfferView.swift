@@ -537,11 +537,7 @@ struct OfferView: View {
     /// (typed by hand), so an earlier month's tagged intention with the same wording
     /// never hides a new month's card.
     private func hasAdoptedThisMonthsPapal(_ item: SuggestedIntention) -> Bool {
-        offer.sortedIntentions.contains {
-            $0.sourceId == item.id
-                || ($0.sourceId == nil
-                    && $0.title.compare(item.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame)
-        }
+        PapalIntention.isAdded(item, among: offer.sortedIntentions)
     }
     private var currentMonthTitle: String {
         Date().formatted(.dateTime.month(.wide).year())

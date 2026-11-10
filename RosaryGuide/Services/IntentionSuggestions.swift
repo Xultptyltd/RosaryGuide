@@ -19,6 +19,26 @@ enum PapalIntention {
     static func isPapal(_ id: String?) -> Bool {
         id?.hasPrefix(prefix) == true
     }
+
+    /// True when this month's Holy Father intention is already one of the user's
+    /// saved intentions. A matching `sourceId` counts; a title match only counts
+    /// for an untagged (hand-typed) intention, so an earlier month's tagged
+    /// intention with the same wording does not count as this month being added.
+    /// Pass the active list (the pickers use `OfferStore.sortedIntentions`).
+    static func isAdded(_ suggestion: SuggestedIntention, among intentions: [OfferIntention]) -> Bool {
+        intentions.contains {
+            $0.sourceId == suggestion.id
+                || ($0.sourceId == nil
+                    && $0.title.compare(suggestion.title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame)
+        }
+    }
+
+    /// Rows in the "Offer this Rosary for" picker, excluding "No specific intention".
+    /// Only saved intentions appear. The monthly papal suggestion is included
+    /// only after the user has added it (at which point it is already in `saved`).
+    static func pickerIntentions(saved: [OfferIntention]) -> [OfferIntention] {
+        saved
+    }
 }
 
 enum IntentionSuggestions {
