@@ -690,3 +690,46 @@ final class FeastHeroFramingTests: XCTestCase {
         }
     }
 }
+
+final class ScaledSpaceTests: XCTestCase {
+    func testScaledSpaceUnchangedAtLarge() {
+        let values: [CGFloat] = [
+            AppTheme.Space.none,
+            AppTheme.Space.xs,
+            AppTheme.Space.sm,
+            AppTheme.Space.md,
+            AppTheme.Space.lg,
+            AppTheme.Space.xl,
+            AppTheme.Space.xxl,
+            AppTheme.Space.section,
+            AppTheme.Component.pillHeight,
+        ]
+        for value in values {
+            XCTAssertEqual(
+                AppTheme.Space.scaled(value, category: .large),
+                value,
+                "Large must keep the design size \(value)"
+            )
+        }
+        XCTAssertEqual(AppTheme.Space.xs, 4)
+        XCTAssertEqual(AppTheme.Space.sm, 8)
+        XCTAssertEqual(AppTheme.Space.md, 12)
+        XCTAssertEqual(AppTheme.Space.lg, 16)
+        XCTAssertEqual(AppTheme.Space.xl, 24)
+        XCTAssertEqual(AppTheme.Space.xxl, 32)
+        XCTAssertEqual(AppTheme.Space.section, 44)
+    }
+
+    func testScaledSpaceIsCappedAtOneAndAHalf() {
+        let value: CGFloat = 16
+        let ax5 = AppTheme.Space.scaled(value, category: .accessibilityExtraExtraExtraLarge)
+        XCTAssertGreaterThan(ax5, value)
+        XCTAssertLessThanOrEqual(ax5, value * AppTheme.Space.scaleLimit + 0.001)
+        XCTAssertEqual(ax5, value * AppTheme.Space.scaleLimit, accuracy: 0.001)
+        XCTAssertEqual(
+            AppTheme.Space.scaled(value, for: .accessibility5),
+            AppTheme.Space.scaled(value, category: .accessibilityExtraExtraExtraLarge)
+        )
+        XCTAssertEqual(DynamicTypeSize.large.guideContentSizeCategory, .large)
+    }
+}

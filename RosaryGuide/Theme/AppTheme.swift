@@ -1614,7 +1614,7 @@ struct GuideChoiceControl<Selection: Hashable>: View {
 
     var body: some View {
         if dynamicTypeSize.isAccessibilitySize {
-            VStack(spacing: AppTheme.Space.sm) {
+            VStack(spacing: AppTheme.Space.scaled(AppTheme.Space.sm, for: dynamicTypeSize)) {
                 ForEach(options, id: \.self) { option in
                     let selected = selection == option
                     Button {
@@ -1625,8 +1625,8 @@ struct GuideChoiceControl<Selection: Hashable>: View {
                             .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, AppTheme.Space.md)
-                            .padding(.horizontal, AppTheme.Space.lg)
+                            .padding(.vertical, AppTheme.Space.scaled(AppTheme.Space.md, for: dynamicTypeSize))
+                            .padding(.horizontal, AppTheme.Space.scaled(AppTheme.Space.lg, for: dynamicTypeSize))
                             .foregroundStyle(selected ? palette.onAccent : palette.ink)
                             .background(selected ? palette.accent : palette.surface, in: Capsule())
                     }
@@ -1726,6 +1726,22 @@ extension View {
         frame(minWidth: AppTheme.Accessibility.minHitTarget, minHeight: AppTheme.Accessibility.minHitTarget)
             .contentShape(Rectangle())
     }
+
+    /// Text-adjacent padding that scales with Dynamic Type (capped at 1.5×).
+    /// At the default Large size this is identical to `padding(edges, base)`.
+    func guidePadding(_ edges: Edge.Set = .all, _ base: CGFloat) -> some View {
+        modifier(GuideScaledPadding(edges: edges, base: base))
+    }
+}
+
+private struct GuideScaledPadding: ViewModifier {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    var edges: Edge.Set
+    var base: CGFloat
+
+    func body(content: Content) -> some View {
+        content.padding(edges, AppTheme.Space.scaled(base, for: dynamicTypeSize))
+    }
 }
 
 // MARK: - Design token scale (consistency layer)
@@ -1742,6 +1758,27 @@ extension AppTheme {
         static let xxl: CGFloat = 32
         /// Major block rhythm (same value as `sectionGap`).
         static let section: CGFloat = 44
+
+        /// Growth cap for Dynamic Type scaling so AX5 padding does not blow out.
+        /// Unscaled constants stay available for art frames and fixed chrome.
+        static let scaleLimit: CGFloat = 1.5
+
+        /// Dynamic Type scale of a design-size space, capped at `scaleLimit`.
+        /// At the default Large category the result equals `value`.
+        static func scaled(_ value: CGFloat, category: UIContentSizeCategory = .large) -> CGFloat {
+            #if canImport(UIKit)
+            let metrics = UIFontMetrics(forTextStyle: .body)
+            let traits = UITraitCollection(preferredContentSizeCategory: category)
+            let raw = metrics.scaledValue(for: value, compatibleWith: traits)
+            return min(raw, value * scaleLimit)
+            #else
+            return value
+            #endif
+        }
+
+        static func scaled(_ value: CGFloat, for dynamicTypeSize: DynamicTypeSize) -> CGFloat {
+            scaled(value, category: dynamicTypeSize.guideContentSizeCategory)
+        }
     }
 
     /// Weekly prayer preview: shared geometry and symbol roles.
