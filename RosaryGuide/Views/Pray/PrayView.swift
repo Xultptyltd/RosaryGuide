@@ -1618,7 +1618,7 @@ struct PrayView: View {
             showScroll: showScroll,
             title: expandedTitle,
             scrollLabel: scrollLabel,
-            primary: expandedTitle == "Next" || expandedTitle == "Finish",
+            primary: expandedTitle == "Next" || expandedTitle == "Finish" || expandedTitle == "Done",
             onScroll: onScroll,
             onAdvance: onAdvance
         )
