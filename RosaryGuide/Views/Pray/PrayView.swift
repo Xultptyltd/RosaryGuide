@@ -848,19 +848,43 @@ struct PrayView: View {
         return max(4, shortfall)
     }
 
+    /// Back is available after the first prayer (and on the intention step, which
+    /// sits between Sign of the Cross and the Creed).
+    private var canRetreat: Bool {
+        showingIntentionStep || index > 0
+    }
+
+    /// Clears the leading back + settings cluster (and the matching trailing
+    /// inset) so the step title stays centred and does not run under the buttons.
+    private var headerTitleHorizontalPadding: CGFloat {
+        AppTheme.Accessibility.minHitTarget * 2 + AppTheme.Space.sm * 2
+    }
+
     private func header(_ step: RosaryStep) -> some View {
         ZStack {
-            HStack {
-                // Swipe right still steps back; this opens Customise rosary.
-                roundControl(system: "gearshape") { showingRosarySettings = true }
-                    .accessibilityLabel("Rosary settings")
-                Spacer()
+            HStack(spacing: 0) {
+                HStack(spacing: AppTheme.Space.sm) {
+                    if canRetreat {
+                        roundControl(system: "chevron.left") { retreat() }
+                            .accessibilityLabel("Back")
+                    } else {
+                        // Same width as the back button so the gear and title do not jump
+                        // when Back is hidden on the first step.
+                        Color.clear
+                            .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                            .accessibilityHidden(true)
+                    }
+                    // Swipe right still steps back; this opens Customise rosary.
+                    roundControl(system: "gearshape") { showingRosarySettings = true }
+                        .accessibilityLabel("Rosary settings")
+                }
+                Spacer(minLength: 0)
                 roundControl(system: "xmark") { closePrayerFlow() }
                     .accessibilityLabel("Close")
             }
             progressNowLabel(step)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 52)
+                .padding(.horizontal, headerTitleHorizontalPadding)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(step.mystery.map { "\(step.stage.spokenName), \($0.title.english)" } ?? step.progressLabel)
                 .accessibilityAddTraits(.isHeader)
