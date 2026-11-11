@@ -184,12 +184,21 @@ enum ArtCatalog {
         return subject
     }
 
-    /// Cover `frame` with the whole feast file at one scale:
-    /// `max(frame.width / imageSize.width, frame.height / imageSize.height)`.
+    /// How far down the file the visible cover may start, after dropping a leading
+    /// letterbox (flat field above the figure). Capped so a bad detection cannot
+    /// zoom too far. Zero when the figure already meets the top of the file.
+    static func feastContentTop(subject: CGRect, imageHeight: CGFloat) -> CGFloat {
+        guard imageHeight > 1, subject.height > 1, subject.minY > 0 else { return 0 }
+        return min(max(subject.minY, 0), imageHeight * 0.30)
+    }
+
+    /// Cover `frame` with the feast file at one scale, after dropping any leading
+    /// letterbox: `max(frame.width / imageSize.width, frame.height / usableHeight)`.
     ///
-    /// The window always starts at the top of the file, so any crop is from the
-    /// bottom. Top air is whatever field is already in those pixels; the scale
-    /// never tightens to the subject. When the scaled width is wider than the
+    /// The window starts at `feastContentTop`, so baked-in empty field above the
+    /// figure is clipped rather than shown as a strip at the top of the card.
+    /// The scale never tightens to the subject's width — only enough to cover
+    /// the frame with the remaining file. When the scaled width is wider than the
     /// frame, the window centers on `focusX` (held inside `subject`) and stays
     /// inside the image. The card is full-bleed: no side bars and no painted strip.
     /// Downward shift for a feast hero whose frame top sits `overlap` points under
@@ -204,12 +213,15 @@ enum ArtCatalog {
         guard imageSize.width > 1, imageSize.height > 1, frame.width > 1, frame.height > 1 else {
             return FeastCover(scale: 1, offset: .zero)
         }
-        let scale = max(frame.width / imageSize.width, frame.height / imageSize.height)
-        let scaledW = imageSize.width * scale
-        let maxVisX = max(0, scaledW - frame.width)
-
         let canvas = CGRect(origin: .zero, size: imageSize)
         let box = subject.intersection(canvas)
+        let contentTop = feastContentTop(subject: box, imageHeight: imageSize.height)
+        let usableHeight = max(imageSize.height - contentTop, 1)
+        let scale = max(frame.width / imageSize.width, frame.height / usableHeight)
+        let scaledW = imageSize.width * scale
+        let maxVisX = max(0, scaledW - frame.width)
+        let maxVisY = max(0, imageSize.height * scale - frame.height)
+
         let anchor: CGFloat
         if box.width > 1, box.height > 1 {
             anchor = min(max(focusX, box.minX), box.maxX)
@@ -217,7 +229,8 @@ enum ArtCatalog {
             anchor = min(max(focusX, 0), imageSize.width)
         }
         let visX = min(max(anchor * scale - frame.width / 2, 0), maxVisX)
-        return FeastCover(scale: scale, offset: CGSize(width: -visX, height: 0))
+        let visY = min(contentTop * scale, maxVisY)
+        return FeastCover(scale: scale, offset: CGSize(width: -visX, height: -visY))
     }
 }
 
@@ -385,8 +398,9 @@ struct FocusedRasterImage: View {
     var focus: UnitPoint = UnitPoint(x: 0.5, y: 0.32)
     /// When set, the top of the visible crop is this far down the image (0...1).
     var cropTop: CGFloat? = nil
-    /// Feast heroes. Covers the card with the whole file, top-aligned.
-    /// Any crop is from the bottom; horizontal overflow follows the subject.
+    /// Feast heroes. Covers the card flush to the top, clipping any leading
+    /// letterbox in the file. Further crop is from the bottom; horizontal
+    /// overflow follows the subject.
     var coversSubject: Bool = false
     /// How far the top of this frame actually sits under translucent status / nav chrome.
     /// The file still cover-fills the FULL frame (same scale as inset 0, no side gaps);
