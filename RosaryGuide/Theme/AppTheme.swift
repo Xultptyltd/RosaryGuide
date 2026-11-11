@@ -2013,6 +2013,9 @@ extension AppTheme {
         static var serifDisplay: Font { AppTheme.serif(40, opticalSize: 44, relativeTo: .largeTitle) }
         /// Reference size for the shared prayer paragraph line-height calculation.
         static func prayerLineHeightReference(scale: CGFloat) -> CGFloat { 21 * scale }
+        /// Comfortable reading measure for body paragraphs such as an intention note.
+        /// Applied as a multiple of the font's own (Dynamic Type scaled) line height.
+        static let readingLineHeight: CGFloat = 1.45
         static func scriptureReference(isMystery: Bool) -> Font {
             AppTheme.sans(isMystery ? 11 : 12, relativeTo: .caption)
         }
@@ -2066,6 +2069,11 @@ extension AppTheme {
         }
         static func calloutUIFont(weight: Font.Weight = .regular) -> UIFont {
             FontRegistrar.sansUI(16, weight: regularized(weight), textStyle: .callout)
+        }
+        /// Extra SwiftUI `lineSpacing` that lifts a font to `readingLineHeight`.
+        /// Uses the font's current line height so it scales with Dynamic Type.
+        static func readingLineSpacing(for font: UIFont) -> CGFloat {
+            max(0, font.lineHeight * (readingLineHeight - 1))
         }
         static func captionUIFont(weight: Font.Weight = .regular) -> UIFont {
             FontRegistrar.sansUI(12, weight: regularized(weight), textStyle: .caption1)
