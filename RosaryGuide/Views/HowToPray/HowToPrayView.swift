@@ -161,7 +161,7 @@ private struct GuideWalkthroughPage<Content: View>: View {
     @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SettingsStore.self) private var settings
-    @State private var scrollPosition = ScrollPosition(edge: .top)
+    @State private var scrollPosition = GuideScrollPosition.top
     @State private var maxOffset: CGFloat = 0
     @State private var scrollY: CGFloat = 0
     @State private var actionLocked = false
@@ -188,11 +188,11 @@ private struct GuideWalkthroughPage<Content: View>: View {
             }
             .frame(maxWidth: .infinity, minHeight: viewportHeight, alignment: .topLeading)
         }
-        .scrollPosition($scrollPosition)
+        .guideScrollPosition($scrollPosition)
         .scrollDisabled(!allowsScrolling)
         .scrollClipDisabled(isMysteryGrid)
         .scrollBounceBehavior(.basedOnSize)
-        .onScrollGeometryChange(for: GuideReadingMetrics.self) { geometry in
+        .guideOnScrollGeometryChange(for: GuideReadingMetrics.self) { geometry in
             let position = ScrollMorph.position(geometry)
             return GuideReadingMetrics(y: position.y, maxOffset: position.maxOffset)
         } action: { _, metrics in
@@ -203,7 +203,7 @@ private struct GuideWalkthroughPage<Content: View>: View {
             actionLocked = next.locked
             arrowArmed = next.armed
         }
-        .onScrollPhaseChange { _, phase in
+        .guideOnScrollPhaseChange { _, phase in
             if phase == .interacting { arrowArmed = false; lastDrag = Date() }
         }
         // Only reading content fades; footer controls stay fully visible.

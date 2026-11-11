@@ -89,28 +89,37 @@ struct OfferView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar(.visible, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .largeTitle) {
-                    // The gear sits in the title row, centred on the H1.
-                    HStack(alignment: .center, spacing: AppTheme.Space.md) {
-                        GuidePageTitle(text: "Profile")
+                if #available(iOS 26.0, *) {
+                    ToolbarItem(placement: .largeTitle) {
+                        // The gear sits in the title row, centred on the H1.
+                        HStack(alignment: .center, spacing: AppTheme.Space.md) {
+                            GuidePageTitle(text: "Profile")
+                            settingsButton
+                                // Content in the large-title slot isn't exposed to VoiceOver; the
+                                // bar item below carries the Settings button for it instead.
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Color.clear
+                            .frame(width: AppTheme.Accessibility.minHitTarget,
+                                   height: AppTheme.Accessibility.minHitTarget)
+                            .allowsHitTesting(false)
+                            .accessibilityElement()
+                            .accessibilityLabel("Settings")
+                            .accessibilityHint("Opens settings")
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityAction { openSettings() }
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+                } else {
+                    // iOS 17–18 have no large-title toolbar slot; the system
+                    // large title (already Instrument Sans via GuideChrome)
+                    // stays, and the gear sits in the trailing slot.
+                    ToolbarItem(placement: .topBarTrailing) {
                         settingsButton
-                            // Content in the large-title slot isn't exposed to VoiceOver; the
-                            // bar item below carries the Settings button for it instead.
-                            .accessibilityHidden(true)
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Color.clear
-                        .frame(width: AppTheme.Accessibility.minHitTarget,
-                               height: AppTheme.Accessibility.minHitTarget)
-                        .allowsHitTesting(false)
-                        .accessibilityElement()
-                        .accessibilityLabel("Settings")
-                        .accessibilityHint("Opens settings")
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityAction { openSettings() }
-                }
-                .sharedBackgroundVisibility(.hidden)
             }
             .task {
                 if DebugHooks.has("-RGDebugOpenSignIn") {
@@ -2694,7 +2703,7 @@ struct IntentionEditorSheet: View {
                     }
                 }
                 .scrollDismissesKeyboard(.interactively)
-                .onScrollGeometryChange(for: EditorSheetScrollMetrics.self) { geometry in
+                .guideOnScrollGeometryChange(for: EditorSheetScrollMetrics.self) { geometry in
                     EditorSheetScrollMetrics(
                         offsetY: geometry.contentOffset.y,
                         maxOffsetY: max(0, geometry.contentSize.height - geometry.containerSize.height + geometry.contentInsets.bottom)

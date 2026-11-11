@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A8C10002A1B2C3D4E5F61238 /* GuideAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8C10001A1B2C3D4E5F61238 /* GuideAvailability.swift */; };
 		A11Y0001C0DE000000000004 /* AccessibilityAuditUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11Y0001C0DE000000000001 /* AccessibilityAuditUITests.swift */; };
 		004406578DA6DEABB8614015 /* PrayHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D14D5C74E932FBB6FE0784F /* PrayHubView.swift */; };
 		05F066B261AA1E475873C6F3 /* MysteryCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F757CBAFDB9E680E1817D854 /* MysteryCatalog.swift */; };
@@ -116,6 +117,7 @@
 		5CC2D3267C7434F6A894B9B1 /* FeastCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeastCatalog.swift; sourceTree = "<group>"; };
 		5FBA0DE58E6AF3D6198CDC09 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		65622D107422099E4F60DE1E /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		A8C10001A1B2C3D4E5F61238 /* GuideAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuideAvailability.swift; sourceTree = "<group>"; };
 		66C5E677CA4145DB823FC9DA /* IntentionSuggestions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentionSuggestions.swift; sourceTree = "<group>"; };
 		6A1EFCA22FB596D08D814D6C /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
 		70497BEC59AAFC851AFB4046 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -293,6 +295,7 @@
 			isa = PBXGroup;
 			children = (
 				65622D107422099E4F60DE1E /* AppTheme.swift */,
+				A8C10001A1B2C3D4E5F61238 /* GuideAvailability.swift */,
 				AB1020261101000000000002 /* AppPageBackground.swift */,
 				F63A4454F491B38C212CC931 /* ArtCatalog.swift */,
 				C29555CF3A426924297A6D05 /* MysteryArtworkView.swift */,
@@ -586,6 +589,7 @@
 				5BEDC4E1A8748517C5BC54EB /* SessionStore.swift in Sources */,
 				BFB2E57A65DA2E74CFB07CD0 /* SettingsStore.swift in Sources */,
 				F17192475C3C5E005FFA1934 /* AppTheme.swift in Sources */,
+				A8C10002A1B2C3D4E5F61238 /* GuideAvailability.swift in Sources */,
 				AB1020261101000000000001 /* AppPageBackground.swift in Sources */,
 				A1C00101A1B2C3D4E5F60102 /* AppIconService.swift in Sources */,
 				92CDCB58703677D509CA6491 /* MysteryArtworkView.swift in Sources */,

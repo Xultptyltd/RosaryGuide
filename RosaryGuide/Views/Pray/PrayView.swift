@@ -80,7 +80,7 @@ struct PrayView: View {
     @State private var michaelArrowArmed = false
     @State private var michaelScrollY: CGFloat = 0
     /// Offset target. A stable anchor id is ignored on the second tap.
-    @State private var michaelScrollPosition = ScrollPosition(edge: .top)
+    @State private var michaelScrollPosition = GuideScrollPosition.top
     /// Last time the prayer actually moved. A scroll that ends on the circle is not a tap.
     @State private var michaelLastDrag = Date.distantPast
     /// Shared scroll-template state for long rosary prayers (not Saint Michael).
@@ -98,7 +98,7 @@ struct PrayView: View {
     /// True while content has scrolled under the top bar (shows the frosted bar).
     @State private var topBarScrolled = false
     @State private var lastAdvanceAt = Date.distantPast
-    @State private var prayerScrollPosition = ScrollPosition(edge: .top)
+    @State private var prayerScrollPosition = GuideScrollPosition.top
     @State private var prayerLastDrag = Date.distantPast
     /// Two-button steps only (decade Hail Marys 1–9). Next shows as a pill.
     @State private var pairNextExpanded = false
@@ -125,7 +125,7 @@ struct PrayView: View {
     @State private var plateNearBottom = false
     @State private var plateActionLockedToNext = false
     @State private var plateArrowArmed = false
-    @State private var plateScrollPosition = ScrollPosition(edge: .top)
+    @State private var plateScrollPosition = GuideScrollPosition.top
     @State private var plateLastDrag = Date.distantPast
     /// Measured header + progress track height (safe-area content, not status bar).
     @State private var plateChromeHeight: CGFloat = 96
@@ -145,7 +145,7 @@ struct PrayView: View {
     @State private var intentionActionLocked = false
     @State private var intentionArrowArmed = false
     @State private var intentionLastDrag = Date.distantPast
-    @State private var intentionScrollPosition = ScrollPosition(edge: .top)
+    @State private var intentionScrollPosition = GuideScrollPosition.top
     @State private var didRecordCarry = false
     /// Chosen before the finis screen exists so its first update does not write UserDefaults.
     @State private var completionQuote: CompletionQuote?
@@ -342,14 +342,14 @@ struct PrayView: View {
                     footer(step)
                 }
                 // Long prayers scroll under the bar, which turns frosted once scrolled.
-                .safeAreaBar(edge: .top, spacing: 0) {
+                .guideSafeAreaBar(edge: .top, spacing: 0) {
                     VStack(spacing: 0) {
                         header(step)
                         SevenStageTrack(current: step.stage) { jump(to: $0) }
                     }
                     .guideChromeBar(visible: topBarScrolled && prayerUsesScrollTemplate, prayerBackground: true)
                 }
-                .scrollEdgeEffectHidden(true, for: .top)
+                .guideScrollEdgeEffectHidden(true, for: .top)
                 .overlay(alignment: .bottom) {
                     if prayerUsesScrollTemplate {
                         // The circle and language toggle float on the prayer, not on a
@@ -462,7 +462,7 @@ struct PrayView: View {
                 }
                 .scrollIndicators(.hidden)
                 .scrollBounceBehavior(.basedOnSize)
-                .scrollPosition($plateScrollPosition)
+                .guideScrollPosition($plateScrollPosition)
                 .background {
                     GeometryReader { geo in
                         Color.clear.preference(key: PlateViewportHeightKey.self, value: geo.size.height).accessibilityHidden(true)
@@ -474,7 +474,7 @@ struct PrayView: View {
                 .onPreferenceChange(PlateViewportHeightKey.self) { height in
                     if height > 1 { plateViewportHeight = height }
                 }
-                .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
+                .guideOnScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
                     // The plate scroll view runs under the status bar and home indicator,
                     // so its offset rests at -contentInsets.top. Measure from that rest
                     // position so 0 is the top and maxOffset is the real bottom.
@@ -504,7 +504,7 @@ struct PrayView: View {
                     if next.armed != plateArrowArmed { plateArrowArmed = next.armed }
                     plateNearBottom = maxOffset > 8 && y >= maxOffset - ScrollMorph.expandGap(maxOffset)
                 }
-                .onScrollPhaseChange { _, phase in
+                .guideOnScrollPhaseChange { _, phase in
                     // A finger on the text takes over from any tap scroll.
                     if phase == .interacting {
                         plateArrowArmed = false
@@ -518,7 +518,7 @@ struct PrayView: View {
                     plateActionLockedToNext = false
                     plateArrowArmed = false
                     plateLastDrag = .distantPast
-                    plateScrollPosition = ScrollPosition(edge: .top)
+                    plateScrollPosition.scrollTo(edge: .top)
                 }
                 // Edge taps below chrome so Aa / close / track keep priority.
                 .overlay {
@@ -715,13 +715,13 @@ struct PrayView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .scrollIndicators(.hidden)
-                .scrollPosition($prayerScrollPosition)
-                .onScrollGeometryChange(for: Bool.self) { geometry in
+                .guideScrollPosition($prayerScrollPosition)
+                .guideOnScrollGeometryChange(for: Bool.self) { geometry in
                     geometry.contentOffset.y + geometry.contentInsets.top > 1
                 } action: { _, scrolled in
                     topBarScrolled = scrolled
                 }
-                .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
+                .guideOnScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
                     PlateScrollMetrics(geometry)
                 } action: { _, newValue in
                     if newValue.contentHeight > 1 {
@@ -748,7 +748,7 @@ struct PrayView: View {
                     if next.locked != prayerActionLocked { prayerActionLocked = next.locked }
                     if next.armed != prayerArrowArmed { prayerArrowArmed = next.armed }
                 }
-                .onScrollPhaseChange { _, phase in
+                .guideOnScrollPhaseChange { _, phase in
                     if phase == .interacting {
                         prayerArrowArmed = false
                         prayerLastDrag = Date()
@@ -1034,15 +1034,15 @@ struct PrayView: View {
                     }
                 }
                 .scrollIndicators(.hidden)
-                .scrollPosition($intentionScrollPosition)
+                .guideScrollPosition($intentionScrollPosition)
                 // Same edge zones as prayer steps, narrowed to the side gutters so
                 // they never cover the intention rows.
-                .onScrollGeometryChange(for: Bool.self) { geometry in
+                .guideOnScrollGeometryChange(for: Bool.self) { geometry in
                     geometry.contentOffset.y + geometry.contentInsets.top > 1
                 } action: { _, scrolled in
                     topBarScrolled = scrolled
                 }
-                .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
+                .guideOnScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
                     PlateScrollMetrics(geometry)
                 } action: { _, newValue in
                     if newValue.contentHeight > 1 { intentionContentHeight = newValue.contentHeight }
@@ -1061,7 +1061,7 @@ struct PrayView: View {
                     if next.locked != intentionActionLocked { intentionActionLocked = next.locked }
                     if next.armed != intentionArrowArmed { intentionArrowArmed = next.armed }
                 }
-                .onScrollPhaseChange { _, phase in
+                .guideOnScrollPhaseChange { _, phase in
                     if phase == .interacting {
                         intentionArrowArmed = false
                         intentionLastDrag = Date()
@@ -1090,14 +1090,14 @@ struct PrayView: View {
             }
             .onAppear { resetIntentionScrollState() }
         }
-        .safeAreaBar(edge: .top, spacing: 0) {
+        .guideSafeAreaBar(edge: .top, spacing: 0) {
             VStack(spacing: 0) {
                 header(step)
                 SevenStageTrack(current: step.stage) { jump(to: $0) }
             }
             .guideChromeBar(visible: topBarScrolled, prayerBackground: true)
         }
-        .scrollEdgeEffectHidden(true, for: .top)
+        .guideScrollEdgeEffectHidden(true, for: .top)
     }
 
     /// Footer room (button + its padding) the list must leave clear.
@@ -1126,7 +1126,7 @@ struct PrayView: View {
         intentionArrowArmed = false
         intentionScrollY = 0
         intentionLastDrag = .distantPast
-        intentionScrollPosition = ScrollPosition(edge: .top)
+        intentionScrollPosition.scrollTo(edge: .top)
     }
 
     private var intentionSelection: Binding<[UUID]> {
@@ -1485,8 +1485,8 @@ struct PrayView: View {
                                 Color.clear.preference(key: MichaelViewportHeightKey.self, value: geo.size.height).accessibilityHidden(true)
                             }
                         }
-                        .scrollPosition($michaelScrollPosition)
-                        .onScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
+                        .guideScrollPosition($michaelScrollPosition)
+                        .guideOnScrollGeometryChange(for: PlateScrollMetrics.self) { geometry in
                         PlateScrollMetrics(geometry)
                     } action: { _, newValue in
                         // The scroll view's own content size is authoritative and may
@@ -1519,7 +1519,7 @@ struct PrayView: View {
                         if next.locked != michaelActionLocked { michaelActionLocked = next.locked }
                         if next.armed != michaelArrowArmed { michaelArrowArmed = next.armed }
                     }
-                        .onScrollPhaseChange { _, phase in
+                        .guideOnScrollPhaseChange { _, phase in
                             if phase == .interacting {
                                 michaelArrowArmed = false
                                 michaelLastDrag = Date()
@@ -1588,7 +1588,7 @@ struct PrayView: View {
         michaelScrollY = 0
         michaelContentHeight = 0
         michaelLastDrag = .distantPast
-        michaelScrollPosition = ScrollPosition(edge: .top)
+        michaelScrollPosition.scrollTo(edge: .top)
     }
 
     /// Mystery-plate circle, in the prayer footer. It becomes Done at the end of the scroll.
@@ -1662,7 +1662,7 @@ struct PrayView: View {
         if !keepPosition {
             topBarScrolled = false
             prayerScrollY = 0
-            prayerScrollPosition = ScrollPosition(edge: .top)
+            prayerScrollPosition.scrollTo(edge: .top)
         }
         resetPairChoreography()
     }
@@ -2145,7 +2145,7 @@ private struct PlateScrollMetrics: Equatable {
 
     /// One reading for every scroll-aware CTA: offset from the content top, clamped
     /// to the real scroll range (see `ScrollMorph.position`).
-    init(_ geometry: ScrollGeometry) {
+    init(_ geometry: GuideScrollGeometry) {
         let position = ScrollMorph.position(geometry)
         offsetY = position.y
         contentHeight = geometry.contentSize.height
@@ -2234,7 +2234,7 @@ enum ScrollMorph {
         return (y, maxOffset)
     }
 
-    static func position(_ geometry: ScrollGeometry) -> (y: CGFloat, maxOffset: CGFloat) {
+    static func position(_ geometry: GuideScrollGeometry) -> (y: CGFloat, maxOffset: CGFloat) {
         position(
             offsetY: geometry.contentOffset.y,
             insetTop: geometry.contentInsets.top,
