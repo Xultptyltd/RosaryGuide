@@ -854,12 +854,6 @@ struct PrayView: View {
         showingIntentionStep || index > 0
     }
 
-    /// Symmetric inset that always clears the two-control leading cluster, so the
-    /// step title stays centred and does not shift when Back appears or hides.
-    private var headerTitleHorizontalPadding: CGFloat {
-        AppTheme.Accessibility.minHitTarget * 2 + AppTheme.Space.sm * 2
-    }
-
     private var headerBackTransition: AnyTransition {
         reduceMotion
             ? .opacity
@@ -867,30 +861,27 @@ struct PrayView: View {
     }
 
     private func header(_ step: RosaryStep) -> some View {
-        ZStack {
-            HStack(spacing: 0) {
-                HStack(spacing: AppTheme.Space.sm) {
-                    if canRetreat {
-                        roundControl(system: "chevron.left") { retreat() }
-                            .accessibilityLabel("Back")
-                            .transition(headerBackTransition)
-                    }
-                    // Swipe right still steps back; this opens Customise rosary.
-                    // On the first step (no Back) this sits in the leading slot.
-                    roundControl(system: "gearshape") { showingRosarySettings = true }
-                        .accessibilityLabel("Rosary settings")
+        HStack(spacing: AppTheme.Space.sm) {
+            HStack(spacing: AppTheme.Space.sm) {
+                if canRetreat {
+                    roundControl(system: "chevron.left") { retreat() }
+                        .accessibilityLabel("Back")
+                        .transition(headerBackTransition)
                 }
-                Spacer(minLength: 0)
-                roundControl(system: "xmark") { closePrayerFlow() }
-                    .accessibilityLabel("Close")
+                // Swipe right still steps back; this opens Customise rosary.
+                // On the first step (no Back) this sits in the leading slot.
+                roundControl(system: "gearshape") { showingRosarySettings = true }
+                    .accessibilityLabel("Rosary settings")
             }
+            // Fills the space between the leading cluster and Close; never wraps.
             progressNowLabel(step)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, headerTitleHorizontalPadding)
+                .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(step.mystery.map { "\(step.stage.spokenName), \($0.title.english)" } ?? step.progressLabel)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityAction(named: "Previous prayer") { retreat() }
+            roundControl(system: "xmark") { closePrayerFlow() }
+                .accessibilityLabel("Close")
         }
         .padding(.horizontal, AppTheme.Space.lg)
         .padding(.top, AppTheme.Space.xs)
@@ -898,36 +889,14 @@ struct PrayView: View {
         .guideAnimation(MotionTokens.soft, value: canRetreat)
     }
 
-    /// Web `#pnow`: roman + padded middot + mystery title (`.sep` is `padding: 0 .5em`).
+    /// Web `#pnow`: roman + middot + mystery title, always one line.
     @ViewBuilder
     private func progressNowLabel(_ step: RosaryStep) -> some View {
-        let font = AppTheme.TypeRole.label(weight: .medium)
-        if dynamicTypeSize.isAccessibilitySize {
-            let text = step.mystery.map { mystery in
-                [.first, .second, .third, .fourth, .fifth].contains(step.stage)
-                    ? "\(OrdinalWord.roman(mystery.number)) · \(mystery.title.english)"
-                    : step.progressLabel
-            } ?? step.progressLabel
-            WordSafeText(text, font: AppTheme.TypeRole.captionUIFont(weight: .medium), color: palette.ink)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(palette.ink)
-        } else if let mystery = step.mystery,
-           [.first, .second, .third, .fourth, .fifth].contains(step.stage) {
-            HStack(spacing: 0) {
-                Text(OrdinalWord.roman(mystery.number))
-                    .font(font)
-                Text("·")
-                    .font(font)
-                    .padding(.horizontal, 10) // web `.sep` ≈ 0.5em; a bit more so it reads on device
-                Text(mystery.title.english)
-                    .font(font)
-            }
-            .foregroundStyle(palette.ink)
-        } else {
-            Text(step.progressLabel)
-                .font(font)
-                .foregroundStyle(palette.ink)
-        }
+        GuideMarqueeText(
+            text: step.progressLabel,
+            font: AppTheme.TypeRole.label(weight: .medium),
+            color: palette.ink
+        )
     }
 
     private func locus(_ step: RosaryStep) -> some View {

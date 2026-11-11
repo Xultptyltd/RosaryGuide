@@ -2610,6 +2610,172 @@ private struct LongestWordWidth: Layout {
 #endif
 
 
+// MARK: - Header marquee
+
+/// Metrics for the prayer-flow step title when it must stay on one line.
+enum GuideMarquee {
+    static let startPause: TimeInterval = 1.25
+    static let endPause: TimeInterval = 1.0
+    static let pointsPerSecond: CGFloat = 30
+    static let minDuration: TimeInterval = 2.2
+    static let maxDuration: TimeInterval = 8
+    static var fadeWidth: CGFloat { AppTheme.Space.md }
+    static var minimumVisibleWidth: CGFloat { AppTheme.Accessibility.minHitTarget }
+
+    static func overflows(textWidth: CGFloat, containerWidth: CGFloat) -> Bool {
+        containerWidth > 0 && textWidth - containerWidth > 1
+    }
+
+    static func isTooNarrow(_ containerWidth: CGFloat) -> Bool {
+        containerWidth > 0 && containerWidth < minimumVisibleWidth
+    }
+
+    static func travelDuration(distance: CGFloat) -> TimeInterval {
+        min(maxDuration, max(minDuration, TimeInterval(distance / pointsPerSecond)))
+    }
+}
+
+private struct GuideMarqueeWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+private struct GuideMarqueeContainerWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+/// Single-line title that fills its slot. When the text is wider than the slot,
+/// it marquees left after a pause, pauses at the end, and resets. Reduce Motion
+/// keeps a trailing ellipsis and does not animate. Hidden when the slot is
+/// narrower than a hit target. VoiceOver is left to the caller.
+struct GuideMarqueeText: View {
+    var text: String
+    var font: Font
+    var color: Color
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var textWidth: CGFloat = 0
+    @State private var containerWidth: CGFloat = 0
+    @State private var offset: CGFloat = 0
+
+    private var overflow: CGFloat { max(0, textWidth - containerWidth) }
+    private var overflows: Bool { GuideMarquee.overflows(textWidth: textWidth, containerWidth: containerWidth) }
+    private var isTooNarrow: Bool { GuideMarquee.isTooNarrow(containerWidth) }
+    private var shouldAnimate: Bool { overflows && !reduceMotion }
+    private var cycleKey: String {
+        "\(text)-\(shouldAnimate)-\(Int(textWidth.rounded()))-\(Int(containerWidth.rounded()))"
+    }
+
+    var body: some View {
+        display
+            .background {
+                GeometryReader { geo in
+                    Color.clear.preference(key: GuideMarqueeContainerWidthKey.self, value: geo.size.width)
+                }
+            }
+            .background(alignment: .leading) {
+                Text(text)
+                    .font(font)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .background {
+                        GeometryReader { geo in
+                            Color.clear.preference(key: GuideMarqueeWidthKey.self, value: geo.size.width)
+                        }
+                    }
+                    .hidden()
+                    .frame(width: 0, height: 0)
+            }
+            .onPreferenceChange(GuideMarqueeWidthKey.self) { textWidth = $0 }
+            .onPreferenceChange(GuideMarqueeContainerWidthKey.self) { containerWidth = $0 }
+            .onChange(of: text) { _, _ in
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { offset = 0 }
+            }
+            .task(id: cycleKey) { await runLoop() }
+            .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var display: some View {
+        if isTooNarrow {
+            Text(text)
+                .font(font)
+                .lineLimit(1)
+                .hidden()
+                .frame(maxWidth: .infinity)
+        } else if shouldAnimate {
+            Text(text)
+                .font(font)
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .offset(x: offset)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .clipped()
+                .mask { fadeMask }
+        } else {
+            Text(text)
+                .font(font)
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var fadeMask: some View {
+        let fade = min(GuideMarquee.fadeWidth, max(AppTheme.Space.xs, overflow))
+        let showLeading = offset < -0.5
+        let showTrailing = offset > -overflow + 0.5
+        return HStack(spacing: 0) {
+            if showLeading {
+                LinearGradient(colors: [.clear, .white], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: fade)
+            }
+            Color.white
+            if showTrailing {
+                LinearGradient(colors: [.white, .clear], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: fade)
+            }
+        }
+    }
+
+    @MainActor
+    private func runLoop() async {
+        guard shouldAnimate else {
+            offset = 0
+            return
+        }
+        offset = 0
+        do {
+            while !Task.isCancelled {
+                try await Task.sleep(for: .seconds(GuideMarquee.startPause))
+                try Task.checkCancellation()
+                let distance = overflow
+                let duration = GuideMarquee.travelDuration(distance: distance)
+                withAnimation(.linear(duration: duration)) {
+                    offset = -distance
+                }
+                try await Task.sleep(for: .seconds(duration + GuideMarquee.endPause))
+                try Task.checkCancellation()
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { offset = 0 }
+            }
+        } catch {
+            return
+        }
+    }
+}
+
+
 // MARK: - Counts and sign-in feedback
 
 /// Digits roll to a new count only when the value changes (not on appear).

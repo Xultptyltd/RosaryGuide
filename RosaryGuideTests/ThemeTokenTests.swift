@@ -865,3 +865,21 @@ extension ContrastTokenTests {
         XCTAssertEqual(UIColor(ThemePalette(scheme: .dark).success), UIColor(Color(hex: 0x30D158)))
     }
 }
+
+final class GuideMarqueeTests: XCTestCase {
+    func testOverflowAndNarrowThresholds() {
+        XCTAssertFalse(GuideMarquee.overflows(textWidth: 100, containerWidth: 0))
+        XCTAssertFalse(GuideMarquee.overflows(textWidth: 100, containerWidth: 120))
+        XCTAssertFalse(GuideMarquee.overflows(textWidth: 100, containerWidth: 100))
+        XCTAssertTrue(GuideMarquee.overflows(textWidth: 200, containerWidth: 120))
+        XCTAssertFalse(GuideMarquee.isTooNarrow(0))
+        XCTAssertTrue(GuideMarquee.isTooNarrow(20))
+        XCTAssertFalse(GuideMarquee.isTooNarrow(AppTheme.Accessibility.minHitTarget))
+        XCTAssertGreaterThan(
+            GuideMarquee.travelDuration(distance: 200),
+            GuideMarquee.travelDuration(distance: 40)
+        )
+        XCTAssertEqual(GuideMarquee.travelDuration(distance: 0), GuideMarquee.minDuration)
+        XCTAssertEqual(GuideMarquee.travelDuration(distance: 10_000), GuideMarquee.maxDuration)
+    }
+}
