@@ -490,6 +490,7 @@ struct IntentionNoteSheet: View {
                     Text(noteText)
                         .font(AppTheme.TypeRole.bodySmall)
                         .foregroundStyle(palette.ink)
+                        .lineSpacing(AppTheme.TypeRole.readingLineSpacing(for: AppTheme.TypeRole.calloutUIFont()))
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
