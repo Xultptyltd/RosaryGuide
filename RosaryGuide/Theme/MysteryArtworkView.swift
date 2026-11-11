@@ -340,15 +340,31 @@ struct DividedRows<Content: View>: View {
 
     var body: some View {
         VStack(alignment: alignment, spacing: spacing) {
-            Group(subviews: content) { subviews in
-                let lastID = subviews.last?.id
-                ForEach(subviews) { subview in
-                    subview.environment(\.showsRowDivider, subview.id != lastID)
+            if #available(iOS 18.0, *) {
+                Group(subviews: content) { subviews in
+                    let lastID = subviews.last?.id
+                    ForEach(subviews) { subview in
+                        subview.environment(\.showsRowDivider, subview.id != lastID)
+                    }
                 }
+            } else {
+                // iOS 17 stand-in for Group(subviews:): resolve the actual
+                // children so the last row can drop its hairline.
+                _VariadicView.Tree(DividedRowsLegacy()) { content }
             }
         }
     }
 }
+
+private struct DividedRowsLegacy: _VariadicView_MultiViewRoot {
+    func body(children: _VariadicView.Children) -> some View {
+        let lastID = children.last?.id
+        ForEach(children) { child in
+            child.environment(\.showsRowDivider, child.id != lastID)
+        }
+    }
+}
+
 
 private struct RowBottomDivider: ViewModifier {
     @Environment(\.showsRowDivider) private var showsRowDivider

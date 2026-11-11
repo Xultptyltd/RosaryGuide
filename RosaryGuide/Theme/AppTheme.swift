@@ -595,7 +595,9 @@ extension View {
     /// set so the compact bar title still appears on scroll.
     func guidePageTitle(_ text: String) -> some View {
         toolbar {
-            ToolbarItem(placement: .largeTitle) { GuidePageTitle(text: text) }
+            if #available(iOS 26.0, *) {
+                ToolbarItem(placement: .largeTitle) { GuidePageTitle(text: text) }
+            }
         }
     }
 }
@@ -1016,7 +1018,7 @@ enum CollapsingTitleMetrics {
 extension View {
     /// How far the scroll view has moved past its top inset (0 at rest).
     func onCollapsingTitleScrollOffset(_ offset: Binding<CGFloat>) -> some View {
-        onScrollGeometryChange(for: CGFloat.self) { geo in
+        guideOnScrollGeometryChange(for: CGFloat.self) { geo in
             geo.contentOffset.y + geo.contentInsets.top
         } action: { _, newValue in
             let y = max(0, newValue)
@@ -1217,7 +1219,7 @@ struct CollapsingTitleChrome<ToolbarLeading: View, ToolbarTrailing: View, Toolba
             .onCollapsingTitleScrollOffset($scrollOffset)
             // Content scrolls under the bar; once scrolled the bar is the standard
             // frosted navigation bar material with a hairline (see `guideChromeBar`).
-            .safeAreaBar(edge: .top, spacing: 0) {
+            .guideSafeAreaBar(edge: .top, spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: 12) {
                         leading()
@@ -1234,7 +1236,7 @@ struct CollapsingTitleChrome<ToolbarLeading: View, ToolbarTrailing: View, Toolba
                 .guideChromeBar(progress: progress)
             }
             // The frosted bar replaces the system edge effect (no double blur).
-            .scrollEdgeEffectHidden(true, for: .top)
+            .guideScrollEdgeEffectHidden(true, for: .top)
             .overlay(alignment: .top) {
                 // Drawn in the page overlay (not inside the inset) so the large
                 // title is not clipped and cannot expand the inset.
