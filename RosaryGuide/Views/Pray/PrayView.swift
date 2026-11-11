@@ -135,7 +135,7 @@ struct PrayView: View {
     /// Dedicated "Offer this Rosary for" step shown between Sign of the Cross and the Creed.
     /// Not a `RosaryStep`, so saved `stepIndex` values keep their meaning.
     @State private var showingIntentionStep = false
-    /// Intention step scroll / circle-to-Continue state (mirrors the prayer scroll template).
+    /// Intention step scroll state (mirrors the prayer scroll template).
     @State private var intentionListHeight: CGFloat = 0
     @State private var intentionContentHeight: CGFloat = 0
     @State private var intentionViewportHeight: CGFloat = 0
@@ -1072,15 +1072,14 @@ struct PrayView: View {
                     if scrollGeo.size.height > 1 { intentionViewportHeight = scrollGeo.size.height }
                 }
                 .overlay(alignment: .bottom) {
-                    // Stacked: Add intention in the grey tertiary pill (as Complete decade),
-                    // Continue below it in the secondary pill (as Next).
+                    // Stacked: Add intention on the white / elevated surface, Next in Marian blue.
                     VStack(spacing: AppTheme.Space.md) {
-                        PillButton(title: "Add intention", filled: false, tertiary: true) {
+                        PillButton(title: "Add intention", filled: false, surface: true) {
                             intentionAddRequests += 1
                         }
                         .accessibilityLabel("Add an intention")
 
-                        PillButton(title: "Continue", filled: false) { advance() }
+                        PillButton(title: "Next", filled: true) { advance() }
                     }
                     .padding(.horizontal, AppTheme.gutter)
                     .padding(.top, AppTheme.Space.md)
@@ -1109,7 +1108,7 @@ struct PrayView: View {
         intentionViewportHeight > 1 && intentionListHeight > intentionViewportHeight - intentionFooterRoom
     }
 
-    /// Scrolling intentions leave the shared reading gap above Continue;
+    /// Scrolling intentions leave the shared reading gap above Next;
     /// short lists only reserve the existing footer room.
     private var intentionScrollTail: CGFloat {
         guard intentionOverflows else { return intentionFooterRoom }
@@ -1221,12 +1220,12 @@ struct PrayView: View {
         let nextTitle = step.nextLabel == "Continue" ? "Next" : step.nextLabel
         let isDecadeHailMary = step.kind == .hailMary && step.decadeNumber != nil
         let showCompleteDecade = isDecadeHailMary && step.hailMaryNumber != 10
-        // Every step's Next is the secondary pill, matching the scroll circle.
-        // Beside it on decade Hail Marys 1–9, Complete decade is tertiary.
+        // Next is the Marian-blue primary pill. Beside it on decade Hail Marys
+        // 1–9, Complete decade stays the grey tertiary pill.
         return VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
             // Web `.pfoot`: Next | Complete decade side by side on Hail Marys.
             HStack(spacing: AppTheme.Component.prayerFooterButtonGap) {
-                PillButton(title: nextTitle, filled: false, action: advance)
+                PillButton(title: nextTitle, filled: nextTitle == "Next", action: advance)
                 if showCompleteDecade {
                     PillButton(title: "Complete decade", filled: false, tertiary: true) {
                         skipDecadeHailMarys()
@@ -1619,6 +1618,7 @@ struct PrayView: View {
             showScroll: showScroll,
             title: expandedTitle,
             scrollLabel: scrollLabel,
+            primary: expandedTitle == "Next",
             onScroll: onScroll,
             onAdvance: onAdvance
         )
@@ -1959,13 +1959,13 @@ struct PrayView: View {
     }
 
     private func advance() {
-        // A double tap on Next / Continue (or a tap during the expand animation)
+        // A double tap on Next (or a tap during the expand animation)
         // moves one step, not two.
         let now = Date()
         guard now.timeIntervalSince(lastAdvanceAt) > 0.3 else { return }
         lastAdvanceAt = now
         if showingIntentionStep {
-            // Intention is optional: Continue always moves on to the next prayer.
+            // Intention is optional: Next always moves on to the next prayer.
             move(to: index + 1)
             return
         }
