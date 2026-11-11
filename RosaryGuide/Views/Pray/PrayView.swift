@@ -1225,7 +1225,7 @@ struct PrayView: View {
         return VStack(spacing: AppTheme.Component.prayerFooterControlGap) {
             // Web `.pfoot`: Next | Complete decade side by side on Hail Marys.
             HStack(spacing: AppTheme.Component.prayerFooterButtonGap) {
-                PillButton(title: nextTitle, filled: nextTitle == "Next", action: advance)
+                PillButton(title: nextTitle, filled: nextTitle == "Next" || nextTitle == "Finish", action: advance)
                 if showCompleteDecade {
                     PillButton(title: "Complete decade", filled: false, tertiary: true) {
                         skipDecadeHailMarys()
@@ -1618,7 +1618,7 @@ struct PrayView: View {
             showScroll: showScroll,
             title: expandedTitle,
             scrollLabel: scrollLabel,
-            primary: expandedTitle == "Next",
+            primary: expandedTitle == "Next" || expandedTitle == "Finish",
             onScroll: onScroll,
             onAdvance: onAdvance
         )
