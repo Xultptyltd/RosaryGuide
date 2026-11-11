@@ -55,6 +55,15 @@ enum OfferedIntentions {
         default: titles.dropLast().joined(separator: ", ") + " and " + titles[titles.count - 1]
         }
     }
+
+    /// "1 intention" / "N intentions"; nil when none were offered.
+    static func countText(_ titles: [String]) -> String? {
+        switch titles.count {
+        case 0: nil
+        case 1: "1 intention"
+        default: "\(titles.count) intentions"
+        }
+    }
 }
 
 @Observable
@@ -885,6 +894,11 @@ enum JourneyDayDetail {
     static func totalDuration(_ entries: [JourneyDayEntry]) -> TimeInterval? {
         let known = entries.compactMap(\.duration)
         return known.isEmpty ? nil : known.reduce(0, +)
+    }
+
+    /// Locale-aware abbreviated heading, e.g. "Wed, 11 Nov 2026" in en-AU.
+    static func heading(_ date: Date, locale: Locale = .current) -> String {
+        date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).year().locale(locale))
     }
 }
 

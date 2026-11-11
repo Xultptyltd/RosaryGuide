@@ -436,6 +436,13 @@ final class MilestonePersistenceTests: XCTestCase {
         XCTAssertEqual(OfferedIntentions.summary(["A", "B", "C"]), "A, B and C")
     }
 
+    func testOfferedIntentionsCountText() {
+        XCTAssertNil(OfferedIntentions.countText([]))
+        XCTAssertEqual(OfferedIntentions.countText(["A"]), "1 intention")
+        XCTAssertEqual(OfferedIntentions.countText(["A", "B"]), "2 intentions")
+        XCTAssertEqual(OfferedIntentions.countText(["A", "B", "C"]), "3 intentions")
+    }
+
     // MARK: - Rosary count caption
 
     func testRosaryCaptionSpellsCountAtSentenceStart() {
@@ -995,6 +1002,12 @@ final class JourneyDayDetailTests: XCTestCase {
         let late = rosary(.joyful, start: at(26, 23, 50), minutes: 20, duration: 19 * 60)
         XCTAssertEqual(JourneyDayDetail.entries(dayKey: "2026-10-26", sessions: [late], decades: [], prayedDayKeys: ["2026-10-26"], calendar: calendar).count, 1)
         XCTAssertTrue(JourneyDayDetail.entries(dayKey: "2026-10-27", sessions: [late], decades: [], prayedDayKeys: [], calendar: calendar).isEmpty)
+    }
+
+    func testDayHeadingAbbreviatesWeekdayAndMonth() {
+        let date = calendar.date(from: DateComponents(year: 2026, month: 11, day: 11, hour: 12))!
+        XCTAssertEqual(JourneyDayDetail.heading(date, locale: Locale(identifier: "en_AU")), "Wed, 11 Nov 2026")
+        XCTAssertEqual(JourneyDayDetail.heading(date, locale: Locale(identifier: "en_US")), "Wed, Nov 11, 2026")
     }
 
     func testLegacyDayAndUntimedRecords() {

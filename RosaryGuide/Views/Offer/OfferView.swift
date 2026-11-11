@@ -4309,9 +4309,7 @@ private struct JourneyHistoryRow: View {
 
     /// "1 intention" / "N intentions"; nil when none were offered.
     private var intentionCountText: String? {
-        let count = OfferedIntentions.titles(row.intentionTitles, legacy: row.intentionTitle).count
-        guard count > 0 else { return nil }
-        return count == 1 ? "1 intention" : "\(count) intentions"
+        OfferedIntentions.countText(OfferedIntentions.titles(row.intentionTitles, legacy: row.intentionTitle))
     }
 
     @ViewBuilder
@@ -4487,7 +4485,7 @@ private struct JourneyDayDetailSheet: View {
         GuideHalfSheetChrome {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                 GuideHalfSheetHeader(
-                    title: date.formatted(.dateTime.weekday(.wide).day().month(.wide).year()),
+                    title: JourneyDayDetail.heading(date),
                     subtitle: summary
                 )
 
@@ -4537,8 +4535,8 @@ private struct JourneyDayEntryRow: View {
                     .font(AppTheme.TypeRole.caption())
                     .foregroundStyle(palette.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                if let intentions = OfferedIntentions.summary(entry.intentionTitles) {
-                    Text("For \(intentions)")
+                if let countText = OfferedIntentions.countText(entry.intentionTitles) {
+                    Text(countText)
                         .font(AppTheme.TypeRole.caption())
                         .foregroundStyle(palette.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
