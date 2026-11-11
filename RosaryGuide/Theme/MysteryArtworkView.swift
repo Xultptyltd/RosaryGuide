@@ -141,6 +141,7 @@ struct PlateArtView: View {
         FocusedRasterImage(
             contentMode: fitsArtwork ? .fit : .fill,
             fitAlignment: fitAlignment,
+            fitIfWiderThanFrame: !fitsArtwork,
             directory: path.directory,
             name: path.name,
             focus: wide ? ArtCatalog.bandFocus(set: mystery.set, number: mystery.number) : ArtCatalog.focus(set: mystery.set, number: mystery.number)
@@ -157,6 +158,36 @@ struct PlateArtView: View {
                     startPoint: .top,
                     endPoint: .bottom
                 )
+                .allowsHitTesting(false)
+            }
+            .overlay {
+                // Wide plates leave page colour under a top-aligned width-fit. Soften
+                // the image's bottom edge into that field so it does not read as a bar.
+                GeometryReader { geo in
+                    if !fitsArtwork,
+                       let image = BundleRasterImage.load(directory: path.directory, name: path.name, ext: "jpg"),
+                       ArtCatalog.shouldFitWidth(image: image.size, frame: geo.size) {
+                        let layout = ArtCatalog.plateHeroLayout(image: image.size, frame: geo.size)
+                        let fadeHeight = min(layout.drawnHeight, AppTheme.RosaryFlow.heroBleedHeight)
+                        VStack(spacing: 0) {
+                            Spacer(minLength: 0)
+                            LinearGradient(
+                                stops: AppTheme.RosaryFlow.heroPageFadeStops(
+                                    page: palette.prayBg,
+                                    scheme: colorScheme,
+                                    fadingIn: true
+                                ),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            .frame(height: fadeHeight)
+                            .accessibilityHidden(true)
+                            Color.clear
+                                .frame(height: layout.leftoverHeight)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                }
                 .allowsHitTesting(false)
             }
     }

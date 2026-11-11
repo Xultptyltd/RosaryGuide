@@ -157,6 +157,65 @@ enum ArtCatalog {
         return CGSize(width: (0.5 - focus.x) * extraW, height: (0.5 - focusY) * extraH)
     }
 
+    /// Width-fit when the image is wider than the frame so both side edges stay
+    /// in view; otherwise cover-fill as today. Equal aspects keep fill.
+    static func shouldFitWidth(image: CGSize, frame: CGSize) -> Bool {
+        guard image.width > 0, image.height > 0, frame.width > 0, frame.height > 0 else {
+            return false
+        }
+        return (image.width / image.height) > (frame.width / frame.height)
+    }
+
+    /// Framing for the rosary-flow mystery hero. Wide images are top-aligned and
+    /// fitted to the frame width; taller or matching images keep a cover-fill crop.
+    struct PlateHeroLayout: Equatable {
+        var fitsWidth: Bool
+        var scale: CGFloat
+        /// Visible window in image coordinates (top-aligned when fitting).
+        var visible: CGRect
+        /// Space below a top-aligned width-fit, in frame points. Zero when filling.
+        var leftoverHeight: CGFloat
+        /// Height of the drawn image in frame points when fitting; the frame height when filling.
+        var drawnHeight: CGFloat
+    }
+
+    static func plateHeroLayout(image: CGSize, frame: CGSize, focus: UnitPoint = UnitPoint(x: 0.5, y: 0.5)) -> PlateHeroLayout {
+        guard image.width > 0, image.height > 0, frame.width > 0, frame.height > 0 else {
+            return PlateHeroLayout(fitsWidth: false, scale: 1, visible: .zero, leftoverHeight: 0, drawnHeight: 0)
+        }
+        if shouldFitWidth(image: image, frame: frame) {
+            let scale = frame.width / image.width
+            let drawnHeight = image.height * scale
+            let leftover = max(0, frame.height - drawnHeight)
+            let visibleHeight = min(image.height, frame.height / scale)
+            return PlateHeroLayout(
+                fitsWidth: true,
+                scale: scale,
+                visible: CGRect(x: 0, y: 0, width: image.width, height: visibleHeight),
+                leftoverHeight: leftover,
+                drawnHeight: drawnHeight
+            )
+        }
+        let scale = max(frame.width / image.width, frame.height / image.height)
+        let shift = offset(imageSize: image, frame: frame, focus: focus)
+        // Cover-fill is centered in the frame, then `offset` nudges that window.
+        let originX = (frame.width - image.width * scale) / 2 + shift.width
+        let originY = (frame.height - image.height * scale) / 2 + shift.height
+        let visible = CGRect(
+            x: -originX / scale,
+            y: -originY / scale,
+            width: frame.width / scale,
+            height: frame.height / scale
+        )
+        return PlateHeroLayout(
+            fitsWidth: false,
+            scale: scale,
+            visible: visible,
+            leftoverHeight: 0,
+            drawnHeight: frame.height
+        )
+    }
+
     /// Where the figure sits in a feast hero, in image points (origin at the top left).
     struct FeastSubject: Equatable {
         var bounds: CGRect
@@ -392,6 +451,9 @@ struct FocusedRasterImage: View {
     @Environment(\.palette) private var palette
     var contentMode: ContentMode = .fill
     var fitAlignment: Alignment = .top
+    /// When the image is wider than this frame, width-fit instead of cover-filling.
+    /// Taller or matching images keep `contentMode`. Off by default so Home and feast crops stay put.
+    var fitIfWiderThanFrame: Bool = false
     var directory: String
     var name: String
     var ext: String = "jpg"
@@ -414,13 +476,15 @@ struct FocusedRasterImage: View {
                 if coversSubject {
                     subjectFill(image, in: geo.size)
                 } else {
-                    let shift = contentMode == .fit ? CGSize.zero : ArtCatalog.offset(imageSize: image.size, frame: geo.size, focus: focus, cropTop: cropTop)
+                    let fitWide = fitIfWiderThanFrame && ArtCatalog.shouldFitWidth(image: image.size, frame: geo.size)
+                    let mode: ContentMode = (contentMode == .fit || fitWide) ? .fit : .fill
+                    let shift = mode == .fit ? CGSize.zero : ArtCatalog.offset(imageSize: image.size, frame: geo.size, focus: focus, cropTop: cropTop)
                     Image(uiImage: image)
                         .resizable()
-                        .aspectRatio(contentMode: contentMode)
+                        .aspectRatio(contentMode: mode)
                         // Move the artwork inside the fixed crop, rather than shifting the crop itself.
                         .offset(x: shift.width, y: shift.height)
-                        .frame(width: geo.size.width, height: geo.size.height, alignment: contentMode == .fit ? fitAlignment : .center)
+                        .frame(width: geo.size.width, height: geo.size.height, alignment: mode == .fit ? fitAlignment : .center)
                         .clipped()
                 }
             } else {
