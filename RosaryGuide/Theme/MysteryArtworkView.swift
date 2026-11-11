@@ -436,8 +436,10 @@ struct GuideScrollActionButton: View {
             if showScroll && pinsTrailing { Spacer(minLength: 0) }
             Button(action: showScroll ? onScroll : onAdvance) {
                 let side = AppTheme.Component.mysteryPlateActionCircle
+                // Capsule is a background, not a ZStack child: a Shape in the
+                // stack would expand to the scroll overlay's full height once
+                // the circle becomes a pill (minHeight only, no fixed height).
                 ZStack {
-                    Capsule().fill(primary && !showScroll ? palette.primaryButtonFill : palette.secondaryButtonFill)
                     if showScroll {
                         Image(systemName: "chevron.down")
                             .guideSymbol(size: 17, weight: .semibold)
@@ -449,12 +451,14 @@ struct GuideScrollActionButton: View {
                             .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
                             .foregroundStyle(primary ? palette.primaryButtonText : palette.secondaryButtonText)
+                            .padding(.horizontal, AppTheme.Space.md)
                             .transition(.identity)
                     }
                 }
                 .frame(maxWidth: showScroll ? side : .infinity)
                 .frame(width: showScroll ? side : nil, height: showScroll ? side : nil)
                 .frame(minHeight: showScroll ? side : AppTheme.Component.pillHeight)
+                .background(Capsule().fill(primary && !showScroll ? palette.primaryButtonFill : palette.secondaryButtonFill))
                 .contentShape(Capsule())
             }
             .buttonStyle(.plain)
