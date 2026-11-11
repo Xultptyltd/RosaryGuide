@@ -489,6 +489,9 @@ struct PillButton: View {
     var filled: Bool = true
     /// Tertiary token (surface fill). Only read when `filled` is false.
     var tertiary: Bool = false
+    /// Prayer-flow Add intention: white page token in light, elevated `surface` in dark.
+    /// Only read when `filled` is false. Takes priority over `tertiary`.
+    var surface: Bool = false
     /// Compact: `compactPillHeight` minimum, growing with large text instead of clipping.
     var compact: Bool = false
     /// White pill with black text for black onboarding-style screens.
@@ -505,19 +508,58 @@ struct PillButton: View {
         } label: {
             Text(title)
                 .font(AppTheme.TypeRole.pillLabel())
-                .foregroundStyle(onDark ? palette.todayPillText : filled ? palette.primaryButtonText : (tertiary ? palette.tertiaryButtonText : palette.learnMoreButtonText))
+                .foregroundStyle(labelColor)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, compact ? AppTheme.Space.xs : AppTheme.Space.sm)
                 .padding(.horizontal, AppTheme.Space.md)
                 .frame(minHeight: compact ? AppTheme.Component.compactPillHeight : AppTheme.Component.pillHeight)
-                .guideSurface(in: Capsule(), fill: onDark ? palette.todayPillFill : filled ? palette.primaryButtonFill : (tertiary ? palette.tertiaryButtonFill : palette.learnMoreButtonFill))
+                .applyPillChrome(
+                    fill: fillColor,
+                    // Hairline so the white light-mode fill reads on the white prayer page.
+                    stroke: (surface && !filled && !onDark) ? palette.cardSurfaceStroke : nil
+                )
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
+
+    /// White in light (`background` / `cardSurface(on: .grouped)`), elevated `surface` (#1C1C1E) in dark.
+    private var surfaceFill: Color { palette.cardSurface(on: .grouped) }
+
+    private var fillColor: Color {
+        if onDark { return palette.todayPillFill }
+        if filled { return palette.primaryButtonFill }
+        if surface { return surfaceFill }
+        if tertiary { return palette.tertiaryButtonFill }
+        return palette.learnMoreButtonFill
+    }
+
+    private var labelColor: Color {
+        if onDark { return palette.todayPillText }
+        if filled { return palette.primaryButtonText }
+        if surface { return palette.textPrimary }
+        if tertiary { return palette.tertiaryButtonText }
+        return palette.learnMoreButtonText
+    }
 }
+
+private extension View {
+    /// Surface-style pills draw a token stroke; every other style keeps `guideSurface`
+    /// (so tertiary still uses the card-surface substitution when the fill is `surface`).
+    @ViewBuilder
+    func applyPillChrome(fill: Color, stroke: Color?) -> some View {
+        if let stroke {
+            self
+                .background(Capsule().fill(fill))
+                .overlay { Capsule().stroke(stroke, lineWidth: AppTheme.Component.panelStrokeWidth) }
+        } else {
+            self.guideSurface(in: Capsule(), fill: fill)
+        }
+    }
+}
+
 
 /// Shape adapter for the canonical theme paths.
 struct MysterySetLineGlyph: Shape {
