@@ -10,7 +10,11 @@ enum AppTheme {
     /// can do their work at the system layer.
     static let marianBlue = Color(hex: 0x0054FF)
 
-    /// Full-bleed brand field for the launch splash and sign-in panel.
+    /// Launch and in-app loading splash. Marian blue in light and dark, matching
+    /// the Info.plist `LaunchBackground` color asset (including its dark appearance).
+    static let launchCanvas = marianBlue
+
+    /// Full-bleed brand field for the sign-in panel.
     /// Light keeps Marian blue. Dark uses the page black so a selected dark
     /// interface never opens on a bright blue screen. The light rosary mark
     /// stays on top of either field.
