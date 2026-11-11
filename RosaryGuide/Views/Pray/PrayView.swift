@@ -854,10 +854,16 @@ struct PrayView: View {
         showingIntentionStep || index > 0
     }
 
-    /// Clears the leading back + settings cluster (and the matching trailing
-    /// inset) so the step title stays centred and does not run under the buttons.
+    /// Symmetric inset that always clears the two-control leading cluster, so the
+    /// step title stays centred and does not shift when Back appears or hides.
     private var headerTitleHorizontalPadding: CGFloat {
         AppTheme.Accessibility.minHitTarget * 2 + AppTheme.Space.sm * 2
+    }
+
+    private var headerBackTransition: AnyTransition {
+        reduceMotion
+            ? .opacity
+            : .opacity.combined(with: .move(edge: .leading))
     }
 
     private func header(_ step: RosaryStep) -> some View {
@@ -867,14 +873,10 @@ struct PrayView: View {
                     if canRetreat {
                         roundControl(system: "chevron.left") { retreat() }
                             .accessibilityLabel("Back")
-                    } else {
-                        // Same width as the back button so the gear and title do not jump
-                        // when Back is hidden on the first step.
-                        Color.clear
-                            .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
-                            .accessibilityHidden(true)
+                            .transition(headerBackTransition)
                     }
                     // Swipe right still steps back; this opens Customise rosary.
+                    // On the first step (no Back) this sits in the leading slot.
                     roundControl(system: "gearshape") { showingRosarySettings = true }
                         .accessibilityLabel("Rosary settings")
                 }
@@ -893,6 +895,7 @@ struct PrayView: View {
         .padding(.horizontal, AppTheme.Space.lg)
         .padding(.top, AppTheme.Space.xs)
         .padding(.bottom, AppTheme.Space.xs)
+        .guideAnimation(MotionTokens.soft, value: canRetreat)
     }
 
     /// Web `#pnow`: roman + padded middot + mystery title (`.sep` is `padding: 0 .5em`).
