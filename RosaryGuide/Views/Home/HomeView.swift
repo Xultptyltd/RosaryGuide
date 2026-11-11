@@ -416,12 +416,13 @@ struct HomeView: View {
             }
 
             Group {
+                GuideSectionBoundary(gutter: gutter)
+
                 VStack(alignment: .leading, spacing: AppTheme.sectionTitleGap) {
                     GuideSectionLabel(text: "Upcoming feast days", prominence: .strong)
                     comingUpSection
                 }
                 .id("home-feasts")
-                .padding(.top, AppTheme.Space.xl)
                 // Tighten the gap below the last feast row before This week.
                 .padding(.bottom, -AppTheme.Space.md)
             }
