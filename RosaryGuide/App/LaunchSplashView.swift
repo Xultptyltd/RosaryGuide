@@ -40,13 +40,12 @@ struct SignInTransitionCover: View {
 
 struct LaunchSplashView: View {
     @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var onFinished: () -> Void
 
     var body: some View {
         ZStack {
-            AppTheme.brandCanvas(colorScheme)
+            AppTheme.launchCanvas
                 .ignoresSafeArea()
 
             if reduceMotion {

@@ -239,9 +239,41 @@ final class ContrastTokenTests: XCTestCase {
     }
 
     func testDarkBrandCanvasIsPageBlack() {
+        // Sign-in panel only. The launch splash uses `launchCanvas`.
         XCTAssertEqual(UIColor(AppTheme.brandCanvas(.light)), UIColor(AppTheme.marianBlue))
         XCTAssertEqual(UIColor(AppTheme.brandCanvas(.dark)), UIColor(Color(hex: 0x000000)))
         XCTAssertNotEqual(UIColor(AppTheme.brandCanvas(.dark)), UIColor(AppTheme.marianBlue))
+    }
+
+    func testLaunchCanvasIsMarianBlueInLightAndDark() throws {
+        XCTAssertEqual(UIColor(AppTheme.launchCanvas), UIColor(AppTheme.marianBlue))
+        XCTAssertEqual(UIColor(AppTheme.launchCanvas), UIColor(Color(hex: 0x0054FF)))
+
+        let testsDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let colorset = testsDir
+            .deletingLastPathComponent()
+            .appendingPathComponent("RosaryGuide/Assets.xcassets/LaunchBackground.colorset/Contents.json")
+        let data = try Data(contentsOf: colorset)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let colors = try XCTUnwrap(json["colors"] as? [[String: Any]])
+        XCTAssertEqual(colors.count, 2, "LaunchBackground needs a universal colour and a dark appearance variant")
+        var sawUniversal = false
+        var sawDark = false
+        for entry in colors {
+            let color = try XCTUnwrap(entry["color"] as? [String: Any])
+            let components = try XCTUnwrap(color["components"] as? [String: String])
+            XCTAssertEqual(components["red"]?.lowercased(), "0x00")
+            XCTAssertEqual(components["green"]?.lowercased(), "0x54")
+            XCTAssertEqual(components["blue"]?.lowercased(), "0xff")
+            XCTAssertEqual(components["alpha"], "1.000")
+            if let appearances = entry["appearances"] as? [[String: String]] {
+                XCTAssertTrue(appearances.contains { $0["appearance"] == "luminosity" && $0["value"] == "dark" })
+                sawDark = true
+            } else {
+                sawUniversal = true
+            }
+        }
+        XCTAssertTrue(sawUniversal && sawDark, "LaunchBackground must set both the universal and dark appearances to Marian blue")
     }
 
     func testFutureDayTextMeetsContrast() {
