@@ -929,10 +929,11 @@ struct HomeView: View {
         GuideChoiceControl(
             title: "Mystery set",
             selection: mysterySetSelection,
-            options: MysterySetKind.displayOrder
+            options: MysterySetKind.displayOrder,
+            spokenLabel: { set in
+                set == assignment.pickerDotSet ? "\(set.shortName), today" : set.shortName
+            }
         ) { set in
-            // Visible label is the set name, as in 1.589. Today's set is the
-            // weekday dot; VoiceOver uses the hint below, not this string.
             set.shortName
         }
         .overlay {
