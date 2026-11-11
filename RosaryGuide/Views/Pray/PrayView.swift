@@ -595,7 +595,13 @@ struct PrayView: View {
     private var plateTopChromeScrim: some View {
         let page = palette.prayBg
         return LinearGradient(
-            stops: AppTheme.RosaryFlow.heroPageFadeStops(page: page, scheme: colorScheme, fadingIn: false),
+            stops: [
+                .init(color: page.opacity(colorScheme == .light ? 0.94 : 0.90), location: 0),
+                .init(color: page.opacity(colorScheme == .light ? 0.70 : 0.64), location: 0.38),
+                .init(color: page.opacity(colorScheme == .light ? 0.28 : 0.24), location: 0.68),
+                .init(color: page.opacity(colorScheme == .light ? 0.06 : 0.05), location: 0.88),
+                .init(color: .clear, location: 1)
+            ],
             startPoint: .top,
             endPoint: .bottom
         )
@@ -614,8 +620,7 @@ struct PrayView: View {
     ) -> some View {
         let washOverlay = progress * 0.75
         let heroOpacity = 1.0 - progress * 0.50
-        // Cover-fill still meets the mystery text with its own edge. Wide images
-        // width-fit and bleed their leftover into the page through PlateArtView.
+        // No bottom fade: the artwork meets the mystery text with its own edge.
         // Scrolling only changes the darkening.
         return Color.clear
             .frame(maxWidth: .infinity)
