@@ -16,7 +16,7 @@ enum NotificationService {
         var dailyEnabled: Bool
         var dailyMinutes: Int
         var feastsEnabled: Bool
-        var feastMinutes: Int = 8 * 60
+        var feastMinutes: Int = SyncedPreferences.defaultFeastAlertMinutes
 
         var isEmpty: Bool { !dailyEnabled && !feastsEnabled }
     }
@@ -26,16 +26,30 @@ enum NotificationService {
     }
 
     /// Shows the system permission prompt only if the user hasn't decided yet.
-    /// Returns true when notifications are allowed.
-    static func requestPermission() async -> Bool {
+    /// Returns true when notifications are allowed. Records `askedForNotifications`
+    /// on this device so Home will not ask again.
+    static func requestPermission(defaults: UserDefaults = .standard) async -> Bool {
         switch await authorizationStatus() {
         case .authorized, .provisional, .ephemeral:
             return true
         case .notDetermined:
+            NotificationPrompt.markAsked(in: defaults)
             let granted = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
             return granted ?? false
         default:
             return false
+        }
+    }
+
+    /// First arrival at Home after onboarding or sign-in: ask once if the
+    /// system status is still undecided, then schedule the default plan if granted.
+    static func askOnHomeArrival(plan: Plan, defaults: UserDefaults = .standard) async {
+        let status = await authorizationStatus()
+        guard NotificationPrompt.shouldAsk(status: status, hasAsked: NotificationPrompt.hasAsked(in: defaults)) else {
+            return
+        }
+        if await requestPermission(defaults: defaults) {
+            await reschedule(plan)
         }
     }
 
@@ -125,7 +139,7 @@ enum NotificationService {
         return takesArticle.contains { name.hasPrefix($0 + " ") } ? "the " + name : name
     }
 
-    /// One alert at the chosen time (default 8:00 am) on each upcoming feast day in the
+    /// One alert at the chosen time (default 9:00 am) on each upcoming feast day in the
     /// app's own feast calendar.
     private static func feastRequests(minutes: Int, now: Date) -> [UNNotificationRequest] {
         let calendar = Calendar.current
@@ -160,3 +174,25 @@ enum NotificationService {
             .map { $0 }
     }
 }
+
+/// Device-only permission prompt bookkeeping. Not synced; authorization is per iPhone.
+enum NotificationPrompt {
+    static let askedKey = "settings.notifications.askedForNotifications"
+    /// Wait until the Home transition (splash or sign-in cover) has settled.
+    static let homeArrivalDelay: Duration = .seconds(1)
+
+    static func hasAsked(in defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: askedKey)
+    }
+
+    static func markAsked(in defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: askedKey)
+    }
+
+    /// The system prompt is shown only when the user has not decided yet and
+    /// we have not already asked on this device. Never re-prompts after a denial.
+    static func shouldAsk(status: UNAuthorizationStatus, hasAsked: Bool) -> Bool {
+        status == .notDetermined && !hasAsked
+    }
+}
+
