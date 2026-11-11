@@ -216,6 +216,7 @@ struct PrayIntentionSheet: View {
 /// do not also select the radio (same overlay pattern as CurrentIntentionHero).
 struct IntentionRadioRow: View {
     @Environment(\.palette) private var palette
+    @Environment(\.pageStyle) private var pageStyle
     @Environment(OfferStore.self) private var offer: OfferStore?
 
     let item: OfferIntention
@@ -269,21 +270,27 @@ struct IntentionRadioRow: View {
         .overlay(alignment: .trailing) {
             trailingControl
         }
+        .contentShape(
+            .contextMenuPreview,
+            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+        )
         .contextMenu {
             if usesNoteInfoAndContextMenu, !readOnly {
                 contextMenuItems
             }
         } preview: {
             if usesNoteInfoAndContextMenu, !readOnly {
-                card
-                    .padding(AppTheme.Space.sm)
+                contextMenuPreview
             }
         }
         .sheet(isPresented: $showingNoteSheet) {
             IntentionNoteSheet(intention: item, hideText: hideText)
                 .environment(\.palette, palette)
+                .environment(\.colorScheme, palette.scheme)
+                .preferredColorScheme(palette.scheme)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+                .presentationBackground(palette.surface)
         }
         .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
@@ -293,7 +300,44 @@ struct IntentionRadioRow: View {
         }
     }
 
+    private var cardShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+    }
+
+    /// Long-press snapshot. The preview host defaults to a light `ThemePalette`,
+    /// which would paint a light surface behind the already-resolved `palette.ink`.
+    /// Bake the current token surface and scheme into the preview instead.
+    private var contextMenuPreview: some View {
+        cardCore
+            .background(palette.cardSurface(on: pageStyle), in: cardShape)
+            .overlay {
+                cardShape.stroke(palette.cardSurfaceStroke, lineWidth: AppTheme.Component.panelStrokeWidth)
+            }
+            .overlay {
+                cardShape.strokeBorder(
+                    selected ? palette.accent.opacity(0.45) : Color.clear,
+                    lineWidth: 1
+                )
+            }
+            .environment(\.palette, palette)
+            .environment(\.pageStyle, pageStyle)
+            .environment(\.colorScheme, palette.scheme)
+            .preferredColorScheme(palette.scheme)
+    }
+
     private var card: some View {
+        cardCore
+            .guideSurface(in: cardShape)
+            .overlay(
+                cardShape.strokeBorder(
+                    selected ? palette.accent.opacity(0.45) : Color.clear,
+                    lineWidth: 1
+                )
+            )
+            .contentShape(cardShape)
+    }
+
+    private var cardCore: some View {
         HStack(alignment: .center, spacing: AppTheme.Space.md) {
             if !readOnly {
                 Image(systemName: selected ? (multiSelect ? "checkmark.circle.fill" : "circle.inset.filled") : "circle")
@@ -340,15 +384,6 @@ struct IntentionRadioRow: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 14)
         .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
-        .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                .strokeBorder(
-                    selected ? palette.accent.opacity(0.45) : Color.clear,
-                    lineWidth: 1
-                )
-        )
-        .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
     }
 
     private var showsTrailingControl: Bool {
@@ -443,6 +478,12 @@ struct IntentionNoteSheet: View {
         IntentionNote.displayNote(for: intention, hideText: hideText)
     }
 
+    /// Extra leading on the serif note, derived from the TypeRole face rather than a raw point size.
+    private static var noteLineSpacing: CGFloat {
+        let ui = AppTheme.TypeRole.serifBodyUIFont
+        return max(0, (ui.lineHeight * 1.15) - ui.lineHeight)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
@@ -469,9 +510,9 @@ struct IntentionNoteSheet: View {
 
                     if let noteText {
                         Text(noteText)
-                            .font(AppTheme.TypeRole.serifBody)
+                            .font(Font(AppTheme.TypeRole.serifBodyUIFont))
                             .foregroundStyle(palette.ink)
-                            .lineSpacing(6)
+                            .lineSpacing(IntentionNoteSheet.noteLineSpacing)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -481,17 +522,24 @@ struct IntentionNoteSheet: View {
                 .padding(.bottom, AppTheme.Space.xl)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .background(palette.background)
+            .background(palette.surface)
             .navigationTitle("Note")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(palette.surface, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(palette.scheme, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                         .font(AppTheme.TypeRole.bodySmall(weight: .medium))
                         .foregroundStyle(palette.accentText)
+                        .tint(palette.accentText)
                 }
             }
         }
+        .environment(\.colorScheme, palette.scheme)
+        .preferredColorScheme(palette.scheme)
+        .presentationBackground(palette.surface)
     }
 }
 
