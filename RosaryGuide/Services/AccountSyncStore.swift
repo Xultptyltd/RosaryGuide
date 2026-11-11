@@ -29,7 +29,7 @@ struct SyncedPreferences: Codable, Equatable {
     var dailyReminderEnabled: Bool
     var dailyReminderMinutes: Int
     var feastAlertsEnabled: Bool
-    /// Feast day alert time as minutes after local midnight (default 8:00 am).
+    /// Feast day alert time as minutes after local midnight (default 9:00 am).
     var feastAlertMinutes: Int
     var appIcon: AppIconOption
     /// When the user last changed any of these. `.syncNever` means never (defaults or values
@@ -67,15 +67,17 @@ struct SyncedPreferences: Codable, Equatable {
         textSize: .medium,
         includeSaintMichael: false,
         hideIntentionText: false,
-        dailyReminderEnabled: false,
-        dailyReminderMinutes: 19 * 60,
-        feastAlertsEnabled: false,
+        dailyReminderEnabled: true,
+        dailyReminderMinutes: SyncedPreferences.defaultDailyReminderMinutes,
+        feastAlertsEnabled: true,
         feastAlertMinutes: SyncedPreferences.defaultFeastAlertMinutes,
         appIcon: .blue,
         updatedAt: .syncNever
     )
 
-    static let defaultFeastAlertMinutes = 8 * 60
+    /// Prayer reminder and feast-day alert time for new installs with no saved value.
+    static let defaultDailyReminderMinutes = 9 * 60
+    static let defaultFeastAlertMinutes = 9 * 60
 
     private enum CodingKeys: String, CodingKey {
         case appearance, prayerLanguage, rosaryLanguage, textSize, includeSaintMichael, hideIntentionText
@@ -148,7 +150,7 @@ struct SyncedPreferences: Codable, Equatable {
 }
 
 extension SyncedPreferences {
-    /// Device copies saved before `feastAlertMinutes` existed decode with the 8:00 am default.
+    /// Device copies saved before `feastAlertMinutes` existed decode with the 9:00 am default.
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         self.init(
@@ -359,7 +361,7 @@ private extension SyncedPreferences {
             dailyReminderEnabled: dailyReminderEnabled,
             dailyReminderMinutes: dailyReminderMinutes,
             feastAlertsEnabled: feastAlertsEnabled,
-            // Documents written before this field existed get the 8:00 am default.
+            // Documents written before this field existed get the 9:00 am default.
             feastAlertMinutes: data["feastAlertMinutes"] as? Int ?? Self.defaultFeastAlertMinutes,
             appIcon: appIcon,
             updatedAt: updatedAt,

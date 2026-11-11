@@ -93,7 +93,7 @@ final class SettingsStore {
         }
     }
 
-    /// Reminder time as minutes after local midnight (default 7:00 pm).
+    /// Reminder time as minutes after local midnight (default 9:00 am).
     var dailyReminderMinutes: Int {
         didSet {
             defaults.set(dailyReminderMinutes, forKey: Keys.dailyReminderMinutes)
@@ -109,7 +109,7 @@ final class SettingsStore {
         }
     }
 
-    /// Feast day alert time as minutes after local midnight (default 8:00 am).
+    /// Feast day alert time as minutes after local midnight (default 9:00 am).
     var feastAlertMinutes: Int {
         didSet {
             defaults.set(feastAlertMinutes, forKey: Keys.feastAlertMinutes)
@@ -176,10 +176,16 @@ final class SettingsStore {
         // Drop any stored "off" from the old Haptics toggle.
         defaults.removeObject(forKey: Keys.haptics)
         textSize = PrayerTextSize(rawValue: defaults.string(forKey: Keys.textSize) ?? "") ?? .medium
-        dailyReminderEnabled = defaults.bool(forKey: Keys.dailyReminder)
-        dailyReminderMinutes = defaults.object(forKey: Keys.dailyReminderMinutes) as? Int ?? 19 * 60
-        feastAlertsEnabled = defaults.bool(forKey: Keys.feastAlerts)
-        feastAlertMinutes = defaults.object(forKey: Keys.feastAlertMinutes) as? Int ?? SyncedPreferences.defaultFeastAlertMinutes
+        // `bool(forKey:)` is false when the key is missing, so read the object
+        // and apply the product default only when the user has no saved value.
+        dailyReminderEnabled = (defaults.object(forKey: Keys.dailyReminder) as? Bool)
+            ?? SyncedPreferences.defaults.dailyReminderEnabled
+        dailyReminderMinutes = defaults.object(forKey: Keys.dailyReminderMinutes) as? Int
+            ?? SyncedPreferences.defaults.dailyReminderMinutes
+        feastAlertsEnabled = (defaults.object(forKey: Keys.feastAlerts) as? Bool)
+            ?? SyncedPreferences.defaults.feastAlertsEnabled
+        feastAlertMinutes = defaults.object(forKey: Keys.feastAlertMinutes) as? Int
+            ?? SyncedPreferences.defaults.feastAlertMinutes
         hideIntentionText = defaults.bool(forKey: Keys.hideIntentionText)
         appIconChoice = AppIconOption(rawValue: defaults.string(forKey: Keys.appIcon) ?? "") ?? .blue
         preferencesUpdatedAt = Date(timeIntervalSince1970: defaults.double(forKey: Keys.updatedAt))
@@ -290,10 +296,10 @@ final class SettingsStore {
         includeSaintMichael = false
         rosaryConfig = .default
         textSize = .medium
-        dailyReminderEnabled = false
-        dailyReminderMinutes = 19 * 60
-        feastAlertsEnabled = false
-        feastAlertMinutes = SyncedPreferences.defaultFeastAlertMinutes
+        dailyReminderEnabled = SyncedPreferences.defaults.dailyReminderEnabled
+        dailyReminderMinutes = SyncedPreferences.defaults.dailyReminderMinutes
+        feastAlertsEnabled = SyncedPreferences.defaults.feastAlertsEnabled
+        feastAlertMinutes = SyncedPreferences.defaults.feastAlertMinutes
         hideIntentionText = false
         appIconChoice = icon
         // Every field counts as changed now, including ones that already had the default.

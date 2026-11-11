@@ -1591,3 +1591,114 @@ final class IntentionTextLimitTests: XCTestCase {
         XCTAssertTrue(IntentionTextLimit.showsCounter(String(repeating: "a", count: 80), limit: 100))
     }
 }
+
+final class NotificationPromptTests: XCTestCase {
+    func testAsksOnlyWhenUndecidedAndNotYetAsked() {
+        XCTAssertTrue(NotificationPrompt.shouldAsk(status: .notDetermined, hasAsked: false))
+        XCTAssertFalse(NotificationPrompt.shouldAsk(status: .notDetermined, hasAsked: true))
+        XCTAssertFalse(NotificationPrompt.shouldAsk(status: .denied, hasAsked: false))
+        XCTAssertFalse(NotificationPrompt.shouldAsk(status: .denied, hasAsked: true))
+        XCTAssertFalse(NotificationPrompt.shouldAsk(status: .authorized, hasAsked: false))
+        XCTAssertFalse(NotificationPrompt.shouldAsk(status: .provisional, hasAsked: false))
+        XCTAssertFalse(NotificationPrompt.shouldAsk(status: .ephemeral, hasAsked: false))
+    }
+
+    func testAskedFlagIsDeviceLocalAndSticky() {
+        let name = "NotificationPromptTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        defer { defaults.removePersistentDomain(forName: name) }
+
+        XCTAssertFalse(NotificationPrompt.hasAsked(in: defaults))
+        NotificationPrompt.markAsked(in: defaults)
+        XCTAssertTrue(NotificationPrompt.hasAsked(in: defaults))
+    }
+}
+
+final class NotificationAndRosaryDefaultTests: XCTestCase {
+    private func freshDefaults() -> UserDefaults {
+        let name = "NotificationAndRosaryDefaultTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        return defaults
+    }
+
+    func testNewInstallEnablesRemindersAndFeastsAtNine() {
+        let settings = SettingsStore(defaults: freshDefaults())
+        XCTAssertTrue(settings.dailyReminderEnabled)
+        XCTAssertEqual(settings.dailyReminderMinutes, 9 * 60)
+        XCTAssertTrue(settings.feastAlertsEnabled)
+        XCTAssertEqual(settings.feastAlertMinutes, 9 * 60)
+        XCTAssertTrue(SyncedPreferences.defaults.dailyReminderEnabled)
+        XCTAssertTrue(SyncedPreferences.defaults.feastAlertsEnabled)
+        XCTAssertEqual(SyncedPreferences.defaults.dailyReminderMinutes, SyncedPreferences.defaultDailyReminderMinutes)
+        XCTAssertEqual(SyncedPreferences.defaults.feastAlertMinutes, SyncedPreferences.defaultFeastAlertMinutes)
+        XCTAssertEqual(SyncedPreferences.defaultDailyReminderMinutes, 9 * 60)
+        XCTAssertEqual(SyncedPreferences.defaultFeastAlertMinutes, 9 * 60)
+    }
+
+    func testSavedNotificationSettingsAreNotOverwritten() {
+        let defaults = freshDefaults()
+        defaults.set(false, forKey: "settings.notifications.dailyReminder")
+        defaults.set(19 * 60, forKey: "settings.notifications.dailyReminderMinutes")
+        defaults.set(false, forKey: "settings.notifications.feastAlerts")
+        defaults.set(8 * 60, forKey: "settings.notifications.feastAlertMinutes")
+        let settings = SettingsStore(defaults: defaults)
+        XCTAssertFalse(settings.dailyReminderEnabled)
+        XCTAssertEqual(settings.dailyReminderMinutes, 19 * 60)
+        XCTAssertFalse(settings.feastAlertsEnabled)
+        XCTAssertEqual(settings.feastAlertMinutes, 8 * 60)
+    }
+
+    func testSyncedNotificationSettingsReplaceUnsavedLocalDefaults() {
+        let settings = SettingsStore(defaults: freshDefaults())
+        var remote = SyncedPreferences.defaults
+        remote.dailyReminderEnabled = false
+        remote.dailyReminderMinutes = 19 * 60
+        remote.feastAlertsEnabled = false
+        remote.feastAlertMinutes = 8 * 60
+        remote.updatedAt = Date()
+        settings.applySynced(remote)
+        XCTAssertFalse(settings.dailyReminderEnabled)
+        XCTAssertEqual(settings.dailyReminderMinutes, 19 * 60)
+        XCTAssertFalse(settings.feastAlertsEnabled)
+        XCTAssertEqual(settings.feastAlertMinutes, 8 * 60)
+    }
+
+    func testRosaryDefaultsMatchTheRequestedPrayers() {
+        let config = RosaryConfig.default
+        XCTAssertTrue(config.intentionsStep)
+        XCTAssertTrue(config.showBeads)
+        XCTAssertTrue(config.fatimaPrayer)
+        XCTAssertTrue(config.closingPrayers)
+        XCTAssertFalse(config.saintMichael)
+        XCTAssertFalse(config.memorare)
+        XCTAssertFalse(config.oSacrament)
+        XCTAssertEqual(SettingsStore(defaults: freshDefaults()).rosaryConfig, config)
+    }
+
+    func testSavedRosaryConfigIsNotOverwritten() throws {
+        var config = RosaryConfig.default
+        config.intentionsStep = false
+        config.showBeads = false
+        config.fatimaPrayer = false
+        config.closingPrayers = false
+        config.saintMichael = true
+        config.memorare = true
+        config.oSacrament = true
+        let defaults = freshDefaults()
+        defaults.set(try XCTUnwrap(JSONEncoder().encode(config)), forKey: "settings.rosaryConfig")
+        let settings = SettingsStore(defaults: defaults)
+        XCTAssertEqual(settings.rosaryConfig, config)
+    }
+
+    func testTimeOfDayRoundTripsNineOClock() {
+        XCTAssertEqual(SyncedPreferences.defaultDailyReminderMinutes, 9 * 60)
+        XCTAssertEqual(SyncedPreferences.defaultFeastAlertMinutes, 9 * 60)
+        let date = TimeOfDay.date(fromMinutes: 9 * 60)
+        let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+        XCTAssertEqual(parts.hour, 9)
+        XCTAssertEqual(parts.minute, 0)
+        XCTAssertEqual(TimeOfDay.minutes(from: date), 9 * 60)
+    }
+}

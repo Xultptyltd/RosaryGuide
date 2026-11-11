@@ -44,6 +44,16 @@ struct RosaryGuideApp: App {
         withAnimation(style.fadeIn) { landing.signInTransition = nil }
     }
 
+    /// Home is the visible front screen — not onboarding, splash, or the sign-in cover.
+    private var isHomeVisibleForNotificationPrompt: Bool {
+        let showsApp = !previewsSignInTransition && LaunchGate.showsApp(
+            didCompleteOnboarding: didCompleteOnboarding,
+            isSignedIn: auth.isSignedIn,
+            signedInThisLaunch: auth.interactiveSignIns > 0
+        )
+        return showsApp && !isShowingSplash && landing.signInTransition == nil
+    }
+
     var body: some Scene {
         WindowGroup {
             ThemedRoot {
@@ -109,6 +119,14 @@ struct RosaryGuideApp: App {
             .preferredColorScheme(settings.appearance.colorScheme)
             .onChange(of: settings.appearance, initial: true) { _, appearance in
                 AppearanceWindowStyle.apply(appearance)
+            }
+            // First arrival at Home (new install or an existing account that has
+            // never been asked): show the system permission prompt once.
+            .task(id: isHomeVisibleForNotificationPrompt) {
+                guard isHomeVisibleForNotificationPrompt else { return }
+                try? await Task.sleep(for: NotificationPrompt.homeArrivalDelay)
+                guard !Task.isCancelled else { return }
+                await NotificationService.askOnHomeArrival(plan: settings.notificationPlan)
             }
             // Reschedule on any reminder/feast-alert change, from any screen or sync,
             // not only while the Notifications page is open.

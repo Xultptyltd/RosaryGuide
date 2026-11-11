@@ -1177,6 +1177,8 @@ private struct SettingsLastRowTrim<Content: View>: View {
 }
 
 /// Row with a trailing compact time picker; time is stored as minutes after midnight.
+/// SwiftUI's compact `DatePicker` can draw and write "now" on appear, so this wraps
+/// `UIDatePicker`, which only sends `.valueChanged` for a real user edit.
 private struct SettingsTimeRow: View {
     @Environment(\.palette) private var palette
     let title: String
@@ -1194,25 +1196,76 @@ private struct SettingsTimeRow: View {
                     .foregroundStyle(palette.ink)
             }
             Spacer(minLength: AppTheme.Space.md)
-            DatePicker(title, selection: dateBinding, displayedComponents: .hourAndMinute)
-                .labelsHidden()
-                // The compact picker draws its time in the tint, so it is text.
-                .tint(palette.accentText)
+            CompactTimePicker(minutes: $minutes)
+                .accessibilityLabel(title)
         }
         .frame(minHeight: AppTheme.Component.profileRowHeight)
         .overlay(alignment: .bottom) { SettingsDivider() }
     }
+}
 
-    private var dateBinding: Binding<Date> {
-        Binding(
-            get: {
-                Calendar.current.date(byAdding: .minute, value: minutes, to: Calendar.current.startOfDay(for: .now)) ?? .now
-            },
-            set: { date in
-                let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                minutes = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
-            }
-        )
+private struct CompactTimePicker: UIViewRepresentable {
+    @Binding var minutes: Int
+
+    func makeCoordinator() -> Coordinator { Coordinator(minutes: $minutes) }
+
+    func makeUIView(context: Context) -> UIDatePicker {
+        let picker = UIDatePicker()
+        picker.datePickerMode = .time
+        picker.preferredDatePickerStyle = .compact
+        picker.minuteInterval = 1
+        picker.locale = Locale.current
+        picker.setDate(TimeOfDay.date(fromMinutes: minutes), animated: false)
+        picker.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .valueChanged)
+        picker.setContentHuggingPriority(.required, for: .horizontal)
+        picker.setContentHuggingPriority(.required, for: .vertical)
+        picker.setContentCompressionResistancePriority(.required, for: .horizontal)
+        picker.setContentCompressionResistancePriority(.required, for: .vertical)
+        return picker
+    }
+
+    func updateUIView(_ picker: UIDatePicker, context: Context) {
+        context.coordinator.minutes = $minutes
+        picker.tintColor = UIColor(context.environment.palette.accentText)
+        let date = TimeOfDay.date(fromMinutes: minutes)
+        if TimeOfDay.minutes(from: picker.date) != minutes {
+            picker.setDate(date, animated: false)
+        }
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UIDatePicker, context: Context) -> CGSize? {
+        uiView.invalidateIntrinsicContentSize()
+        let size = uiView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        if size.width >= 1 && size.height >= 1 { return size }
+        return uiView.intrinsicContentSize
+    }
+
+    final class Coordinator: NSObject {
+        var minutes: Binding<Int>
+        init(minutes: Binding<Int>) { self.minutes = minutes }
+
+        @objc func changed(_ sender: UIDatePicker) {
+            let next = TimeOfDay.minutes(from: sender.date)
+            if next != minutes.wrappedValue { minutes.wrappedValue = next }
+        }
+    }
+}
+
+/// Minutes after local midnight, used by notification time rows.
+enum TimeOfDay {
+    static func date(fromMinutes minutes: Int) -> Date {
+        var components = DateComponents()
+        components.year = 2001
+        components.month = 1
+        components.day = 1
+        components.hour = max(0, min(23, minutes / 60))
+        components.minute = max(0, min(59, minutes % 60))
+        return Calendar.current.date(from: components) ?? Date()
+    }
+
+    static func minutes(from date: Date) -> Int {
+        let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+        return (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
     }
 }
 
