@@ -516,7 +516,7 @@ final class FeastHeroFramingTests: XCTestCase {
             subject: subject,
             focusX: 630
         )
-        assertFullFileCover(cover: cover, image: image, frame: frame)
+        assertCoversFrame(cover: cover, image: image, frame: frame, subject: subject)
         XCTAssertLessThan(cover.scale, frame.width / subject.width)
         let visible = visibleOrigin(cover, frame: frame)
         XCTAssertEqual(visible.y, 0, accuracy: 0.0001)
@@ -528,7 +528,7 @@ final class FeastHeroFramingTests: XCTestCase {
     }
 
     /// A tall frame overflows horizontally and keeps the face inside the window.
-    /// The top of the file stays visible even when the figure starts lower.
+    /// Leading letterbox is clipped so the figure meets the top of the frame.
     func testTallFrameKeepsAFaceOnTheLeftInsideTheWindow() {
         let focus: CGFloat = 314
         let image = CGSize(width: 1280, height: 720)
@@ -540,11 +540,10 @@ final class FeastHeroFramingTests: XCTestCase {
             subject: subject,
             focusX: focus
         )
-        assertFullFileCover(cover: cover, image: image, frame: frame)
-        XCTAssertEqual(cover.scale, frame.height / image.height, accuracy: 0.0001)
+        assertCoversFrame(cover: cover, image: image, frame: frame, subject: subject)
         let visible = visibleOrigin(cover, frame: frame)
         let visibleWidth = frame.width / cover.scale
-        XCTAssertEqual(visible.y, 0, accuracy: 0.0001)
+        XCTAssertEqual(visible.y, 144, accuracy: 0.5)
         XCTAssertGreaterThanOrEqual(focus, visible.x - 0.5)
         XCTAssertLessThanOrEqual(focus, visible.x + visibleWidth + 0.5)
         assertWindowFillsFrame(visibleX: visible.x, visibleY: visible.y, cover: cover, image: image, frame: frame)
@@ -560,7 +559,7 @@ final class FeastHeroFramingTests: XCTestCase {
             subject: subject,
             focusX: 640
         )
-        assertFullFileCover(cover: cover, image: image, frame: frame)
+        assertCoversFrame(cover: cover, image: image, frame: frame, subject: subject)
         XCTAssertEqual(cover.scale, frame.width / image.width, accuracy: 0.0001)
         let visible = visibleOrigin(cover, frame: frame)
         let visibleHeight = frame.height / cover.scale
@@ -571,9 +570,9 @@ final class FeastHeroFramingTests: XCTestCase {
         assertWindowFillsFrame(visibleX: visible.x, visibleY: visible.y, cover: cover, image: image, frame: frame)
     }
 
-    /// Field above a lower figure stays in view because the window starts at y = 0.
-    /// A subject narrower than the file does not increase the scale.
-    func testLetterboxStaysInFrameWithoutSubjectZoom() {
+    /// Leading letterbox is clipped; a subject narrower than the file does not
+    /// increase the scale beyond what is needed to cover the remaining canvas.
+    func testLetterboxIsCroppedFromTheTopWithoutSubjectZoom() {
         let image = CGSize(width: 1280, height: 720)
         let frame = CGSize(width: 358, height: 176)
         let subject = CGRect(x: 240, y: 100, width: 800, height: 620)
@@ -583,11 +582,10 @@ final class FeastHeroFramingTests: XCTestCase {
             subject: subject,
             focusX: 640
         )
-        assertFullFileCover(cover: cover, image: image, frame: frame)
+        assertCoversFrame(cover: cover, image: image, frame: frame, subject: subject)
         XCTAssertLessThan(cover.scale, frame.width / subject.width - 0.05)
         let visible = visibleOrigin(cover, frame: frame)
-        XCTAssertEqual(visible.y, 0, accuracy: 0.0001)
-        XCTAssertEqual(visible.x, 0, accuracy: 0.5)
+        XCTAssertEqual(visible.y, 100, accuracy: 0.5)
         let visibleBottom = visible.y + frame.height / cover.scale
         XCTAssertGreaterThan(visibleBottom, subject.minY)
         assertWindowFillsFrame(visibleX: visible.x, visibleY: visible.y, cover: cover, image: image, frame: frame)
@@ -614,7 +612,7 @@ final class FeastHeroFramingTests: XCTestCase {
     }
 
     /// When the scaled file is wider than the frame, the window centers on the focus
-    /// and still lies entirely inside the image. The top edge stays at y = 0.
+    /// and still lies entirely inside the image. Leading letterbox is clipped.
     func testHorizontalOverflowCentersOnFocus() {
         let image = CGSize(width: 1280, height: 720)
         let frame = CGSize(width: 200, height: 400)
@@ -626,11 +624,10 @@ final class FeastHeroFramingTests: XCTestCase {
             subject: subject,
             focusX: focus
         )
-        assertFullFileCover(cover: cover, image: image, frame: frame)
-        XCTAssertEqual(cover.scale, frame.height / image.height, accuracy: 0.0001)
+        assertCoversFrame(cover: cover, image: image, frame: frame, subject: subject)
         let visible = visibleOrigin(cover, frame: frame)
         let visibleWidth = frame.width / cover.scale
-        XCTAssertEqual(visible.y, 0, accuracy: 0.0001)
+        XCTAssertEqual(visible.y, 80, accuracy: 0.5)
         XCTAssertEqual(visible.x + visibleWidth / 2, focus, accuracy: 0.5)
         XCTAssertGreaterThan(visible.x, 0)
         assertWindowFillsFrame(visibleX: visible.x, visibleY: visible.y, cover: cover, image: image, frame: frame)
@@ -639,15 +636,16 @@ final class FeastHeroFramingTests: XCTestCase {
         let leftFocus: CGFloat = 80
         let left = ArtCatalog.feastCover(imageSize: image, frame: frame, subject: leftSubject, focusX: leftFocus)
         let leftVisible = visibleOrigin(left, frame: frame)
-        XCTAssertEqual(leftVisible.y, 0, accuracy: 0.0001)
+        XCTAssertEqual(leftVisible.y, 40, accuracy: 0.5)
         XCTAssertEqual(leftVisible.x, 0, accuracy: 0.5)
         XCTAssertLessThanOrEqual(leftFocus, leftVisible.x + frame.width / left.scale)
 
         let rightFocus: CGFloat = 1200
-        let right = ArtCatalog.feastCover(imageSize: image, frame: frame, subject: CGRect(x: 900, y: 40, width: 360, height: 640), focusX: rightFocus)
+        let rightSubject = CGRect(x: 900, y: 40, width: 360, height: 640)
+        let right = ArtCatalog.feastCover(imageSize: image, frame: frame, subject: rightSubject, focusX: rightFocus)
         let rightVisible = visibleOrigin(right, frame: frame)
         let rightWidth = frame.width / right.scale
-        XCTAssertEqual(rightVisible.y, 0, accuracy: 0.0001)
+        XCTAssertEqual(rightVisible.y, 40, accuracy: 0.5)
         XCTAssertGreaterThanOrEqual(rightFocus, rightVisible.x - 0.5)
         XCTAssertLessThanOrEqual(rightFocus, rightVisible.x + rightWidth + 0.5)
         assertWindowFillsFrame(visibleX: rightVisible.x, visibleY: rightVisible.y, cover: right, image: image, frame: frame)
@@ -657,10 +655,13 @@ final class FeastHeroFramingTests: XCTestCase {
         CGPoint(x: -cover.offset.width / cover.scale, y: -cover.offset.height / cover.scale)
     }
 
-    private func assertFullFileCover(cover: ArtCatalog.FeastCover, image: CGSize, frame: CGSize, file: StaticString = #filePath, line: UInt = #line) {
-        let scale = max(frame.width / image.width, frame.height / image.height)
+    private func assertCoversFrame(cover: ArtCatalog.FeastCover, image: CGSize, frame: CGSize, subject: CGRect, file: StaticString = #filePath, line: UInt = #line) {
+        let contentTop = ArtCatalog.feastContentTop(subject: subject, imageHeight: image.height)
+        let usable = max(image.height - contentTop, 1)
+        let scale = max(frame.width / image.width, frame.height / usable)
         XCTAssertEqual(cover.scale, scale, accuracy: 0.0001, file: file, line: line)
-        XCTAssertEqual(cover.offset.height, 0, accuracy: 0.0001, file: file, line: line)
+        let maxVisY = max(0, image.height * scale - frame.height)
+        XCTAssertEqual(cover.offset.height, -min(contentTop * scale, maxVisY), accuracy: 0.0001, file: file, line: line)
     }
 
     /// Every edge of the card is a pixel from the file.
@@ -671,6 +672,43 @@ final class FeastHeroFramingTests: XCTestCase {
         XCTAssertLessThanOrEqual(visibleY + frame.height / cover.scale, image.height + 0.5, file: file, line: line)
         XCTAssertGreaterThanOrEqual(image.width * cover.scale, frame.width - 0.5, file: file, line: line)
         XCTAssertGreaterThanOrEqual(image.height * cover.scale, frame.height - 0.5, file: file, line: line)
+    }
+
+    /// Home featured card (358×176): 58px of top letterbox — as in Presentation of Mary —
+    /// is clipped, and the scale stays width-driven.
+    func testHomeCardCropsLeadingLetterboxFlushToTheTop() {
+        let image = CGSize(width: 1280, height: 720)
+        let frame = CGSize(width: 358, height: 176)
+        let subject = CGRect(x: 200, y: 58, width: 880, height: 650)
+        let cover = ArtCatalog.feastCover(
+            imageSize: image,
+            frame: frame,
+            subject: subject,
+            focusX: 640
+        )
+        assertCoversFrame(cover: cover, image: image, frame: frame, subject: subject)
+        XCTAssertEqual(cover.scale, frame.width / image.width, accuracy: 0.0001)
+        let visible = visibleOrigin(cover, frame: frame)
+        XCTAssertEqual(visible.y, 58, accuracy: 0.5)
+        XCTAssertEqual(visible.x, 0, accuracy: 0.5)
+        assertWindowFillsFrame(visibleX: visible.x, visibleY: visible.y, cover: cover, image: image, frame: frame)
+    }
+
+    func testLeadingLetterboxIsCappedAtThirtyPercent() {
+        let image = CGSize(width: 1280, height: 720)
+        let frame = CGSize(width: 358, height: 176)
+        let subject = CGRect(x: 200, y: 400, width: 880, height: 300)
+        let cover = ArtCatalog.feastCover(
+            imageSize: image,
+            frame: frame,
+            subject: subject,
+            focusX: 640
+        )
+        XCTAssertEqual(ArtCatalog.feastContentTop(subject: subject, imageHeight: image.height), 216, accuracy: 0.0001)
+        assertCoversFrame(cover: cover, image: image, frame: frame, subject: subject)
+        let visible = visibleOrigin(cover, frame: frame)
+        XCTAssertEqual(visible.y, 216, accuracy: 0.5)
+        assertWindowFillsFrame(visibleX: visible.x, visibleY: visible.y, cover: cover, image: image, frame: frame)
     }
 
     func testDetectorFindsAMarkAtTheTopNotTheBottom() {
