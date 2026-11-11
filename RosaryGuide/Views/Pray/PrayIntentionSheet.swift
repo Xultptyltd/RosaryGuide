@@ -286,11 +286,7 @@ struct IntentionRadioRow: View {
         .sheet(isPresented: $showingNoteSheet) {
             IntentionNoteSheet(intention: item, hideText: hideText)
                 .environment(\.palette, palette)
-                .environment(\.colorScheme, palette.scheme)
-                .preferredColorScheme(palette.scheme)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-                .presentationBackground(palette.surface)
+                .guideHalfSheetPresentation()
         }
         .alert("Delete intention?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}
@@ -459,9 +455,9 @@ struct IntentionRadioRow: View {
 }
 
 /// Half-height sheet that shows an intention's attached note in the prayer-flow picker.
+/// Uses the same chrome, type, and presentation as History's decade sheet.
 struct IntentionNoteSheet: View {
     @Environment(\.palette) private var palette
-    @Environment(\.dismiss) private var dismiss
 
     let intention: OfferIntention
     var hideText: Bool = false
@@ -478,68 +474,27 @@ struct IntentionNoteSheet: View {
         IntentionNote.displayNote(for: intention, hideText: hideText)
     }
 
-    /// Extra leading on the serif note, derived from the TypeRole face rather than a raw point size.
-    private static var noteLineSpacing: CGFloat {
-        let ui = AppTheme.TypeRole.serifBodyUIFont
-        return max(0, (ui.lineHeight * 1.15) - ui.lineHeight)
-    }
-
     var body: some View {
-        NavigationStack {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                    HStack(alignment: .center, spacing: AppTheme.Space.md) {
-                        IntentionIconView(
-                            accent: intention.accent,
-                            emoji: intention.displayEmoji,
-                            size: 40,
-                            usesPopePortrait: intention.isPapal
-                        )
-                        VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                            WordSafeText(displayTitle, font: AppTheme.TypeRole.bodyUIFont(weight: .semibold), color: palette.ink)
-                                .multilineTextAlignment(.leading)
-                                .fixedSize(horizontal: false, vertical: true)
-                            if let subtitle, !subtitle.isEmpty {
-                                Text(subtitle)
-                                    .font(AppTheme.TypeRole.label)
-                                    .foregroundStyle(palette.dim)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    if let noteText {
-                        Text(noteText)
-                            .font(Font(AppTheme.TypeRole.serifBodyUIFont))
-                            .foregroundStyle(palette.ink)
-                            .lineSpacing(IntentionNoteSheet.noteLineSpacing)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+        GuideHalfSheetChrome {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
+                GuideHalfSheetHeader(title: displayTitle, subtitle: subtitle) {
+                    IntentionIconView(
+                        accent: intention.accent,
+                        emoji: intention.displayEmoji,
+                        size: 56,
+                        usesPopePortrait: intention.isPapal
+                    )
                 }
-                .padding(.horizontal, AppTheme.gutter)
-                .padding(.top, AppTheme.Space.sm)
-                .padding(.bottom, AppTheme.Space.xl)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .background(palette.surface)
-            .navigationTitle("Note")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(palette.surface, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(palette.scheme, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                        .font(AppTheme.TypeRole.bodySmall(weight: .medium))
-                        .foregroundStyle(palette.accentText)
-                        .tint(palette.accentText)
+
+                if let noteText {
+                    Text(noteText)
+                        .font(AppTheme.TypeRole.bodySmall)
+                        .foregroundStyle(palette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
-        .environment(\.colorScheme, palette.scheme)
-        .preferredColorScheme(palette.scheme)
-        .presentationBackground(palette.surface)
     }
 }
 

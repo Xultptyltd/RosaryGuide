@@ -3597,9 +3597,7 @@ private struct PrayerJourneyView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedHistoryRow) { row in
             JourneyPrayerDetailSheet(row: row)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-                .presentationCornerRadius(AppTheme.containerRadius)
+                .guideHalfSheetPresentation()
         }
         .sheet(item: $selectedDay) { day in
             JourneyDayDetailSheet(
@@ -3611,9 +3609,7 @@ private struct PrayerJourneyView: View {
                     prayedDayKeys: sessionStore.completedDayKeys
                 )
             )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-            .presentationCornerRadius(AppTheme.containerRadius)
+            .guideHalfSheetPresentation()
         }
     }
 
@@ -4415,22 +4411,22 @@ private struct JourneyPrayerDetailSheet: View {
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
+        GuideHalfSheetChrome {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
                 // Icon stacked above the title and status, left-aligned.
-                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
-                    if let set = row.mystery { JourneyMysteryThumb(set: set, kind: row.kind) }
-                    VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                        Text(facts.title)
-                            .font(AppTheme.TypeRole.headingPrimary)
-                            .foregroundStyle(palette.textPrimary)
-                            .accessibilityAddTraits(.isHeader)
-                        Text(decade == nil ? "Rosary completed" : "Single decade")
-                            .font(AppTheme.TypeRole.caption)
-                            .foregroundStyle(palette.textSecondary)
+                if let set = row.mystery {
+                    GuideHalfSheetHeader(
+                        title: facts.title,
+                        subtitle: decade == nil ? "Rosary completed" : "Single decade"
+                    ) {
+                        JourneyMysteryThumb(set: set, kind: row.kind)
                     }
+                } else {
+                    GuideHalfSheetHeader(
+                        title: facts.title,
+                        subtitle: decade == nil ? "Rosary completed" : "Single decade"
+                    )
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
 
                 VStack(spacing: 0) {
                     ForEach(Array(facts.facts.enumerated()), id: \.offset) { index, fact in
@@ -4467,12 +4463,7 @@ private struct JourneyPrayerDetailSheet: View {
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .padding(.horizontal, AppTheme.gutter)
-            .padding(.top, AppTheme.Space.xxl)
-            .padding(.bottom, AppTheme.Space.xl)
         }
-        .background(palette.bg)
     }
 }
 
@@ -4484,18 +4475,12 @@ private struct JourneyDayDetailSheet: View {
     let entries: [JourneyDayEntry]
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
+        GuideHalfSheetChrome {
             VStack(alignment: .leading, spacing: AppTheme.Space.xl) {
-                VStack(alignment: .leading, spacing: AppTheme.Space.sm) {
-                    Text(date.formatted(.dateTime.weekday(.wide).day().month(.wide).year()))
-                        .font(AppTheme.TypeRole.headingPrimary)
-                        .foregroundStyle(palette.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityAddTraits(.isHeader)
-                    Text(summary)
-                        .font(AppTheme.TypeRole.caption)
-                        .foregroundStyle(palette.textSecondary)
-                }
+                GuideHalfSheetHeader(
+                    title: date.formatted(.dateTime.weekday(.wide).day().month(.wide).year()),
+                    subtitle: summary
+                )
 
                 if entries.isEmpty {
                     Text("No prayer recorded on this day.")
@@ -4512,12 +4497,7 @@ private struct JourneyDayDetailSheet: View {
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .padding(.horizontal, AppTheme.gutter)
-            .padding(.top, AppTheme.Space.xxl)
-            .padding(.bottom, AppTheme.Space.xl)
         }
-        .background(palette.bg)
     }
 
     private var summary: String {

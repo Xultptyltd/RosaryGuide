@@ -794,6 +794,82 @@ extension View {
     }
 }
 
+/// Scroll, gutters and page background shared by History's prayer/decade and day
+/// half-sheets, and by any sheet that should match them.
+struct GuideHalfSheetChrome<Content: View>: View {
+    @Environment(\.palette) private var palette
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            content()
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding(.horizontal, AppTheme.gutter)
+                .padding(.top, AppTheme.Space.xxl)
+                .padding(.bottom, AppTheme.Space.xl)
+        }
+        .background(palette.bg)
+    }
+}
+
+extension View {
+    /// Presentation used by History's decade/rosary and day sheets: medium or large,
+    /// a drag indicator, and the standard container corner radius. There is no Close
+    /// or Done — swipe down to dismiss.
+    func guideHalfSheetPresentation() -> some View {
+        self
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(AppTheme.containerRadius)
+    }
+}
+
+/// Stacked header on History half-sheets: an optional icon above a headingPrimary
+/// title and caption subtitle.
+struct GuideHalfSheetHeader<Icon: View>: View {
+    @Environment(\.palette) private var palette
+    let title: String
+    var subtitle: String? = nil
+    var hasIcon: Bool = true
+    @ViewBuilder var icon: () -> Icon
+
+    var body: some View {
+        Group {
+            if hasIcon {
+                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                    icon()
+                    titleAndSubtitle(spacing: AppTheme.Space.xs)
+                }
+            } else {
+                titleAndSubtitle(spacing: AppTheme.Space.sm)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func titleAndSubtitle(spacing: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: spacing) {
+            Text(title)
+                .font(AppTheme.TypeRole.headingPrimary)
+                .foregroundStyle(palette.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+            if let subtitle, !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(AppTheme.TypeRole.caption)
+                    .foregroundStyle(palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+extension GuideHalfSheetHeader where Icon == EmptyView {
+    init(title: String, subtitle: String? = nil) {
+        self.init(title: title, subtitle: subtitle, hasIcon: false, icon: { EmptyView() })
+    }
+}
+
 /// Custom sticky-header blur with the app's page-colour tint.
 struct GuideChromeBar: ViewModifier {
     @Environment(\.displayScale) private var displayScale
