@@ -216,6 +216,7 @@ struct PrayIntentionSheet: View {
 /// do not also select the radio (same overlay pattern as CurrentIntentionHero).
 struct IntentionRadioRow: View {
     @Environment(\.palette) private var palette
+    @Environment(OfferStore.self) private var offer: OfferStore?
 
     let item: OfferIntention
     let hideText: Bool
@@ -232,8 +233,13 @@ struct IntentionRadioRow: View {
     var readOnly = false
     /// Adds the app's standard "Archive" item to the row menu.
     var allowsArchive = false
+    /// Prayer-flow picker: trailing info button and a long-press menu, instead of the ellipsis.
+    var usesNoteInfoAndContextMenu = false
+    /// Dims selection only, so the info button and long-press menu stay available at the limit.
+    var selectionDisabled = false
 
     @State private var showingDeleteAlert = false
+    @State private var showingNoteSheet = false
 
     private var hidesText: Bool {
         IntentionPrivacy.hides(item, hidden: hideText)
@@ -248,71 +254,129 @@ struct IntentionRadioRow: View {
         item.papalMonthLabel ?? item.categoryTitle
     }
 
+    private var showsNoteInfoButton: Bool {
+        usesNoteInfoAndContextMenu && IntentionNote.showsInfoButton(for: item, hideText: hideText)
+    }
+
     var body: some View {
         Button(action: onChoose) {
-            HStack(alignment: .center, spacing: AppTheme.Space.md) {
-                if !readOnly {
+            card
+        }
+        .buttonStyle(.plain)
+        .disabled(readOnly || selectionDisabled)
+        .accessibilityAddTraits(selected && !readOnly ? .isSelected : [])
+        .accessibilityLabel(hidesText ? IntentionPrivacy.maskedText : item.title)
+        .overlay(alignment: .trailing) {
+            trailingControl
+        }
+        .contextMenu {
+            if usesNoteInfoAndContextMenu, !readOnly {
+                contextMenuItems
+            }
+        } preview: {
+            if usesNoteInfoAndContextMenu, !readOnly {
+                card
+                    .padding(AppTheme.Space.sm)
+            }
+        }
+        .sheet(isPresented: $showingNoteSheet) {
+            IntentionNoteSheet(intention: item, hideText: hideText)
+                .environment(\.palette, palette)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .alert("Delete intention?", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive, action: onDelete)
+        } message: {
+            Text("This will delete “\(displayTitle)” from your intentions.")
+        }
+    }
+
+    private var card: some View {
+        HStack(alignment: .center, spacing: AppTheme.Space.md) {
+            if !readOnly {
                 Image(systemName: selected ? (multiSelect ? "checkmark.circle.fill" : "circle.inset.filled") : "circle")
                     .guideSymbol(size: 22, weight: .regular)
                     .foregroundStyle(selected ? palette.accentText : palette.ink.opacity(0.45))
                     .frame(width: 24, height: 24)
                     .guideSymbolSwap(value: selected)
-                }
+            }
 
-                IntentionIconView(
-                    accent: item.accent,
-                    emoji: item.displayEmoji,
-                    size: 40,
-                    usesPopePortrait: item.isPapal
-                )
+            IntentionIconView(
+                accent: item.accent,
+                emoji: item.displayEmoji,
+                size: 40,
+                usesPopePortrait: item.isPapal
+            )
 
-                VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                    HStack(spacing: AppTheme.Space.sm) {
-                        WordSafeText(displayTitle, font: AppTheme.TypeRole.bodyUIFont(weight: .semibold), color: palette.ink)
-                            .multilineTextAlignment(.leading)
-                        if item.isPinned, !multiSelect {
-                            Image(systemName: "pin.fill")
-                                .font(AppTheme.TypeRole.caption)
-                                .foregroundStyle(palette.accentText)
-                        }
-                    }
-                    if let subtitle, !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(AppTheme.TypeRole.label)
-                            .foregroundStyle(palette.dim)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(2)
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                HStack(spacing: AppTheme.Space.sm) {
+                    WordSafeText(displayTitle, font: AppTheme.TypeRole.bodyUIFont(weight: .semibold), color: palette.ink)
+                        .multilineTextAlignment(.leading)
+                    if item.isPinned, !multiSelect {
+                        Image(systemName: "pin.fill")
+                            .font(AppTheme.TypeRole.caption)
+                            .foregroundStyle(palette.accentText)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(AppTheme.TypeRole.label)
+                        .foregroundStyle(palette.dim)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Reserve trailing space so the overlaid overflow sits clear of the title.
-                if !readOnly {
+            // Reserve trailing space so an overlaid control sits clear of the title.
+            if showsTrailingControl {
                 Color.clear
                     .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
                     .accessibilityHidden(true)
-                }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 14)
-            .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
-            .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
-                    .strokeBorder(
-                        selected ? palette.accent.opacity(0.45) : Color.clear,
-                        lineWidth: 1
-                    )
-            )
-            .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
         }
-        .buttonStyle(.plain)
-        .disabled(readOnly)
-        .accessibilityAddTraits(selected && !readOnly ? .isSelected : [])
-        .accessibilityLabel(hidesText ? IntentionPrivacy.maskedText : item.title)
-        .overlay(alignment: .trailing) {
-            // Outside the row Button so menu taps do not also select the radio.
-            if !readOnly {
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: .leading)
+        .guideSurface(in: RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous)
+                .strokeBorder(
+                    selected ? palette.accent.opacity(0.45) : Color.clear,
+                    lineWidth: 1
+                )
+        )
+        .contentShape(RoundedRectangle(cornerRadius: AppTheme.containerRadius, style: .continuous))
+    }
+
+    private var showsTrailingControl: Bool {
+        if readOnly { return false }
+        if usesNoteInfoAndContextMenu { return showsNoteInfoButton }
+        return true
+    }
+
+    @ViewBuilder
+    private var trailingControl: some View {
+        // Outside the row Button so the control does not also select the radio.
+        if usesNoteInfoAndContextMenu {
+            if showsNoteInfoButton {
+                Button {
+                    showingNoteSheet = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .guideSymbol(size: 20, weight: .regular)
+                        .foregroundStyle(palette.accentText)
+                        .frame(width: AppTheme.Accessibility.minHitTarget, height: AppTheme.Accessibility.minHitTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .environment(\.isEnabled, true)
+                .accessibilityLabel("Read note for \(displayTitle)")
+                .padding(.trailing, 14)
+            }
+        } else if !readOnly {
             OverflowMenuButton(
                 isPinned: item.isPinned,
                 intentionID: allowsArchive ? item.id : nil,
@@ -323,13 +387,110 @@ struct IntentionRadioRow: View {
                 onDelete: { showingDeleteAlert = true }
             )
             .padding(.trailing, 14)
+        }
+    }
+
+    @ViewBuilder
+    private var contextMenuItems: some View {
+        Button {
+            onEdit()
+        } label: {
+            Label("Edit", systemImage: "pencil")
+        }
+        if allowsPin {
+            Button {
+                onPin()
+            } label: {
+                Label(item.isPinned ? "Unpin" : "Pin", systemImage: item.isPinned ? "pin.slash" : "pin.fill")
             }
         }
-        .alert("Delete intention?", isPresented: $showingDeleteAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive, action: onDelete)
-        } message: {
-            Text("This will delete “\(displayTitle)” from your intentions.")
+        if allowsArchive, let offer, !offer.isArchived(item.id) {
+            Button {
+                if Motion.isReduceMotionEnabled {
+                    offer.archive(id: item.id)
+                } else {
+                    withAnimation(.easeInOut(duration: 0.25)) { offer.archive(id: item.id) }
+                }
+            } label: {
+                Label("Archive", systemImage: "archivebox")
+            }
+        }
+        Button(role: .destructive) {
+            showingDeleteAlert = true
+        } label: {
+            Label("Delete", systemImage: "trash")
+        }
+    }
+}
+
+/// Half-height sheet that shows an intention's attached note in the prayer-flow picker.
+struct IntentionNoteSheet: View {
+    @Environment(\.palette) private var palette
+    @Environment(\.dismiss) private var dismiss
+
+    let intention: OfferIntention
+    var hideText: Bool = false
+
+    private var displayTitle: String {
+        IntentionPrivacy.displayTitle(intention, hidden: hideText)
+    }
+
+    private var subtitle: String? {
+        intention.papalMonthLabel ?? intention.categoryTitle
+    }
+
+    private var noteText: String? {
+        IntentionNote.displayNote(for: intention, hideText: hideText)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.md) {
+                    HStack(alignment: .center, spacing: AppTheme.Space.md) {
+                        IntentionIconView(
+                            accent: intention.accent,
+                            emoji: intention.displayEmoji,
+                            size: 40,
+                            usesPopePortrait: intention.isPapal
+                        )
+                        VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                            WordSafeText(displayTitle, font: AppTheme.TypeRole.bodyUIFont(weight: .semibold), color: palette.ink)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if let subtitle, !subtitle.isEmpty {
+                                Text(subtitle)
+                                    .font(AppTheme.TypeRole.label)
+                                    .foregroundStyle(palette.dim)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    if let noteText {
+                        Text(noteText)
+                            .font(AppTheme.TypeRole.serifBody)
+                            .foregroundStyle(palette.ink)
+                            .lineSpacing(6)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(.horizontal, AppTheme.gutter)
+                .padding(.top, AppTheme.Space.sm)
+                .padding(.bottom, AppTheme.Space.xl)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .background(palette.background)
+            .navigationTitle("Note")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                        .font(AppTheme.TypeRole.bodySmall(weight: .medium))
+                        .foregroundStyle(palette.accentText)
+                }
+            }
         }
     }
 }
@@ -378,9 +539,10 @@ struct IntentionMultiSelectList: View {
                         offer.delete(id: item.id)
                     },
                     multiSelect: true,
-                    allowsArchive: true
+                    allowsArchive: true,
+                    usesNoteInfoAndContextMenu: true,
+                    selectionDisabled: atLimit && !selected
                 )
-                .disabled(atLimit && !selected)
                 .opacity(atLimit && !selected ? 0.4 : 1)
             }
 

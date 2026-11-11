@@ -20,6 +20,26 @@ enum IntentionPrivacy {
     }
 }
 
+/// Visibility of an intention's attached note on the prayer-flow picker.
+enum IntentionNote {
+    /// Trimmed note stored on the intention, or `nil` when empty.
+    static func trimmedNote(on intention: OfferIntention) -> String? {
+        let note = intention.note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return (note?.isEmpty == false) ? note : nil
+    }
+
+    /// The note the prayer-flow picker may show. Hidden personal intentions yield `nil`.
+    static func displayNote(for intention: OfferIntention, hideText: Bool) -> String? {
+        if IntentionPrivacy.hides(intention, hidden: hideText) { return nil }
+        return trimmedNote(on: intention)
+    }
+
+    /// Trailing info button: a readable, non-empty note, and intention text is not hidden.
+    static func showsInfoButton(for intention: OfferIntention, hideText: Bool) -> Bool {
+        displayNote(for: intention, hideText: hideText) != nil
+    }
+}
+
 enum IntentionAccent: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case skyBlue
     case mintGreen

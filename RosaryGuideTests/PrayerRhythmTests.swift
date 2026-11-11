@@ -627,6 +627,40 @@ final class PapalIntentionTests: XCTestCase {
     }
 }
 
+final class IntentionNoteTests: XCTestCase {
+    func testInfoButtonRequiresANonEmptyNote() {
+        let withNote = OfferIntention(title: "For Mum’s recovery", note: "Please keep her in your prayers.")
+        let blank = OfferIntention(title: "For our parish", note: "   ")
+        let none = OfferIntention(title: "For our parish")
+
+        XCTAssertTrue(IntentionNote.showsInfoButton(for: withNote, hideText: false))
+        XCTAssertEqual(IntentionNote.displayNote(for: withNote, hideText: false), "Please keep her in your prayers.")
+        XCTAssertFalse(IntentionNote.showsInfoButton(for: blank, hideText: false))
+        XCTAssertFalse(IntentionNote.showsInfoButton(for: none, hideText: false))
+        XCTAssertNil(IntentionNote.displayNote(for: blank, hideText: false))
+        XCTAssertNil(IntentionNote.displayNote(for: none, hideText: false))
+    }
+
+    func testHiddenPersonalIntentionHidesTheNoteAndInfoButton() {
+        let personal = OfferIntention(title: "For Mum’s recovery", note: "Please keep her in your prayers.", category: .personal)
+        XCTAssertFalse(IntentionNote.showsInfoButton(for: personal, hideText: true))
+        XCTAssertNil(IntentionNote.displayNote(for: personal, hideText: true))
+        // The title stays readable when the privacy toggle is off.
+        XCTAssertTrue(IntentionNote.showsInfoButton(for: personal, hideText: false))
+    }
+
+    func testHiddenPapalIntentionStillShowsItsNote() {
+        let papal = OfferIntention(
+            title: "For the proper use of wealth",
+            note: "That we may use goods justly.",
+            sourceId: "pope-2026-11",
+            category: .world
+        )
+        XCTAssertTrue(IntentionNote.showsInfoButton(for: papal, hideText: true))
+        XCTAssertEqual(IntentionNote.displayNote(for: papal, hideText: true), "That we may use goods justly.")
+    }
+}
+
 /// Sundays are always Glorious, so the repeating Sunday reminder can name the set.
 final class ReminderCopyTests: XCTestCase {
     func testSundayCopyNamesGlorious() {
