@@ -921,3 +921,94 @@ final class GuideMarqueeTests: XCTestCase {
         XCTAssertEqual(GuideMarquee.travelDuration(distance: 10_000), GuideMarquee.maxDuration)
     }
 }
+
+
+final class RosaryPlateHeroFramingTests: XCTestCase {
+    /// iPhone 17 Pro Max rosary-flow art band: full width, bottom at 58% of the
+    /// screen minus the 104pt top inset.
+    private var phoneHero: CGSize {
+        let height = 932 * AppTheme.rosaryMysteryArtworkBottomFraction - AppTheme.rosaryMysteryArtworkTopInset
+        return CGSize(width: 430, height: height)
+    }
+
+    func testWideImageFitsToWidthSoBothSidesStayVisible() {
+        let image = CGSize(width: 1536, height: 1024)
+        let frame = phoneHero
+        XCTAssertTrue(ArtCatalog.shouldFitWidth(image: image, frame: frame))
+        let layout = ArtCatalog.plateHeroLayout(image: image, frame: frame)
+        XCTAssertTrue(layout.fitsWidth)
+        XCTAssertEqual(layout.scale, frame.width / image.width, accuracy: 0.0001)
+        XCTAssertEqual(layout.visible.minX, 0, accuracy: 0.0001)
+        XCTAssertEqual(layout.visible.maxX, image.width, accuracy: 0.0001)
+        XCTAssertEqual(layout.visible.minY, 0, accuracy: 0.0001)
+        XCTAssertEqual(layout.visible.height, image.height, accuracy: 0.0001)
+        XCTAssertEqual(layout.drawnHeight, image.height * layout.scale, accuracy: 0.0001)
+        XCTAssertEqual(layout.leftoverHeight, frame.height - layout.drawnHeight, accuracy: 0.0001)
+        XCTAssertGreaterThan(layout.leftoverHeight, 0)
+    }
+
+    func testTallImageKeepsCoverFill() {
+        let image = CGSize(width: 800, height: 1200)
+        let frame = phoneHero
+        XCTAssertFalse(ArtCatalog.shouldFitWidth(image: image, frame: frame))
+        let layout = ArtCatalog.plateHeroLayout(image: image, frame: frame, focus: UnitPoint(x: 0.5, y: 0.5))
+        XCTAssertFalse(layout.fitsWidth)
+        XCTAssertEqual(layout.leftoverHeight, 0, accuracy: 0.0001)
+        XCTAssertEqual(layout.drawnHeight, frame.height, accuracy: 0.0001)
+        // Fill covers the width; overflow is vertical.
+        XCTAssertEqual(layout.visible.minX, 0, accuracy: 0.0001)
+        XCTAssertEqual(layout.visible.width, image.width, accuracy: 0.0001)
+        XCTAssertLessThan(layout.visible.height, image.height)
+        XCTAssertGreaterThan(layout.visible.minY, 0)
+    }
+
+    func testMatchingAspectKeepsCoverFill() {
+        let frame = phoneHero
+        let image = CGSize(width: frame.width * 2, height: frame.height * 2)
+        XCTAssertFalse(ArtCatalog.shouldFitWidth(image: image, frame: frame))
+        let layout = ArtCatalog.plateHeroLayout(image: image, frame: frame)
+        XCTAssertFalse(layout.fitsWidth)
+        XCTAssertEqual(layout.leftoverHeight, 0, accuracy: 0.0001)
+        XCTAssertEqual(layout.visible.minX, 0, accuracy: 0.0001)
+        XCTAssertEqual(layout.visible.minY, 0, accuracy: 0.0001)
+        XCTAssertEqual(layout.visible.width, image.width, accuracy: 0.0001)
+        XCTAssertEqual(layout.visible.height, image.height, accuracy: 0.0001)
+    }
+
+    func testInvalidSizesDoNotFit() {
+        XCTAssertFalse(ArtCatalog.shouldFitWidth(image: .zero, frame: phoneHero))
+        XCTAssertFalse(ArtCatalog.shouldFitWidth(image: CGSize(width: 1536, height: 1024), frame: .zero))
+        let layout = ArtCatalog.plateHeroLayout(image: .zero, frame: phoneHero)
+        XCTAssertFalse(layout.fitsWidth)
+        XCTAssertEqual(layout.leftoverHeight, 0, accuracy: 0.0001)
+    }
+
+    func testAllBundledPlatesAreWideOnAPhoneHero() {
+        let frame = phoneHero
+        var counted = 0
+        var unexpected: [String] = []
+        for set in MysterySetKind.allCases {
+            for slug in ArtCatalog.plateSlugs(set: set) {
+                for scheme: ColorScheme in [.light, .dark] {
+                    let path = ArtCatalog.platePath(set: set, slug: slug, scheme: scheme, wide: true)
+                    guard let image = BundleRasterImage.load(directory: path.directory, name: path.name, ext: "jpg") else {
+                        unexpected.append("missing \(path.directory)/\(path.name)")
+                        continue
+                    }
+                    counted += 1
+                    let size = image.size
+                    XCTAssertEqual(size.width, 1536, accuracy: 0.5, "\(path.directory)/\(path.name)")
+                    XCTAssertEqual(size.height, 1024, accuracy: 0.5, "\(path.directory)/\(path.name)")
+                    let layout = ArtCatalog.plateHeroLayout(image: size, frame: frame)
+                    if !layout.fitsWidth {
+                        unexpected.append("\(path.directory)/\(path.name) \(Int(size.width))x\(Int(size.height))")
+                    }
+                    XCTAssertEqual(layout.visible.minX, 0, accuracy: 0.0001)
+                    XCTAssertEqual(layout.visible.width, size.width, accuracy: 0.0001)
+                }
+            }
+        }
+        XCTAssertEqual(counted, 40, "expected 20 mysteries in light and dark")
+        XCTAssertTrue(unexpected.isEmpty, "plates that would not width-fit: \(unexpected.joined(separator: ", "))")
+    }
+}
