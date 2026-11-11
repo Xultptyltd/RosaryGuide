@@ -931,7 +931,9 @@ struct HomeView: View {
             selection: mysterySetSelection,
             options: MysterySetKind.displayOrder
         ) { set in
-            set == assignment.pickerDotSet ? "\(set.shortName), today" : set.shortName
+            // Visible label is the set name, as in 1.589. Today's set is the
+            // weekday dot; VoiceOver uses the hint below, not this string.
+            set.shortName
         }
         .overlay {
             // Weekday dot only fits the equal-width segmented control.
