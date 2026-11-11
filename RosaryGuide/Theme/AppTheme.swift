@@ -120,19 +120,6 @@ enum AppTheme {
         static let eyebrowTracking: CGFloat = 2
         static let fruitTracking: CGFloat = 0.8
         static let resurrectionArtworkScale: CGFloat = 1.08
-        /// Soft edge used when a wide plate is width-fitted, matching the top chrome wash.
-        static let heroBleedHeight: CGFloat = AppTheme.Space.xxl * 2
-
-        /// Page-colour wash used by the rosary-flow hero chrome and width-fit bleed.
-        /// `fadingIn: false` is page colour at the top dissolving to clear; `true` is the reverse.
-        static func heroPageFadeStops(page: Color, scheme: ColorScheme, fadingIn: Bool) -> [Gradient.Stop] {
-            let opacities: [CGFloat] = scheme == .light
-                ? [0.94, 0.70, 0.28, 0.06, 0]
-                : [0.90, 0.64, 0.24, 0.05, 0]
-            let locations: [CGFloat] = [0, 0.38, 0.68, 0.88, 1]
-            let values = fadingIn ? Array(opacities.reversed()) : opacities
-            return zip(values, locations).map { .init(color: page.opacity($0), location: $1) }
-        }
     }
 
     static func grid(_ value: CGFloat, minimum: CGFloat = 4) -> CGFloat {
