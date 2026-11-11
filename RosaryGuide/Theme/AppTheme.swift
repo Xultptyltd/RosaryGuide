@@ -1731,6 +1731,8 @@ struct GuideChoiceControl<Selection: Hashable>: View {
     var title: String
     @Binding var selection: Selection
     var options: [Selection]
+    /// Spoken by VoiceOver when it should differ from the visible `label`.
+    var spokenLabel: ((Selection) -> String)? = nil
     var label: (Selection) -> String
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.palette) private var palette
@@ -1754,7 +1756,7 @@ struct GuideChoiceControl<Selection: Hashable>: View {
                             .background(selected ? palette.accent : palette.surface, in: Capsule())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(label(option))
+                    .accessibilityLabel(spokenLabel?(option) ?? label(option))
                     .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
                 }
             }
@@ -1763,7 +1765,9 @@ struct GuideChoiceControl<Selection: Hashable>: View {
         } else {
             Picker(title, selection: $selection) {
                 ForEach(options, id: \.self) { option in
-                    Text(label(option)).tag(option)
+                    Text(label(option))
+                        .tag(option)
+                        .accessibilityLabel(spokenLabel?(option) ?? label(option))
                 }
             }
             .guideSegmentedControl()
