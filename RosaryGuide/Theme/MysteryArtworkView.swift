@@ -459,7 +459,7 @@ struct GuideScrollActionButton: View {
                     if showScroll {
                         Image(systemName: "chevron.down")
                             .guideSymbol(size: 17, weight: .semibold)
-                            .foregroundStyle(palette.secondaryButtonText)
+                            .foregroundStyle(primary ? palette.primaryButtonText : palette.secondaryButtonText)
                             .transition(.identity)
                     } else {
                         Text(title)
@@ -474,7 +474,7 @@ struct GuideScrollActionButton: View {
                 .frame(maxWidth: showScroll ? side : .infinity)
                 .frame(width: showScroll ? side : nil, height: showScroll ? side : nil)
                 .frame(minHeight: showScroll ? side : AppTheme.Component.pillHeight)
-                .background(Capsule().fill(primary && !showScroll ? palette.primaryButtonFill : palette.secondaryButtonFill))
+                .background(Capsule().fill(primary ? palette.primaryButtonFill : palette.secondaryButtonFill))
                 .contentShape(Capsule())
             }
             .buttonStyle(.plain)
