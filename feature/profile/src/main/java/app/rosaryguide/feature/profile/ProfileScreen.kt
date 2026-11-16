@@ -317,7 +317,7 @@ private fun ProfileHome(
                 )
                 if (index != preview.lastIndex) {
                     HorizontalDivider(
-                        modifier = Modifier.padding(start = 52.dp),
+                        modifier = Modifier.padding(start = 56.dp),
                         color = palette.strokeSubtle,
                     )
                 }

@@ -96,7 +96,7 @@ fun AllIntentionsScreen(
                         onDelete = { onDelete(item) },
                     )
                     if (index != intentions.lastIndex) {
-                        HorizontalDivider(modifier = Modifier.padding(start = 52.dp), color = palette.strokeSubtle)
+                        HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = palette.strokeSubtle)
                     }
                 }
             }
