@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +37,7 @@ import app.rosaryguide.core.data.session.IntentionAccent
 import app.rosaryguide.core.data.session.IntentionCategory
 import app.rosaryguide.core.data.session.IntentionPrivacy
 import app.rosaryguide.core.data.session.OfferIntention
+import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
@@ -66,7 +69,7 @@ fun AllIntentionsScreen(
             .padding(horizontal = RosarySpace.gutter)
             .padding(top = RosarySpace.md, bottom = RosarySpace.xl),
     ) {
-        ProfileBackRow(title = "Intentions", onBack = onBack)
+        GuideDetailTopBar(title = "Intentions", onBack = onBack)
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.weight(1f))
             if (intentions.isNotEmpty()) {
@@ -112,6 +115,7 @@ fun AllIntentionsScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun IntentionEditorScreen(
     existing: OfferIntention?,
@@ -135,7 +139,7 @@ fun IntentionEditorScreen(
             .padding(horizontal = RosarySpace.gutter)
             .padding(top = RosarySpace.md, bottom = RosarySpace.xl),
     ) {
-        ProfileBackRow(title = if (existing == null) "Add intention" else "Edit intention", onBack = onBack)
+        GuideDetailTopBar(title = if (existing == null) "Add intention" else "Edit intention", onBack = onBack)
         Spacer(Modifier.height(RosarySpace.md))
         GuideSectionLabel(text = "Intention")
         OutlinedTextField(
@@ -205,7 +209,11 @@ fun IntentionEditorScreen(
         }
         Spacer(Modifier.height(RosarySpace.lg))
         GuideSectionLabel(text = "Icon")
-        Row(horizontalArrangement = Arrangement.spacedBy(RosarySpace.sm), modifier = Modifier.fillMaxWidth()) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(RosarySpace.sm),
+            verticalArrangement = Arrangement.spacedBy(RosarySpace.sm),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             INTENTION_EMOJIS.forEach { item ->
                 val selected = emoji == item
                 Box(
@@ -269,7 +277,7 @@ fun IntentionDetailScreen(
             .padding(horizontal = RosarySpace.gutter)
             .padding(top = RosarySpace.md, bottom = RosarySpace.xl),
     ) {
-        ProfileBackRow(title = "Intention", onBack = onBack)
+        GuideDetailTopBar(title = "Intention", onBack = onBack)
         Spacer(Modifier.height(RosarySpace.lg))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -335,7 +343,7 @@ fun ArchivedIntentionsScreen(
             .padding(horizontal = RosarySpace.gutter)
             .padding(top = RosarySpace.md, bottom = RosarySpace.xl),
     ) {
-        ProfileBackRow(title = "Archived", onBack = onBack)
+        GuideDetailTopBar(title = "Archived", onBack = onBack)
         if (intentions.isEmpty()) {
             Spacer(Modifier.height(RosarySpace.lg))
             Text("No archived intentions.", style = RosaryType.supportingLabel, color = palette.textSecondary)

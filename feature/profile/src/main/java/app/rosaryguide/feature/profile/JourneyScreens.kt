@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -30,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.data.journey.JourneyDayDetail
@@ -39,6 +41,8 @@ import app.rosaryguide.core.data.journey.JourneyMilestones
 import app.rosaryguide.core.data.journey.PrayerRhythm
 import app.rosaryguide.core.data.session.OfferedIntentions
 import app.rosaryguide.core.data.session.SessionStore
+import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
+import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
@@ -86,7 +90,7 @@ fun JourneyScreen(
             .padding(horizontal = RosarySpace.gutter)
             .padding(top = RosarySpace.md),
     ) {
-        ProfileBackRow(title = "Journey", onBack = onBack)
+        GuideDetailTopBar(title = "Journey", onBack = onBack)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -183,7 +187,12 @@ fun MilestoneRow(item: JourneyMilestones.Item, modifier: Modifier = Modifier) {
             .padding(RosarySpace.lg),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(if (item.completed) "✦" else "◇", style = RosaryType.headingSecondary, color = if (item.completed) palette.accent else palette.textSecondary)
+            Icon(
+                painter = painterResource(milestoneGlyph(item.symbol)),
+                contentDescription = null,
+                tint = if (item.completed) palette.accent else palette.textSecondary,
+                modifier = Modifier.size(22.dp),
+            )
             Spacer(Modifier.width(RosarySpace.md))
             Column(modifier = Modifier.weight(1f)) {
                 Text(item.title, style = RosaryType.body, color = palette.ink)
@@ -391,4 +400,16 @@ private fun HistoryDayEntryRow(entry: JourneyDayEntry) {
             Text(JourneyDuration.text(it), style = RosaryType.caption, color = palette.ink)
         }
     }
+}
+
+
+private fun milestoneGlyph(symbol: String): Int = when (symbol) {
+    "circle.dotted" -> R.drawable.ic_milestone_circle_dotted
+    "calendar" -> R.drawable.ic_milestone_calendar
+    "leaf" -> R.drawable.ic_milestone_leaf
+    "sparkles" -> R.drawable.ic_milestone_sparkles
+    "person.2" -> R.drawable.ic_milestone_people
+    "building" -> R.drawable.ic_milestone_building
+    "cross" -> R.drawable.ic_milestone_cross
+    else -> R.drawable.ic_milestone_circle_dotted
 }

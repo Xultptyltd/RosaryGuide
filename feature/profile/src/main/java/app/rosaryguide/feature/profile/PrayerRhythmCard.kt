@@ -22,10 +22,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.data.journey.PrayerRhythm
+import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
@@ -65,9 +67,13 @@ fun PrayerRhythmCard(
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = if (rhythm.isMilestone) "🔥" else "📅",
-                    style = RosaryType.headingSecondary,
+                Icon(
+                    painter = painterResource(
+                        if (rhythm.isMilestone) R.drawable.ic_rhythm_flame else R.drawable.ic_rhythm_calendar,
+                    ),
+                    contentDescription = null,
+                    tint = if (rhythm.isMilestone) palette.accent else palette.ink,
+                    modifier = Modifier.size(22.dp),
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,

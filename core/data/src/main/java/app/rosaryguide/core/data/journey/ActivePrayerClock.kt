@@ -86,6 +86,7 @@ object JourneyDuration {
 @Serializable
 data class CompletedDecadeSession(
     val id: String,
+    val sessionId: String? = null,
     val decade: Int,
     val mysterySet: String? = null,
     val startedAtEpochMs: Long? = null,

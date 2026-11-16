@@ -4,14 +4,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import app.rosaryguide.android.ui.DebugLaunch
 import app.rosaryguide.android.ui.RosaryGuideApp
+import app.rosaryguide.core.data.prefs.SettingsStore
 import app.rosaryguide.core.designsystem.theme.RosaryGuideTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject lateinit var settingsStore: SettingsStore
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -22,7 +29,9 @@ class MainActivity : ComponentActivity() {
         splash.setKeepOnScreenCondition { keepSplash }
         enableEdgeToEdge()
         setContent {
-            RosaryGuideTheme {
+            val settings by settingsStore.value.collectAsState()
+            val systemDark = isSystemInDarkTheme()
+            RosaryGuideTheme(darkTheme = settings.appearance.isDark(systemDark)) {
                 RosaryGuideApp(
                     debugLaunch = debug,
                     onFirstFrame = { keepSplash = false },

@@ -189,6 +189,51 @@ class SessionStore(
         publishSession(current.copy(completedDecades = current.completedDecades + decade))
     }
 
+    /**
+     * Records a standalone decade when its closing prayer is left, matching iOS
+     * `recordCompletedDecadeIfNeeded`. A later full-Rosary complete removes these
+     * partials via [removePartialDecades].
+     */
+    fun recordCompletedDecadeIfNeeded(decade: Int, nowEpochMs: Long = clock()) {
+        val current = _session.value ?: return
+        if (decade !in 1..5 || decade in current.completedDecades) return
+        val duration = (current.activeDuration).coerceAtLeast(0.0)
+        publishSession(current.copy(completedDecades = current.completedDecades + decade, updatedAtEpochMs = nowEpochMs))
+        recordStandaloneDecade(
+            CompletedDecadeSession(
+                id = java.util.UUID.randomUUID().toString(),
+                sessionId = current.id,
+                decade = decade,
+                mysterySet = current.mysterySet.name,
+                startedAtEpochMs = current.startedAtEpochMs,
+                completedAtEpochMs = nowEpochMs,
+                duration = duration,
+                intentionTitles = current.allIntentionTitles,
+            ),
+        )
+    }
+
+    fun removePartialDecades(sessionId: String) {
+        publishJourney(
+            _journey.value.copy(
+                completedDecades = _journey.value.completedDecades.filter { it.sessionId != sessionId },
+            ),
+        )
+    }
+
+
+    fun clearHistoryAndData() {
+        clockState = app.rosaryguide.core.data.journey.ActivePrayerClock()
+        publishSession(null)
+        _completedSessions.value = emptyList()
+        _completedDayKeys.value = emptySet()
+        prefs.saveCompletedSessions(emptyList())
+        prefs.saveCompletedDayKeys(emptySet())
+        publishJourney(app.rosaryguide.core.data.journey.JourneyState(hideIntentionText = _journey.value.hideIntentionText))
+        _intentions.value = emptyList()
+        prefs.saveIntentions(emptyList())
+    }
+
     fun complete(nowEpochMs: Long = clock()): CompletedPrayerSession? {
         val current = _session.value ?: return null
         val (nextClock, credited) = clockState.take(nowEpochMs, keepRunning = false)
@@ -219,6 +264,7 @@ class SessionStore(
         prefs.saveCompletedSessions(_completedSessions.value)
         prefs.saveCompletedDayKeys(_completedDayKeys.value)
         creditDayTime(day, durationSeconds)
+        removePartialDecades(record.sessionId ?: current.id)
         publishAwards()
         publishSession(null)
         return record

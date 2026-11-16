@@ -23,6 +23,13 @@ object SettingsKeys {
     val SessionJourney = stringPreferencesKey("session.journeyState")
     val NextCompletionQuoteIndex = intPreferencesKey("rosary.completion.nextQuoteIndex")
     val LastCompletionQuoteId = stringPreferencesKey("rosary.completion.lastQuoteId")
+    val DailyReminder = booleanPreferencesKey("settings.notifications.dailyReminder")
+    val DailyReminderMinutes = intPreferencesKey("settings.notifications.dailyReminderMinutes")
+    val FeastAlerts = booleanPreferencesKey("settings.notifications.feastAlerts")
+    val FeastAlertMinutes = intPreferencesKey("settings.notifications.feastAlertMinutes")
+    val AppIcon = stringPreferencesKey("settings.appIcon")
+    val RosaryConfig = stringPreferencesKey("settings.rosaryConfig")
+    val ReviewLastPromptedVersion = stringPreferencesKey("review.lastPromptedVersion")
 }
 
 

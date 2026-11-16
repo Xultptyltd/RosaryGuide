@@ -19,7 +19,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "0.4.0-m4"
+        versionName = "0.6.0-m6"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -66,6 +66,8 @@ dependencies {
     implementation(project(":feature:settings"))
     implementation(project(":sync"))
     implementation(project(":notifications"))
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.play.review.ktx)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)

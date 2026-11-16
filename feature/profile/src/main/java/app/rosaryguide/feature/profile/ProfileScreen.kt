@@ -1,5 +1,6 @@
 package app.rosaryguide.feature.profile
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -34,6 +36,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.data.calendar.WeekStart
 import app.rosaryguide.core.data.journey.JourneyDayDetail
@@ -42,6 +47,7 @@ import app.rosaryguide.core.data.journey.PopeMonthIntention
 import app.rosaryguide.core.data.session.IntentionPrivacy
 import app.rosaryguide.core.data.session.OfferIntention
 import app.rosaryguide.core.data.session.SessionStore
+import app.rosaryguide.core.designsystem.component.GuideOutlineButton
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
@@ -54,7 +60,7 @@ import java.time.ZoneId
 import java.util.Locale
 
 enum class ProfileDestination {
-    Root, AllIntentions, Editor, Detail, Archived, Journey,
+    Root, AllIntentions, Editor, Detail, Archived, Journey, Papal,
 }
 
 data class ProfileLaunch(
@@ -66,6 +72,7 @@ data class ProfileLaunch(
     val historyDay: LocalDate? = null,
     val sampleIntentions: Boolean = false,
     val sampleHistory: Boolean = false,
+    val openPapal: Boolean = false,
 )
 
 @Composable
@@ -106,6 +113,7 @@ fun ProfileScreen(
                 launch.openAllIntentions -> ProfileDestination.AllIntentions
                 launch.openArchived -> ProfileDestination.Archived
                 launch.openJourney -> ProfileDestination.Journey
+                launch.openPapal -> ProfileDestination.Papal
                 else -> ProfileDestination.Root
             },
         )
@@ -138,6 +146,7 @@ fun ProfileScreen(
             pope = pope,
             isSignedIn = isSignedIn,
             onOpenSettings = onOpenSettings,
+            onOpenPapal = { destination = ProfileDestination.Papal },
             onOpenRhythm = { journeyHistoryTab = false; destination = ProfileDestination.Journey },
             onOpenJourney = { journeyHistoryTab = false; destination = ProfileDestination.Journey },
             onAdd = { editing = null; destination = ProfileDestination.Editor },
@@ -206,6 +215,26 @@ fun ProfileScreen(
             onDelete = { sessionStore.removeIntention(it.id) },
             modifier = modifier,
         )
+        ProfileDestination.Papal -> {
+            val item = pope
+            if (item == null) destination = ProfileDestination.Root
+            else PapalIntentionScreen(
+                pope = item,
+                alreadyAdded = active.any { it.sourceId == "pope-${item.yearMonth}" },
+                onBack = { destination = ProfileDestination.Root },
+                onAdd = {
+                    sessionStore.addIntention(
+                        title = item.title,
+                        note = item.note,
+                        category = app.rosaryguide.core.data.session.IntentionCategory.World,
+                        accent = app.rosaryguide.core.data.session.IntentionAccent.Purple,
+                        emoji = "✝️",
+                        sourceId = "pope-${item.yearMonth}",
+                    )
+                },
+                modifier = modifier,
+            )
+        }
         ProfileDestination.Journey -> JourneyScreen(
             sessionStore = sessionStore,
             today = today,
@@ -230,6 +259,7 @@ private fun ProfileHome(
     pope: PopeMonthIntention?,
     isSignedIn: Boolean,
     onOpenSettings: () -> Unit,
+    onOpenPapal: () -> Unit = {},
     onOpenRhythm: () -> Unit,
     onOpenJourney: () -> Unit,
     onAdd: () -> Unit,
@@ -287,14 +317,14 @@ private fun ProfileHome(
                 }
             }
             Spacer(Modifier.height(RosarySpace.md))
-            GuideSecondaryButton(title = "View all intentions", onClick = onOpenAll)
+            GuideOutlineButton(title = "View all intentions", onClick = onOpenAll)
             Spacer(Modifier.height(RosarySpace.sm))
             GuidePrimaryButton(title = "Add intention", onClick = onAdd)
         }
         if (pope != null) {
             Spacer(Modifier.height(RosarySpace.lg))
             GuideSectionLabel(text = "Holy Father’s intention")
-            HolyFatherCard(pope)
+            Box(Modifier.clickable(onClick = onOpenPapal)) { HolyFatherCard(pope) }
         }
         if (milestones.preview.isNotEmpty() || milestones.earnedCount > 0 || rhythm.hasEverPrayed) {
             Spacer(Modifier.height(RosarySpace.lg))
@@ -364,15 +394,14 @@ fun IntentionsEmptyCard(onAdd: () -> Unit, modifier: Modifier = Modifier) {
             .padding(RosarySpace.lg),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
+        Image(
+            painter = painterResource(app.rosaryguide.core.designsystem.R.drawable.praying_hands_empty),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
             modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(palette.accent),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("🙏", style = RosaryType.headingSecondary)
-        }
+                .requiredWidth(LocalConfiguration.current.screenWidthDp.dp)
+                .height(280.dp),
+        )
         Spacer(Modifier.height(RosarySpace.md))
         Text("What’s on your heart?", style = RosaryType.headingSecondary, color = palette.ink)
         Spacer(Modifier.height(RosarySpace.xs))

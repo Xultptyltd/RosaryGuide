@@ -14,6 +14,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -38,6 +43,8 @@ import app.rosaryguide.core.data.session.SessionStore
 import app.rosaryguide.core.designsystem.component.GuideMarqueeText
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
+import app.rosaryguide.core.designsystem.component.GuideTertiaryButton
+import app.rosaryguide.feature.settings.CustomiseRosaryScreen
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
@@ -67,6 +74,9 @@ fun PrayScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     hapticEnabled: Boolean = true,
+    settingsConfig: RosaryConfig = launch.config,
+    onRosaryConfigChange: (RosaryConfig) -> Unit = {},
+    onReadyForReview: () -> Unit = {},
 ) {
     val palette = LocalThemePalette.current
     val context = LocalContext.current
@@ -85,6 +95,7 @@ fun PrayScreen(
     var selectedTitles by remember { mutableStateOf(listOf<String>()) }
     var completionQuote by remember { mutableStateOf<CompletionQuote?>(null) }
     var lastAdvanceAt by remember { mutableStateOf(0L) }
+    var showCustomise by remember { mutableStateOf(false) }
 
     LaunchedEffect(launch) {
         haptics.prepare(hapticEnabled)
@@ -136,6 +147,9 @@ fun PrayScreen(
     }
 
     fun goTo(target: Int, from: RosaryStep?, viaCompleteDecade: Boolean = false) {
+        if (from?.closesDecade == true) {
+            from.decadeNumber?.let { sessionStore.recordCompletedDecadeIfNeeded(it) }
+        }
         val clamped = target.coerceIn(0, steps.lastIndex)
         val dest = steps[clamped]
         index = clamped
@@ -168,12 +182,14 @@ fun PrayScreen(
             return
         }
         if (current?.kind == RosaryStepKind.Completion) {
+            if (current.closesDecade) current.decadeNumber?.let { sessionStore.recordCompletedDecadeIfNeeded(it) }
             if (completionQuote == null) completionQuote = QuoteCatalog.freshCompletionQuote(quotePreferences)
             showingCompletion = true
             sessionStore.complete()
             return
         }
         if (current?.isLastPrayer == true) {
+            if (current.closesDecade) current.decadeNumber?.let { sessionStore.recordCompletedDecadeIfNeeded(it) }
             if (completionQuote == null) completionQuote = QuoteCatalog.freshCompletionQuote(quotePreferences)
             showingCompletion = true
             sessionStore.complete()
@@ -199,7 +215,7 @@ fun PrayScreen(
         val decade = current.decadeNumber ?: return
         val closing = steps.indexOfFirst { it.closesDecade && it.decadeNumber == decade }
         if (closing < 0) return
-        goTo(closing + 1, current, viaCompleteDecade = true)
+        goTo(closing, current, viaCompleteDecade = true)
     }
 
     fun toggleIntention(intention: OfferIntention) {
@@ -249,6 +265,7 @@ fun PrayScreen(
                     sessionStore.discard()
                     onClose()
                 },
+                onReadyForReview = onReadyForReview,
             )
             return@Box
         }
@@ -269,17 +286,14 @@ fun PrayScreen(
                         .padding(RosarySpace.sm),
                 )
                 Spacer(Modifier.weight(1f))
-                Text(
-                    text = if (config.showBeads) "Hide beads" else "Show beads",
-                    style = RosaryType.caption,
-                    color = palette.accentText,
-                    modifier = Modifier
-                        .clickable {
-                            config = config.copy(showBeads = !config.showBeads)
-                            sessionStore.updateRosaryConfig(config)
-                        }
-                        .padding(RosarySpace.sm),
-                )
+                IconButton(onClick = { showCustomise = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Customise rosary",
+                        tint = palette.ink,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
             }
             GuideMarqueeText(
                 text = header,
@@ -380,9 +394,21 @@ fun PrayScreen(
                         .padding(horizontal = RosarySpace.gutter)
                         .padding(bottom = RosarySpace.md),
                 ) {
-                    GuideSecondaryButton(title = "Complete decade", onClick = { completeDecade() })
+                    GuideTertiaryButton(title = "Complete decade", onClick = { completeDecade() })
                 }
             }
+        }
+        if (showCustomise) {
+            CustomiseRosaryScreen(
+                config = settingsConfig.copy(showBeads = config.showBeads),
+                onConfigChange = { next ->
+                    onRosaryConfigChange(next)
+                    config = config.copy(showBeads = next.showBeads)
+                    sessionStore.updateRosaryConfig(config)
+                },
+                onBack = { showCustomise = false },
+                modifier = Modifier.fillMaxSize(),
+            )
         }
     }
 }

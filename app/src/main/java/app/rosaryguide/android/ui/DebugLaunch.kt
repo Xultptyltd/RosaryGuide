@@ -36,6 +36,13 @@ data class DebugLaunch(
     val historyDay: LocalDate? = null,
     val sampleIntentions: Boolean = false,
     val sampleHistory: Boolean = false,
+    val openPapal: Boolean = false,
+    val openSettings: Boolean = false,
+    val openCustomiseRosary: Boolean = false,
+    val openNotifications: Boolean = false,
+    val openAppIcon: Boolean = false,
+    val openLegal: Boolean = false,
+    val openAcknowledgements: Boolean = false,
 ) {
     companion object {
         fun from(intent: Intent?): DebugLaunch {
@@ -81,6 +88,13 @@ data class DebugLaunch(
                 historyDay = date("history_day"),
                 sampleIntentions = flag("sample_intentions"),
                 sampleHistory = flag("sample_history") || flag("sample_rhythm"),
+                openPapal = flag("open_papal"),
+                openSettings = flag("open_settings"),
+                openCustomiseRosary = flag("open_customise_rosary"),
+                openNotifications = flag("open_notifications"),
+                openAppIcon = flag("open_app_icon"),
+                openLegal = flag("open_legal") || flag("open_terms"),
+                openAcknowledgements = flag("open_acknowledgements"),
             )
         }
     }

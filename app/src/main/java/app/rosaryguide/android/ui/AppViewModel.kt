@@ -3,10 +3,16 @@ package app.rosaryguide.android.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.rosaryguide.core.data.auth.StubAuthStore
+import app.rosaryguide.android.icons.AppIconController
+import app.rosaryguide.android.review.AppReviewPrompter
 import app.rosaryguide.core.data.prefs.AppPreferences
 import app.rosaryguide.core.data.catalog.QuotePreferences
 import app.rosaryguide.core.data.prefs.SessionFlags
+import app.rosaryguide.core.data.prefs.SettingsStore
 import app.rosaryguide.core.data.session.SessionStore
+import app.rosaryguide.core.model.AppIconOption
+import app.rosaryguide.notifications.ReminderScheduler
+import android.app.Activity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,6 +26,10 @@ class AppViewModel @Inject constructor(
     val auth: StubAuthStore,
     val sessionStore: SessionStore,
     val quotePreferences: QuotePreferences,
+    val settingsStore: SettingsStore,
+    private val reminderScheduler: ReminderScheduler,
+    private val appIconController: AppIconController,
+    private val reviewPrompter: AppReviewPrompter,
 ) : ViewModel() {
     val flags: StateFlow<SessionFlags> = preferences.flags.stateIn(
         viewModelScope,
@@ -49,5 +59,30 @@ class AppViewModel @Inject constructor(
             preferences.setAuth("guest", null)
             preferences.setOnboardingCompleted(true)
         }
+    }
+
+    fun rescheduleReminders() {
+        reminderScheduler.reschedule(settingsStore.current)
+    }
+
+    fun setAppIcon(option: AppIconOption) {
+        settingsStore.setAppIcon(option)
+        appIconController.apply(option)
+    }
+
+    fun clearAppHistory() {
+        sessionStore.clearHistoryAndData()
+        settingsStore.resetLocalPreferences()
+        reminderScheduler.reschedule(settingsStore.current)
+    }
+
+    fun signOut() {
+        auth.signOut()
+        viewModelScope.launch { preferences.setAuth("guest", null) }
+    }
+
+    fun maybeRequestReview(activity: Activity, versionName: String) {
+        val count = sessionStore.completedSessions.value.size
+        reviewPrompter.maybePrompt(activity, count, versionName)
     }
 }

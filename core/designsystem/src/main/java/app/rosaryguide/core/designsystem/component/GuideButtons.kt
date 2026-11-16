@@ -140,6 +140,31 @@ fun GuideGoogleButton(
 }
 
 @Composable
+fun GuideOutlineButton(
+    title: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) {
+    val palette = LocalThemePalette.current
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(RosarySpace.pillHeight),
+        shape = RoundedCornerShape(RosarySpace.containerRadius),
+        border = BorderStroke(1.dp, palette.strokeRegular),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            contentColor = palette.ink,
+        ),
+    ) {
+        Text(text = title, style = RosaryType.body)
+    }
+}
+
+@Composable
 fun GuideSectionDivider(modifier: Modifier = Modifier) {
     val palette = LocalThemePalette.current
     Row(

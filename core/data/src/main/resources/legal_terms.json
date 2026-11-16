@@ -1,0 +1,477 @@
+[
+  {
+    "id": 0,
+    "kind": "h1",
+    "text": "Terms of Use"
+  },
+  {
+    "id": 1,
+    "kind": "p",
+    "text": "These Terms of Use are a binding agreement between you and Xult. Please read them carefully, together with our [Privacy Policy](https://xult.ltd/privacy/)."
+  },
+  {
+    "id": 2,
+    "kind": "p",
+    "text": "Effective date: September 5, 2026 · Last updated: November 4, 2026"
+  },
+  {
+    "id": 3,
+    "kind": "p",
+    "text": "These Terms of Use (the “**Terms**”) constitute a legally binding agreement between you and Xult Pty Ltd (ACN 668 030 591) (“**Xult**,” “**we**,” “**us**,” or “**our**”), an Australian proprietary company registered in Western Australia, governing your access to and use of xult.ltd, xult.com, rosaryguide.app, the Rosary Guide iOS application, and related websites, content, and support channels (collectively, the “**Services**”)."
+  },
+  {
+    "id": 4,
+    "kind": "p",
+    "text": "By accessing or using the Services, you agree to these Terms and to the [Privacy Policy](https://xult.ltd/privacy/), which is incorporated by reference. If you do not agree, you may not use the Services. If you are under the age of majority where you live, you may use the Services only with the consent of a parent or legal guardian who agrees to these Terms on your behalf."
+  },
+  {
+    "id": 5,
+    "kind": "p",
+    "text": "**IMPORTANT:** Section 16 describes how disputes are handled. Nothing in these Terms limits non-waivable rights under the Australian Consumer Law or other mandatory consumer-protection laws."
+  },
+  {
+    "id": 6,
+    "kind": "h2",
+    "text": "1. The Services"
+  },
+  {
+    "id": 7,
+    "kind": "p",
+    "text": "Xult publishes software for personal prayer. **Rosary Guide** provides a bead-by-bead guide to the Holy Rosary, including mysteries associated with a given day, related Scripture and art, and related features described on the product pages. The Services are licensed, not sold, and are offered for your personal, non-commercial use unless we agree otherwise in a signed writing."
+  },
+  {
+    "id": 8,
+    "kind": "p",
+    "text": "We may modify, suspend, or discontinue all or any part of the Services at any time, with or without notice. We will use reasonable efforts not to remove core prayer texts without cause, but we do not warrant continuous availability, uninterrupted operation, or that any particular feature will remain available."
+  },
+  {
+    "id": 9,
+    "kind": "h2",
+    "text": "2. Eligibility and accounts"
+  },
+  {
+    "id": 10,
+    "kind": "p",
+    "text": "You represent that you have the legal capacity to enter into these Terms. If you use the Services on behalf of an organization, you represent that you have authority to bind that organization, in which case “you” includes that organization."
+  },
+  {
+    "id": 11,
+    "kind": "p",
+    "text": "The current web experience does not require an Xult account. Rosary Guide on iOS may be used as a guest without an account; guest prayer data stays on the device. You may optionally sign in with Sign in with Apple or Sign in with Google (through Google Firebase Authentication) to sync intentions, prayer progress and history, and preferences across your devices, as described in the [Privacy Policy](https://xult.ltd/privacy/). If you create or use a signed-in account, you are responsible for all activity under your credentials, for maintaining their confidentiality, and for notifying us promptly of unauthorized use. We may refuse, suspend, or terminate access where we reasonably believe these Terms have been violated or that continued access presents a legal, security, or operational risk. You may delete a signed-in Rosary Guide account in Settings as described in the [Privacy Policy](https://xult.ltd/privacy/)."
+  },
+  {
+    "id": 12,
+    "kind": "p",
+    "text": "The Services are not directed to children under thirteen (13) as an account product. Parents and guardians may use Rosary Guide with their families for personal devotion. See the [Privacy Policy](https://xult.ltd/privacy/) for how we treat children’s information."
+  },
+  {
+    "id": 13,
+    "kind": "h2",
+    "text": "3. License"
+  },
+  {
+    "id": 14,
+    "kind": "p",
+    "text": "Subject to your compliance with these Terms, Xult grants you a limited, revocable, non-exclusive, non-transferable, non-sublicensable license to access and use the Services for your personal, non-commercial purposes, and, for the iOS application, only on an Apple-branded device that you own or control, as permitted by the App Store Terms of Service and any applicable Usage Rules."
+  },
+  {
+    "id": 15,
+    "kind": "p",
+    "text": "Except as expressly permitted, you may not copy, modify, distribute, sell, lease, reverse engineer, decompile, or disassemble the Services or any substantial portion of their design, except to the extent such restriction is prohibited by applicable law. All rights not expressly granted are reserved by Xult and its licensors."
+  },
+  {
+    "id": 23,
+    "kind": "h3",
+    "text": "User content"
+  },
+  {
+    "id": 24,
+    "kind": "p",
+    "text": "If you save prayer intentions, notes, preferences, feedback, or other materials through the Services (“**User Content**”), you retain ownership of that User Content. You grant Xult a worldwide, non-exclusive, royalty-free licence to host, store, transmit, sync, back up, and display User Content solely as needed to operate and provide the Services you use (including cross-device sync for a signed-in Rosary Guide account). You represent that you have the rights needed to submit User Content and that it does not violate these Terms or applicable law. You are solely responsible for User Content you submit. We do not endorse User Content and are not responsible for its accuracy, lawfulness, or fitness for any purpose. We may remove or disable User Content that we reasonably believe violates these Terms, law, or the rights of others, or that poses a security or operational risk."
+  },
+  {
+    "id": 16,
+    "kind": "h2",
+    "text": "4. Spiritual, pastoral, and informational content"
+  },
+  {
+    "id": 17,
+    "kind": "p",
+    "text": "Prayers, mystery titles, feast designations, Scripture citations, sacred art, and similar materials are provided as a convenience for personal devotion. They are not a substitute for the teaching, sacraments, liturgy, or pastoral care of the Church, nor for the advice of a priest, deacon, spiritual director, or other qualified counselor."
+  },
+  {
+    "id": 18,
+    "kind": "p",
+    "text": "Mystery selections follow a traditional weekly cycle and, where implemented, certain Marian feasts. Calendars, local custom, and particular law vary. We do not warrant that any selection will match every diocese, rite, religious community, or personal custom. Traditional prayers may appear in commonly used English or Latin forms. Scripture may appear in short cited lines. If you believe a text is in error, notify us through the [Contact form](https://xult.ltd/contact/)."
+  },
+  {
+    "id": 19,
+    "kind": "p",
+    "text": "The Services are not medical, psychological, or mental-health services and are not intended to diagnose, treat, or prevent any condition. If you are in distress, seek appropriate professional or emergency help."
+  },
+  {
+    "id": 20,
+    "kind": "p",
+    "text": "Statements on our marketing pages about accessibility, design, or similar goals describe our intentions and are not warranties. Nothing in the Services constitutes a representation that the Services meet any particular accessibility certification or legal standard in every respect."
+  },
+  {
+    "id": 21,
+    "kind": "h2",
+    "text": "5. App Store and purchases"
+  },
+  {
+    "id": 22,
+    "kind": "p",
+    "text": "If you download Rosary Guide from the Apple App Store, Apple’s terms, including the Licensed Application End User License Agreement and the App Store Terms of Service, also apply. If those terms conflict with these Terms on a point required by Apple, Apple’s required terms control for that point as to the iOS application."
+  },
+  {
+    "id": 97,
+    "kind": "p",
+    "text": "If we offer paid features, they will be billed by Apple when purchased through the App Store. Prices, taxes, auto-renewal, free trials, and cancellation for App Store purchases are governed by Apple’s terms and your Apple ID settings. Refunds for App Store purchases are handled by Apple. We will assist where we reasonably can if you use the [Contact form](https://xult.ltd/contact/), but we cannot override Apple’s refund determinations."
+  },
+  {
+    "id": 98,
+    "kind": "p",
+    "text": "Unless a separate writing states otherwise, all sales are final except as required by Apple or by mandatory consumer law. We may change prices for future periods with notice as required by Apple or applicable law. A purchase grants a license to use the applicable feature, not ownership of the software."
+  },
+  {
+    "id": 25,
+    "kind": "h2",
+    "text": "6. Additional terms required by Apple"
+  },
+  {
+    "id": 26,
+    "kind": "p",
+    "text": "The following terms apply to the Rosary Guide application obtained from the Apple App Store (the “**App**”). “**Apple**” means Apple Inc. and, as applicable, its subsidiaries."
+  },
+  {
+    "id": 27,
+    "kind": "li",
+    "text": "1. These Terms are concluded between you and Xult only, and not with Apple. Apple is not responsible for the App or its content."
+  },
+  {
+    "id": 28,
+    "kind": "li",
+    "text": "2. The App is licensed to you on a limited, non-exclusive, non-transferable, non-sublicensable basis, solely for use in connection with the Services for your private, personal, non-commercial use, on Apple-branded products that you own or control, and as permitted by the Usage Rules set forth in the App Store Terms of Service (including as the App may be accessed and used by other accounts associated with you via Family Sharing or volume purchasing, if applicable)."
+  },
+  {
+    "id": 29,
+    "kind": "li",
+    "text": "3. Apple has no obligation to furnish any maintenance or support services with respect to the App. Xult is solely responsible for providing any support, as described at [xult.ltd/support](https://xult.ltd/support/)."
+  },
+  {
+    "id": 30,
+    "kind": "li",
+    "text": "4. To the extent any warranty applies and is not effectively disclaimed, if the App fails to conform to that warranty, you may notify Apple, and Apple may refund the purchase price (if any) of the App. To the maximum extent permitted by law, Apple has no other warranty obligation with respect to the App, and any other claims, losses, liabilities, damages, costs, or expenses attributable to any failure to conform to any warranty are Xult’s responsibility."
+  },
+  {
+    "id": 31,
+    "kind": "li",
+    "text": "5. Xult, not Apple, is responsible for addressing any claims by you or a third party relating to the App or your possession and use of the App, including product-liability claims, any claim that the App fails to conform to applicable legal or regulatory requirements, and claims arising under consumer-protection, privacy, or similar legislation."
+  },
+  {
+    "id": 32,
+    "kind": "li",
+    "text": "6. In the event of a third-party claim that the App or your possession and use of the App infringes that third party’s intellectual-property rights, Xult, not Apple, is responsible for the investigation, defense, settlement, and discharge of that claim, to the extent required by these Terms."
+  },
+  {
+    "id": 33,
+    "kind": "li",
+    "text": "7. You represent and warrant that you are not located in a country subject to a U.S. Government embargo or designated by the U.S. Government as a “terrorist supporting” country, and that you are not listed on any U.S. Government list of prohibited or restricted parties."
+  },
+  {
+    "id": 34,
+    "kind": "li",
+    "text": "8. You will comply with applicable third-party terms when using the App."
+  },
+  {
+    "id": 35,
+    "kind": "li",
+    "text": "9. Apple and Apple’s subsidiaries are third-party beneficiaries of these Terms as they relate to the App. Upon your acceptance of these Terms, Apple will have the right (and will be deemed to have accepted the right) to enforce these Terms against you as a third-party beneficiary."
+  },
+  {
+    "id": 36,
+    "kind": "h2",
+    "text": "7. Acceptable use"
+  },
+  {
+    "id": 37,
+    "kind": "p",
+    "text": "You agree that you will not, and will not permit others to:"
+  },
+  {
+    "id": 38,
+    "kind": "li",
+    "text": "• use the Services in violation of any applicable law, regulation, or third-party right;"
+  },
+  {
+    "id": 39,
+    "kind": "li",
+    "text": "• interfere with, disrupt, or attempt to gain unauthorized access to the Services, accounts, or related systems;"
+  },
+  {
+    "id": 40,
+    "kind": "li",
+    "text": "• probe, scan, or test the vulnerability of the Services, except with our prior written consent;"
+  },
+  {
+    "id": 41,
+    "kind": "li",
+    "text": "• introduce malware, or impose an unreasonable load on our infrastructure;"
+  },
+  {
+    "id": 42,
+    "kind": "li",
+    "text": "• scrape, crawl, harvest, or use automated means to extract content or data from the Services, except as allowed by a written robots protocol we publish or by mandatory law;"
+  },
+  {
+    "id": 43,
+    "kind": "li",
+    "text": "• copy, redistribute, publicly display, or create derivative works from the Services or their unique interface, except as permitted by these Terms or mandatory law;"
+  },
+  {
+    "id": 44,
+    "kind": "li",
+    "text": "• remove or alter proprietary notices;"
+  },
+  {
+    "id": 45,
+    "kind": "li",
+    "text": "• use the Services to send spam, phishing, or unlawful content;"
+  },
+  {
+    "id": 46,
+    "kind": "li",
+    "text": "• impersonate Xult or any other person or entity, or suggest that we endorse any product, service, or statement that we have not endorsed; or"
+  },
+  {
+    "id": 47,
+    "kind": "li",
+    "text": "• use the Services for any commercial purpose without our prior written consent."
+  },
+  {
+    "id": 48,
+    "kind": "p",
+    "text": "A violation of this section is grounds for immediate suspension or termination of access."
+  },
+  {
+    "id": 49,
+    "kind": "h2",
+    "text": "8. Intellectual property"
+  },
+  {
+    "id": 50,
+    "kind": "p",
+    "text": "The Services, including the Xult name and marks, site and application design, software, compilation, and original text and graphics, are owned by Xult or its licensors and are protected by copyright, trademark, and other laws. Traditional prayers and Scripture are not claimed as Xult’s original literary works. Where a translation, recording, or artwork is used under license or fair-use or similar doctrines, rights remain with the applicable rights holder."
+  },
+  {
+    "id": 51,
+    "kind": "p",
+    "text": "You may not use the Xult name, mark, or trade dress in a manner that is likely to cause confusion as to source, sponsorship, or affiliation. Feedback you send does not transfer ownership of your pre-existing intellectual property, but you grant the license in Section 9."
+  },
+  {
+    "id": 52,
+    "kind": "h2",
+    "text": "9. Communications and feedback"
+  },
+  {
+    "id": 53,
+    "kind": "p",
+    "text": "If you send ideas, suggestions, or other feedback, you grant Xult a perpetual, irrevocable, worldwide, royalty-free, transferable, and sublicensable license to use, reproduce, modify, and otherwise exploit that feedback for any purpose, without compensation or attribution, to the extent permitted by law. You represent that you have the right to grant that license and that the feedback does not infringe third-party rights."
+  },
+  {
+    "id": 54,
+    "kind": "p",
+    "text": "You are responsible for the content of messages you send to us. You represent that they are accurate to the best of your knowledge and that you have the right to send them. We may retain correspondence as described in the Privacy Policy."
+  },
+  {
+    "id": 55,
+    "kind": "h2",
+    "text": "10. Third-party services and links"
+  },
+  {
+    "id": 56,
+    "kind": "p",
+    "text": "The Services may link to or rely on third-party services, including Apple (App Store and Sign in with Apple), Google (Sign in with Google, Google Fonts, and Google Firebase for Authentication, Cloud Firestore, and App Check used by Rosary Guide), hosting and content-delivery providers (including Netlify for our websites), and form processors (including Formsubmit for the website contact form). We do not control those services and are not responsible for their content, availability, security, or practices. Your use of third-party services is subject to their terms and privacy policies. We are not a party to your agreement with Apple, Google, or any other platform or provider. Outages, account actions, or data handling by those providers are outside Xult’s control to the fullest extent permitted by law."
+  },
+  {
+    "id": 57,
+    "kind": "h2",
+    "text": "11. Copyright complaints"
+  },
+  {
+    "id": 58,
+    "kind": "p",
+    "text": "If you believe that material available through the Services infringes your copyright, send a notice that complies with the Digital Millennium Copyright Act, 17 U.S.C. § 512, through the [Contact form](https://xult.ltd/contact/), including: (a) a physical or electronic signature of a person authorized to act for the copyright owner; (b) identification of the copyrighted work; (c) identification of the material claimed to be infringing and information reasonably sufficient to permit us to locate it; (d) your contact information; (e) a statement that you have a good-faith belief that the use is not authorized by the owner, its agent, or the law; and (f) a statement, under penalty of perjury, that the information in the notice is accurate and that you are authorized to act for the owner."
+  },
+  {
+    "id": 59,
+    "kind": "p",
+    "text": "We may remove or disable access to material in appropriate circumstances and may terminate repeat infringers. If you believe material was removed by mistake, you may send a counter-notification meeting the statutory requirements to the same address."
+  },
+  {
+    "id": 60,
+    "kind": "h2",
+    "text": "12. Disclaimers"
+  },
+  {
+    "id": 61,
+    "kind": "p",
+    "text": "THE SERVICES AND ALL CONTENT ARE PROVIDED “AS IS” AND “AS AVAILABLE.” TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, XULT AND ITS OFFICERS, DIRECTORS, EMPLOYEES, CONTRACTORS, LICENSORS, AND SUPPLIERS (THE “**XULT PARTIES**”) DISCLAIM ALL WARRANTIES, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, QUIET ENJOYMENT, AND NON-INFRINGEMENT, AND ANY WARRANTIES ARISING FROM COURSE OF DEALING OR USAGE OF TRADE."
+  },
+  {
+    "id": 62,
+    "kind": "p",
+    "text": "THE XULT PARTIES DO NOT WARRANT THAT THE SERVICES WILL BE UNINTERRUPTED, SECURE, OR ERROR-FREE; THAT DEFECTS WILL BE CORRECTED; THAT MYSTERY SELECTIONS, FEAST DAYS, OR TEXTS WILL BE COMPLETE, CURRENT, OR CONSISTENT WITH EVERY LOCAL CUSTOM OR CALENDAR; OR THAT THE SERVICES WILL MEET YOUR REQUIREMENTS. YOU USE THE SERVICES AT YOUR OWN RISK."
+  },
+  {
+    "id": 63,
+    "kind": "p",
+    "text": "SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OF CERTAIN WARRANTIES. IN THOSE JURISDICTIONS, THE FOREGOING EXCLUSIONS APPLY TO THE MAXIMUM EXTENT PERMITTED."
+  },
+  {
+    "id": 64,
+    "kind": "h2",
+    "text": "13. Limitation of liability"
+  },
+  {
+    "id": 65,
+    "kind": "p",
+    "text": "TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE XULT PARTIES WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF PROFITS, REVENUE, DATA, GOODWILL, OR BUSINESS INTERRUPTION, ARISING OUT OF OR RELATED TO THE SERVICES OR THESE TERMS, WHETHER BASED IN CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, OR ANY OTHER THEORY, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES."
+  },
+  {
+    "id": 66,
+    "kind": "p",
+    "text": "TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE XULT PARTIES’ TOTAL LIABILITY FOR ALL CLAIMS ARISING OUT OF OR RELATED TO THE SERVICES OR THESE TERMS WILL NOT EXCEED THE GREATER OF (A) THE AMOUNTS YOU PAID TO XULT FOR THE SERVICES IN THE TWELVE (12) MONTHS BEFORE THE CLAIM OR (B) ONE HUNDRED U.S. DOLLARS (US $100). IF YOU HAVE PAID NOTHING TO XULT IN THAT PERIOD, YOUR SOLE AND EXCLUSIVE REMEDY IS TO STOP USING THE SERVICES."
+  },
+  {
+    "id": 67,
+    "kind": "p",
+    "text": "THE FOREGOING LIMITATIONS DO NOT APPLY TO LIABILITY THAT CANNOT BE LIMITED UNDER APPLICABLE LAW, INCLUDING LIABILITY FOR DEATH OR PERSONAL INJURY CAUSED BY NEGLIGENCE, OR FOR FRAUD OR FRAUDULENT MISREPRESENTATION, IN JURISDICTIONS WHERE SUCH LIMITATIONS ARE PROHIBITED. THEY ALSO DO NOT LIMIT ANY NON-WAIVABLE RIGHTS YOU MAY HAVE AS A CONSUMER IN YOUR COUNTRY OF RESIDENCE."
+  },
+  {
+    "id": 68,
+    "kind": "h2",
+    "text": "14. Indemnification"
+  },
+  {
+    "id": 69,
+    "kind": "p",
+    "text": "You will defend, indemnify, and hold harmless the Xult Parties from and against any claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys’ fees) arising out of or related to: (a) your use of the Services in violation of these Terms or applicable law; (b) content or information you submit to us; or (c) your infringement or misappropriation of a third party’s rights. We will use reasonable efforts to notify you of an indemnified claim using contact information you have provided. This obligation does not apply to the extent a claim is caused by the Xult Parties’ willful misconduct or gross negligence."
+  },
+  {
+    "id": 70,
+    "kind": "h2",
+    "text": "15. Termination"
+  },
+  {
+    "id": 71,
+    "kind": "p",
+    "text": "You may stop using the Services at any time. We may suspend or terminate access immediately if you materially breach these Terms, if we are required to do so by law, or if we discontinue the Services. Upon termination, the license in Section 3 ends. Sections that by their nature should survive (including 4, 6, 8–18) will survive."
+  },
+  {
+    "id": 72,
+    "kind": "h2",
+    "text": "16. Dispute resolution"
+  },
+  {
+    "id": 73,
+    "kind": "p",
+    "text": "Please read this section carefully."
+  },
+  {
+    "id": 74,
+    "kind": "p",
+    "text": "**Informal resolution.** Before filing a claim, you and Xult agree to attempt in good faith to resolve the dispute informally. Use the [Contact form](https://xult.ltd/contact/), choose General, and include “Dispute” in the message with a description of the claim and a contact email address. If the dispute is not resolved within thirty (30) days after we receive a complete notice, either party may commence proceedings in a court of competent jurisdiction as set out below."
+  },
+  {
+    "id": 75,
+    "kind": "p",
+    "text": "**Courts.** Subject to the consumer-law carve-out below, the courts of Western Australia, Australia, have non-exclusive jurisdiction over disputes arising out of or relating to these Terms or the Services. You and Xult submit to that jurisdiction. You may also bring a claim in any court of competent jurisdiction in your place of residence where mandatory law requires or permits it (including small-claims or consumer tribunals)."
+  },
+  {
+    "id": 76,
+    "kind": "p",
+    "text": "**Australian Consumer Law and other mandatory rights.** Nothing in these Terms excludes, restricts, or modifies any right or remedy you have under the Australian Consumer Law (Schedule 2 to the *Competition and Consumer Act 2010* (Cth)) or any other applicable mandatory consumer-protection law that cannot be excluded by contract. Where our liability can be limited under those laws, it is limited to the maximum extent permitted (for example, resupply of services or payment of the cost of resupply)."
+  },
+  {
+    "id": 77,
+    "kind": "p",
+    "text": "**Class and representative actions.** To the maximum extent permitted by applicable law, disputes must be brought in an individual capacity and not as a plaintiff or class member in any purported class, collective, consolidated, or representative proceeding. This paragraph does not limit any non-waivable right to bring or participate in a proceeding that mandatory law preserves."
+  },
+  {
+    "id": 80,
+    "kind": "h2",
+    "text": "17. Governing law"
+  },
+  {
+    "id": 81,
+    "kind": "p",
+    "text": "These Terms are governed by the laws of Western Australia and the Commonwealth of Australia, without regard to conflict-of-laws rules that would apply another jurisdiction’s laws. Mandatory consumer-protection laws of your country or state of residence (including the Australian Consumer Law) remain unaffected and prevail to the extent of any inconsistency with these Terms."
+  },
+  {
+    "id": 82,
+    "kind": "h2",
+    "text": "18. General"
+  },
+  {
+    "id": 83,
+    "kind": "p",
+    "text": "**Entire agreement.** These Terms and the Privacy Policy are the entire agreement between you and Xult regarding the Services and supersede prior or contemporaneous agreements on that subject. Additional terms may apply to a specific feature if we present them to you; those terms control for that feature if they conflict with these Terms."
+  },
+  {
+    "id": 84,
+    "kind": "p",
+    "text": "**Changes.** We may revise these Terms from time to time. The “Last updated” date will change when we do. Material changes will be posted on this page and, where appropriate, noticed in the application or by email if we have your address. Except where applicable law requires a different method of acceptance, continued use after the effective date constitutes acceptance. If you do not agree, stop using the Services. The version in effect when we first received actual notice of a dispute will apply to that dispute."
+  },
+  {
+    "id": 85,
+    "kind": "p",
+    "text": "**Assignment.** You may not assign or transfer these Terms without our prior written consent. We may assign these Terms in connection with a merger, acquisition, corporate reorganization, or sale of assets, or by operation of law."
+  },
+  {
+    "id": 86,
+    "kind": "p",
+    "text": "**Severability and waiver.** If any provision is held unenforceable, it will be modified to the minimum extent necessary to make it enforceable, or if modification is not possible, severed, and the remaining provisions will remain in effect. A failure to enforce a provision is not a waiver."
+  },
+  {
+    "id": 87,
+    "kind": "p",
+    "text": "**Force majeure.** We are not liable for delay or failure caused by events beyond our reasonable control, including acts of God, labor disputes, failures of third-party networks or platforms (including Apple), or governmental action."
+  },
+  {
+    "id": 88,
+    "kind": "p",
+    "text": "**Export.** You will not use, export, or re-export the Services except as authorized by United States law and the laws of the jurisdiction in which the Services were obtained."
+  },
+  {
+    "id": 89,
+    "kind": "p",
+    "text": "**Notices.** We may provide notices by posting to the Services or by email to an address you have provided. Notices to Xult must be sent through the [Contact form](https://xult.ltd/contact/)."
+  },
+  {
+    "id": 90,
+    "kind": "p",
+    "text": "**No third-party beneficiaries.** Except for Apple and Apple’s subsidiaries as stated in Section 6, and except for the Xult Parties with respect to the disclaimer, limitation, and indemnity provisions, these Terms create no third-party beneficiary rights."
+  },
+  {
+    "id": 91,
+    "kind": "p",
+    "text": "**Interpretation.** Headings are for convenience only. “Including” means “including without limitation.” These Terms do not create a partnership, joint venture, or employment relationship."
+  },
+  {
+    "id": 92,
+    "kind": "p",
+    "text": "**Government rights.** If you are a U.S. government end user, the Services are “commercial computer software” and “commercial computer software documentation” as those terms are used in 48 C.F.R. § 12.212, and are provided with only those rights customarily provided to the public under these Terms."
+  },
+  {
+    "id": 93,
+    "kind": "h2",
+    "text": "19. Contact"
+  },
+  {
+    "id": 94,
+    "kind": "p",
+    "text": "Xult [Support](https://xult.ltd/contact/)"
+  }
+]

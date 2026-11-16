@@ -35,6 +35,7 @@ dependencies {
 
     implementation(project(":core:model"))
     implementation(project(":core:data"))
+    implementation(project(":feature:settings"))
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))

@@ -68,6 +68,10 @@ import app.rosaryguide.core.data.session.OfferIntention
 import app.rosaryguide.core.data.calendar.MysteryCalendar
 import app.rosaryguide.core.model.RosaryConfig
 import app.rosaryguide.feature.today.TodayScreen
+import app.rosaryguide.feature.settings.SettingsPage
+import app.rosaryguide.feature.settings.SettingsScreen
+import androidx.compose.ui.platform.LocalContext
+import android.app.Activity
 import java.time.LocalDate
 import kotlinx.serialization.Serializable
 
@@ -107,14 +111,47 @@ fun RosaryGuideApp(
         val prayedDayKeys by viewModel.sessionStore.completedDayKeys.collectAsStateWithLifecycle()
         val auth by viewModel.auth.state.collectAsStateWithLifecycle()
         val today = debugLaunch.clockDate ?: LocalDate.now()
+        val settings by viewModel.settingsStore.value.collectAsStateWithLifecycle()
+        val intentions by viewModel.sessionStore.intentions.collectAsStateWithLifecycle()
+        val completed by viewModel.sessionStore.completedSessions.collectAsStateWithLifecycle()
+        val context = LocalContext.current
+        val versionName = remember {
+            runCatching {
+                context.packageManager.getPackageInfo(context.packageName, 0).versionName
+            }.getOrNull().orEmpty().ifBlank { "0.6.0-m6" }
+        }
         var showSplash by remember { mutableStateOf(!debugLaunch.skipSplash) }
         var showSignIn by remember { mutableStateOf(debugLaunch.forceSignIn) }
         var prayLaunch by remember { mutableStateOf<PrayLaunch?>(null) }
+        var showSettings by remember {
+            mutableStateOf(
+                debugLaunch.openSettings ||
+                    debugLaunch.openCustomiseRosary ||
+                    debugLaunch.openNotifications ||
+                    debugLaunch.openAppIcon ||
+                    debugLaunch.openLegal ||
+                    debugLaunch.openAcknowledgements,
+            )
+        }
+        var settingsPage by remember {
+            mutableStateOf(
+                when {
+                    debugLaunch.openCustomiseRosary -> SettingsPage.CustomiseRosary
+                    debugLaunch.openNotifications -> SettingsPage.Notifications
+                    debugLaunch.openAppIcon -> SettingsPage.AppIcon
+                    debugLaunch.openLegal -> SettingsPage.Terms
+                    debugLaunch.openAcknowledgements -> SettingsPage.Acknowledgements
+                    else -> SettingsPage.Root
+                },
+            )
+        }
+        var showWelcomeReplay by remember { mutableStateOf(false) }
 
         fun openPray(set: MysterySetKind, fromDebug: Boolean = false) {
-            val config = RosaryConfig.default.copy(
-                showBeads = if (debugLaunch.hideBeads) false else RosaryConfig.default.showBeads,
-                saintMichael = debugLaunch.includeSaintMichael || RosaryConfig.default.saintMichael,
+            val base = viewModel.settingsStore.current.rosaryConfig
+            val config = base.copy(
+                showBeads = if (debugLaunch.hideBeads) false else base.showBeads,
+                saintMichael = debugLaunch.includeSaintMichael || base.saintMichael,
             )
             prayLaunch = PrayLaunch(
                 mysterySet = set,
@@ -161,11 +198,16 @@ fun RosaryGuideApp(
                             mysterySet = set,
                             seedIntentions = listOf(intention.id to intention.title),
                             forceFresh = true,
+                            config = viewModel.settingsStore.current.rosaryConfig,
                         )
                     },
                     sessionStore = viewModel.sessionStore,
                     isSignedIn = auth.isSignedIn,
                     onSignIn = { showSignIn = true },
+                    onOpenSettings = {
+                        settingsPage = SettingsPage.Root
+                        showSettings = true
+                    },
                 )
             } else if (showSignIn || debugLaunch.forceSignIn) {
                 SignInScreen(
@@ -197,6 +239,62 @@ fun RosaryGuideApp(
                     quotePreferences = viewModel.quotePreferences,
                     onClose = { prayLaunch = null },
                     modifier = Modifier.fillMaxSize(),
+                    settingsConfig = settings.rosaryConfig,
+                    onRosaryConfigChange = { viewModel.settingsStore.setRosaryConfig(it) },
+                    onReadyForReview = {
+                        val activity = context as? Activity
+                        if (activity != null) viewModel.maybeRequestReview(activity, versionName)
+                    },
+                )
+            }
+
+            if (showSettings) {
+                SettingsScreen(
+                    settings = settings,
+                    appVersion = versionName,
+                    isSignedIn = auth.isSignedIn,
+                    signedInWith = if (auth.isSignedIn) "Google" else null,
+                    hasAppHistory = completed.isNotEmpty() || intentions.isNotEmpty() || prayedDayKeys.isNotEmpty(),
+                    playStorePackage = context.packageName,
+                    initialPage = settingsPage,
+                    onAppearance = { viewModel.settingsStore.setAppearance(it) },
+                    onRosaryConfig = { viewModel.settingsStore.setRosaryConfig(it) },
+                    onDailyEnabled = {
+                        viewModel.settingsStore.setDailyReminderEnabled(it)
+                        viewModel.rescheduleReminders()
+                    },
+                    onDailyMinutes = {
+                        viewModel.settingsStore.setDailyReminderMinutes(it)
+                        viewModel.rescheduleReminders()
+                    },
+                    onFeastEnabled = {
+                        viewModel.settingsStore.setFeastAlertsEnabled(it)
+                        viewModel.rescheduleReminders()
+                    },
+                    onFeastMinutes = {
+                        viewModel.settingsStore.setFeastAlertMinutes(it)
+                        viewModel.rescheduleReminders()
+                    },
+                    onAppIcon = { viewModel.setAppIcon(it) },
+                    onClearHistory = { viewModel.clearAppHistory() },
+                    onSignOut = { viewModel.signOut() },
+                    onReplayWelcome = {
+                        showSettings = false
+                        showWelcomeReplay = true
+                    },
+                    onSignIn = {
+                        showSettings = false
+                        showSignIn = true
+                    },
+                    onBack = { showSettings = false },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
+            if (showWelcomeReplay) {
+                OnboardingScreen(
+                    initialPage = 0,
+                    onBegin = { showWelcomeReplay = false },
                 )
             }
         }
@@ -215,6 +313,7 @@ private fun AppTabs(
     sessionStore: SessionStore,
     isSignedIn: Boolean = false,
     onSignIn: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
 ) {
     val navController = rememberNavController()
     val palette = LocalThemePalette.current
@@ -314,6 +413,7 @@ private fun AppTabs(
                         navController.navigate(FeastDetailRoute(item.feast.id, item.date.toString()))
                     },
                     onPray = onPray,
+                    onOpenSettings = onOpenSettings,
                 )
             }
             composable<LearnRoute> {
@@ -339,6 +439,7 @@ private fun AppTabs(
                     isSignedIn = isSignedIn,
                     onPrayWith = onPrayWith,
                     onSignIn = onSignIn,
+                    onOpenSettings = onOpenSettings,
                     launch = ProfileLaunch(
                         openJourney = debugLaunch.openJourney || debugLaunch.historyDay != null,
                         journeyHistory = debugLaunch.journeyHistory || debugLaunch.historyDay != null,
@@ -348,6 +449,7 @@ private fun AppTabs(
                         historyDay = debugLaunch.historyDay,
                         sampleIntentions = debugLaunch.sampleIntentions,
                         sampleHistory = debugLaunch.sampleHistory,
+                        openPapal = debugLaunch.openPapal,
                     ),
                 )
             }
