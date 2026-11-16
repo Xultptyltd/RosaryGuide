@@ -1,0 +1,1 @@
+# consumer ProGuard rules

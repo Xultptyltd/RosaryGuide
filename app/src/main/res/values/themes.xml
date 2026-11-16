@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launch canvas is Marian blue, matching iOS AppTheme.launchCanvas. -->
+    <style name="Theme.RosaryGuide" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#0054FF</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
