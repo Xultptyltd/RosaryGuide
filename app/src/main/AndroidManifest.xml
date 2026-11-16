@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -25,6 +26,6 @@
             android:name=".ThemeGalleryActivity"
             android:exported="true"
             android:label="Theme Gallery"
-            android:theme="@style/Theme.RosaryGuide" />
+            android:theme="@style/Theme.RosaryGuide.Main" />
     </application>
 </manifest>

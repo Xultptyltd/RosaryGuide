@@ -14,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.data.art.FeastCoverMath
@@ -37,13 +36,12 @@ import java.util.Locale
 @Composable
 fun FeastDetailScreen(
     item: DatedFeast,
-    onPray: () -> Unit,
+    onPray: (app.rosaryguide.core.model.MysterySetKind) -> Unit,
     modifier: Modifier = Modifier,
     chromeOverlapPx: Float = 0f,
 ) {
     val palette = LocalThemePalette.current
     val context = LocalContext.current
-    val density = LocalDensity.current
     val resId = feastHeroDrawableId(context, item.feast.id)
     val narrative = FeastNarratives.narrative(item.feast.id)
     val about = narrative?.about ?: item.feast.summary
@@ -63,25 +61,19 @@ fun FeastDetailScreen(
     ) {
         if (resId != 0) {
             val subject = FeastSubjects.ofFeastId(item.feast.id)
-            val frameW = with(density) { 400.dp.toPx() }
-            val frameH = with(density) { heroHeight.toPx() }
-            val cover = if (subject != null) {
-                FeastCoverMath.feastCover(
-                    SizeF(1280f, 720f),
-                    SizeF(frameW, frameH),
-                    subject,
-                    subject.focusX,
-                )
-            } else {
-                null
-            }
-            val shift = FeastCoverMath.feastChromeShift(chromeOverlapPx, frameH)
-            if (cover != null) {
+            if (subject != null) {
                 CroppedArt(
                     painter = painterResource(resId),
-                    scale = cover.scale,
-                    offsetX = cover.offsetX,
-                    offsetY = cover.offsetY + shift,
+                    coverForFrame = { frameW, frameH ->
+                        val cover = FeastCoverMath.feastCover(
+                            SizeF(1280f, 720f),
+                            SizeF(frameW, frameH),
+                            subject,
+                            subject.focusX,
+                        )
+                        val shift = FeastCoverMath.feastChromeShift(chromeOverlapPx, frameH)
+                        Triple(cover.scale, cover.offsetX, cover.offsetY + shift)
+                    },
                     contentDescription = item.feast.name.english,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -104,7 +96,7 @@ fun FeastDetailScreen(
                 Spacer(Modifier.height(RosarySpace.lg))
                 GuidePrimaryButton(
                     title = HomeCopy.prayTheMysteries(item.feast.suggestedMysterySet!!),
-                    onClick = onPray,
+                    onClick = { item.feast.suggestedMysterySet?.let(onPray) },
                 )
             }
             Spacer(Modifier.height(RosarySpace.xl))

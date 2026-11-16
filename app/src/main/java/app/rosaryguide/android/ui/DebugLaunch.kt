@@ -21,6 +21,13 @@ data class DebugLaunch(
     val mysterySet: String? = null,
     val openHowTo: Boolean = false,
     val clockDate: LocalDate? = null,
+    val openPray: Boolean = false,
+    val showIntentions: Boolean = false,
+    val showCompletion: Boolean = false,
+    val prayStep: Int? = null,
+    val forceFreshPray: Boolean = false,
+    val hideBeads: Boolean = false,
+    val includeSaintMichael: Boolean = false,
 ) {
     companion object {
         fun from(intent: Intent?): DebugLaunch {
@@ -36,6 +43,7 @@ data class DebugLaunch(
                 else -> AppTab.Today
             }
             val page = if (extras.containsKey("onboarding_page")) extras.getInt("onboarding_page") else null
+            val prayStep = if (extras.containsKey("pray_step")) extras.getInt("pray_step") else null
             return DebugLaunch(
                 skipSplash = flag("skip_splash"),
                 forceTabs = flag("force_tabs") || flag("skip_onboarding"),
@@ -50,6 +58,13 @@ data class DebugLaunch(
                 mysterySet = str("mystery_set"),
                 openHowTo = flag("open_how_to"),
                 clockDate = date("clock_date"),
+                openPray = flag("open_pray"),
+                showIntentions = flag("show_intentions"),
+                showCompletion = flag("show_completion"),
+                prayStep = prayStep,
+                forceFreshPray = flag("force_fresh_pray"),
+                hideBeads = flag("hide_beads"),
+                includeSaintMichael = flag("include_michael") || flag("include_saint_michael"),
             )
         }
     }

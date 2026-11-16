@@ -30,8 +30,9 @@ import kotlinx.coroutines.delay
 
 /** Marian blue canvas. Lottie plays at 1.4×; Reduce Motion shows a serif “R” and finishes at 0.8s. */
 private val MarianBlue = Color(RosaryHex.MarianBlue)
-private const val SPLASH_MS = 5_000L
 private const val REDUCE_MOTION_MS = 800L
+private const val COMPOSITION_WAIT_MS = 2_000L
+private const val PLAY_CAP_MS = 6_000L
 
 @Composable
 fun LaunchSplashScreen(
@@ -47,24 +48,39 @@ fun LaunchSplashScreen(
         iterations = 1,
         isPlaying = !reduceMotion && composition != null,
         speed = 1.4f,
+        restartOnPlay = false,
     )
-
-    LaunchedEffect(reduceMotion, progress.isAtEnd, composition) {
-        if (reduceMotion) {
-            delay(REDUCE_MOTION_MS)
-            onFinished()
-        } else if (composition == null) {
-            delay(SPLASH_MS)
-            onFinished()
-        } else if (progress.isAtEnd && progress.isPlaying.not() && progress.progress > 0.95f) {
+    var finished by remember { mutableStateOf(false) }
+    fun finish() {
+        if (!finished) {
+            finished = true
             onFinished()
         }
     }
 
-    // Safety timeout so a failed composition cannot pin the splash.
+    LaunchedEffect(reduceMotion, composition, progress.isAtEnd, progress.progress) {
+        if (reduceMotion) {
+            delay(REDUCE_MOTION_MS)
+            finish()
+            return@LaunchedEffect
+        }
+        if (composition == null) {
+            delay(COMPOSITION_WAIT_MS)
+            if (composition == null) {
+                // Asset failed to load — hold the Marian-blue canvas briefly, then continue.
+                delay(1_200)
+                finish()
+            }
+            return@LaunchedEffect
+        }
+        if (progress.isAtEnd && progress.progress >= 0.99f) {
+            finish()
+        }
+    }
+
     LaunchedEffect(reduceMotion) {
-        delay(if (reduceMotion) REDUCE_MOTION_MS + 200 else SPLASH_MS + 400)
-        onFinished()
+        delay(if (reduceMotion) REDUCE_MOTION_MS + 200 else PLAY_CAP_MS)
+        finish()
     }
 
     Box(
@@ -73,7 +89,7 @@ fun LaunchSplashScreen(
             .background(MarianBlue),
         contentAlignment = Alignment.Center,
     ) {
-        if (reduceMotion || composition == null) {
+        if (reduceMotion) {
             var visible by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) { visible = true }
             val scale by animateFloatAsState(
@@ -87,11 +103,11 @@ fun LaunchSplashScreen(
                 color = Color.White,
                 modifier = Modifier.scale(scale),
             )
-        } else {
+        } else if (composition != null) {
             LottieAnimation(
                 composition = composition,
                 progress = { progress.progress },
-                modifier = Modifier.size(220.dp),
+                modifier = Modifier.size(280.dp),
             )
         }
     }

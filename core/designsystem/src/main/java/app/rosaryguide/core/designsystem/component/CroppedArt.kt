@@ -1,25 +1,56 @@
 package app.rosaryguide.core.designsystem.component
 
 import android.content.Context
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.DpSize
 
 /**
- * Positions a feast (or other) image using the iOS cover scale and top-leading offset.
- * The painter is laid out at its intrinsic pixel size; [scale] and [offsetX]/[offsetY]
- * are applied from the top-left, matching `FeastCover`.
+ * [coverForFrame] is called with the laid-out frame size in pixels and must
+ * return (scale, offsetX, offsetY) with a top-left origin, matching iOS
+ * `ArtCatalog.feastCover`. Computing the cover against the real frame is what
+ * makes the card full-bleed.
  */
+@Composable
+fun CroppedArt(
+    painter: Painter,
+    coverForFrame: (frameWidthPx: Float, frameHeightPx: Float) -> Triple<Float, Float, Float>,
+    modifier: Modifier = Modifier,
+    contentDescription: String? = null,
+) {
+    val src = painter.intrinsicSize
+    val srcW = if (src.width.isFinite() && src.width > 1f) src.width else 1280f
+    val srcH = if (src.height.isFinite() && src.height > 1f) src.height else 720f
+    Box(
+        modifier = modifier
+            .clipToBounds()
+            .drawWithCache {
+                val frameW = size.width.coerceAtLeast(1f)
+                val frameH = size.height.coerceAtLeast(1f)
+                val (scale, offsetX, offsetY) = coverForFrame(frameW, frameH)
+                onDrawBehind {
+                    translate(offsetX, offsetY) {
+                        scale(scaleX = scale, scaleY = scale, pivot = Offset.Zero) {
+                            with(painter) { draw(Size(srcW, srcH)) }
+                        }
+                    }
+                }
+            },
+        content = {},
+    )
+    // contentDescription is reserved for a later semantics wrapper; keep the parameter.
+    @Suppress("UNUSED_PARAMETER")
+    val ignored = contentDescription
+}
+
+/** Legacy entry point when the cover has already been computed for this frame. */
 @Composable
 fun CroppedArt(
     painter: Painter,
@@ -29,33 +60,12 @@ fun CroppedArt(
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
 ) {
-    val density = LocalDensity.current
-    val src = painter.intrinsicSize
-    val layout = if (src.width.isFinite() && src.height.isFinite() && src.width > 1f && src.height > 1f) {
-        with(density) { DpSize(src.width.toDp(), src.height.toDp()) }
-    } else {
-        null
-    }
-    BoxWithConstraints(modifier = modifier.clipToBounds()) {
-        val imageModifier = if (layout != null) {
-            Modifier.requiredSize(layout)
-        } else {
-            Modifier
-        }
-        Image(
-            painter = painter,
-            contentDescription = contentDescription,
-            contentScale = ContentScale.FillBounds,
-            alignment = Alignment.TopStart,
-            modifier = imageModifier.graphicsLayer {
-                transformOrigin = TransformOrigin(0f, 0f)
-                scaleX = scale
-                scaleY = scale
-                translationX = offsetX
-                translationY = offsetY
-            },
-        )
-    }
+    CroppedArt(
+        painter = painter,
+        coverForFrame = { _, _ -> Triple(scale, offsetX, offsetY) },
+        modifier = modifier,
+        contentDescription = contentDescription,
+    )
 }
 
 fun drawableIdByName(context: Context, name: String): Int {

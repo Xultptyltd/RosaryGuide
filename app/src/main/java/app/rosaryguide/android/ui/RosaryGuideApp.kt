@@ -41,6 +41,7 @@ import app.rosaryguide.core.data.catalog.PrayerCatalog
 import app.rosaryguide.core.data.launch.AppTab
 import app.rosaryguide.core.data.launch.LaunchGate
 import app.rosaryguide.core.designsystem.R
+import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
 import app.rosaryguide.core.designsystem.component.ProvideReduceMotion
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
@@ -57,7 +58,11 @@ import app.rosaryguide.feature.learn.PrayerReaderScreen
 import app.rosaryguide.feature.onboarding.LaunchSplashScreen
 import app.rosaryguide.feature.onboarding.OnboardingScreen
 import app.rosaryguide.feature.onboarding.SignInScreen
+import app.rosaryguide.feature.pray.PrayLaunch
+import app.rosaryguide.feature.pray.PrayScreen
 import app.rosaryguide.feature.profile.ProfileStubScreen
+import app.rosaryguide.core.data.calendar.MysteryCalendar
+import app.rosaryguide.core.model.RosaryConfig
 import app.rosaryguide.feature.today.TodayScreen
 import java.time.LocalDate
 import kotlinx.serialization.Serializable
@@ -89,14 +94,41 @@ private val tabs = listOf(
 @Composable
 fun RosaryGuideApp(
     debugLaunch: DebugLaunch = DebugLaunch(),
+    onFirstFrame: () -> Unit = {},
     viewModel: AppViewModel = hiltViewModel(),
 ) {
+    onFirstFrame()
     ProvideReduceMotion {
         val flags by viewModel.flags.collectAsStateWithLifecycle()
         val auth by viewModel.auth.state.collectAsStateWithLifecycle()
         val today = debugLaunch.clockDate ?: LocalDate.now()
         var showSplash by remember { mutableStateOf(!debugLaunch.skipSplash) }
         var showSignIn by remember { mutableStateOf(debugLaunch.forceSignIn) }
+        var prayLaunch by remember { mutableStateOf<PrayLaunch?>(null) }
+
+        fun openPray(set: MysterySetKind, fromDebug: Boolean = false) {
+            val config = RosaryConfig.default.copy(
+                showBeads = if (debugLaunch.hideBeads) false else RosaryConfig.default.showBeads,
+                saintMichael = debugLaunch.includeSaintMichael || RosaryConfig.default.saintMichael,
+            )
+            prayLaunch = PrayLaunch(
+                mysterySet = set,
+                startStep = debugLaunch.prayStep,
+                showIntentions = fromDebug && debugLaunch.showIntentions,
+                showCompletion = fromDebug && debugLaunch.showCompletion,
+                forceFresh = fromDebug && (debugLaunch.forceFreshPray || debugLaunch.showCompletion || debugLaunch.showIntentions),
+                config = config,
+            )
+        }
+
+        LaunchedEffect(debugLaunch.openPray, debugLaunch.showIntentions, debugLaunch.showCompletion) {
+            if (debugLaunch.openPray || debugLaunch.showIntentions || debugLaunch.showCompletion) {
+                val set = debugLaunch.mysterySet?.let { raw ->
+                    MysterySetKind.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) || it.shortName.equals(raw, ignoreCase = true) }
+                } ?: MysteryCalendar.assignment(today).set
+                openPray(set, fromDebug = true)
+            }
+        }
 
         val didComplete = when {
             debugLaunch.forceOnboarding || debugLaunch.forceSignIn -> false
@@ -116,6 +148,7 @@ fun RosaryGuideApp(
                     today = today,
                     hasAskedForNotifications = flags.askedForNotifications,
                     onAskedForNotifications = viewModel::markAskedForNotifications,
+                    onPray = { openPray(it) },
                 )
             } else if (showSignIn || debugLaunch.forceSignIn) {
                 SignInScreen(
@@ -139,6 +172,16 @@ fun RosaryGuideApp(
             if (showSplash) {
                 LaunchSplashScreen(onFinished = { showSplash = false })
             }
+
+            prayLaunch?.let { launch ->
+                PrayScreen(
+                    launch = launch,
+                    sessionStore = viewModel.sessionStore,
+                    quotePreferences = viewModel.quotePreferences,
+                    onClose = { prayLaunch = null },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
     }
 }
@@ -149,6 +192,7 @@ private fun AppTabs(
     today: LocalDate,
     hasAskedForNotifications: Boolean,
     onAskedForNotifications: () -> Unit,
+    onPray: (MysterySetKind) -> Unit,
 ) {
     val navController = rememberNavController()
     val palette = LocalThemePalette.current
@@ -177,7 +221,8 @@ private fun AppTabs(
             debugLaunch.openHowTo -> navController.navigate(HowToPrayRoute)
             debugLaunch.articleId != null -> navController.navigate(ArticleRoute(debugLaunch.articleId))
             debugLaunch.prayerId != null -> navController.navigate(PrayerRoute(debugLaunch.prayerId))
-            debugLaunch.mysterySet != null -> navController.navigate(MysterySetRoute(debugLaunch.mysterySet))
+            debugLaunch.mysterySet != null && !debugLaunch.openPray && !debugLaunch.showIntentions && !debugLaunch.showCompletion ->
+                navController.navigate(MysterySetRoute(debugLaunch.mysterySet))
         }
     }
 
@@ -245,7 +290,7 @@ private fun AppTabs(
                     onFeastClick = { item ->
                         navController.navigate(FeastDetailRoute(item.feast.id, item.date.toString()))
                     },
-                    onPray = { /* M3 */ },
+                    onPray = onPray,
                 )
             }
             composable<LearnRoute> {
@@ -270,7 +315,7 @@ private fun AppTabs(
                 val feast = FeastCatalog.all.find { it.id == route.feastId } ?: return@composable
                 val date = runCatching { LocalDate.parse(route.date) }.getOrDefault(today)
                 DetailScaffold(title = feast.shortTitle, onBack = { navController.popBackStack() }) {
-                    FeastDetailScreen(item = DatedFeast(feast, date), onPray = { })
+                    FeastDetailScreen(item = DatedFeast(feast, date), onPray = onPray)
                 }
             }
             composable<HowToPrayRoute> {
@@ -311,15 +356,7 @@ private fun DetailScaffold(
 ) {
     val palette = LocalThemePalette.current
     Column(Modifier.fillMaxSize().background(palette.bg)) {
-        Text(
-            text = "Back",
-            style = RosaryType.body,
-            color = palette.accentText,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onBack)
-                .padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.sm),
-        )
+        GuideDetailTopBar(title = title, onBack = onBack)
         Box(Modifier.weight(1f)) { content() }
     }
 }

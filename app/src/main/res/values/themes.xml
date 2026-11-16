@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Launch canvas is Marian blue, matching iOS AppTheme.launchCanvas. -->
-    <style name="Theme.RosaryGuide" parent="android:Theme.Material.Light.NoActionBar">
+    <!-- System splash hands off on Marian blue with the app mark, then Compose Lottie plays on the same canvas. -->
+    <style name="Theme.RosaryGuide" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0054FF</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/logo_mark_splash</item>
+        <item name="windowSplashScreenIconBackgroundColor">#0054FF</item>
+        <item name="postSplashScreenTheme">@style/Theme.RosaryGuide.Main</item>
+    </style>
+
+    <style name="Theme.RosaryGuide.Main" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">#0054FF</item>
-        <item name="android:windowSplashScreenBackground">#0054FF</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">#0054FF</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>

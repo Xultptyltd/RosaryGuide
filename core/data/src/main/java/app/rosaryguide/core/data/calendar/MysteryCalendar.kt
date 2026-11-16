@@ -35,11 +35,11 @@ object MysteryCalendar {
 
     /**
      * Week strip starting on [firstWeekday] (Sunday = 1 … Saturday = 7).
-     * Monday-start weeks use 2, matching a typical Australian first weekday.
+     * The default is the device locale, matching iOS `Calendar.current.firstWeekday`.
      */
     fun week(
         date: LocalDate,
-        firstWeekday: Int = 1,
+        firstWeekday: Int = WeekStart.firstWeekday(),
     ): List<Pair<LocalDate, MysteryAssignment>> {
         val weekday = LiturgicalCalendar.weekday(date)
         val startOffset = -((weekday - firstWeekday + 7) % 7)

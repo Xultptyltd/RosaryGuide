@@ -283,8 +283,12 @@ enum class RosaryStepKind {
 
 @Serializable
 enum class HapticKind {
+    Soft,
     Light,
+    Medium,
+    Heavy,
     Success,
+    Warning,
     None,
 }
 

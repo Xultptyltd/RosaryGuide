@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.data.calendar.FeastAgenda
+import app.rosaryguide.core.data.calendar.WeekStart
 import app.rosaryguide.core.data.calendar.FeastMonthLayout
 import app.rosaryguide.core.data.catalog.FeastCatalog
 import app.rosaryguide.core.data.search.localizedStandardContains
@@ -42,7 +43,6 @@ import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.model.DatedFeast
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.temporal.WeekFields
 import java.util.Locale
 
 @Composable
@@ -53,7 +53,7 @@ fun FeastsScreen(
     initialFeastId: String? = null,
 ) {
     val palette = LocalThemePalette.current
-    val firstWeekday = foundationFirstWeekday()
+    val firstWeekday = WeekStart.firstWeekday()
     var month by remember(today) { mutableStateOf(today.withDayOfMonth(1)) }
     var selected by remember(today, initialFeastId) {
         mutableStateOf(today)
@@ -252,10 +252,6 @@ private fun AgendaRow(item: DatedFeast, onClick: (DatedFeast) -> Unit) {
     }
 }
 
-private fun foundationFirstWeekday(): Int {
-    val first = WeekFields.of(Locale.getDefault()).firstDayOfWeek
-    return if (first == java.time.DayOfWeek.SUNDAY) 1 else first.value + 1
-}
 
 private fun weekdayHeaders(firstWeekday: Int): List<String> {
     val names = listOf("S", "M", "T", "W", "T", "F", "S") // Sunday-first

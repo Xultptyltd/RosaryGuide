@@ -37,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,6 +44,7 @@ import app.rosaryguide.core.data.art.FeastCoverMath
 import app.rosaryguide.core.data.art.FeastSubjects
 import app.rosaryguide.core.data.art.SizeF
 import app.rosaryguide.core.data.calendar.MysteryCalendar
+import app.rosaryguide.core.data.calendar.WeekStart
 import app.rosaryguide.core.data.art.ArtCatalog
 import app.rosaryguide.core.data.catalog.FeastCatalog
 import app.rosaryguide.core.data.catalog.HomeCopy
@@ -65,21 +65,20 @@ import app.rosaryguide.core.model.DatedFeast
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.temporal.WeekFields
 import java.util.Locale
 
 @Composable
 fun TodayScreen(
     onViewAllFeasts: () -> Unit,
     onFeastClick: (DatedFeast) -> Unit,
-    onPray: () -> Unit,
+    onPray: (app.rosaryguide.core.model.MysterySetKind) -> Unit,
     modifier: Modifier = Modifier,
     today: LocalDate = LocalDate.now(),
     hasAskedForNotifications: Boolean = true,
     onAskedForNotifications: () -> Unit = {},
 ) {
     val palette = LocalThemePalette.current
-    val firstWeekday = foundationFirstWeekday()
+    val firstWeekday = WeekStart.firstWeekday()
     var selected by remember(today) { mutableStateOf(today) }
     val assignment = remember(selected) { MysteryCalendar.assignment(selected) }
     val week = remember(today, firstWeekday) { MysteryCalendar.week(today, firstWeekday) }
@@ -123,7 +122,7 @@ fun TodayScreen(
         Spacer(Modifier.height(RosarySpace.md))
         GuidePrimaryButton(
             title = if (isToday) HomeCopy.PRAY_TODAYS_MYSTERIES else HomeCopy.prayTheMysteries(assignment.set),
-            onClick = onPray,
+            onClick = { onPray(assignment.set) },
             modifier = Modifier.padding(horizontal = RosarySpace.gutter),
         )
 
@@ -313,7 +312,6 @@ private fun FeaturedFeastCard(
 ) {
     val palette = LocalThemePalette.current
     val context = LocalContext.current
-    val density = LocalDensity.current
     val resId = feastHeroDrawableId(context, item.feast.id)
     val dateLabel = if (item.date == today) {
         "TODAY"
@@ -330,19 +328,17 @@ private fun FeaturedFeastCard(
         if (resId != 0) {
             val subject = FeastSubjects.ofFeastId(item.feast.id)
             if (subject != null) {
-                val frameW = with(density) { 358.dp.toPx() }
-                val frameH = with(density) { 176.dp.toPx() }
-                val cover = FeastCoverMath.feastCover(
-                    imageSize = SizeF(1280f, 720f),
-                    frame = SizeF(frameW, frameH),
-                    subject = subject,
-                    focusX = subject.focusX,
-                )
                 CroppedArt(
                     painter = painterResource(resId),
-                    scale = cover.scale,
-                    offsetX = cover.offsetX,
-                    offsetY = cover.offsetY,
+                    coverForFrame = { frameW, frameH ->
+                        val cover = FeastCoverMath.feastCover(
+                            imageSize = SizeF(1280f, 720f),
+                            frame = SizeF(frameW, frameH),
+                            subject = subject,
+                            focusX = subject.focusX,
+                        )
+                        Triple(cover.scale, cover.offsetX, cover.offsetY)
+                    },
                     contentDescription = item.feast.shortTitle,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -431,7 +427,3 @@ private fun WeekFeastRow(
     }
 }
 
-private fun foundationFirstWeekday(): Int {
-    val first = WeekFields.of(Locale.getDefault()).firstDayOfWeek
-    return if (first == java.time.DayOfWeek.SUNDAY) 1 else first.value + 1
-}
