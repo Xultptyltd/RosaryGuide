@@ -85,3 +85,6 @@ fun feastHeroDrawableId(context: Context, feastId: String): Int {
 
 fun heroDrawableId(context: Context, setName: String): Int =
     drawableIdByName(context, "hero_" + setName.lowercase())
+
+fun mysteryPlateDrawableId(context: Context, artSlug: String): Int =
+    drawableIdByName(context, "mystery_" + artSlug.replace('-', '_'))

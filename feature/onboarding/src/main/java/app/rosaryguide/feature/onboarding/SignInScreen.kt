@@ -1,7 +1,5 @@
 package app.rosaryguide.feature.onboarding
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -12,18 +10,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.withLink
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -45,7 +43,6 @@ fun SignInScreen(
     isSigningInWithGoogle: Boolean = false,
 ) {
     val palette = LocalThemePalette.current
-    val context = LocalContext.current
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -103,28 +100,23 @@ fun SignInScreen(
             Spacer(Modifier.height(RosarySpace.lg))
             val legal = buildAnnotatedString {
                 append(OnboardingCopy.LEGAL_PREFIX)
-                pushStringAnnotation("url", OnboardingCopy.TERMS_URL)
-                withStyle(SpanStyle(color = palette.accentText, textDecoration = TextDecoration.Underline)) {
-                    append(OnboardingCopy.TERMS_LABEL)
+                withLink(LinkAnnotation.Url(OnboardingCopy.TERMS_URL)) {
+                    withStyle(SpanStyle(color = palette.accentText, textDecoration = TextDecoration.Underline)) {
+                        append(OnboardingCopy.TERMS_LABEL)
+                    }
                 }
-                pop()
                 append(" and ")
-                pushStringAnnotation("url", OnboardingCopy.PRIVACY_URL)
-                withStyle(SpanStyle(color = palette.accentText, textDecoration = TextDecoration.Underline)) {
-                    append(OnboardingCopy.PRIVACY_LABEL)
+                withLink(LinkAnnotation.Url(OnboardingCopy.PRIVACY_URL)) {
+                    withStyle(SpanStyle(color = palette.accentText, textDecoration = TextDecoration.Underline)) {
+                        append(OnboardingCopy.PRIVACY_LABEL)
+                    }
                 }
-                pop()
                 append(".")
             }
-            ClickableText(
+            Text(
                 text = legal,
                 style = RosaryType.caption.copy(color = palette.dim, textAlign = TextAlign.Center),
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { offset ->
-                    legal.getStringAnnotations("url", offset, offset).firstOrNull()?.let { annotation ->
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item)))
-                    }
-                },
             )
         }
     }

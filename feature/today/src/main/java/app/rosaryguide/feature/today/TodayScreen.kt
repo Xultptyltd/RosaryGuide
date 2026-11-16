@@ -25,6 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -74,6 +75,7 @@ fun TodayScreen(
     onPray: (app.rosaryguide.core.model.MysterySetKind) -> Unit,
     modifier: Modifier = Modifier,
     today: LocalDate = LocalDate.now(),
+    prayedDayKeys: Set<String> = emptySet(),
     hasAskedForNotifications: Boolean = true,
     onAskedForNotifications: () -> Unit = {},
 ) {
@@ -102,14 +104,6 @@ fun TodayScreen(
         GuideScreenHeader(
             title = "Today",
             modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg),
-        )
-
-        WeekStrip(
-            days = week.map { it.first },
-            today = today,
-            selected = selected,
-            onSelect = { selected = it },
-            modifier = Modifier.padding(bottom = RosarySpace.lg),
         )
 
         MysteryCard(
@@ -168,18 +162,24 @@ fun TodayScreen(
             text = HomeCopy.THIS_WEEK,
             modifier = Modifier.padding(horizontal = RosarySpace.gutter),
         )
-        week.forEach { (date, dayAssignment) ->
-            val feastToday = FeastCatalog.feasts(date).firstOrNull()
-            WeekFeastRow(
+        week.forEachIndexed { index, (date, dayAssignment) ->
+            val isTodayRow = date == today
+            val nextIsToday = index < week.lastIndex && week[index + 1].first == today
+            WeekGlanceRow(
                 date = date,
-                isToday = date == today,
-                mysteryLetter = dayAssignment.set.letter,
-                feastName = feastToday?.feast?.shortTitle,
-                onClick = {
-                    if (feastToday != null) onFeastClick(feastToday) else selected = date
-                },
+                assignment = dayAssignment,
+                isToday = isTodayRow,
+                prayed = date.toString() in prayedDayKeys,
+                onClick = { selected = date },
                 modifier = Modifier.padding(horizontal = RosarySpace.gutter),
             )
+            if (index < week.lastIndex && !isTodayRow && !nextIsToday) {
+                androidx.compose.material3.HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = RosarySpace.gutter),
+                    color = palette.strokeSubtle,
+                    thickness = 1.dp,
+                )
+            }
         }
     }
 }
@@ -201,70 +201,6 @@ private fun NotificationPermissionEffect(
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
             onAsked()
-        }
-    }
-}
-
-@Composable
-private fun WeekStrip(
-    days: List<LocalDate>,
-    today: LocalDate,
-    selected: LocalDate,
-    onSelect: (LocalDate) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val palette = LocalThemePalette.current
-    val dayFmt = DateTimeFormatter.ofPattern("EE", Locale.getDefault())
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = RosarySpace.gutter),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        days.forEach { date ->
-            val isToday = date == today
-            val isSelected = date == selected
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(if (isSelected) palette.surface else androidx.compose.ui.graphics.Color.Transparent)
-                    .clickable { onSelect(date) }
-                    .padding(horizontal = 8.dp, vertical = 8.dp)
-                    .width(52.dp),
-            ) {
-                Text(
-                    text = date.format(dayFmt).uppercase(Locale.getDefault()),
-                    style = RosaryType.caption,
-                    color = if (isSelected) palette.ink else palette.dim,
-                )
-                Text(
-                    text = date.dayOfMonth.toString(),
-                    style = RosaryType.body.copy(fontWeight = FontWeight.Medium),
-                    color = palette.ink,
-                )
-                if (isToday) {
-                    Spacer(Modifier.height(4.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(palette.todayPillFill)
-                            .border(1.dp, palette.strokeRegular, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 6.dp, vertical = 1.dp),
-                    ) {
-                        Text(
-                            text = HomeCopy.TODAY_PILL,
-                            style = RosaryType.caption.copy(fontWeight = FontWeight.Medium),
-                            color = palette.todayPillText,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                    }
-                } else {
-                    Spacer(Modifier.height(16.dp))
-                }
-            }
         }
     }
 }
@@ -389,41 +325,63 @@ private fun FeastRow(
     }
 }
 
+
 @Composable
-private fun WeekFeastRow(
-    date: LocalDate,
+private fun WeekGlanceRow(
+    date: java.time.LocalDate,
+    assignment: app.rosaryguide.core.model.MysteryAssignment,
     isToday: Boolean,
-    mysteryLetter: String,
-    feastName: String?,
+    prayed: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalThemePalette.current
-    val day = date.format(DateTimeFormatter.ofPattern("EEE d", Locale.getDefault()))
+    val weekday = date.format(java.time.format.DateTimeFormatter.ofPattern("EEE", java.util.Locale.getDefault()))
+    val dayMonth = date.format(java.time.format.DateTimeFormatter.ofPattern("d MMM", java.util.Locale.getDefault()))
+    val shape = RoundedCornerShape(RosarySpace.md)
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .then(
+                if (isToday) Modifier
+                    .background(
+                        if (palette.isDark) palette.ink.copy(alpha = 0.07f) else palette.surface,
+                        shape,
+                    )
+                    .padding(horizontal = RosarySpace.md)
+                else Modifier
+            )
             .clickable(onClick = onClick)
-            .padding(vertical = RosarySpace.sm),
+            .padding(vertical = RosarySpace.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = day, style = RosaryType.supportingLabel, color = if (isToday) palette.ink else palette.dim, modifier = Modifier.width(80.dp))
-        Box(
-            modifier = Modifier
-                .size(22.dp)
-                .clip(CircleShape)
-                .background(palette.mysteryIconFill),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(text = mysteryLetter, style = RosaryType.caption, color = palette.mysteryIconGlyph)
-        }
-        Spacer(Modifier.width(RosarySpace.sm))
         Text(
-            text = feastName ?: "",
+            text = weekday,
             style = RosaryType.body,
             color = palette.ink,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.width(44.dp),
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = dayMonth,
+                style = RosaryType.supportingLabel,
+                color = if (isToday) palette.ink else palette.dim,
+            )
+            assignment.feast?.feast?.shortTitle?.let { feast ->
+                Text(text = feast, style = RosaryType.caption, color = palette.dim)
+            }
+        }
+        Text(
+            text = assignment.set.shortName,
+            style = RosaryType.body,
+            color = if (isToday) palette.ink else palette.dim,
+        )
+        Spacer(Modifier.width(RosarySpace.sm))
+        Text(
+            text = "✓",
+            style = RosaryType.body,
+            color = palette.accent.copy(alpha = if (prayed) 1f else 0f),
+            modifier = Modifier.width(22.dp),
         )
     }
 }
-

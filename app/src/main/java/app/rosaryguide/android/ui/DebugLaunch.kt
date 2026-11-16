@@ -28,6 +28,14 @@ data class DebugLaunch(
     val forceFreshPray: Boolean = false,
     val hideBeads: Boolean = false,
     val includeSaintMichael: Boolean = false,
+    val openJourney: Boolean = false,
+    val journeyHistory: Boolean = false,
+    val openAllIntentions: Boolean = false,
+    val openIntentionEditor: Boolean = false,
+    val openArchived: Boolean = false,
+    val historyDay: LocalDate? = null,
+    val sampleIntentions: Boolean = false,
+    val sampleHistory: Boolean = false,
 ) {
     companion object {
         fun from(intent: Intent?): DebugLaunch {
@@ -65,6 +73,14 @@ data class DebugLaunch(
                 forceFreshPray = flag("force_fresh_pray"),
                 hideBeads = flag("hide_beads"),
                 includeSaintMichael = flag("include_michael") || flag("include_saint_michael"),
+                openJourney = flag("open_journey"),
+                journeyHistory = flag("journey_history") || flag("open_history"),
+                openAllIntentions = flag("open_intentions") || flag("open_all_intentions"),
+                openIntentionEditor = flag("open_intention_editor"),
+                openArchived = flag("open_archived"),
+                historyDay = date("history_day"),
+                sampleIntentions = flag("sample_intentions"),
+                sampleHistory = flag("sample_history") || flag("sample_rhythm"),
             )
         }
     }

@@ -23,6 +23,13 @@ enum class IntentionCategory {
             World -> "world"
         }
 
+    val defaultAccent: IntentionAccent
+        get() = when (this) {
+            Personal -> IntentionAccent.MintGreen
+            Someone -> IntentionAccent.SkyBlue
+            World -> IntentionAccent.Purple
+        }
+
     companion object {
         fun fromStorage(raw: String?): IntentionCategory? = when (raw) {
             "personal" -> Personal
@@ -35,16 +42,48 @@ enum class IntentionCategory {
 }
 
 @Serializable
+enum class IntentionAccent {
+    MintGreen,
+    SkyBlue,
+    Purple,
+    ;
+
+    val storageName: String
+        get() = when (this) {
+            MintGreen -> "mintGreen"
+            SkyBlue -> "skyBlue"
+            Purple -> "purple"
+        }
+
+    companion object {
+        fun fromStorage(raw: String?): IntentionAccent? = when (raw) {
+            "mintGreen" -> MintGreen
+            "skyBlue" -> SkyBlue
+            "purple" -> Purple
+            else -> null
+        }
+    }
+}
+
+@Serializable
 data class OfferIntention(
     val id: String,
     val title: String,
     val note: String? = null,
     val category: IntentionCategory = IntentionCategory.Personal,
+    val accent: IntentionAccent = IntentionAccent.MintGreen,
+    val emoji: String? = "🙏",
     val sourceId: String? = null,
     val isPinned: Boolean = false,
     val createdAtEpochMs: Long = 0L,
+    val archivedAtEpochMs: Long? = null,
+    val expiresAtEpochMs: Long? = null,
+    val suggestOn: List<String> = emptyList(),
+    val timesCarried: Int = 0,
 ) {
     val isPapal: Boolean get() = sourceId?.startsWith("pope-") == true
+    val isArchived: Boolean get() = archivedAtEpochMs != null
+    val displayEmoji: String get() = emoji?.takeIf { it.isNotBlank() } ?: "🙏"
 }
 
 object IntentionPrivacy {

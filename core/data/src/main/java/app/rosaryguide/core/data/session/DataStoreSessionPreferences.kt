@@ -7,6 +7,7 @@ import app.rosaryguide.core.data.SettingsKeys
 import app.rosaryguide.core.data.config.RosaryJson
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import app.rosaryguide.core.data.journey.JourneyState
 import kotlinx.serialization.builtins.ListSerializer
 
 class DataStoreSessionPreferences(
@@ -64,6 +65,23 @@ class DataStoreSessionPreferences(
                 prefs[SettingsKeys.SessionIntentions] = RosaryJson.encodeToString(
                     ListSerializer(OfferIntention.serializer()),
                     intentions,
+                )
+            }
+        }
+    }
+
+    override fun loadJourneyState(): JourneyState = runBlocking {
+        val raw = dataStore.data.first()[SettingsKeys.SessionJourney] ?: return@runBlocking JourneyState()
+        runCatching { RosaryJson.decodeFromString(JourneyState.serializer(), raw) }
+            .getOrDefault(JourneyState())
+    }
+
+    override fun saveJourneyState(state: JourneyState) {
+        runBlocking {
+            dataStore.edit { prefs ->
+                prefs[SettingsKeys.SessionJourney] = RosaryJson.encodeToString(
+                    JourneyState.serializer(),
+                    state,
                 )
             }
         }

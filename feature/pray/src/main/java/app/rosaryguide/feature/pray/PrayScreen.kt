@@ -220,8 +220,12 @@ fun PrayScreen(
     }
 
     val current = steps.getOrNull(index)
-    val header = current?.mystery?.title?.english
-        ?: launch.mysterySet.titleText.english
+    val isPlate = current?.isPlate == true
+    val header = when {
+        isPlate && current?.mystery != null ->
+            "${current.stage.label}  ·  ${current.mystery!!.title.english}"
+        else -> current?.mystery?.title?.english ?: launch.mysterySet.titleText.english
+    }
     val showCompleteDecade = current?.kind == RosaryStepKind.HailMary &&
         (current.hailMaryNumber ?: 0) in 1..9 &&
         current.decadeNumber != null &&
@@ -279,18 +283,20 @@ fun PrayScreen(
             }
             GuideMarqueeText(
                 text = header,
-                style = RosaryType.headingPrimary,
+                style = if (isPlate) RosaryType.supportingLabel else RosaryType.headingPrimary,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = RosarySpace.gutter),
             )
-            current?.stage?.label?.let { label ->
-                Text(
-                    text = label,
-                    style = RosaryType.supportingLabel,
-                    color = palette.dim,
-                    modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.xs),
-                )
+            if (!isPlate) {
+                current?.stage?.label?.let { label ->
+                    Text(
+                        text = label,
+                        style = RosaryType.supportingLabel,
+                        color = palette.dim,
+                        modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.xs),
+                    )
+                }
             }
 
             if (showingIntentionStep) {
@@ -315,30 +321,36 @@ fun PrayScreen(
                     modifier = Modifier
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = RosarySpace.gutter),
+                        .then(if (isPlate) Modifier else Modifier.padding(horizontal = RosarySpace.gutter)),
                 ) {
-                    current?.title?.resolved(language)?.takeIf { it.isNotBlank() }?.let { title ->
-                        Text(text = title, style = RosaryType.headingSecondary, color = palette.ink)
-                        Spacer(Modifier.height(RosarySpace.sm))
-                    }
-                    current?.subtitle?.english?.takeIf { it.isNotBlank() }?.let { subtitle ->
-                        Text(text = subtitle, style = RosaryType.supportingLabel, color = palette.dim)
-                        Spacer(Modifier.height(RosarySpace.sm))
-                    }
-                    current?.body?.let { body ->
-                        Text(text = body.primary(language), style = RosaryType.serifBody, color = palette.ink)
-                        body.secondary(language)?.let { latin ->
-                            Spacer(Modifier.height(RosarySpace.md))
-                            Text(text = latin, style = RosaryType.serifItalicBody, color = palette.dim)
+                    if (isPlate && current != null) {
+                        MysteryPlate(step = current, language = language)
+                    } else {
+                        current?.title?.resolved(language)?.takeIf { it.isNotBlank() }?.let { title ->
+                            Text(text = title, style = RosaryType.headingSecondary, color = palette.ink)
+                            Spacer(Modifier.height(RosarySpace.sm))
+                        }
+                        current?.subtitle?.english?.takeIf { it.isNotBlank() }?.let { subtitle ->
+                            Text(text = subtitle, style = RosaryType.supportingLabel, color = palette.dim)
+                            Spacer(Modifier.height(RosarySpace.sm))
+                        }
+                        current?.body?.let { body ->
+                            Text(text = body.primary(language), style = RosaryType.serifBody, color = palette.ink)
+                            body.secondary(language)?.let { latin ->
+                                Spacer(Modifier.height(RosarySpace.md))
+                                Text(text = latin, style = RosaryType.serifItalicBody, color = palette.dim)
+                            }
                         }
                     }
                     Spacer(Modifier.height(RosarySpace.lg))
-                    LanguageChips(language) { language = it }
+                    Box(Modifier.padding(horizontal = if (isPlate) RosarySpace.gutter else 0.dp)) {
+                        LanguageChips(language) { language = it }
+                    }
                     Spacer(Modifier.height(RosarySpace.xl))
                 }
             }
 
-            if (config.showBeads && !showingIntentionStep) {
+            if (config.showBeads && !showingIntentionStep && !isPlate) {
                 BeadRail(current = current?.bead, modifier = Modifier.fillMaxWidth())
             }
 

@@ -20,6 +20,7 @@ object SettingsKeys {
     val SessionCompleted = stringPreferencesKey("session.completedPrayerSessions")
     val SessionCompletedDayKeys = stringSetPreferencesKey("session.completedDayKeys")
     val SessionIntentions = stringPreferencesKey("session.offerIntentions")
+    val SessionJourney = stringPreferencesKey("session.journeyState")
     val NextCompletionQuoteIndex = intPreferencesKey("rosary.completion.nextQuoteIndex")
     val LastCompletionQuoteId = stringPreferencesKey("rosary.completion.lastQuoteId")
 }

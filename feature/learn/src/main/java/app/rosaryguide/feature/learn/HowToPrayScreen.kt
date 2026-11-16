@@ -27,9 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.data.catalog.HowToPrayContent
-import app.rosaryguide.core.data.catalog.LearnCopy
 import app.rosaryguide.core.designsystem.R
-import app.rosaryguide.core.designsystem.component.GuideScreenHeader
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
@@ -52,16 +50,13 @@ fun HowToPrayScreen(modifier: Modifier = Modifier) {
             .verticalScroll(rememberScrollState())
             .padding(bottom = RosarySpace.xxl),
     ) {
-        GuideScreenHeader(
-            title = LearnCopy.HOW_TO_PRAY_TITLE,
-            modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg),
-        )
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp)
-                .padding(horizontal = RosarySpace.gutter),
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(top = RosarySpace.lg),
         ) { index ->
             Image(
                 painter = painterResource(walkthroughImages[index]),

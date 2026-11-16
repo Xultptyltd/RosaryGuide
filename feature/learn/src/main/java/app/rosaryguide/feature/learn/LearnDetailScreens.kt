@@ -100,8 +100,6 @@ fun MysterySetScreen(set: MysterySetKind, modifier: Modifier = Modifier) {
             )
         }
         Column(Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg)) {
-            Text(text = set.titleText.english, style = RosaryType.headingPrimary, color = palette.ink)
-            Spacer(Modifier.height(RosarySpace.xs))
             Text(text = set.weekdayCaption, style = RosaryType.supportingLabel, color = palette.dim)
             Spacer(Modifier.height(RosarySpace.sm))
             Text(text = set.themeSummary, style = RosaryType.body, color = palette.ink)

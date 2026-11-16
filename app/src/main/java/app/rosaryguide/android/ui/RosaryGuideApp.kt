@@ -60,7 +60,11 @@ import app.rosaryguide.feature.onboarding.OnboardingScreen
 import app.rosaryguide.feature.onboarding.SignInScreen
 import app.rosaryguide.feature.pray.PrayLaunch
 import app.rosaryguide.feature.pray.PrayScreen
-import app.rosaryguide.feature.profile.ProfileStubScreen
+import app.rosaryguide.feature.profile.ProfileLaunch
+import app.rosaryguide.feature.profile.ProfileScreen
+import app.rosaryguide.core.data.session.SessionStore
+import app.rosaryguide.core.data.calendar.WeekStart
+import app.rosaryguide.core.data.session.OfferIntention
 import app.rosaryguide.core.data.calendar.MysteryCalendar
 import app.rosaryguide.core.model.RosaryConfig
 import app.rosaryguide.feature.today.TodayScreen
@@ -100,6 +104,7 @@ fun RosaryGuideApp(
     onFirstFrame()
     ProvideReduceMotion {
         val flags by viewModel.flags.collectAsStateWithLifecycle()
+        val prayedDayKeys by viewModel.sessionStore.completedDayKeys.collectAsStateWithLifecycle()
         val auth by viewModel.auth.state.collectAsStateWithLifecycle()
         val today = debugLaunch.clockDate ?: LocalDate.now()
         var showSplash by remember { mutableStateOf(!debugLaunch.skipSplash) }
@@ -146,9 +151,21 @@ fun RosaryGuideApp(
                 AppTabs(
                     debugLaunch = debugLaunch,
                     today = today,
+                    prayedDayKeys = prayedDayKeys,
                     hasAskedForNotifications = flags.askedForNotifications,
                     onAskedForNotifications = viewModel::markAskedForNotifications,
                     onPray = { openPray(it) },
+                    onPrayWith = { intention ->
+                        val set = MysteryCalendar.assignment(today).set
+                        prayLaunch = PrayLaunch(
+                            mysterySet = set,
+                            seedIntentions = listOf(intention.id to intention.title),
+                            forceFresh = true,
+                        )
+                    },
+                    sessionStore = viewModel.sessionStore,
+                    isSignedIn = auth.isSignedIn,
+                    onSignIn = { showSignIn = true },
                 )
             } else if (showSignIn || debugLaunch.forceSignIn) {
                 SignInScreen(
@@ -193,6 +210,11 @@ private fun AppTabs(
     hasAskedForNotifications: Boolean,
     onAskedForNotifications: () -> Unit,
     onPray: (MysterySetKind) -> Unit,
+    prayedDayKeys: Set<String> = emptySet(),
+    onPrayWith: (OfferIntention) -> Unit = {},
+    sessionStore: SessionStore,
+    isSignedIn: Boolean = false,
+    onSignIn: () -> Unit = {},
 ) {
     val navController = rememberNavController()
     val palette = LocalThemePalette.current
@@ -278,6 +300,7 @@ private fun AppTabs(
             composable<TodayRoute> {
                 TodayScreen(
                     today = today,
+                    prayedDayKeys = prayedDayKeys,
                     hasAskedForNotifications = hasAskedForNotifications,
                     onAskedForNotifications = onAskedForNotifications,
                     onViewAllFeasts = {
@@ -309,7 +332,25 @@ private fun AppTabs(
                     },
                 )
             }
-            composable<ProfileRoute> { ProfileStubScreen() }
+            composable<ProfileRoute> {
+                ProfileScreen(
+                    sessionStore = sessionStore,
+                    today = today,
+                    isSignedIn = isSignedIn,
+                    onPrayWith = onPrayWith,
+                    onSignIn = onSignIn,
+                    launch = ProfileLaunch(
+                        openJourney = debugLaunch.openJourney || debugLaunch.historyDay != null,
+                        journeyHistory = debugLaunch.journeyHistory || debugLaunch.historyDay != null,
+                        openAllIntentions = debugLaunch.openAllIntentions,
+                        openEditor = debugLaunch.openIntentionEditor,
+                        openArchived = debugLaunch.openArchived,
+                        historyDay = debugLaunch.historyDay,
+                        sampleIntentions = debugLaunch.sampleIntentions,
+                        sampleHistory = debugLaunch.sampleHistory,
+                    ),
+                )
+            }
             composable<FeastDetailRoute> { entry ->
                 val route = entry.toRoute<FeastDetailRoute>()
                 val feast = FeastCatalog.all.find { it.id == route.feastId } ?: return@composable
@@ -319,7 +360,7 @@ private fun AppTabs(
                 }
             }
             composable<HowToPrayRoute> {
-                DetailScaffold(title = "How to pray the Rosary", onBack = { navController.popBackStack() }) {
+                DetailScaffold(title = "How to pray", onBack = { navController.popBackStack() }) {
                     HowToPrayScreen()
                 }
             }
