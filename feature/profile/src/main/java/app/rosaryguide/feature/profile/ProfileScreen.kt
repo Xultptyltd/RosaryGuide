@@ -2,6 +2,7 @@ package app.rosaryguide.feature.profile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import app.rosaryguide.core.designsystem.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -305,7 +306,19 @@ private fun ProfileHome(
             IntentionsEmptyCard(onAdd = onAdd)
         } else {
             Column(modifier = gutter.fillMaxWidth()) {
-            preview.forEachIndexed { index, item ->
+            val hero = preview.firstOrNull { it.isPinned } ?: preview.first()
+            val rest = preview.filter { it.id != hero.id }
+            IntentionHero(
+                intention = hero,
+                hidden = hidden,
+                onOpen = { onOpenDetail(hero) },
+                onPray = { onPray(hero) },
+                onPin = { onPin(hero) },
+                onEdit = { onEdit(hero) },
+                onDelete = { onDelete(hero) },
+            )
+            rest.forEachIndexed { index, item ->
+                if (index == 0) Spacer(Modifier.height(RosarySpace.md))
                 IntentionRow(
                     intention = item,
                     hidden = hidden,
@@ -315,7 +328,7 @@ private fun ProfileHome(
                     onEdit = { onEdit(item) },
                     onDelete = { onDelete(item) },
                 )
-                if (index != preview.lastIndex) {
+                if (index != rest.lastIndex) {
                     HorizontalDivider(
                         modifier = Modifier.padding(start = 56.dp),
                         color = palette.strokeSubtle,
@@ -328,7 +341,7 @@ private fun ProfileHome(
             GuidePrimaryButton(title = "Add intention", onClick = onAdd)
             }
         }
-        if (pope != null) {
+        if (pope != null && active.none { it.sourceId == "pope-${pope.yearMonth}" }) {
             Column(modifier = gutter.fillMaxWidth()) {
             Spacer(Modifier.height(RosarySpace.lg))
             GuideSectionLabel(text = "Holy Father’s intention")
@@ -443,13 +456,34 @@ fun HolyFatherCard(pope: PopeMonthIntention, modifier: Modifier = Modifier) {
             .background(palette.surface)
             .padding(RosarySpace.lg),
     ) {
-        Text(pope.monthLabel(), style = RosaryType.caption, color = palette.textSecondary)
-        Spacer(Modifier.height(RosarySpace.xs))
-        Text(pope.title, style = RosaryType.headingSecondary, color = palette.ink)
-        pope.note?.let {
-            Spacer(Modifier.height(RosarySpace.sm))
-            Text(it, style = RosaryType.supportingLabel, color = palette.textSecondary)
+        Row(verticalAlignment = Alignment.Top) {
+            Image(
+                painter = painterResource(R.drawable.pope_leo),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(width = 96.dp, height = 124.dp)
+                    .clip(RoundedCornerShape(RosarySpace.nestedRadius)),
+            )
+            Spacer(Modifier.width(RosarySpace.lg))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Holy Father’s intention",
+                    style = RosaryType.caption,
+                    color = palette.accentText,
+                )
+                Spacer(Modifier.height(RosarySpace.sm))
+                Text(pope.title, style = RosaryType.body, color = palette.ink)
+                Spacer(Modifier.height(RosarySpace.xs))
+                Text(pope.monthLabel(), style = RosaryType.caption, color = palette.textSecondary)
+            }
         }
+        pope.note?.let {
+            Spacer(Modifier.height(RosarySpace.md))
+            Text(it, style = RosaryType.supportingLabel, color = palette.dim)
+        }
+        Spacer(Modifier.height(RosarySpace.sm))
+        Text("Tap to add", style = RosaryType.caption, color = palette.accentText)
     }
 }
 

@@ -1,12 +1,20 @@
 package app.rosaryguide.feature.profile
 
 import androidx.compose.foundation.background
+import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
+import app.rosaryguide.core.designsystem.R
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -63,15 +71,7 @@ fun IntentionRow(
             .padding(vertical = RosarySpace.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(intention.accent.fill()),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(intention.displayEmoji, style = RosaryType.body)
-        }
+        IntentionIcon(intention = intention, size = 40.dp)
         Spacer(Modifier.width(RosarySpace.md))
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -135,4 +135,95 @@ fun OfferIntention.papalMonthLabel(): String? {
         .atZone(ZoneId.systemDefault())
         .toLocalDate()
         .format(papalMonthFormatter)
+}
+
+@Composable
+fun IntentionIcon(intention: OfferIntention, size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+    if (intention.isPapal) {
+        Image(
+            painter = painterResource(R.drawable.pope_leo),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = modifier.size(size).clip(CircleShape),
+        )
+    } else {
+        Box(
+            modifier = modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(intention.accent.fill()),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(intention.displayEmoji, style = RosaryType.body)
+        }
+    }
+}
+
+@Composable
+fun IntentionHero(
+    intention: OfferIntention,
+    hidden: Boolean,
+    onOpen: () -> Unit,
+    onPray: () -> Unit,
+    onPin: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = LocalThemePalette.current
+    var menu by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    val title = IntentionPrivacy.displayTitle(intention, hidden)
+    val hiddenTitle = IntentionPrivacy.hides(intention, hidden)
+    val shape = RoundedCornerShape(RosarySpace.containerRadius)
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(palette.surface)
+            .clickable(onClick = onOpen)
+            .padding(RosarySpace.lg),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IntentionIcon(intention = intention, size = 57.dp)
+            Spacer(Modifier.width(RosarySpace.lg))
+            Text(
+                title,
+                style = RosaryType.body,
+                color = if (hiddenTitle) palette.dim else palette.ink,
+                maxLines = 2,
+                modifier = Modifier.weight(1f),
+            )
+            Box {
+                IconButton(onClick = { menu = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "More", tint = palette.textSecondary)
+                }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(text = { Text(if (intention.isPinned) "Unpin" else "Pin") }, onClick = { menu = false; onPin() })
+                    DropdownMenuItem(text = { Text("Edit") }, onClick = { menu = false; onEdit() })
+                    DropdownMenuItem(text = { Text("Delete") }, onClick = { menu = false; confirmDelete = true })
+                }
+            }
+        }
+        Spacer(Modifier.height(RosarySpace.md))
+        GuideSecondaryButton(title = "Pray my next Rosary for this", onClick = onPray)
+    }
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete intention?", style = RosaryType.headingSecondary, color = palette.ink) },
+            text = { Text("This will delete “$title” from your intentions.", style = RosaryType.body, color = palette.dim) },
+            confirmButton = {
+                TextButton(onClick = { confirmDelete = false; onDelete() }) {
+                    Text("Delete", color = palette.destructive)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) {
+                    Text("Cancel", color = palette.accentText)
+                }
+            },
+            containerColor = palette.bg,
+        )
+    }
 }
