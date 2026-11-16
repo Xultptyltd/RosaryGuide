@@ -30,6 +30,7 @@ import app.rosaryguide.core.data.catalog.OnboardingCopy
 import app.rosaryguide.core.data.catalog.OnboardingPage
 import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
+import app.rosaryguide.core.designsystem.component.LocalReduceMotion
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
@@ -45,6 +46,7 @@ fun OnboardingScreen(
     val pages = OnboardingPage.pages
     val pagerState = rememberPagerState(initialPage = initialPage.coerceIn(0, pages.lastIndex)) { pages.size }
     val scope = rememberCoroutineScope()
+    val reduceMotion = LocalReduceMotion.current
 
     Column(
         modifier = modifier
@@ -88,7 +90,10 @@ fun OnboardingScreen(
                 if (isLast) {
                     onBegin()
                 } else {
-                    scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+                    scope.launch {
+                        if (reduceMotion) pagerState.scrollToPage(pagerState.currentPage + 1)
+                        else pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                    }
                 }
             }
         }

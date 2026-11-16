@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material.icons.Icons
@@ -21,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
+import app.rosaryguide.core.designsystem.theme.guideHeading
+import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
 
 /**
  * Pushed-page chrome, ported from iOS `GuideDetailChrome`: a chevron back
@@ -33,10 +36,11 @@ fun GuideDetailTopBar(
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalThemePalette.current
+    val ax = isAccessibilitySize()
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(52.dp)
+            .heightIn(min = 52.dp)
             .padding(horizontal = RosarySpace.xs),
         contentAlignment = Alignment.Center,
     ) {
@@ -44,12 +48,14 @@ fun GuideDetailTopBar(
             text = title,
             style = RosaryType.navigationTitle,
             color = palette.ink,
-            maxLines = 1,
+            maxLines = if (ax) 3 else 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 56.dp),
+                .padding(horizontal = 56.dp)
+                .padding(vertical = if (ax) RosarySpace.xs else 0.dp)
+                .guideHeading(),
         )
         Row(
             modifier = Modifier

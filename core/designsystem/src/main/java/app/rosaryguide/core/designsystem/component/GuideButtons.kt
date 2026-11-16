@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,7 +43,7 @@ fun GuidePrimaryButton(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .height(RosarySpace.pillHeight),
+            .heightIn(min = RosarySpace.pillHeight),
         shape = RoundedCornerShape(RosarySpace.containerRadius),
         colors = ButtonDefaults.buttonColors(
             containerColor = palette.buttonPrimaryFill,
@@ -67,7 +68,7 @@ fun GuideSecondaryButton(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .height(RosarySpace.pillHeight),
+            .heightIn(min = RosarySpace.pillHeight),
         shape = RoundedCornerShape(RosarySpace.containerRadius),
         colors = ButtonDefaults.buttonColors(
             containerColor = palette.buttonSecondaryFill,
@@ -91,7 +92,7 @@ fun GuideTertiaryButton(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .height(RosarySpace.pillHeight),
+            .heightIn(min = RosarySpace.pillHeight),
         shape = RoundedCornerShape(RosarySpace.containerRadius),
         colors = ButtonDefaults.buttonColors(
             containerColor = palette.buttonTertiaryFill,
@@ -115,7 +116,7 @@ fun GuideGoogleButton(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .height(RosarySpace.pillHeight),
+            .heightIn(min = RosarySpace.pillHeight),
         shape = RoundedCornerShape(RosarySpace.containerRadius),
         border = BorderStroke(1.dp, palette.googleButtonStroke),
         colors = ButtonDefaults.outlinedButtonColors(
@@ -152,7 +153,7 @@ fun GuideOutlineButton(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .height(RosarySpace.pillHeight),
+            .heightIn(min = RosarySpace.pillHeight),
         shape = RoundedCornerShape(RosarySpace.containerRadius),
         border = BorderStroke(1.dp, palette.strokeRegular),
         colors = ButtonDefaults.outlinedButtonColors(

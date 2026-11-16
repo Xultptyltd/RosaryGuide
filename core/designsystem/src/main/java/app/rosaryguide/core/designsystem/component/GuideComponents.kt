@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
@@ -22,6 +23,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
@@ -38,21 +43,42 @@ import androidx.compose.ui.unit.IntOffset
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
+import app.rosaryguide.core.designsystem.theme.guideHeading
+import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
 import kotlin.math.roundToInt
 
 val LocalReduceMotion = staticCompositionLocalOf { false }
 
+fun isReduceMotionEnabled(context: android.content.Context): Boolean {
+    val resolver = context.contentResolver
+    fun scale(name: String): Float = Settings.Global.getFloat(resolver, name, 1f)
+    return scale(Settings.Global.ANIMATOR_DURATION_SCALE) == 0f ||
+        scale(Settings.Global.TRANSITION_ANIMATION_SCALE) == 0f ||
+        scale(Settings.Global.WINDOW_ANIMATION_SCALE) == 0f
+}
+
 @Composable
 fun rememberReduceMotion(): Boolean {
     val context = LocalContext.current
-    return remember(context) {
-        val scale = Settings.Global.getFloat(
-            context.contentResolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f,
-        )
-        scale == 0f
+    var enabled by remember { mutableStateOf(isReduceMotionEnabled(context)) }
+    DisposableEffect(context) {
+        val resolver = context.contentResolver
+        val observer = object : android.database.ContentObserver(android.os.Handler(android.os.Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                enabled = isReduceMotionEnabled(context)
+            }
+        }
+        listOf(
+            Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE),
+            Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE),
+            Settings.Global.getUriFor(Settings.Global.WINDOW_ANIMATION_SCALE),
+        ).forEach { uri ->
+            if (uri != null) resolver.registerContentObserver(uri, false, observer)
+        }
+        enabled = isReduceMotionEnabled(context)
+        onDispose { resolver.unregisterContentObserver(observer) }
     }
+    return enabled
 }
 
 @Composable
@@ -70,7 +96,7 @@ fun GuideSectionLabel(
         text = text,
         style = RosaryType.supportingLabel,
         color = palette.textSecondary,
-        modifier = modifier.padding(bottom = RosarySpace.xs),
+        modifier = modifier.padding(bottom = RosarySpace.xs).guideHeading(),
     )
 }
 
@@ -87,7 +113,7 @@ fun GuidePill(
     val click = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
     Box(
         modifier = modifier
-            .height(RosarySpace.pillHeight)
+            .heightIn(min = RosarySpace.pillHeight)
             .clip(RoundedCornerShape(RosarySpace.containerRadius))
             .background(background)
             .then(click)
@@ -135,7 +161,7 @@ fun GuideScreenHeader(
 ) {
     val palette = LocalThemePalette.current
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(text = title, style = RosaryType.headingPrimary, color = palette.ink)
+        Text(text = title, style = RosaryType.headingPrimary, color = palette.ink, modifier = Modifier.guideHeading())
         if (subtitle != null) {
             Spacer(Modifier.height(RosarySpace.xs))
             Text(text = subtitle, style = RosaryType.supportingLabel, color = palette.textSecondary)
@@ -151,12 +177,13 @@ fun GuideMarqueeText(
 ) {
     val palette = LocalThemePalette.current
     val reduceMotion = LocalReduceMotion.current
-    if (reduceMotion) {
+    val ax = isAccessibilitySize()
+    if (reduceMotion || ax) {
         Text(
             text = text,
             style = style,
             color = palette.ink,
-            maxLines = 1,
+            maxLines = if (ax) 4 else 1,
             overflow = TextOverflow.Ellipsis,
             modifier = modifier,
         )

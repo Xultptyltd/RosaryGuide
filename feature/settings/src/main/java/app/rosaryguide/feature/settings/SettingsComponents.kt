@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -24,6 +25,7 @@ import app.rosaryguide.core.designsystem.component.GuideSectionLabel
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
+import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
 
 @Composable
 fun SettingsSection(
@@ -55,26 +57,46 @@ fun SettingsNavigationRow(
         destructive -> palette.destructive
         else -> palette.ink
     }
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.padding(end = RosarySpace.md))
+    val ax = isAccessibilitySize()
+    val rowMod = modifier
+        .fillMaxWidth()
+        .sizeIn(minHeight = RosarySpace.minHitTarget)
+        .clickable(enabled = enabled, onClick = onClick)
+        .padding(vertical = 14.dp)
+    if (ax && value != null) {
+        Column(modifier = rowMod) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                if (icon != null) {
+                    Icon(icon, contentDescription = null, tint = color, modifier = Modifier.padding(end = RosarySpace.md))
+                }
+                Text(title, style = RosaryType.body, color = color, modifier = Modifier.weight(1f))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = palette.dim,
+                )
+            }
+            Text(value, style = RosaryType.body, color = palette.dim, modifier = Modifier.padding(top = RosarySpace.xs))
         }
-        Text(title, style = RosaryType.body, color = color, modifier = Modifier.weight(1f))
-        if (value != null) {
-            Text(value, style = RosaryType.body, color = palette.dim)
-            Spacer(Modifier.width(RosarySpace.xs))
+    } else {
+        Row(
+            modifier = rowMod,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (icon != null) {
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.padding(end = RosarySpace.md))
+            }
+            Text(title, style = RosaryType.body, color = color, modifier = Modifier.weight(1f))
+            if (value != null) {
+                Text(value, style = RosaryType.body, color = palette.dim)
+                Spacer(Modifier.width(RosarySpace.xs))
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = palette.dim,
+            )
         }
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = palette.dim,
-        )
     }
 }
 
@@ -87,9 +109,34 @@ fun SettingsToggleRow(
     onCheckedChange: (Boolean) -> Unit,
 ) {
     val palette = LocalThemePalette.current
+    val ax = isAccessibilitySize()
+    if (ax) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .sizeIn(minHeight = RosarySpace.minHitTarget)
+                .padding(vertical = 8.dp),
+        ) {
+            Text(
+                title,
+                style = RosaryType.body,
+                color = if (enabled) palette.ink else palette.dim,
+            )
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                enabled = enabled,
+                colors = SwitchDefaults.colors(
+                    checkedTrackColor = palette.accent,
+                    checkedThumbColor = palette.onAccent,
+                ),
+            )
+        }
+    } else
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .sizeIn(minHeight = RosarySpace.minHitTarget)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

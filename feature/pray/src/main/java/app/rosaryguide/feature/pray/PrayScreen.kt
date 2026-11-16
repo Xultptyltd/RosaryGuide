@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.size
@@ -48,6 +50,7 @@ import app.rosaryguide.feature.settings.CustomiseRosaryScreen
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
+import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
 import app.rosaryguide.core.model.CompletionQuote
 import app.rosaryguide.core.model.MysterySetKind
 import app.rosaryguide.core.model.PrayTrackStage
@@ -282,6 +285,7 @@ fun PrayScreen(
                     style = RosaryType.body,
                     color = palette.accentText,
                     modifier = Modifier
+                        .sizeIn(minWidth = RosarySpace.minHitTarget, minHeight = RosarySpace.minHitTarget)
                         .clickable(onClick = onClose)
                         .padding(RosarySpace.sm),
                 )
@@ -368,6 +372,23 @@ fun PrayScreen(
                 BeadRail(current = current?.bead, modifier = Modifier.fillMaxWidth())
             }
 
+            val axFooter = isAccessibilitySize()
+            if (axFooter) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.sm),
+                    verticalArrangement = Arrangement.spacedBy(RosarySpace.sm),
+                ) {
+                    GuidePrimaryButton(
+                        title = if (current?.isLastPrayer == true) "Finish" else "Next",
+                        onClick = { advance() },
+                    )
+                    if (index > 0 || showingIntentionStep) {
+                        GuideSecondaryButton(title = "Back", onClick = { goBack() })
+                    }
+                }
+            } else {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -386,6 +407,7 @@ fun PrayScreen(
                         onClick = { advance() },
                     )
                 }
+            }
             }
             if (showCompleteDecade) {
                 Box(
@@ -419,7 +441,7 @@ private fun LanguageChips(
     onChange: (PrayerLanguage) -> Unit,
 ) {
     val palette = LocalThemePalette.current
-    Row(horizontalArrangement = Arrangement.spacedBy(RosarySpace.sm)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(RosarySpace.sm)) {
         PrayerLanguage.entries.forEach { option ->
             val selected = option == language
             Text(
@@ -427,7 +449,7 @@ private fun LanguageChips(
                 style = RosaryType.caption,
                 color = if (selected) palette.accentText else palette.dim,
                 modifier = Modifier
-                    .widthIn(min = 44.dp)
+                    .sizeIn(minWidth = RosarySpace.minHitTarget, minHeight = RosarySpace.minHitTarget)
                     .clickable { onChange(option) }
                     .padding(vertical = RosarySpace.xs, horizontal = RosarySpace.sm),
             )

@@ -11,7 +11,9 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import app.rosaryguide.android.ui.DebugLaunch
 import app.rosaryguide.android.ui.RosaryGuideApp
 import app.rosaryguide.core.data.prefs.SettingsStore
+import app.rosaryguide.core.designsystem.theme.ColorSchemeContrast
 import app.rosaryguide.core.designsystem.theme.RosaryGuideTheme
+import app.rosaryguide.core.designsystem.theme.isIncreasedContrast
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -31,7 +33,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settings by settingsStore.value.collectAsState()
             val systemDark = isSystemInDarkTheme()
-            RosaryGuideTheme(darkTheme = settings.appearance.isDark(systemDark)) {
+            val contrast = if (isIncreasedContrast(this@MainActivity)) {
+                ColorSchemeContrast.Increased
+            } else {
+                ColorSchemeContrast.Standard
+            }
+            RosaryGuideTheme(
+                darkTheme = settings.appearance.isDark(systemDark),
+                contrast = contrast,
+            ) {
                 RosaryGuideApp(
                     debugLaunch = debug,
                     onFirstFrame = { keepSplash = false },

@@ -3,6 +3,13 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
+    </queries>
+
     <application
         android:name=".RosaryGuideApplication"
         android:allowBackup="false"
@@ -10,6 +17,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.RosaryGuide">
         <activity
             android:name=".MainActivity"

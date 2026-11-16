@@ -14,6 +14,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.platform.LocalUriHandler
 import app.rosaryguide.core.data.legal.LegalBlock
 import app.rosaryguide.core.data.legal.LegalCatalog
@@ -70,20 +80,12 @@ fun LegalDocumentBody(
                 val color = if (block.kind == "h1" || block.kind == "h2" || block.kind == "h3") palette.ink else palette.ink
                 val prefix = if (block.kind == "li") "• " else ""
                 Text(
-                    text = prefix + displayLegal(block.text),
+                    text = annotatedLegal(prefix + block.text, palette.accentText),
                     style = style,
                     color = color,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = RosarySpace.md)
-                        .then(
-                            if (block.text.contains("https://")) {
-                                Modifier.clickable {
-                                    val match = Regex("https://[^\\s\\])]+").find(block.text)
-                                    match?.value?.let { uriHandler.openUri(it) }
-                                }
-                            } else Modifier,
-                        ),
+                        .padding(bottom = RosarySpace.md),
                 )
             }
         }
@@ -159,8 +161,35 @@ fun LicenseDetailScreen(
 }
 
 
-private fun displayLegal(raw: String): String {
-    var text = raw.replace("**", "")
-    text = Regex("""\[([^\]]+)\]\(([^)]+)\)""").replace(text) { it.groupValues[1] }
-    return text
+private fun annotatedLegal(raw: String, linkColor: Color): AnnotatedString {
+    val mdLink = Regex("""\[([^\]]+)]\(([^)]+)\)""")
+    val bold = Regex("""\*\*(.+?)\*\*""")
+    val tokens = mutableListOf<Pair<IntRange, Pair<String, String?>>>()
+    mdLink.findAll(raw).forEach { match ->
+        tokens += match.range to (match.groupValues[1] to match.groupValues[2])
+    }
+    bold.findAll(raw).forEach { match ->
+        val overlaps = tokens.any { it.first.first <= match.range.last && match.range.first <= it.first.last }
+        if (!overlaps) tokens += match.range to (match.groupValues[1] to null)
+    }
+    tokens.sortBy { it.first.first }
+    return buildAnnotatedString {
+        var cursor = 0
+        for ((range, payload) in tokens) {
+            if (cursor < range.first) append(raw.substring(cursor, range.first))
+            val (label, url) = payload
+            if (url != null) {
+                withLink(
+                    LinkAnnotation.Url(
+                        url,
+                        TextLinkStyles(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)),
+                    ),
+                ) { append(label) }
+            } else {
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(label) }
+            }
+            cursor = range.last + 1
+        }
+        if (cursor < raw.length) append(raw.substring(cursor))
+    }
 }

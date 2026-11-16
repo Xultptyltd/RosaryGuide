@@ -1,5 +1,6 @@
 package app.rosaryguide.feature.settings
 
+import androidx.activity.compose.BackHandler
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -77,6 +78,16 @@ fun SettingsScreen(
 ) {
     var page by remember(initialPage) { mutableStateOf(initialPage) }
     var license by remember { mutableStateOf<LicenseEntry?>(null) }
+    BackHandler {
+        when (page) {
+            SettingsPage.Root -> onBack()
+            SettingsPage.License -> {
+                page = SettingsPage.Acknowledgements
+                license = null
+            }
+            else -> page = SettingsPage.Root
+        }
+    }
 
     when (page) {
         SettingsPage.CustomiseRosary -> CustomiseRosaryScreen(
@@ -171,6 +182,7 @@ private fun SettingsRoot(
     var confirmSignOut by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var deleteStub by remember { mutableStateOf(false) }
+    var reportProblem by remember { mutableStateOf(false) }
 
     fun openUrl(url: String) {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -240,7 +252,7 @@ private fun SettingsRoot(
 
             Spacer(Modifier.height(RosarySpace.xl))
             SettingsSection(title = "Help & support") {
-                SettingsNavigationRow("Report a problem", external = true, onClick = { openUrl("https://xult.ltd/contact/") })
+                SettingsNavigationRow("Report a problem", external = true, onClick = { reportProblem = true })
                 SettingsDivider()
                 SettingsNavigationRow("Suggest a feature", external = true, onClick = { openUrl("https://xult.ltd/contact/") })
                 if (playStorePackage != null) {
@@ -296,6 +308,28 @@ private fun SettingsRoot(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+
+
+    if (reportProblem) {
+        AlertDialog(
+            onDismissRequest = { reportProblem = false },
+            title = { Text("What would you like to report?") },
+            text = {
+                androidx.compose.foundation.layout.Column {
+                    TextButton(onClick = {
+                        reportProblem = false
+                        SettingsMail.send(context, SupportMailKind.Bug, appVersion)
+                    }) { Text("Bug") }
+                    TextButton(onClick = {
+                        reportProblem = false
+                        SettingsMail.send(context, SupportMailKind.Translation, appVersion)
+                    }) { Text("Translation") }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { reportProblem = false }) { Text("Cancel") } },
+        )
     }
 
     if (confirmClear) {

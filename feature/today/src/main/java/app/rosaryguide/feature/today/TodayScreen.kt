@@ -39,6 +39,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -66,6 +68,7 @@ import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.PageStyle
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
+import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
 import app.rosaryguide.core.model.DatedFeast
 import kotlinx.coroutines.delay
 import java.time.LocalDate
@@ -136,6 +139,24 @@ fun TodayScreen(
         GuideSectionDivider(Modifier.padding(horizontal = RosarySpace.gutter))
         Spacer(Modifier.height(RosarySpace.xl))
 
+        val ax = isAccessibilitySize()
+        if (ax) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = RosarySpace.gutter),
+            ) {
+                GuideSectionLabel(text = HomeCopy.UPCOMING_FEAST_DAYS)
+                Text(
+                    text = HomeCopy.VIEW_ALL_FEASTS,
+                    style = RosaryType.caption,
+                    color = palette.accentText,
+                    modifier = Modifier
+                        .clickable(onClick = onViewAllFeasts)
+                        .padding(vertical = RosarySpace.sm),
+                )
+            }
+        } else {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -148,8 +169,11 @@ fun TodayScreen(
                 text = HomeCopy.VIEW_ALL_FEASTS,
                 style = RosaryType.caption,
                 color = palette.accentText,
-                modifier = Modifier.clickable(onClick = onViewAllFeasts),
+                modifier = Modifier
+                    .clickable(onClick = onViewAllFeasts)
+                    .padding(vertical = RosarySpace.sm),
             )
+        }
         }
 
         if (featured != null) {
@@ -324,16 +348,25 @@ private fun FeastRow(
 ) {
     val palette = LocalThemePalette.current
     val date = item.date.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
+    val ax = isAccessibilitySize()
+    val rowMod = modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(RosarySpace.nestedRadius))
+        .clickable(onClick = onClick)
+        .padding(vertical = RosarySpace.sm)
+    if (ax) {
+        Column(modifier = rowMod) {
+            Text(text = date, style = RosaryType.supportingLabel, color = palette.dim)
+            Text(text = item.feast.shortTitle, style = RosaryType.body, color = palette.ink)
+        }
+    } else {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(RosarySpace.nestedRadius))
-            .clickable(onClick = onClick)
-            .padding(vertical = RosarySpace.sm),
+        modifier = rowMod,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text = date, style = RosaryType.supportingLabel, color = palette.dim, modifier = Modifier.width(72.dp))
         Text(text = item.feast.shortTitle, style = RosaryType.body, color = palette.ink, modifier = Modifier.weight(1f))
+    }
     }
 }
 
@@ -351,20 +384,48 @@ private fun WeekGlanceRow(
     val weekday = date.format(java.time.format.DateTimeFormatter.ofPattern("EEE", java.util.Locale.getDefault()))
     val dayMonth = date.format(java.time.format.DateTimeFormatter.ofPattern("d MMM", java.util.Locale.getDefault()))
     val shape = RoundedCornerShape(RosarySpace.md)
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .then(
-                if (isToday) Modifier
-                    .background(
-                        if (palette.isDark) palette.ink.copy(alpha = 0.07f) else palette.surface,
-                        shape,
-                    )
-                    .padding(horizontal = RosarySpace.md)
-                else Modifier
+    val ax = isAccessibilitySize()
+    val feastTitle = assignment.feast?.feast?.shortTitle
+    val description = buildString {
+        append(weekday)
+        append(", ")
+        append(dayMonth)
+        append(", ")
+        append(assignment.set.shortName)
+        if (feastTitle != null) {
+            append(", ")
+            append(feastTitle)
+        }
+        if (prayed) append(", prayed")
+        if (isToday) append(", today")
+    }
+    val rowMod = modifier
+        .fillMaxWidth()
+        .then(
+            if (isToday) Modifier
+                .background(
+                    if (palette.isDark) palette.ink.copy(alpha = 0.07f) else palette.surface,
+                    shape,
+                )
+                .padding(horizontal = RosarySpace.md)
+            else Modifier
+        )
+        .clickable(onClick = onClick)
+        .semantics { contentDescription = description }
+        .padding(vertical = RosarySpace.md)
+    if (ax) {
+        Column(modifier = rowMod) {
+            Text(text = "$weekday  $dayMonth", style = RosaryType.body, color = palette.ink)
+            feastTitle?.let { Text(text = it, style = RosaryType.caption, color = palette.dim) }
+            Text(
+                text = assignment.set.shortName + if (prayed) "  ✓" else "",
+                style = RosaryType.body,
+                color = if (isToday) palette.ink else palette.dim,
             )
-            .clickable(onClick = onClick)
-            .padding(vertical = RosarySpace.md),
+        }
+    } else {
+    Row(
+        modifier = rowMod,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -379,7 +440,7 @@ private fun WeekGlanceRow(
                 style = RosaryType.supportingLabel,
                 color = if (isToday) palette.ink else palette.dim,
             )
-            assignment.feast?.feast?.shortTitle?.let { feast ->
+            feastTitle?.let { feast ->
                 Text(text = feast, style = RosaryType.caption, color = palette.dim)
             }
         }
@@ -395,5 +456,6 @@ private fun WeekGlanceRow(
             color = palette.accent.copy(alpha = if (prayed) 1f else 0f),
             modifier = Modifier.width(22.dp),
         )
+    }
     }
 }

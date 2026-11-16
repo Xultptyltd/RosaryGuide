@@ -13,13 +13,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 @Composable
 fun RosaryGuideTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    contrast: ColorSchemeContrast = ColorSchemeContrast.Standard,
     content: @Composable () -> Unit,
 ) {
     val colors = if (darkTheme) darkRosaryColors() else lightRosaryColors()
+    val palette = ThemePalette(isDark = darkTheme, contrast = contrast)
     CompositionLocalProvider(
         LocalRosaryColors provides colors,
         LocalRosaryDimens provides RosaryDimens(),
-        LocalThemePalette provides if (darkTheme) ThemePalette.Dark else ThemePalette.Light,
+        LocalThemePalette provides palette,
     ) {
         MaterialTheme(
             colorScheme = colors.toMaterialScheme(),
@@ -28,6 +30,5 @@ fun RosaryGuideTheme(
         )
     }
 }
-
 
 val LocalThemePalette = staticCompositionLocalOf { ThemePalette.Light }

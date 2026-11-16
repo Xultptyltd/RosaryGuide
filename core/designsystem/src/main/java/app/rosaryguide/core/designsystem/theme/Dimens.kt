@@ -22,7 +22,7 @@ object RosarySpace {
     val section: Dp = 44.dp
     const val ScaleLimit = 1.5f
     val gutter: Dp = 16.dp
-    val minHitTarget: Dp = 44.dp
+    val minHitTarget: Dp = 48.dp
     val pillHeight: Dp = 52.dp
     val profileRowHeight: Dp = 56.dp
     val containerRadius: Dp = 20.dp

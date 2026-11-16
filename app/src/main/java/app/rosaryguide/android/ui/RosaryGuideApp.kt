@@ -1,5 +1,8 @@
 package app.rosaryguide.android.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -8,13 +11,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,7 +29,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -42,6 +54,7 @@ import app.rosaryguide.core.data.launch.AppTab
 import app.rosaryguide.core.data.launch.LaunchGate
 import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
+import app.rosaryguide.core.designsystem.component.LocalReduceMotion
 import app.rosaryguide.core.designsystem.component.ProvideReduceMotion
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
@@ -118,7 +131,7 @@ fun RosaryGuideApp(
         val versionName = remember {
             runCatching {
                 context.packageManager.getPackageInfo(context.packageName, 0).versionName
-            }.getOrNull().orEmpty().ifBlank { "0.6.0-m6" }
+            }.getOrNull().orEmpty().ifBlank { "0.7.0-m7" }
         }
         var showSplash by remember { mutableStateOf(!debugLaunch.skipSplash) }
         var showSignIn by remember { mutableStateOf(debugLaunch.forceSignIn) }
@@ -146,6 +159,7 @@ fun RosaryGuideApp(
             )
         }
         var showWelcomeReplay by remember { mutableStateOf(false) }
+        var consumeForceOnboarding by remember { mutableStateOf(false) }
 
         fun openPray(set: MysterySetKind, fromDebug: Boolean = false) {
             val base = viewModel.settingsStore.current.rosaryConfig
@@ -172,16 +186,17 @@ fun RosaryGuideApp(
             }
         }
 
+        val forcingEntry = (debugLaunch.forceOnboarding || debugLaunch.forceSignIn) && !consumeForceOnboarding
         val didComplete = when {
-            debugLaunch.forceOnboarding || debugLaunch.forceSignIn -> false
-            debugLaunch.forceTabs -> true
+            forcingEntry -> false
+            debugLaunch.forceTabs || consumeForceOnboarding -> true
             else -> flags.onboardingCompleted
         }
         val showsApp = LaunchGate.showsApp(
             didCompleteOnboarding = didComplete,
             isSignedIn = auth.isSignedIn,
             signedInThisLaunch = auth.interactiveSignIns > 0,
-        ) && !debugLaunch.forceOnboarding && !debugLaunch.forceSignIn && !showSignIn
+        ) && !forcingEntry && !showSignIn
 
         Box(Modifier.fillMaxSize()) {
             if (showsApp) {
@@ -214,10 +229,12 @@ fun RosaryGuideApp(
                     onGoogle = {
                         viewModel.signInWithGoogle()
                         showSignIn = false
+                        consumeForceOnboarding = true
                     },
                     onGuest = {
                         viewModel.continueAsGuest()
                         showSignIn = false
+                        consumeForceOnboarding = true
                     },
                     isSigningInWithGoogle = auth.isSigningInWithGoogle,
                 )
@@ -297,6 +314,13 @@ fun RosaryGuideApp(
                     onBegin = { showWelcomeReplay = false },
                 )
             }
+
+            if (prayLaunch != null) {
+                BackHandler { prayLaunch = null }
+            }
+            if (showWelcomeReplay) {
+                BackHandler { showWelcomeReplay = false }
+            }
         }
     }
 }
@@ -319,13 +343,6 @@ private fun AppTabs(
     val palette = LocalThemePalette.current
     val backStackEntry by navController.currentBackStackEntryAsState()
     val destination = backStackEntry?.destination
-    val onTab = tabs.any { spec -> destination?.hierarchy?.any { it.hasRoute(spec.route::class) } == true }
-        && destination?.hasRoute<FeastDetailRoute>() != true
-        && destination?.hasRoute<HowToPrayRoute>() != true
-        && destination?.hasRoute<ArticleRoute>() != true
-        && destination?.hasRoute<PrayerRoute>() != true
-        && destination?.hasRoute<MysterySetRoute>() != true
-
     val startRoute: Any = when (debugLaunch.startTab) {
         AppTab.Today -> TodayRoute
         AppTab.Learn -> LearnRoute
@@ -347,54 +364,31 @@ private fun AppTabs(
         }
     }
 
-    Scaffold(
-        containerColor = palette.bg,
-        bottomBar = {
-            if (onTab) {
-                NavigationBar(containerColor = palette.groupedBackground) {
-                    tabs.forEach { tab ->
-                        val selected = destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(if (selected) tab.selectedIcon else tab.unselectedIcon),
-                                    contentDescription = tab.tab.title,
-                                )
-                            },
-                            label = {
-                                Text(text = tab.tab.title, style = RosaryType.caption.copy(fontSize = 12.sp))
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = palette.tabSelected,
-                                selectedTextColor = palette.tabSelected,
-                                unselectedIconColor = palette.textSecondary,
-                                unselectedTextColor = palette.textSecondary,
-                                indicatorColor = palette.accent.copy(alpha = 0.12f),
-                            ),
-                        )
-                    }
-                }
-            }
-        },
-    ) { innerPadding ->
+    val density = LocalDensity.current
+    val fontScale = density.fontScale
+    var tabBarHeight by remember { mutableStateOf(80.dp) }
+    val tabClearance = if (fontScale >= 1.6f) maxOf(tabBarHeight, 148.dp) else tabBarHeight
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(palette.bg)
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)),
+    ) {
+        val reduceMotion = LocalReduceMotion.current
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = tabClearance)
+                .clipToBounds(),
+        ) {
         NavHost(
             navController = navController,
             startDestination = startRoute,
-            modifier = Modifier
-                .padding(innerPadding)
-                .statusBarsPadding(),
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() },
+            modifier = Modifier.fillMaxSize(),
+            enterTransition = { if (reduceMotion) EnterTransition.None else fadeIn() },
+            exitTransition = { if (reduceMotion) ExitTransition.None else fadeOut() },
+            popEnterTransition = { if (reduceMotion) EnterTransition.None else fadeIn() },
+            popExitTransition = { if (reduceMotion) ExitTransition.None else fadeOut() },
         ) {
             composable<TodayRoute> {
                 TodayScreen(
@@ -486,6 +480,53 @@ private fun AppTabs(
                 DetailScaffold(title = set.titleText.english, onBack = { navController.popBackStack() }) {
                     MysterySetScreen(set)
                 }
+            }
+        }
+        }
+        NavigationBar(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .onSizeChanged { size ->
+                    if (size.height > 0) {
+                        val measured = with(density) { size.height.toDp() }
+                        if (measured > tabBarHeight) tabBarHeight = measured
+                    }
+                },
+            containerColor = palette.groupedBackground,
+            windowInsets = WindowInsets.safeDrawing.only(
+                WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
+            ),
+        ) {
+            tabs.forEach { tab ->
+                val selected = destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true
+                NavigationBarItem(
+                    selected = selected,
+                    onClick = {
+                        navController.navigate(tab.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    icon = {
+                        Icon(
+                            painter = painterResource(if (selected) tab.selectedIcon else tab.unselectedIcon),
+                            contentDescription = tab.tab.title,
+                        )
+                    },
+                    label = {
+                        Text(text = tab.tab.title, style = RosaryType.caption.copy(fontSize = 12.sp))
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = palette.tabSelected,
+                        selectedTextColor = palette.tabSelected,
+                        unselectedIconColor = palette.textSecondary,
+                        unselectedTextColor = palette.textSecondary,
+                        indicatorColor = palette.accent.copy(alpha = 0.12f),
+                    ),
+                )
             }
         }
     }

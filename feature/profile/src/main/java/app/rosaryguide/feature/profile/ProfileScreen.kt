@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -38,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.data.calendar.WeekStart
 import app.rosaryguide.core.data.journey.JourneyDayDetail
@@ -54,6 +52,7 @@ import app.rosaryguide.core.designsystem.component.GuideSectionLabel
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
+import app.rosaryguide.core.designsystem.theme.guideHeading
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -276,29 +275,30 @@ private fun ProfileHome(
 ) {
     val palette = LocalThemePalette.current
     val preview = active.take(3)
+    val gutter = Modifier.padding(horizontal = RosarySpace.gutter)
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(palette.bg)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = RosarySpace.gutter)
             .padding(top = RosarySpace.md, bottom = RosarySpace.xl),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text(text = "Profile", style = RosaryType.headingPrimary, color = palette.ink, modifier = Modifier.weight(1f))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = gutter.fillMaxWidth()) {
+            Text(text = "Profile", style = RosaryType.headingPrimary, color = palette.ink, modifier = Modifier.weight(1f).guideHeading())
             IconButton(onClick = onOpenSettings) {
                 Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = palette.ink)
             }
         }
         Spacer(Modifier.height(RosarySpace.lg))
-        Box(modifier = Modifier.clickable(onClick = onOpenRhythm)) {
+        Box(modifier = gutter.clickable(onClick = onOpenRhythm)) {
             PrayerRhythmCard(rhythm)
         }
         Spacer(Modifier.height(RosarySpace.lg))
-        IntentionsHeader(onToggleHide = onToggleHide, hidden = hidden, showToggle = active.isNotEmpty())
+        IntentionsHeader(onToggleHide = onToggleHide, hidden = hidden, showToggle = active.isNotEmpty(), modifier = gutter)
         if (active.isEmpty()) {
             IntentionsEmptyCard(onAdd = onAdd)
         } else {
+            Column(modifier = gutter.fillMaxWidth()) {
             preview.forEachIndexed { index, item ->
                 IntentionRow(
                     intention = item,
@@ -320,13 +320,17 @@ private fun ProfileHome(
             GuideOutlineButton(title = "View all intentions", onClick = onOpenAll)
             Spacer(Modifier.height(RosarySpace.sm))
             GuidePrimaryButton(title = "Add intention", onClick = onAdd)
+            }
         }
         if (pope != null) {
+            Column(modifier = gutter.fillMaxWidth()) {
             Spacer(Modifier.height(RosarySpace.lg))
             GuideSectionLabel(text = "Holy Father’s intention")
             Box(Modifier.clickable(onClick = onOpenPapal)) { HolyFatherCard(pope) }
+            }
         }
         if (milestones.preview.isNotEmpty() || milestones.earnedCount > 0 || rhythm.hasEverPrayed) {
+            Column(modifier = gutter.fillMaxWidth()) {
             Spacer(Modifier.height(RosarySpace.lg))
             GuideSectionLabel(text = "Milestones")
             val stage = milestoneStage(milestones, rhythm.hasEverPrayed)
@@ -345,28 +349,32 @@ private fun ProfileHome(
                     .clickable(onClick = onOpenJourney)
                     .padding(vertical = RosarySpace.sm),
             )
+            }
         }
         if (!isSignedIn) {
+            Column(modifier = gutter.fillMaxWidth()) {
             Spacer(Modifier.height(RosarySpace.lg))
             GuestBackupCard(onSignIn = onSignIn)
+            }
         }
         if (archivedCount > 0) {
-            Spacer(Modifier.height(RosarySpace.md))
             Text(
                 text = "Archived intentions",
                 style = RosaryType.caption,
                 color = palette.accent,
-                modifier = Modifier.clickable(onClick = onOpenArchived),
+                modifier = gutter
+                    .clickable(onClick = onOpenArchived)
+                    .padding(vertical = RosarySpace.sm),
             )
         }
     }
 }
 
 @Composable
-private fun IntentionsHeader(onToggleHide: () -> Unit, hidden: Boolean, showToggle: Boolean) {
+private fun IntentionsHeader(onToggleHide: () -> Unit, hidden: Boolean, showToggle: Boolean, modifier: Modifier = Modifier) {
     val palette = LocalThemePalette.current
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(bottom = RosarySpace.sm),
         verticalAlignment = Alignment.CenterVertically,
@@ -387,11 +395,7 @@ private fun IntentionsHeader(onToggleHide: () -> Unit, hidden: Boolean, showTogg
 fun IntentionsEmptyCard(onAdd: () -> Unit, modifier: Modifier = Modifier) {
     val palette = LocalThemePalette.current
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(RosarySpace.containerRadius))
-            .background(palette.surface)
-            .padding(RosarySpace.lg),
+        modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
@@ -399,19 +403,26 @@ fun IntentionsEmptyCard(onAdd: () -> Unit, modifier: Modifier = Modifier) {
             contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier = Modifier
-                .requiredWidth(LocalConfiguration.current.screenWidthDp.dp)
-                .height(280.dp),
+                .fillMaxWidth()
+                .height(280.dp)
+
         )
-        Spacer(Modifier.height(RosarySpace.md))
-        Text("What’s on your heart?", style = RosaryType.headingSecondary, color = palette.ink)
-        Spacer(Modifier.height(RosarySpace.xs))
-        Text(
-            "Keep your intentions close as you pray.",
-            style = RosaryType.supportingLabel,
-            color = palette.textSecondary,
-        )
-        Spacer(Modifier.height(RosarySpace.lg))
-        GuidePrimaryButton(title = "Add intention", onClick = onAdd)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(top = RosarySpace.md),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                "Keep the people, needs and hopes you carry close as you pray.",
+                style = RosaryType.body,
+                color = palette.dim,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Spacer(Modifier.height(RosarySpace.lg))
+            GuidePrimaryButton(title = "Add your first intention", onClick = onAdd)
+        }
     }
 }
 
