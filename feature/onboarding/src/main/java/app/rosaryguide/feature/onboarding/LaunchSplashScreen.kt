@@ -1,0 +1,98 @@
+package app.rosaryguide.feature.onboarding
+
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import app.rosaryguide.core.designsystem.component.LocalReduceMotion
+import app.rosaryguide.core.designsystem.theme.RosaryHex
+import app.rosaryguide.core.designsystem.theme.RosaryType
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
+import kotlinx.coroutines.delay
+
+/** Marian blue canvas. Lottie plays at 1.4×; Reduce Motion shows a serif “R” and finishes at 0.8s. */
+private val MarianBlue = Color(RosaryHex.MarianBlue)
+private const val SPLASH_MS = 5_000L
+private const val REDUCE_MOTION_MS = 800L
+
+@Composable
+fun LaunchSplashScreen(
+    onFinished: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val reduceMotion = LocalReduceMotion.current
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.Asset("rosary_loader_intro_dark.json"),
+    )
+    val progress = animateLottieCompositionAsState(
+        composition = composition,
+        iterations = 1,
+        isPlaying = !reduceMotion && composition != null,
+        speed = 1.4f,
+    )
+
+    LaunchedEffect(reduceMotion, progress.isAtEnd, composition) {
+        if (reduceMotion) {
+            delay(REDUCE_MOTION_MS)
+            onFinished()
+        } else if (composition == null) {
+            delay(SPLASH_MS)
+            onFinished()
+        } else if (progress.isAtEnd && progress.isPlaying.not() && progress.progress > 0.95f) {
+            onFinished()
+        }
+    }
+
+    // Safety timeout so a failed composition cannot pin the splash.
+    LaunchedEffect(reduceMotion) {
+        delay(if (reduceMotion) REDUCE_MOTION_MS + 200 else SPLASH_MS + 400)
+        onFinished()
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MarianBlue),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (reduceMotion || composition == null) {
+            var visible by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) { visible = true }
+            val scale by animateFloatAsState(
+                targetValue = if (visible) 1f else 0.92f,
+                animationSpec = tween(400, easing = FastOutSlowInEasing),
+                label = "splash-r",
+            )
+            Text(
+                text = "R",
+                style = RosaryType.serifDisplay,
+                color = Color.White,
+                modifier = Modifier.scale(scale),
+            )
+        } else {
+            LottieAnimation(
+                composition = composition,
+                progress = { progress.progress },
+                modifier = Modifier.size(220.dp),
+            )
+        }
+    }
+}

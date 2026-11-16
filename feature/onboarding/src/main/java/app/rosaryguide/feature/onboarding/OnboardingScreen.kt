@@ -1,0 +1,133 @@
+package app.rosaryguide.feature.onboarding
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import app.rosaryguide.core.data.catalog.OnboardingCopy
+import app.rosaryguide.core.data.catalog.OnboardingPage
+import app.rosaryguide.core.designsystem.R
+import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
+import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.RosarySpace
+import app.rosaryguide.core.designsystem.theme.RosaryType
+import kotlinx.coroutines.launch
+
+@Composable
+fun OnboardingScreen(
+    onBegin: () -> Unit,
+    modifier: Modifier = Modifier,
+    initialPage: Int = 0,
+) {
+    val palette = LocalThemePalette.current
+    val pages = OnboardingPage.pages
+    val pagerState = rememberPagerState(initialPage = initialPage.coerceIn(0, pages.lastIndex)) { pages.size }
+    val scope = rememberCoroutineScope()
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(palette.bg)
+            .navigationBarsPadding(),
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+        ) { index ->
+            OnboardingPageBody(page = pages[index])
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(bottom = RosarySpace.xl),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = RosarySpace.lg),
+            ) {
+                pages.forEachIndexed { i, _ ->
+                    val active = i == pagerState.currentPage
+                    Box(
+                        modifier = Modifier
+                            .size(if (active) 8.dp else 7.dp)
+                            .clip(CircleShape)
+                            .background(if (active) palette.ink else palette.strokeStrong),
+                    )
+                }
+            }
+            val isLast = pagerState.currentPage == pages.lastIndex
+            GuidePrimaryButton(title = if (isLast) OnboardingCopy.BEGIN else OnboardingCopy.CONTINUE) {
+                if (isLast) {
+                    onBegin()
+                } else {
+                    scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OnboardingPageBody(page: OnboardingPage) {
+    val palette = LocalThemePalette.current
+    val image = when (page.imageName) {
+        "OnboardingRosaryDaily" -> R.drawable.onboarding_rosary_daily
+        "OnboardingBeads" -> R.drawable.onboarding_beads
+        else -> R.drawable.onboarding_intentions
+    }
+    val alignment = if (page.imageAlignment == "center") Alignment.Center else Alignment.TopCenter
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .clip(RoundedCornerShape(bottomStart = 0.dp, bottomEnd = 0.dp)),
+        ) {
+            Image(
+                painter = painterResource(image),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alignment = alignment,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(top = RosarySpace.xl, bottom = RosarySpace.md),
+        ) {
+            Text(text = page.title, style = RosaryType.headingPrimary, color = palette.ink)
+            Spacer(Modifier.height(RosarySpace.sm))
+            Text(text = page.body, style = RosaryType.body, color = palette.dim)
+        }
+    }
+}
