@@ -82,6 +82,7 @@ fun TodayScreen(
     onPray: (app.rosaryguide.core.model.MysterySetKind) -> Unit,
     modifier: Modifier = Modifier,
     today: LocalDate = LocalDate.now(),
+    resumableCta: String? = null,
     prayedDayKeys: Set<String> = emptySet(),
     hasAskedForNotifications: Boolean = true,
     onAskedForNotifications: () -> Unit = {},
@@ -130,7 +131,11 @@ fun TodayScreen(
 
         Spacer(Modifier.height(RosarySpace.md))
         GuidePrimaryButton(
-            title = if (isToday) HomeCopy.PRAY_TODAYS_MYSTERIES else HomeCopy.prayTheMysteries(assignment.set),
+            title = when {
+                isToday && resumableCta != null -> resumableCta
+                isToday -> HomeCopy.PRAY_TODAYS_MYSTERIES
+                else -> HomeCopy.prayTheMysteries(assignment.set)
+            },
             onClick = { onPray(assignment.set) },
             modifier = Modifier.padding(horizontal = RosarySpace.gutter),
         )

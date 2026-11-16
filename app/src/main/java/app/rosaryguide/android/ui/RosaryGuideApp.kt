@@ -345,6 +345,10 @@ private fun AppTabs(
 ) {
     val navController = rememberNavController()
     val palette = LocalThemePalette.current
+    val prayerSession by sessionStore.session.collectAsStateWithLifecycle()
+    val resumeCta = prayerSession?.takeIf {
+        it.isResumable(System.currentTimeMillis())
+    }?.continueCTATitle()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val destination = backStackEntry?.destination
     val startRoute: Any = when (debugLaunch.startTab) {
@@ -361,6 +365,9 @@ private fun AppTabs(
                 navController.navigate(FeastDetailRoute(debugLaunch.feastId, date.toString()))
             }
             debugLaunch.openHowTo -> navController.navigate(HowToPrayRoute)
+            debugLaunch.openRosaryPrayers -> navController.navigate(RosaryPrayersRoute)
+            debugLaunch.openAllPrayers -> navController.navigate(AllPrayersRoute)
+            debugLaunch.openWalkthrough -> navController.navigate(LearnRoute)
             debugLaunch.articleId != null -> navController.navigate(ArticleRoute(debugLaunch.articleId))
             debugLaunch.prayerId != null -> navController.navigate(PrayerRoute(debugLaunch.prayerId))
             debugLaunch.mysterySet != null && !debugLaunch.openPray && !debugLaunch.showIntentions && !debugLaunch.showCompletion ->
@@ -412,6 +419,7 @@ private fun AppTabs(
                     },
                     onPray = onPray,
                     onOpenSettings = onOpenSettings,
+                    resumableCta = resumeCta,
                 )
             }
             composable<LearnRoute> {
@@ -424,6 +432,8 @@ private fun AppTabs(
                     onAllPrayers = { navController.navigate(AllPrayersRoute) },
                     onBeginRosary = { onPray(MysteryCalendar.assignment(today).set) },
                     todaySetTitle = MysteryCalendar.assignment(today).set.titleText.english,
+                    resumeCta = resumeCta,
+                    startWalkthrough = debugLaunch.openWalkthrough,
                 )
             }
             composable<FeastsRoute> {

@@ -3,6 +3,7 @@ package app.rosaryguide.core.data.session
 import app.rosaryguide.core.data.config.RosaryJson
 import app.rosaryguide.core.model.MysterySetKind
 import app.rosaryguide.core.model.PrayerLanguage
+import app.rosaryguide.core.data.sequence.RosarySequenceBuilder
 import app.rosaryguide.core.model.RosaryConfig
 import java.time.Instant
 import java.time.LocalDate
@@ -56,6 +57,13 @@ data class PrayerSession(
         if (startedDay == nowDay) return true
         if (startedDay != nowDay.minusDays(1)) return false
         return nowEpochMs - updatedAtEpochMs < OVERNIGHT_RESUME_WINDOW_MS
+    }
+
+    fun continueCTATitle(): String {
+        val steps = RosarySequenceBuilder.build(mysterySet, rosaryConfig)
+        if (steps.isEmpty()) return "Continue"
+        val idx = stepIndex.coerceIn(0, steps.lastIndex)
+        return "Continue — ${steps[idx].stage.continuePhrase}"
     }
 
     companion object {

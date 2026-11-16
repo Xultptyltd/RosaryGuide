@@ -67,11 +67,13 @@ fun LearnScreen(
     onAllPrayers: () -> Unit = {},
     onBeginRosary: () -> Unit = {},
     todaySetTitle: String = "Joyful Mysteries",
+    resumeCta: String? = null,
+    startWalkthrough: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalThemePalette.current
     var query by remember { mutableStateOf("") }
-    var showWalkthrough by remember { mutableStateOf(false) }
+    var showWalkthrough by remember { mutableStateOf(startWalkthrough) }
     val trimmed = query.trim()
     val articles = LearnArticle.commonQuestions.filter { article ->
         trimmed.isEmpty() ||
@@ -145,7 +147,7 @@ fun LearnScreen(
                     GuideSectionLabel(text = LearnCopy.COMMON_QUESTIONS)
                     QuestionsAccordion(articles)
                     Spacer(Modifier.height(RosarySpace.xl))
-                    PrayTodayCard(title = todaySetTitle, onPray = onBeginRosary)
+                    PrayTodayCard(title = todaySetTitle, resumeCta = resumeCta, onPray = onBeginRosary)
                 }
             }
         }
@@ -337,9 +339,12 @@ private fun QuestionsAccordion(articles: List<LearnArticle>) {
 }
 
 @Composable
-private fun PrayTodayCard(title: String, onPray: () -> Unit) {
+private fun PrayTodayCard(title: String, resumeCta: String?, onPray: () -> Unit) {
     val palette = LocalThemePalette.current
     val shape = RoundedCornerShape(RosarySpace.containerRadius)
+    val heading = if (resumeCta != null) "Resume your Rosary" else title
+    val subtitle = if (resumeCta != null) "Pick up where you left off" else LearnCopy.PRAY_TODAY_SUBTITLE
+    val cta = resumeCta ?: LearnCopy.PRAY_TODAY_TITLE_FRESH
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -347,11 +352,11 @@ private fun PrayTodayCard(title: String, onPray: () -> Unit) {
             .background(palette.surface)
             .padding(RosarySpace.xl),
     ) {
-        Text(title, style = RosaryType.headingSecondary, color = palette.ink)
+        Text(heading, style = RosaryType.headingSecondary, color = palette.ink)
         Spacer(Modifier.height(RosarySpace.sm))
-        Text(LearnCopy.PRAY_TODAY_SUBTITLE, style = RosaryType.supportingLabel, color = palette.dim)
+        Text(subtitle, style = RosaryType.supportingLabel, color = palette.dim)
         Spacer(Modifier.height(RosarySpace.lg))
-        GuideSecondaryButton(title = LearnCopy.PRAY_TODAY_TITLE_FRESH, onClick = onPray)
+        GuideSecondaryButton(title = cta, onClick = onPray)
     }
 }
 
