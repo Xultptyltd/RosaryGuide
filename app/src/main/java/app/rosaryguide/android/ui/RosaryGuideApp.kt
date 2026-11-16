@@ -68,6 +68,8 @@ import app.rosaryguide.feature.learn.LearnArticleScreen
 import app.rosaryguide.feature.learn.LearnScreen
 import app.rosaryguide.feature.learn.MysterySetScreen
 import app.rosaryguide.feature.learn.PrayerReaderScreen
+import app.rosaryguide.feature.learn.RosaryPrayersScreen
+import app.rosaryguide.feature.learn.AllPrayersScreen
 import app.rosaryguide.feature.onboarding.LaunchSplashScreen
 import app.rosaryguide.feature.onboarding.OnboardingScreen
 import app.rosaryguide.feature.onboarding.SignInScreen
@@ -94,6 +96,8 @@ import kotlinx.serialization.Serializable
 @Serializable data object ProfileRoute
 @Serializable data class FeastDetailRoute(val feastId: String, val date: String)
 @Serializable data object HowToPrayRoute
+@Serializable data object RosaryPrayersRoute
+@Serializable data object AllPrayersRoute
 @Serializable data class ArticleRoute(val id: String)
 @Serializable data class PrayerRoute(val id: String)
 @Serializable data class MysterySetRoute(val set: String)
@@ -416,6 +420,10 @@ private fun AppTabs(
                     onArticle = { navController.navigate(ArticleRoute(it.id)) },
                     onPrayer = { navController.navigate(PrayerRoute(it.id)) },
                     onMysterySet = { navController.navigate(MysterySetRoute(it.name)) },
+                    onRosaryPrayers = { navController.navigate(RosaryPrayersRoute) },
+                    onAllPrayers = { navController.navigate(AllPrayersRoute) },
+                    onBeginRosary = { onPray(MysteryCalendar.assignment(today).set) },
+                    todaySetTitle = MysteryCalendar.assignment(today).set.titleText.english,
                 )
             }
             composable<FeastsRoute> {
@@ -456,8 +464,18 @@ private fun AppTabs(
                 }
             }
             composable<HowToPrayRoute> {
-                DetailScaffold(title = "How to pray", onBack = { navController.popBackStack() }) {
+                DetailScaffold(title = "How to pray the Rosary", onBack = { navController.popBackStack() }) {
                     HowToPrayScreen()
+                }
+            }
+            composable<RosaryPrayersRoute> {
+                DetailScaffold(title = "Rosary prayers", onBack = { navController.popBackStack() }) {
+                    RosaryPrayersScreen(onPrayer = { navController.navigate(PrayerRoute(it.id)) })
+                }
+            }
+            composable<AllPrayersRoute> {
+                DetailScaffold(title = "All prayers", onBack = { navController.popBackStack() }) {
+                    AllPrayersScreen(onPrayer = { navController.navigate(PrayerRoute(it.id)) })
                 }
             }
             composable<ArticleRoute> { entry ->
@@ -477,7 +495,7 @@ private fun AppTabs(
             composable<MysterySetRoute> { entry ->
                 val route = entry.toRoute<MysterySetRoute>()
                 val set = runCatching { MysterySetKind.valueOf(route.set) }.getOrNull() ?: return@composable
-                DetailScaffold(title = set.titleText.english, onBack = { navController.popBackStack() }) {
+                DetailScaffold(title = set.shortName, onBack = { navController.popBackStack() }) {
                     MysterySetScreen(set)
                 }
             }

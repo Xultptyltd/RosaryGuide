@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import app.rosaryguide.core.data.legal.LicenseEntry
 import app.rosaryguide.core.data.prefs.UserSettings
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
+import app.rosaryguide.core.designsystem.component.GuideLargeTopAppBar
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
@@ -193,7 +194,7 @@ private fun SettingsRoot(
             .fillMaxSize()
             .background(palette.bg),
     ) {
-        GuideDetailTopBar(title = "Settings", onBack = onBack)
+        GuideLargeTopAppBar(title = "Settings", onBack = onBack, closeInsteadOfBack = true)
         Column(
             modifier = Modifier
                 .fillMaxSize()

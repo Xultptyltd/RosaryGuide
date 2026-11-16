@@ -36,7 +36,8 @@ class LearnArticleTest {
 
     @Test
     fun searchChromeCopy() {
-        assertEquals("Prayers, mysteries and how to pray", LearnCopy.SEARCH_TITLE)
+        assertEquals("Search prayers, mysteries and feasts", LearnCopy.SEARCH_PROMPT)
+        assertEquals("Prayers, mysteries and how to pray", LearnCopy.INTRO_SUBTITLE)
         assertEquals("Nothing can be found. Try another search", LearnCopy.EMPTY)
     }
 }

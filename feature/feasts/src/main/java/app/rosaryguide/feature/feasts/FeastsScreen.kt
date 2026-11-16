@@ -37,6 +37,7 @@ import app.rosaryguide.core.data.calendar.FeastMonthLayout
 import app.rosaryguide.core.data.catalog.FeastCatalog
 import app.rosaryguide.core.data.search.localizedStandardContains
 import app.rosaryguide.core.designsystem.component.GuideMarqueeText
+import app.rosaryguide.core.designsystem.component.GuideLargeTopAppBar
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
@@ -81,8 +82,9 @@ fun FeastsScreen(
             .fillMaxSize()
             .background(palette.bg),
     ) {
+        GuideLargeTopAppBar(title = "Feasts")
         Column(Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg)) {
-            GuideMarqueeText(text = monthTitle, style = RosaryType.headingPrimary)
+            GuideMarqueeText(text = monthTitle, style = RosaryType.headingSecondary)
             Spacer(Modifier.height(RosarySpace.md))
             Row(
                 modifier = Modifier.fillMaxWidth(),

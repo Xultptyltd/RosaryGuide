@@ -45,6 +45,7 @@ import app.rosaryguide.core.data.journey.PopeMonthIntention
 import app.rosaryguide.core.data.session.IntentionPrivacy
 import app.rosaryguide.core.data.session.OfferIntention
 import app.rosaryguide.core.data.session.SessionStore
+import app.rosaryguide.core.designsystem.component.GuideLargeTopAppBar
 import app.rosaryguide.core.designsystem.component.GuideOutlineButton
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
@@ -279,17 +280,22 @@ private fun ProfileHome(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.bg)
-            .verticalScroll(rememberScrollState())
-            .padding(top = RosarySpace.md, bottom = RosarySpace.xl),
+            .background(palette.bg),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = gutter.fillMaxWidth()) {
-            Text(text = "Profile", style = RosaryType.headingPrimary, color = palette.ink, modifier = Modifier.weight(1f).guideHeading())
-            IconButton(onClick = onOpenSettings) {
-                Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = palette.ink)
-            }
-        }
-        Spacer(Modifier.height(RosarySpace.lg))
+        GuideLargeTopAppBar(
+            title = "Profile",
+            actions = {
+                IconButton(onClick = onOpenSettings) {
+                    Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = palette.ink)
+                }
+            },
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = RosarySpace.xl),
+        ) {
         Box(modifier = gutter.clickable(onClick = onOpenRhythm)) {
             PrayerRhythmCard(rhythm)
         }
@@ -366,6 +372,7 @@ private fun ProfileHome(
                     .clickable(onClick = onOpenArchived)
                     .padding(vertical = RosarySpace.sm),
             )
+        }
         }
     }
 }

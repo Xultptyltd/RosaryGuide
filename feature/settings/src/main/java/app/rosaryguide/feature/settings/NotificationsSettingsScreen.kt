@@ -1,7 +1,6 @@
 package app.rosaryguide.feature.settings
 
 import android.Manifest
-import android.app.TimePickerDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -14,6 +13,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -32,6 +38,7 @@ import app.rosaryguide.core.data.prefs.UserSettings
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
+import app.rosaryguide.core.designsystem.theme.RosaryType
 
 enum class NotificationPermissionState { Granted, Denied, NotDetermined }
 
@@ -49,6 +56,7 @@ fun NotificationsSettingsScreen(
     val context = LocalContext.current
     var permission by remember { mutableStateOf(currentPermission(context)) }
     var permissionWasDenied by remember { mutableStateOf(permission == NotificationPermissionState.Denied) }
+    var timePickerTarget by remember { mutableStateOf<String?>(null) }
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permission = if (granted) NotificationPermissionState.Granted else NotificationPermissionState.Denied
@@ -110,9 +118,7 @@ fun NotificationsSettingsScreen(
                 SettingsNavigationRow(
                     title = "Reminder time",
                     value = TimeOfDay.format(settings.dailyReminderMinutes),
-                    onClick = {
-                        showTimePicker(context, settings.dailyReminderMinutes, onDailyMinutes)
-                    },
+                    onClick = { timePickerTarget = "daily" },
                 )
             }
             SettingsDivider()
@@ -126,9 +132,7 @@ fun NotificationsSettingsScreen(
                 SettingsNavigationRow(
                     title = "Alert time",
                     value = TimeOfDay.format(settings.feastAlertMinutes),
-                    onClick = {
-                        showTimePicker(context, settings.feastAlertMinutes, onFeastMinutes)
-                    },
+                    onClick = { timePickerTarget = "feast" },
                 )
             }
 
@@ -167,6 +171,18 @@ fun NotificationsSettingsScreen(
             }
         }
     }
+
+    timePickerTarget?.let { target ->
+        val minutes = if (target == "daily") settings.dailyReminderMinutes else settings.feastAlertMinutes
+        MaterialTimePickerDialog(
+            initialMinutes = minutes,
+            onDismiss = { timePickerTarget = null },
+            onConfirm = { picked ->
+                if (target == "daily") onDailyMinutes(picked) else onFeastMinutes(picked)
+                timePickerTarget = null
+            },
+        )
+    }
 }
 
 private fun currentPermission(context: android.content.Context): NotificationPermissionState {
@@ -189,12 +205,52 @@ private fun currentPermission(context: android.content.Context): NotificationPer
     }
 }
 
-private fun showTimePicker(context: android.content.Context, minutes: Int, onPicked: (Int) -> Unit) {
-    TimePickerDialog(
-        context,
-        { _, hour, minute -> onPicked(TimeOfDay.minutes(hour, minute)) },
-        TimeOfDay.hour(minutes),
-        TimeOfDay.minute(minutes),
-        false,
-    ).show()
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MaterialTimePickerDialog(
+    initialMinutes: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit,
+) {
+    val palette = LocalThemePalette.current
+    val state = rememberTimePickerState(
+        initialHour = TimeOfDay.hour(initialMinutes),
+        initialMinute = TimeOfDay.minute(initialMinutes),
+        is24Hour = false,
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { onConfirm(TimeOfDay.minutes(state.hour, state.minute)) }) {
+                Text("OK", style = RosaryType.body, color = palette.accentText)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", style = RosaryType.body, color = palette.accentText)
+            }
+        },
+        text = {
+            TimePicker(
+                state = state,
+                colors = TimePickerDefaults.colors(
+                    clockDialColor = palette.surface,
+                    clockDialSelectedContentColor = palette.onAccent,
+                    clockDialUnselectedContentColor = palette.ink,
+                    selectorColor = palette.accent,
+                    containerColor = palette.bg,
+                    periodSelectorBorderColor = palette.strokeRegular,
+                    periodSelectorSelectedContainerColor = palette.accent,
+                    periodSelectorUnselectedContainerColor = palette.surface,
+                    periodSelectorSelectedContentColor = palette.onAccent,
+                    periodSelectorUnselectedContentColor = palette.ink,
+                    timeSelectorSelectedContainerColor = palette.accent,
+                    timeSelectorUnselectedContainerColor = palette.surface,
+                    timeSelectorSelectedContentColor = palette.onAccent,
+                    timeSelectorUnselectedContentColor = palette.ink,
+                ),
+            )
+        },
+        containerColor = palette.bg,
+    )
 }
