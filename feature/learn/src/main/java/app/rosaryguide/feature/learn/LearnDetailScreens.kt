@@ -2,6 +2,13 @@ package app.rosaryguide.feature.learn
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.ui.text.font.FontWeight
+import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
+import app.rosaryguide.core.model.PrayerLanguage
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.foundation.layout.Arrangement
 import app.rosaryguide.core.data.catalog.PrayerCatalog
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.Alignment
@@ -70,6 +77,9 @@ fun LearnArticleScreen(article: LearnArticle, modifier: Modifier = Modifier) {
 @Composable
 fun PrayerReaderScreen(prayer: Prayer, modifier: Modifier = Modifier) {
     val palette = LocalThemePalette.current
+    var language by remember { mutableStateOf(PrayerLanguage.English) }
+    val shown = if (prayer.text.hasDistinctLatin) language else PrayerLanguage.English
+    val ax = isAccessibilitySize()
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -79,15 +89,52 @@ fun PrayerReaderScreen(prayer: Prayer, modifier: Modifier = Modifier) {
             .padding(bottom = RosarySpace.xxl),
     ) {
         Text(text = prayer.title.english, style = RosaryType.headingPrimary, color = palette.ink)
-        if (prayer.title.latin.isNotBlank()) {
+        if (prayer.title.latin.isNotBlank() && prayer.title.latin != prayer.title.english) {
             Spacer(Modifier.height(RosarySpace.xs))
             Text(text = prayer.title.latin, style = RosaryType.serifItalicBody, color = palette.dim)
         }
-        Spacer(Modifier.height(RosarySpace.lg))
-        Text(text = prayer.text.english, style = RosaryType.serifBody, color = palette.ink)
-        if (prayer.text.latin.isNotBlank()) {
+        if (prayer.text.hasDistinctLatin) {
             Spacer(Modifier.height(RosarySpace.lg))
-            Text(text = prayer.text.latin, style = RosaryType.serifItalicBody, color = palette.dim)
+            Text("Prayer language", style = RosaryType.caption, color = palette.dim)
+            Spacer(Modifier.height(RosarySpace.sm))
+            val options = listOf(PrayerLanguage.English, PrayerLanguage.Latin, PrayerLanguage.Bilingual)
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                options.forEachIndexed { index, option ->
+                    SegmentedButton(
+                        selected = language == option,
+                        onClick = { language = option },
+                        shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor = palette.accent,
+                            activeContentColor = palette.onAccent,
+                            inactiveContainerColor = palette.surface,
+                            inactiveContentColor = palette.ink,
+                        ),
+                        label = { Text(option.title, style = RosaryType.caption, maxLines = 1) },
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(RosarySpace.lg))
+        if (shown == PrayerLanguage.Bilingual && prayer.text.hasDistinctLatin) {
+            if (ax) {
+                Column(verticalArrangement = Arrangement.spacedBy(RosarySpace.xxl)) {
+                    Text(prayer.text.english, style = RosaryType.serifBody, color = palette.ink)
+                    Text(prayer.text.latin, style = RosaryType.serifItalicBody, color = palette.ink)
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(RosarySpace.xl),
+                ) {
+                    Text(prayer.text.english, style = RosaryType.serifBody, color = palette.ink, modifier = Modifier.weight(1f))
+                    Text(prayer.text.latin, style = RosaryType.serifItalicBody, color = palette.ink, modifier = Modifier.weight(1f))
+                }
+            }
+        } else {
+            val body = if (shown == PrayerLanguage.Latin) prayer.text.latinOrEnglish else prayer.text.english
+            val style = if (shown == PrayerLanguage.Latin) RosaryType.serifItalicBody else RosaryType.serifBody
+            Text(body, style = style, color = palette.ink)
         }
     }
 }
