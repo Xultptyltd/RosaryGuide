@@ -2,20 +2,31 @@ package app.rosaryguide.core.designsystem.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import app.rosaryguide.core.designsystem.R
 import androidx.compose.ui.unit.sp
 
 /**
  * Type scale ported from iOS `AppTheme.TypeRole`.
  *
- * Instrument Sans (UI) and Newsreader (serif body) are bundled in M1.
- * Until then the scale uses the platform sans / serif families at the same sizes.
+ * Instrument Sans (UI) and Newsreader (serif body) are the bundled, SIL OFL 1.1
+ * variable fonts instanced at the weights / optical sizes the iOS app requested.
  */
 object RosaryFonts {
-    val sans: FontFamily = FontFamily.SansSerif
-    val serif: FontFamily = FontFamily.Serif
+    val sans: FontFamily = FontFamily(
+        Font(R.font.instrument_sans_regular, FontWeight.Normal),
+        Font(R.font.instrument_sans_medium, FontWeight.Medium),
+    )
+    val serif: FontFamily = FontFamily(
+        Font(R.font.newsreader_regular, FontWeight.Normal),
+        Font(R.font.newsreader_italic, FontWeight.Normal, FontStyle.Italic),
+    )
+    val serifDisplay: FontFamily = FontFamily(
+        Font(R.font.newsreader_display, FontWeight.Normal),
+    )
 }
 
 object RosaryType {
@@ -99,7 +110,7 @@ object RosaryType {
         lineHeight = 30.sp,
     )
     val serifDisplay = TextStyle(
-        fontFamily = RosaryFonts.serif,
+        fontFamily = RosaryFonts.serifDisplay,
         fontWeight = FontWeight.Normal,
         fontSize = 40.sp,
         lineHeight = 46.sp,

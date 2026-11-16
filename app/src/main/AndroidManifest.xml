@@ -19,5 +19,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ThemeGalleryActivity"
+            android:exported="true"
+            android:label="Theme Gallery"
+            android:theme="@style/Theme.RosaryGuide" />
     </application>
 </manifest>

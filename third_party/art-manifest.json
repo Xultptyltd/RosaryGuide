@@ -1,0 +1,403 @@
+[
+  {
+    "ios": "crucifix.png",
+    "res": "crucifix",
+    "bucket": "shared"
+  },
+  {
+    "ios_light": "hero/hero-joyful-light.jpg",
+    "ios_dark": "hero/hero-joyful-dark.jpg",
+    "res": "hero_joyful"
+  },
+  {
+    "ios_light": "hero/hero-luminous-light.jpg",
+    "ios_dark": "hero/hero-luminous-dark.jpg",
+    "res": "hero_luminous"
+  },
+  {
+    "ios_light": "hero/hero-sorrowful-light.jpg",
+    "ios_dark": "hero/hero-sorrowful-dark.jpg",
+    "res": "hero_sorrowful"
+  },
+  {
+    "ios_light": "hero/hero-glorious-light.jpg",
+    "ios_dark": "hero/hero-glorious-dark.jpg",
+    "res": "hero_glorious"
+  },
+  {
+    "ios_light": "feasts/feast-advent-1.jpg",
+    "ios_dark": "feasts/dark/feast-advent-1.png",
+    "res": "feast_advent_1",
+    "feast_id": "advent-1"
+  },
+  {
+    "ios_light": "feasts/feast-all-saints.jpg",
+    "ios_dark": "feasts/dark/feast-all-saints.jpg",
+    "res": "feast_all_saints",
+    "feast_id": "all-saints"
+  },
+  {
+    "ios_light": "feasts/feast-all-souls.jpg",
+    "ios_dark": "feasts/dark/feast-all-souls.jpg",
+    "res": "feast_all_souls",
+    "feast_id": "all-souls"
+  },
+  {
+    "ios_light": "feasts/feast-annunciation.jpg",
+    "ios_dark": "feasts/dark/feast-annunciation.jpg",
+    "res": "feast_annunciation",
+    "feast_id": "annunciation"
+  },
+  {
+    "ios_light": "feasts/feast-ascension.jpg",
+    "ios_dark": "feasts/dark/feast-ascension.jpg",
+    "res": "feast_ascension",
+    "feast_id": "ascension"
+  },
+  {
+    "ios_light": "feasts/feast-ash-wednesday.jpg",
+    "ios_dark": "feasts/dark/feast-ash-wednesday.jpg",
+    "res": "feast_ash_wednesday",
+    "feast_id": "ash-wednesday"
+  },
+  {
+    "ios_light": "feasts/feast-assumption.jpg",
+    "ios_dark": "feasts/dark/feast-assumption.jpg",
+    "res": "feast_assumption",
+    "feast_id": "assumption"
+  },
+  {
+    "ios_light": "feasts/feast-baptism-movable.jpg",
+    "ios_dark": "feasts/dark/feast-baptism-movable.jpg",
+    "res": "feast_baptism_movable",
+    "feast_id": "baptism-movable"
+  },
+  {
+    "ios_light": "feasts/feast-carmel.jpg",
+    "ios_dark": "feasts/dark/feast-carmel.png",
+    "res": "feast_carmel",
+    "feast_id": "carmel"
+  },
+  {
+    "ios_light": "feasts/feast-christ-the-king.jpg",
+    "ios_dark": "feasts/dark/feast-christ-the-king.png",
+    "res": "feast_christ_the_king",
+    "feast_id": "christ-the-king"
+  },
+  {
+    "ios_light": "feasts/feast-christmas.jpg",
+    "ios_dark": "feasts/dark/feast-christmas.jpg",
+    "res": "feast_christmas",
+    "feast_id": "christmas"
+  },
+  {
+    "ios_light": "feasts/feast-corpus-christi.jpg",
+    "ios_dark": "feasts/dark/feast-corpus-christi.jpg",
+    "res": "feast_corpus_christi",
+    "feast_id": "corpus-christi"
+  },
+  {
+    "ios_light": "feasts/feast-divine-mercy.jpg",
+    "ios_dark": "feasts/dark/feast-divine-mercy.jpg",
+    "res": "feast_divine_mercy",
+    "feast_id": "divine-mercy"
+  },
+  {
+    "ios_light": "feasts/feast-easter.jpg",
+    "ios_dark": "feasts/dark/feast-easter.jpg",
+    "res": "feast_easter",
+    "feast_id": "easter"
+  },
+  {
+    "ios_light": "feasts/feast-epiphany.jpg",
+    "ios_dark": "feasts/dark/feast-epiphany.jpg",
+    "res": "feast_epiphany",
+    "feast_id": "epiphany"
+  },
+  {
+    "ios_light": "feasts/feast-fatima.jpg",
+    "ios_dark": "feasts/dark/feast-fatima.jpg",
+    "res": "feast_fatima",
+    "feast_id": "fatima"
+  },
+  {
+    "ios_light": "feasts/feast-good-friday.jpg",
+    "ios_dark": "feasts/dark/feast-good-friday.jpg",
+    "res": "feast_good_friday",
+    "feast_id": "good-friday"
+  },
+  {
+    "ios_light": "feasts/feast-guadalupe.jpg",
+    "ios_dark": "feasts/dark/feast-guadalupe.jpg",
+    "res": "feast_guadalupe",
+    "feast_id": "guadalupe"
+  },
+  {
+    "ios_light": "feasts/feast-guardian-angels.jpg",
+    "ios_dark": "feasts/dark/feast-guardian-angels.jpg",
+    "res": "feast_guardian_angels",
+    "feast_id": "guardian-angels"
+  },
+  {
+    "ios_light": "feasts/feast-holy-cross.jpg",
+    "ios_dark": "feasts/dark/feast-holy-cross.jpg",
+    "res": "feast_holy_cross",
+    "feast_id": "holy-cross"
+  },
+  {
+    "ios_light": "feasts/feast-holy-family.jpg",
+    "ios_dark": "feasts/dark/feast-holy-family.jpg",
+    "res": "feast_holy_family",
+    "feast_id": "holy-family"
+  },
+  {
+    "ios_light": "feasts/feast-holy-name-mary.jpg",
+    "ios_dark": "feasts/dark/feast-holy-name-mary.jpg",
+    "res": "feast_holy_name_mary",
+    "feast_id": "holy-name-mary"
+  },
+  {
+    "ios_light": "feasts/feast-holy-saturday.jpg",
+    "ios_dark": "feasts/dark/feast-holy-saturday.png",
+    "res": "feast_holy_saturday",
+    "feast_id": "holy-saturday"
+  },
+  {
+    "ios_light": "feasts/feast-holy-thursday.jpg",
+    "ios_dark": "feasts/dark/feast-holy-thursday.jpg",
+    "res": "feast_holy_thursday",
+    "feast_id": "holy-thursday"
+  },
+  {
+    "ios_light": "feasts/feast-immaculate-conception.jpg",
+    "ios_dark": "feasts/dark/feast-immaculate-conception.jpg",
+    "res": "feast_immaculate_conception",
+    "feast_id": "immaculate-conception"
+  },
+  {
+    "ios_light": "feasts/feast-immaculate-heart.jpg",
+    "ios_dark": "feasts/dark/feast-immaculate-heart.jpg",
+    "res": "feast_immaculate_heart",
+    "feast_id": "immaculate-heart"
+  },
+  {
+    "ios_light": "feasts/feast-joachim-anne.jpg",
+    "ios_dark": "feasts/dark/feast-joachim-anne.jpg",
+    "res": "feast_joachim_anne",
+    "feast_id": "joachim-anne"
+  },
+  {
+    "ios_light": "feasts/feast-john-baptist.jpg",
+    "ios_dark": "feasts/dark/feast-john-baptist.jpg",
+    "res": "feast_john_baptist",
+    "feast_id": "john-baptist"
+  },
+  {
+    "ios_light": "feasts/feast-joseph.jpg",
+    "ios_dark": "feasts/dark/feast-joseph.jpg",
+    "res": "feast_joseph",
+    "feast_id": "joseph"
+  },
+  {
+    "ios_light": "feasts/feast-loreto.jpg",
+    "ios_dark": "feasts/dark/feast-loreto.jpg",
+    "res": "feast_loreto",
+    "feast_id": "loreto"
+  },
+  {
+    "ios_light": "feasts/feast-lourdes.jpg",
+    "ios_dark": "feasts/dark/feast-lourdes.jpg",
+    "res": "feast_lourdes",
+    "feast_id": "lourdes"
+  },
+  {
+    "ios_light": "feasts/feast-mary-mother-of-god.jpg",
+    "ios_dark": "feasts/dark/feast-mary-mother-of-god.jpg",
+    "res": "feast_mary_mother_of_god",
+    "feast_id": "mary-mother-of-god"
+  },
+  {
+    "ios_light": "feasts/feast-michael.jpg",
+    "ios_dark": "feasts/dark/feast-michael.jpg",
+    "res": "feast_michael",
+    "feast_id": "michael"
+  },
+  {
+    "ios_light": "feasts/feast-nativity-mary.jpg",
+    "ios_dark": "feasts/dark/feast-nativity-mary.png",
+    "res": "feast_nativity_mary",
+    "feast_id": "nativity-mary"
+  },
+  {
+    "ios_light": "feasts/feast-palm-sunday.jpg",
+    "ios_dark": "feasts/dark/feast-palm-sunday.jpg",
+    "res": "feast_palm_sunday",
+    "feast_id": "palm-sunday"
+  },
+  {
+    "ios_light": "feasts/feast-pentecost.jpg",
+    "ios_dark": "feasts/dark/feast-pentecost.jpg",
+    "res": "feast_pentecost",
+    "feast_id": "pentecost"
+  },
+  {
+    "ios_light": "feasts/feast-peter-paul.jpg",
+    "ios_dark": "feasts/dark/feast-peter-paul.jpg",
+    "res": "feast_peter_paul",
+    "feast_id": "peter-paul"
+  },
+  {
+    "ios_light": "feasts/feast-presentation-mary.jpg",
+    "ios_dark": "feasts/dark/feast-presentation-mary.jpg",
+    "res": "feast_presentation_mary",
+    "feast_id": "presentation-mary"
+  },
+  {
+    "ios_light": "feasts/feast-presentation.jpg",
+    "ios_dark": "feasts/dark/feast-presentation.jpg",
+    "res": "feast_presentation",
+    "feast_id": "presentation"
+  },
+  {
+    "ios_light": "feasts/feast-queenship.jpg",
+    "ios_dark": "feasts/dark/feast-queenship.jpg",
+    "res": "feast_queenship",
+    "feast_id": "queenship"
+  },
+  {
+    "ios_light": "feasts/feast-rosary.jpg",
+    "ios_dark": "feasts/dark/feast-rosary.jpg",
+    "res": "feast_rosary",
+    "feast_id": "rosary"
+  },
+  {
+    "ios_light": "feasts/feast-sacred-heart.jpg",
+    "ios_dark": "feasts/dark/feast-sacred-heart.png",
+    "res": "feast_sacred_heart",
+    "feast_id": "sacred-heart"
+  },
+  {
+    "ios_light": "feasts/feast-sorrows.jpg",
+    "ios_dark": "feasts/dark/feast-sorrows.jpg",
+    "res": "feast_sorrows",
+    "feast_id": "sorrows"
+  },
+  {
+    "ios_light": "feasts/feast-transfiguration.jpg",
+    "ios_dark": "feasts/dark/feast-transfiguration.jpg",
+    "res": "feast_transfiguration",
+    "feast_id": "transfiguration"
+  },
+  {
+    "ios_light": "feasts/feast-trinity.jpg",
+    "ios_dark": "feasts/dark/feast-trinity.jpg",
+    "res": "feast_trinity",
+    "feast_id": "trinity"
+  },
+  {
+    "ios_light": "feasts/feast-visitation.jpg",
+    "ios_dark": "feasts/dark/feast-visitation.jpg",
+    "res": "feast_visitation",
+    "feast_id": "visitation"
+  },
+  {
+    "ios_light": "light/joyful/mystery-01-annunciation.jpg",
+    "res": "mystery_01_annunciation",
+    "slug": "mystery-01-annunciation"
+  },
+  {
+    "ios_light": "light/joyful/mystery-02-visitation.jpg",
+    "res": "mystery_02_visitation",
+    "slug": "mystery-02-visitation"
+  },
+  {
+    "ios_light": "light/joyful/mystery-03-birth-of-jesus.jpg",
+    "res": "mystery_03_birth_of_jesus",
+    "slug": "mystery-03-birth-of-jesus"
+  },
+  {
+    "ios_light": "light/joyful/mystery-04-presentation-of-the-baby-jesus.jpg",
+    "res": "mystery_04_presentation_of_the_baby_jesus",
+    "slug": "mystery-04-presentation-of-the-baby-jesus"
+  },
+  {
+    "ios_light": "light/joyful/mystery-05-finding-of-the-child-jesus-in-the-temple.jpg",
+    "res": "mystery_05_finding_of_the_child_jesus_in_the_temple",
+    "slug": "mystery-05-finding-of-the-child-jesus-in-the-temple"
+  },
+  {
+    "ios_light": "light/luminous/mystery-01-baptism-of-jesus-in-the-jordan.jpg",
+    "res": "mystery_01_baptism_of_jesus_in_the_jordan",
+    "slug": "mystery-01-baptism-of-jesus-in-the-jordan"
+  },
+  {
+    "ios_light": "light/luminous/mystery-02-miracle-at-the-wedding-at-cana.jpg",
+    "res": "mystery_02_miracle_at_the_wedding_at_cana",
+    "slug": "mystery-02-miracle-at-the-wedding-at-cana"
+  },
+  {
+    "ios_light": "light/luminous/mystery-03-proclamation-of-the-kingdom-of-god.jpg",
+    "res": "mystery_03_proclamation_of_the_kingdom_of_god",
+    "slug": "mystery-03-proclamation-of-the-kingdom-of-god"
+  },
+  {
+    "ios_light": "light/luminous/mystery-04-transfiguration.jpg",
+    "res": "mystery_04_transfiguration",
+    "slug": "mystery-04-transfiguration"
+  },
+  {
+    "ios_light": "light/luminous/mystery-05-institution-of-the-holy-eucharist.jpg",
+    "res": "mystery_05_institution_of_the_holy_eucharist",
+    "slug": "mystery-05-institution-of-the-holy-eucharist"
+  },
+  {
+    "ios_light": "light/sorrowful/mystery-01-agony-in-the-garden.jpg",
+    "res": "mystery_01_agony_in_the_garden",
+    "slug": "mystery-01-agony-in-the-garden"
+  },
+  {
+    "ios_light": "light/sorrowful/mystery-02-scourging-at-the-pillar.jpg",
+    "res": "mystery_02_scourging_at_the_pillar",
+    "slug": "mystery-02-scourging-at-the-pillar"
+  },
+  {
+    "ios_light": "light/sorrowful/mystery-03-crowning-with-thorns.jpg",
+    "res": "mystery_03_crowning_with_thorns",
+    "slug": "mystery-03-crowning-with-thorns"
+  },
+  {
+    "ios_light": "light/sorrowful/mystery-04-carrying-of-the-cross.jpg",
+    "res": "mystery_04_carrying_of_the_cross",
+    "slug": "mystery-04-carrying-of-the-cross"
+  },
+  {
+    "ios_light": "light/sorrowful/mystery-05-crucifixion.jpg",
+    "res": "mystery_05_crucifixion",
+    "slug": "mystery-05-crucifixion"
+  },
+  {
+    "ios_light": "light/glorious/mystery-01-resurrection.jpg",
+    "res": "mystery_01_resurrection",
+    "slug": "mystery-01-resurrection"
+  },
+  {
+    "ios_light": "light/glorious/mystery-02-ascension.jpg",
+    "res": "mystery_02_ascension",
+    "slug": "mystery-02-ascension"
+  },
+  {
+    "ios_light": "light/glorious/mystery-03-descent-of-the-holy-spirit.jpg",
+    "res": "mystery_03_descent_of_the_holy_spirit",
+    "slug": "mystery-03-descent-of-the-holy-spirit"
+  },
+  {
+    "ios_light": "light/glorious/mystery-04-assumption.jpg",
+    "res": "mystery_04_assumption",
+    "slug": "mystery-04-assumption"
+  },
+  {
+    "ios_light": "light/glorious/mystery-05-coronation.jpg",
+    "res": "mystery_05_coronation",
+    "slug": "mystery-05-coronation"
+  }
+]

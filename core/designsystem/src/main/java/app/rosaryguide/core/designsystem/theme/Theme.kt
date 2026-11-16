@@ -3,6 +3,7 @@ package app.rosaryguide.core.designsystem.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.CompositionLocalProvider
 
 /**
@@ -18,6 +19,7 @@ fun RosaryGuideTheme(
     CompositionLocalProvider(
         LocalRosaryColors provides colors,
         LocalRosaryDimens provides RosaryDimens(),
+        LocalThemePalette provides if (darkTheme) ThemePalette.Dark else ThemePalette.Light,
     ) {
         MaterialTheme(
             colorScheme = colors.toMaterialScheme(),
@@ -26,3 +28,6 @@ fun RosaryGuideTheme(
         )
     }
 }
+
+
+val LocalThemePalette = staticCompositionLocalOf { ThemePalette.Light }
