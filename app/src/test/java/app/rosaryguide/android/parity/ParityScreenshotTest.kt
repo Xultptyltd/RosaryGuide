@@ -61,6 +61,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import app.rosaryguide.core.data.catalog.MapQuotePreferences
+import app.rosaryguide.core.data.catalog.QuoteCatalog
 import app.rosaryguide.core.data.sequence.RosarySequenceBuilder
 import app.rosaryguide.core.model.RosaryStepKind
 import app.rosaryguide.feature.pray.PrayLaunch
@@ -102,14 +103,14 @@ class ParityScreenshotTest {
     @Test fun learnWalkthroughLight() = shot("learn-walkthrough", dark = false) { Walkthrough() }
     @Test fun learnWalkthroughDark() = shot("learn-walkthrough", dark = true) { Walkthrough() }
 
-    @Test fun rosaryPrayersLight() = shot("rosary-prayers", dark = false) { RosaryPrayers() }
-    @Test fun rosaryPrayersDark() = shot("rosary-prayers", dark = true) { RosaryPrayers() }
+    @Test fun rosaryPrayersLight() = shot("rosary-prayers", dark = false) { Pushed("Rosary prayers") { RosaryPrayers() } }
+    @Test fun rosaryPrayersDark() = shot("rosary-prayers", dark = true) { Pushed("Rosary prayers") { RosaryPrayers() } }
 
-    @Test fun allPrayersLight() = shot("all-prayers", dark = false) { AllPrayers() }
-    @Test fun allPrayersDark() = shot("all-prayers", dark = true) { AllPrayers() }
+    @Test fun allPrayersLight() = shot("all-prayers", dark = false) { Pushed("All prayers") { AllPrayers() } }
+    @Test fun allPrayersDark() = shot("all-prayers", dark = true) { Pushed("All prayers") { AllPrayers() } }
 
-    @Test fun prayerReaderLight() = shot("prayer-reader", dark = false) { Reader() }
-    @Test fun prayerReaderDark() = shot("prayer-reader", dark = true) { Reader() }
+    @Test fun prayerReaderLight() = shot("prayer-reader", dark = false) { Pushed("") { Reader() } }
+    @Test fun prayerReaderDark() = shot("prayer-reader", dark = true) { Pushed("") { Reader() } }
 
     @Test fun feastsLight() = shot("feasts", dark = false) { Feasts() }
     @Test fun feastsDark() = shot("feasts", dark = true) { Feasts() }
@@ -176,8 +177,8 @@ class ParityScreenshotTest {
     @Test fun prayOpeningLight() = shot("pray-opening", dark = false) { Pray(openingLaunch()) }
     @Test fun prayOpeningDark() = shot("pray-opening", dark = true) { Pray(openingLaunch()) }
 
-    @Test fun prayIntentionsLight() = shot("pray-intentions", dark = false) { Pray(intentionLaunch()) }
-    @Test fun prayIntentionsDark() = shot("pray-intentions", dark = true) { Pray(intentionLaunch()) }
+    @Test fun prayIntentionsLight() = shot("pray-intentions", dark = false) { Pray(intentionLaunch(), emptyKeepList = true) }
+    @Test fun prayIntentionsDark() = shot("pray-intentions", dark = true) { Pray(intentionLaunch(), emptyKeepList = true) }
 
     @Test fun prayPlateLight() = shot("pray-plate", dark = false) { Pray(stepLaunch(plateIndex)) }
     @Test fun prayPlateDark() = shot("pray-plate", dark = true) { Pray(stepLaunch(plateIndex)) }
@@ -191,8 +192,8 @@ class ParityScreenshotTest {
     @Test fun prayClosingLight() = shot("pray-closing", dark = false) { Pray(stepLaunch(closingIndex)) }
     @Test fun prayClosingDark() = shot("pray-closing", dark = true) { Pray(stepLaunch(closingIndex)) }
 
-    @Test fun prayCompletionLight() = shot("pray-completion", dark = false) { Pray(completionLaunch()) }
-    @Test fun prayCompletionDark() = shot("pray-completion", dark = true) { Pray(completionLaunch()) }
+    @Test fun prayCompletionLight() = shot("pray-completion", dark = false) { Pray(completionLaunch(), emptyKeepList = true) }
+    @Test fun prayCompletionDark() = shot("pray-completion", dark = true) { Pray(completionLaunch(), emptyKeepList = true) }
 
     @Test fun prayCustomiseLight() = shot("pray-customise", dark = false) { Pray(customiseLaunch()) }
     @Test fun prayCustomiseDark() = shot("pray-customise", dark = true) { Pray(customiseLaunch()) }
@@ -213,8 +214,8 @@ class ParityScreenshotTest {
     @Test fun settingsAppIconLight() = shot("settings-app-icon", dark = false) { Settings(SettingsPage.AppIcon) }
     @Test fun settingsAppIconDark() = shot("settings-app-icon", dark = true) { Settings(SettingsPage.AppIcon) }
 
-    @Test fun settingsLegalLight() = shot("settings-legal", dark = false) { Settings(SettingsPage.Terms) }
-    @Test fun settingsLegalDark() = shot("settings-legal", dark = true) { Settings(SettingsPage.Terms) }
+    @Test fun settingsLegalLight() = shot("settings-legal", dark = false) { Settings(SettingsPage.Privacy) }
+    @Test fun settingsLegalDark() = shot("settings-legal", dark = true) { Settings(SettingsPage.Privacy) }
 
     @Test fun settingsAcknowledgementsLight() = shot("settings-acknowledgements", dark = false) { Settings(SettingsPage.Acknowledgements) }
     @Test fun settingsAcknowledgementsDark() = shot("settings-acknowledgements", dark = true) { Settings(SettingsPage.Acknowledgements) }
@@ -258,6 +259,9 @@ class ParityScreenshotTest {
     @Test fun articleLight() = shot("article", dark = false) { Article() }
     @Test fun articleDark() = shot("article", dark = true) { Article() }
 
+    @Test fun faqArticleLight() = shot("faq-article", dark = false) { FaqArticle() }
+    @Test fun faqArticleDark() = shot("faq-article", dark = true) { FaqArticle() }
+
     @Test fun mysterySetLight() = shot("mystery-set", dark = false) { MysterySet() }
     @Test fun mysterySetDark() = shot("mystery-set", dark = true) { MysterySet() }
 
@@ -293,8 +297,8 @@ class ParityScreenshotTest {
     @Test fun learnEmptyDark() = shot("learn-empty", dark = true) { LearnEmpty() }
     @Test fun feastsEmptyLight() = shot("feasts-empty", dark = false) { Feasts(query = "zzzzzx") }
     @Test fun feastsEmptyDark() = shot("feasts-empty", dark = true) { Feasts(query = "zzzzzx") }
-    @Test fun allPrayersEmptyLight() = shot("all-prayers-empty", dark = false) { AllPrayersScreen(onPrayer = {}, initialQuery = "zzzzzx") }
-    @Test fun allPrayersEmptyDark() = shot("all-prayers-empty", dark = true) { AllPrayersScreen(onPrayer = {}, initialQuery = "zzzzzx") }
+    @Test fun allPrayersEmptyLight() = shot("all-prayers-empty", dark = false) { Pushed("All prayers") { AllPrayersScreen(onPrayer = {}, initialQuery = "zzzzzx") } }
+    @Test fun allPrayersEmptyDark() = shot("all-prayers-empty", dark = true) { Pushed("All prayers") { AllPrayersScreen(onPrayer = {}, initialQuery = "zzzzzx") } }
 
 
 
@@ -406,6 +410,18 @@ class ParityScreenshotTest {
     }
 
     @Composable
+    private fun FaqArticle() {
+        LearnScreen(
+            onHowToPray = {},
+            onArticle = {},
+            onPrayer = {},
+            onMysterySet = {},
+            todaySetTitle = "Joyful Mysteries",
+            initialExpandedArticleId = LearnArticle.commonQuestions.first().id,
+        )
+    }
+
+    @Composable
     private fun Walkthrough() {
         RosaryWalkthroughScreen(onClose = {}, onBegin = {}, initialPage = 0)
     }
@@ -508,15 +524,15 @@ class ParityScreenshotTest {
     private val joyfulSteps = RosarySequenceBuilder.build(MysterySetKind.Joyful)
     private val plateIndex = joyfulSteps.indexOfFirst { it.isPlate }
     private val hailIndex = joyfulSteps.indexOfFirst {
-        it.kind == RosaryStepKind.HailMary && it.decadeNumber == 1 && it.hailMaryNumber == 4
+        it.kind == RosaryStepKind.HailMary && it.decadeNumber == 1 && it.hailMaryNumber == 1
     }
     private val decadeEndIndex = joyfulSteps.indexOfFirst { it.closesDecade && it.decadeNumber == 1 }
     private val closingIndex = joyfulSteps.indexOfFirst { it.isLastPrayer }
 
     private fun openingLaunch() = baseLaunch()
-    private fun intentionLaunch() = baseLaunch().copy(showIntentions = true)
+    private fun intentionLaunch() = baseLaunch().copy(showIntentions = true, seedIntentions = emptyList())
     private fun stepLaunch(start: Int) = baseLaunch().copy(startStep = start.coerceAtLeast(0))
-    private fun completionLaunch() = baseLaunch().copy(showCompletion = true)
+    private fun completionLaunch() = baseLaunch().copy(showCompletion = true, seedIntentions = emptyList())
     private fun customiseLaunch() = baseLaunch().copy(showCustomise = true)
     private fun michaelLaunch() = baseLaunch().copy(showSaintMichael = true)
 
@@ -527,14 +543,26 @@ class ParityScreenshotTest {
     )
 
     @Composable
-    private fun Pray(launch: PrayLaunch) {
-        val store = remember { filledStore() }
+    private fun Pray(launch: PrayLaunch, emptyKeepList: Boolean = false) {
+        val store = remember(emptyKeepList) { if (emptyKeepList) emptyStore() else filledStore() }
         PrayScreen(
             launch = launch,
             sessionStore = store,
-            quotePreferences = remember { MapQuotePreferences() },
+            quotePreferences = remember { completionQuotePrefs() },
             onClose = {},
         )
+    }
+
+    private fun emptyStore(): SessionStore = SessionStore(
+        prefs = InMemorySessionPreferences(),
+        zone = zone,
+    )
+
+    private fun completionQuotePrefs(): MapQuotePreferences {
+        val prefs = MapQuotePreferences()
+        val index = QuoteCatalog.all.indexOfFirst { it.id == "jp2-favourite" }
+        if (index >= 0) prefs.setInt(QuoteCatalog.NEXT_COMPLETION_QUOTE_KEY, index)
+        return prefs
     }
 
     private fun filledStore(): SessionStore {
