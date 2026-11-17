@@ -35,6 +35,7 @@ import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun OnboardingScreen(
@@ -114,14 +115,16 @@ private fun OnboardingPageBody(page: OnboardingPage) {
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .clip(RoundedCornerShape(bottomStart = 0.dp, bottomEnd = 0.dp)),
+                .padding(horizontal = 24.dp),
         ) {
             Image(
                 painter = painterResource(image),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 alignment = alignment,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)),
             )
         }
         Column(
@@ -129,10 +132,11 @@ private fun OnboardingPageBody(page: OnboardingPage) {
                 .fillMaxWidth()
                 .padding(horizontal = RosarySpace.gutter)
                 .padding(top = RosarySpace.xl, bottom = RosarySpace.md),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(text = page.title, style = RosaryType.headingPrimary, color = palette.ink)
+            Text(text = page.title, style = RosaryType.headingPrimary, color = palette.ink, textAlign = TextAlign.Center)
             Spacer(Modifier.height(RosarySpace.sm))
-            Text(text = page.body, style = RosaryType.body, color = palette.dim)
+            Text(text = page.body, style = RosaryType.body, color = palette.dim, textAlign = TextAlign.Center)
         }
     }
 }

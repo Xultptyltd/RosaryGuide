@@ -34,6 +34,12 @@ import app.rosaryguide.core.designsystem.component.GuideTertiaryButton
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import app.rosaryguide.core.designsystem.component.LocalReduceMotion
+import app.rosaryguide.core.designsystem.theme.ThemePalette
 
 @Composable
 fun SignInScreen(
@@ -49,18 +55,30 @@ fun SignInScreen(
             .background(palette.bg)
             .navigationBarsPadding(),
     ) {
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
         ) {
-            Image(
-                painter = painterResource(R.drawable.onboarding_sign_in),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.TopCenter,
-                modifier = Modifier.fillMaxSize(),
-            )
+            val panelHeight = maxHeight * 0.5f
+            val reduceMotion = LocalReduceMotion.current
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(horizontal = 24.dp)
+                    .fillMaxWidth()
+                    .height(panelHeight)
+                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                    .background(ThemePalette.brandCanvas(palette.isDark)),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                RosaryBeadsFallPlayer(
+                    plays = !reduceMotion,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 40.dp),
+                )
+            }
         }
         Column(
             modifier = Modifier
@@ -91,11 +109,16 @@ fun SignInScreen(
                 enabled = !isSigningInWithGoogle,
                 onClick = onGoogle,
             )
-            Spacer(Modifier.height(RosarySpace.sm))
-            GuideTertiaryButton(
-                title = OnboardingCopy.CONTINUE_AS_GUEST,
-                enabled = !isSigningInWithGoogle,
-                onClick = onGuest,
+            Spacer(Modifier.height(RosarySpace.md))
+            Text(
+                text = OnboardingCopy.CONTINUE_AS_GUEST,
+                style = RosaryType.body.copy(textDecoration = TextDecoration.Underline),
+                color = palette.ink,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .clickable(enabled = !isSigningInWithGoogle, onClick = onGuest)
+                    .padding(horizontal = RosarySpace.md, vertical = RosarySpace.sm)
+                    .semantics { contentDescription = "Continue as guest. You can sign in later in Settings" },
             )
             Spacer(Modifier.height(RosarySpace.lg))
             val legal = buildAnnotatedString {
