@@ -54,6 +54,8 @@ enum class SettingsPage {
     License,
 }
 
+enum class SettingsConfirmDialog { None, ClearHistory, DeleteAccount }
+
 @Composable
 fun SettingsScreen(
     settings: UserSettings,
@@ -63,6 +65,7 @@ fun SettingsScreen(
     hasAppHistory: Boolean,
     playStorePackage: String? = null,
     initialPage: SettingsPage = SettingsPage.Root,
+    initialConfirm: SettingsConfirmDialog = SettingsConfirmDialog.None,
     onAppearance: (AppearancePreference) -> Unit,
     onRosaryConfig: (RosaryConfig) -> Unit,
     onDailyEnabled: (Boolean) -> Unit,
@@ -152,6 +155,7 @@ fun SettingsScreen(
             onSignOut = onSignOut,
             onReplayWelcome = onReplayWelcome,
             onSignIn = onSignIn,
+            initialConfirm = initialConfirm,
             onBack = onBack,
             modifier = modifier,
         )
@@ -173,15 +177,16 @@ private fun SettingsRoot(
     onReplayWelcome: () -> Unit,
     onSignIn: () -> Unit,
     onBack: () -> Unit,
+    initialConfirm: SettingsConfirmDialog = SettingsConfirmDialog.None,
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalThemePalette.current
     val context = LocalContext.current
     var themeMenu by remember { mutableStateOf(false) }
-    var confirmClear by remember { mutableStateOf(false) }
+    var confirmClear by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.ClearHistory) }
     var didClear by remember { mutableStateOf(false) }
     var confirmSignOut by remember { mutableStateOf(false) }
-    var confirmDelete by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.DeleteAccount) }
     var deleteStub by remember { mutableStateOf(false) }
     var reportProblem by remember { mutableStateOf(false) }
 
@@ -385,13 +390,15 @@ private fun SettingsRoot(
             onDismissRequest = { confirmDelete = false },
             title = { Text("Delete account?") },
             text = {
-                Text("Account deletion will be available when sign-in sync arrives. Nothing has been deleted.")
+                Text(
+                    "This permanently deletes your Rosary Guide account and everything synced to it (intentions, prayer history and settings), then clears your prayer data from this device. You'll confirm with Google first. This can't be undone.",
+                )
             },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
                     deleteStub = true
-                }) { Text("OK") }
+                }) { Text("Delete account") }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
         )

@@ -3,6 +3,7 @@ package app.rosaryguide.feature.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -121,7 +122,37 @@ fun AcknowledgementsScreen(
                 )
                 SettingsDivider()
             }
+            SettingsSection(title = "Scripture") {
+                ScriptureRow("World English Bible, Catholic Edition")
+                ScriptureRow("Douay-Rheims (Challoner, 1899)")
+                ScriptureRow("Clementine Vulgate")
+            }
+            SettingsSection(title = "Photos") {
+                Text(
+                    text = POPE_PHOTO_CREDIT,
+                    style = RosaryType.caption,
+                    color = palette.dim,
+                    modifier = Modifier.padding(vertical = RosarySpace.md),
+                )
+            }
         }
+    }
+}
+
+private const val POPE_PHOTO_CREDIT =
+    "Photo of Pope Leo XIV: Edgar Beltrán, The Pillar, via Wikimedia Commons, CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). Cropped; the cropped image is shared under the same licence."
+
+@Composable
+private fun ScriptureRow(title: String) {
+    val palette = LocalThemePalette.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = RosarySpace.md),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+    ) {
+        Text(text = title, style = RosaryType.body, color = palette.ink, modifier = Modifier.weight(1f))
+        Text(text = "Public domain", style = RosaryType.caption, color = palette.dim)
     }
 }
 
