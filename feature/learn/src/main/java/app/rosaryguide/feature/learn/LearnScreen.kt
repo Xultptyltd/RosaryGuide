@@ -66,6 +66,7 @@ fun LearnScreen(
     onRosaryPrayers: () -> Unit = {},
     onAllPrayers: () -> Unit = {},
     onBeginRosary: () -> Unit = {},
+    onResumeRosary: () -> Unit = onBeginRosary,
     todaySetTitle: String = "Joyful Mysteries",
     resumeCta: String? = null,
     startWalkthrough: Boolean = false,
@@ -147,7 +148,7 @@ fun LearnScreen(
                     GuideSectionLabel(text = LearnCopy.COMMON_QUESTIONS)
                     QuestionsAccordion(articles)
                     Spacer(Modifier.height(RosarySpace.xl))
-                    PrayTodayCard(title = todaySetTitle, resumeCta = resumeCta, onPray = onBeginRosary)
+                    PrayTodayCard(title = todaySetTitle, resumeCta = resumeCta, onPray = if (resumeCta != null) onResumeRosary else onBeginRosary)
                 }
             }
         }

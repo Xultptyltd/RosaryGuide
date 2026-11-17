@@ -116,20 +116,12 @@ fun CompletionScreen(
                     },
             )
         }
-        Box(
-            modifier = Modifier
-                .size(88.dp)
-                .clip(CircleShape)
-                .background(palette.surface),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Check,
-                contentDescription = null,
-                tint = palette.ink,
-                modifier = Modifier.size(36.dp),
-            )
-        }
+        val playTick = android.os.Build.FINGERPRINT.lowercase() != "robolectric"
+        RosaryTickPlayer(
+            size = 88.dp,
+            plays = playTick,
+            modifier = Modifier.padding(top = RosarySpace.xs),
+        )
         Column(
             modifier = Modifier
                 .fillMaxWidth()

@@ -165,7 +165,7 @@ fun RosaryGuideApp(
         var showWelcomeReplay by remember { mutableStateOf(false) }
         var consumeForceOnboarding by remember { mutableStateOf(false) }
 
-        fun openPray(set: MysterySetKind, fromDebug: Boolean = false) {
+        fun openPray(set: MysterySetKind, fromDebug: Boolean = false, isResume: Boolean = false) {
             val base = viewModel.settingsStore.current.rosaryConfig
             val config = base.copy(
                 showBeads = if (debugLaunch.hideBeads) false else base.showBeads,
@@ -177,6 +177,7 @@ fun RosaryGuideApp(
                 showIntentions = fromDebug && debugLaunch.showIntentions,
                 showCompletion = fromDebug && debugLaunch.showCompletion,
                 forceFresh = fromDebug && (debugLaunch.forceFreshPray || debugLaunch.showCompletion || debugLaunch.showIntentions),
+                isResume = isResume,
                 config = config,
             )
         }
@@ -211,12 +212,12 @@ fun RosaryGuideApp(
                     hasAskedForNotifications = flags.askedForNotifications,
                     onAskedForNotifications = viewModel::markAskedForNotifications,
                     onPray = { openPray(it) },
+                    onResumePray = { openPray(it, isResume = true) },
                     onPrayWith = { intention ->
                         val set = MysteryCalendar.assignment(today).set
                         prayLaunch = PrayLaunch(
                             mysterySet = set,
                             seedIntentions = listOf(intention.id to intention.title),
-                            forceFresh = true,
                             config = viewModel.settingsStore.current.rosaryConfig,
                         )
                     },
@@ -336,6 +337,7 @@ private fun AppTabs(
     hasAskedForNotifications: Boolean,
     onAskedForNotifications: () -> Unit,
     onPray: (MysterySetKind) -> Unit,
+    onResumePray: (MysterySetKind) -> Unit = onPray,
     prayedDayKeys: Set<String> = emptySet(),
     onPrayWith: (OfferIntention) -> Unit = {},
     sessionStore: SessionStore,
@@ -418,6 +420,7 @@ private fun AppTabs(
                         navController.navigate(FeastDetailRoute(item.feast.id, item.date.toString()))
                     },
                     onPray = onPray,
+                    onResumePray = onResumePray,
                     onOpenSettings = onOpenSettings,
                     resumableCta = resumeCta,
                 )
@@ -431,6 +434,7 @@ private fun AppTabs(
                     onRosaryPrayers = { navController.navigate(RosaryPrayersRoute) },
                     onAllPrayers = { navController.navigate(AllPrayersRoute) },
                     onBeginRosary = { onPray(MysteryCalendar.assignment(today).set) },
+                    onResumeRosary = { onResumePray(MysteryCalendar.assignment(today).set) },
                     todaySetTitle = MysteryCalendar.assignment(today).set.titleText.english,
                     resumeCta = resumeCta,
                     startWalkthrough = debugLaunch.openWalkthrough,

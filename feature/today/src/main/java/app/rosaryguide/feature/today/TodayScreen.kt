@@ -81,6 +81,7 @@ fun TodayScreen(
     onViewAllFeasts: () -> Unit,
     onFeastClick: (DatedFeast) -> Unit,
     onPray: (app.rosaryguide.core.model.MysterySetKind) -> Unit,
+    onResumePray: (app.rosaryguide.core.model.MysterySetKind) -> Unit = onPray,
     modifier: Modifier = Modifier,
     today: LocalDate = LocalDate.now(),
     resumableCta: String? = null,
@@ -138,7 +139,9 @@ fun TodayScreen(
                 isToday -> HomeCopy.PRAY_TODAYS_MYSTERIES
                 else -> HomeCopy.prayTheMysteries(assignment.set)
             },
-            onClick = { onPray(assignment.set) },
+            onClick = {
+                if (isToday && resumableCta != null) onResumePray(assignment.set) else onPray(assignment.set)
+            },
             modifier = Modifier.padding(horizontal = RosarySpace.gutter),
         )
 

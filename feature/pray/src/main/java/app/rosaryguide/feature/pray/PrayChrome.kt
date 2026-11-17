@@ -1,5 +1,6 @@
 package app.rosaryguide.feature.pray
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -17,7 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -220,6 +225,8 @@ fun PrayActionFooter(
     onCompleteDecade: () -> Unit,
     onLanguageChange: (PrayerLanguage) -> Unit,
     modifier: Modifier = Modifier,
+    showScroll: Boolean = false,
+    onScroll: () -> Unit = {},
 ) {
     val palette = LocalThemePalette.current
     Column(
@@ -230,6 +237,14 @@ fun PrayActionFooter(
             .padding(top = RosarySpace.md, bottom = RosarySpace.lg),
         verticalArrangement = Arrangement.spacedBy(RosarySpace.md),
     ) {
+        if (showScroll) {
+            GuideScrollActionButton(
+                showScroll = true,
+                title = nextTitle,
+                onScroll = onScroll,
+                onAdvance = onNext,
+            )
+        } else {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(RosarySpace.sm),
@@ -246,6 +261,7 @@ fun PrayActionFooter(
                     modifier = Modifier.weight(1f),
                 )
             }
+        }
         }
         if (showLanguage) {
             PrayerLanguageToggle(
@@ -274,5 +290,49 @@ fun IntentionActionFooter(
     ) {
         GuideOutlineButton(title = "Add intention", onClick = onAdd)
         GuidePrimaryButton(title = "Next", onClick = onNext)
+    }
+}
+
+
+private val ScrollCircle = 56.dp
+
+@Composable
+fun GuideScrollActionButton(
+    showScroll: Boolean,
+    title: String,
+    onScroll: () -> Unit,
+    onAdvance: () -> Unit,
+    modifier: Modifier = Modifier,
+    scrollLabel: String = "Scroll to continue",
+    primary: Boolean = true,
+) {
+    val palette = LocalThemePalette.current
+    val circle = ScrollCircle
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = if (showScroll) Arrangement.End else Arrangement.Start,
+    ) {
+        Button(
+            onClick = if (showScroll) onScroll else onAdvance,
+            modifier = Modifier
+                .then(if (showScroll) Modifier.size(circle) else Modifier.fillMaxWidth())
+                .heightIn(min = if (showScroll) circle else RosarySpace.pillHeight),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(RosarySpace.containerRadius),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (primary) palette.buttonPrimaryFill else palette.buttonSecondaryFill,
+                contentColor = if (primary) palette.buttonPrimaryText else palette.buttonSecondaryText,
+            ),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+        ) {
+            if (showScroll) {
+                Icon(
+                    imageVector = Icons.Filled.KeyboardArrowDown,
+                    contentDescription = scrollLabel,
+                    modifier = Modifier.size(22.dp),
+                )
+            } else {
+                androidx.compose.material3.Text(text = title, style = RosaryType.body)
+            }
+        }
     }
 }

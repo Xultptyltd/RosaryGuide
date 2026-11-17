@@ -4,6 +4,14 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import app.rosaryguide.core.designsystem.component.LocalReduceMotion
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.InfiniteTransition
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -18,6 +26,7 @@ import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.model.BeadLocus
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
 
@@ -29,6 +38,22 @@ fun BeadRail(
     val palette = LocalThemePalette.current
     val geometry = RosaryGeometry.shared
     val stroke = with(LocalDensity.current) { 1.4.dp.toPx() }
+    val reduceMotion = LocalReduceMotion.current
+    val phase = if (reduceMotion) {
+        0.45f
+    } else {
+        val transition = rememberInfiniteTransition(label = "beadHalo")
+        val animated = transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1120, easing = LinearEasing),
+            ),
+            label = "beadHaloPhase",
+        )
+        animated.value
+    }
+    val wave = if (reduceMotion) 0.45f else (1f - (1f - phase.coerceIn(0f, 1f)).let { it * it * it })
     Canvas(
         modifier = modifier
             .fillMaxWidth()
@@ -42,6 +67,42 @@ fun BeadRail(
         val cord = palette.dim.copy(alpha = 0.55f)
         drawPath(pathFrom(geometry.pendantPath, ox, oy, scale), color = cord, style = Stroke(stroke, cap = StrokeCap.Round))
         drawPath(pathFrom(geometry.loopPath, ox, oy, scale), color = cord, style = Stroke(stroke, cap = StrokeCap.Round))
+
+        // iOS paintPulse: accent halo around the current crucifix, medal, or bead.
+        val pulsePoint: Offset? = when (current) {
+            is BeadLocus.Crucifix -> map(geometry.crucifix.x, geometry.crucifix.y)
+            is BeadLocus.Closing, is BeadLocus.DecadeOurFather ->
+                if (current is BeadLocus.Closing || (current is BeadLocus.DecadeOurFather && current.decade == 1))
+                    map(geometry.medal.x, geometry.medal.y)
+                else geometry.beads.firstOrNull { it.locus == current && !it.isSpace }?.let { map(it.point.x, it.point.y) }
+            else -> geometry.beads.firstOrNull { it.locus == current }?.let { map(it.point.x, it.point.y) }
+        }
+        if (pulsePoint != null) {
+            val large = geometry.beads.firstOrNull { it.locus == current }?.large == true
+            val (baseRadius, expansion, lineWidth) = when (current) {
+                is BeadLocus.Crucifix -> Triple(15.0, 17.0, 2.2)
+                is BeadLocus.Closing -> Triple(14.0, 16.0, 2.0)
+                is BeadLocus.DecadeOurFather ->
+                    if (current.decade == 1) Triple(14.0, 16.0, 2.0)
+                    else if (large) Triple(7.0, 7.4, 1.45) else Triple(5.2, 5.8, 1.2)
+                else -> if (large) Triple(7.0, 7.4, 1.45) else Triple(5.2, 5.8, 1.2)
+            }
+            val outerR = ((baseRadius + expansion * wave) * scale).toFloat()
+            val innerR = (max(baseRadius * 0.62, baseRadius - expansion * 0.16) * scale).toFloat()
+            val outerOpacity = if (reduceMotion) 0.42f else 0.72f * (1f - wave)
+            val fillOpacity = if (reduceMotion) 0.26f else 0.44f * (1f - wave)
+            drawCircle(
+                color = palette.accent.copy(alpha = fillOpacity),
+                radius = innerR,
+                center = pulsePoint,
+            )
+            drawCircle(
+                color = palette.accent.copy(alpha = outerOpacity),
+                radius = outerR,
+                center = pulsePoint,
+                style = Stroke(width = (lineWidth * scale).toFloat()),
+            )
+        }
 
         val medal = map(geometry.medal.x, geometry.medal.y)
         val medalIsCurrent = current is BeadLocus.DecadeOurFather && current.decade == 1

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -25,6 +26,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +59,8 @@ data class PrayLaunch(
     val showSaintMichael: Boolean = false,
     val showCustomise: Boolean = false,
     val forceFresh: Boolean = false,
+    val isResume: Boolean = false,
+    val showReplaceDialog: Boolean = false,
     val config: RosaryConfig = RosaryConfig.default,
     val seedIntentions: List<Pair<String, String>> = emptyList(),
 )
@@ -93,6 +98,10 @@ fun PrayScreen(
     var lastAdvanceAt by remember { mutableStateOf(0L) }
     var showCustomise by remember { mutableStateOf(launch.showCustomise) }
     var showComposer by remember { mutableStateOf(false) }
+    var confirmReplace by remember { mutableStateOf(launch.showReplaceDialog) }
+    val prayerScroll = rememberScrollState()
+    val scope = rememberCoroutineScope()
+
 
     LaunchedEffect(launch) {
         haptics.prepare(hapticEnabled)
@@ -101,8 +110,19 @@ fun PrayScreen(
                 sessionStore.addIntention(title)
             }
         }
-        val existing = saved?.takeIf { it.mysterySet == launch.mysterySet && it.isResumable(System.currentTimeMillis()) }
-        if (!launch.forceFresh && !launch.showCompletion && !launch.showSaintMichael && existing != null) {
+        val existing = saved?.takeIf { it.isResumable(System.currentTimeMillis()) }
+        val shouldAsk = existing != null &&
+            !launch.forceFresh &&
+            !launch.isResume &&
+            !launch.showCompletion &&
+            !launch.showSaintMichael &&
+            !launch.showCustomise &&
+            launch.startStep == null
+        if (shouldAsk || launch.showReplaceDialog) {
+            confirmReplace = true
+            return@LaunchedEffect
+        }
+        if (launch.isResume && !launch.forceFresh && !launch.showCompletion && !launch.showSaintMichael && existing != null) {
             config = existing.rosaryConfig
             steps = RosarySequenceBuilder.build(existing.mysterySet, existing.rosaryConfig)
             index = existing.stepIndex.coerceIn(0, steps.lastIndex)
@@ -135,6 +155,11 @@ fun PrayScreen(
     DisposableEffect(Unit) {
         onDispose { }
     }
+
+    LaunchedEffect(index, showingIntentionStep) {
+        prayerScroll.scrollTo(0)
+    }
+
 
     fun playArrival(at: RosaryStep, from: RosaryStep?, viaCompleteDecade: Boolean = false) {
         val arrival = RosaryHaptics.arrival(at, from, viaCompleteDecade, celebrated)
@@ -265,6 +290,40 @@ fun PrayScreen(
             .fillMaxSize()
             .background(palette.prayBg),
     ) {
+
+        if (confirmReplace) {
+            AlertDialog(
+                onDismissRequest = {
+                    confirmReplace = false
+                    onClose()
+                },
+                title = { Text("Start a new rosary?") },
+                text = {
+                    Text("You already have a rosary in progress today. Starting fresh will replace it once you move past the first step.")
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            confirmReplace = false
+                            config = launch.config
+                            steps = RosarySequenceBuilder.build(launch.mysterySet, launch.config)
+                            val started = sessionStore.start(launch.mysterySet, language, config = launch.config)
+                            selectedIds = started.intentionIds
+                            selectedTitles = started.intentionTitles
+                            index = 0
+                            celebrated = emptySet()
+                        },
+                    ) { Text("Replace saved place") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        confirmReplace = false
+                        onClose()
+                    }) { Text("Cancel") }
+                },
+            )
+        }
+
         when {
             showingMichael -> {
                 SaintMichaelScreen(
@@ -320,6 +379,8 @@ fun PrayScreen(
                             onCompleteDecade = { completeDecade() },
                             onLanguageChange = { language = it },
                             modifier = Modifier.navigationBarsPadding(),
+                            showScroll = prayerScroll.canScrollForward,
+                            onScroll = { scope.launch { prayerScroll.animateScrollTo(prayerScroll.maxValue) } },
                         )
                     }
                 }
@@ -329,7 +390,7 @@ fun PrayScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .verticalScroll(rememberScrollState()),
+                                .verticalScroll(prayerScroll),
                         ) {
                             MysteryPlate(
                                 step = current,
@@ -370,7 +431,7 @@ fun PrayScreen(
                             Column(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .verticalScroll(rememberScrollState())
+                                    .verticalScroll(prayerScroll)
                                     .padding(horizontal = RosarySpace.gutter),
                             ) {
                                 current?.let { step ->
