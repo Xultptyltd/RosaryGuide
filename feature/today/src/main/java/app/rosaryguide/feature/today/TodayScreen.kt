@@ -40,10 +40,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -103,7 +99,6 @@ fun TodayScreen(
     prayedDayKeys: Set<String> = emptySet(),
     hasAskedForNotifications: Boolean = true,
     onAskedForNotifications: () -> Unit = {},
-    onOpenSettings: () -> Unit = {},
     onPrayDecade: (MysterySetKind, Int) -> Unit = { set, _ -> onPray(set) },
 ) {
     val palette = LocalThemePalette.current
@@ -140,17 +135,10 @@ fun TodayScreen(
             .verticalScroll(rememberScrollState())
             .padding(bottom = RosarySpace.xxl),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            GuideScreenHeader(title = "Today", modifier = Modifier.weight(1f))
-            IconButton(onClick = onOpenSettings) {
-                Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = palette.ink)
-            }
-        }
+        GuideScreenHeader(
+            title = "Today",
+            modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg),
+        )
 
         MysteryCard(
             setName = assignment.set.shortName,

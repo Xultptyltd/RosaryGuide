@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -52,6 +53,7 @@ import app.rosaryguide.core.data.catalog.LearnArticle
 import app.rosaryguide.core.data.catalog.PrayerCatalog
 import app.rosaryguide.core.data.launch.AppTab
 import app.rosaryguide.core.data.launch.LaunchGate
+import app.rosaryguide.core.data.navigation.NavigationIa
 import app.rosaryguide.core.data.sequence.RosarySequenceBuilder
 import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
@@ -165,6 +167,27 @@ fun RosaryGuideApp(
         }
         var showWelcomeReplay by remember { mutableStateOf(false) }
         var consumeForceOnboarding by remember { mutableStateOf(false) }
+        var signInOrigin by remember { mutableStateOf<NavigationIa.SignInOrigin?>(null) }
+        var tabsResetKey by remember { mutableIntStateOf(0) }
+
+        fun finishInAppSignIn(signIn: () -> Unit) {
+            signIn()
+            val origin = signInOrigin
+            showSignIn = false
+            signInOrigin = null
+            consumeForceOnboarding = true
+            when (NavigationIa.afterSignIn(origin ?: NavigationIa.SignInOrigin.Profile)) {
+                NavigationIa.AfterSignInLanding.TodayClearingStacks -> {
+                    showSettings = false
+                    showWelcomeReplay = false
+                    tabsResetKey += 1
+                }
+                NavigationIa.AfterSignInLanding.StayOnSettings -> {
+                    showSettings = true
+                }
+                NavigationIa.AfterSignInLanding.StayOnProfile -> Unit
+            }
+        }
 
         fun openPray(
             set: MysterySetKind,
@@ -212,10 +235,13 @@ fun RosaryGuideApp(
             didCompleteOnboarding = didComplete,
             isSignedIn = auth.isSignedIn,
             signedInThisLaunch = auth.interactiveSignIns > 0,
-        ) && !forcingEntry && !showSignIn
+        ) && !forcingEntry
+        val firstRunSignIn = (showSignIn || debugLaunch.forceSignIn) && !showsApp
+        val inAppSignIn = showSignIn && showsApp
 
         Box(Modifier.fillMaxSize()) {
             if (showsApp) {
+                androidx.compose.runtime.key(tabsResetKey) {
                 AppTabs(
                     debugLaunch = debugLaunch,
                     today = today,
@@ -235,22 +261,28 @@ fun RosaryGuideApp(
                     },
                     sessionStore = viewModel.sessionStore,
                     isSignedIn = auth.isSignedIn,
-                    onSignIn = { showSignIn = true },
+                    onSignIn = {
+                        signInOrigin = NavigationIa.SignInOrigin.Profile
+                        showSignIn = true
+                    },
                     onOpenSettings = {
                         settingsPage = SettingsPage.Root
                         showSettings = true
                     },
                 )
-            } else if (showSignIn || debugLaunch.forceSignIn) {
+                }
+            } else if (firstRunSignIn) {
                 SignInScreen(
                     onGoogle = {
                         viewModel.signInWithGoogle()
                         showSignIn = false
+                        signInOrigin = null
                         consumeForceOnboarding = true
                     },
                     onGuest = {
                         viewModel.continueAsGuest()
                         showSignIn = false
+                        signInOrigin = null
                         consumeForceOnboarding = true
                     },
                     isSigningInWithGoogle = auth.isSigningInWithGoogle,
@@ -319,11 +351,10 @@ fun RosaryGuideApp(
                         prayLaunch = null
                     },
                     onReplayWelcome = {
-                        showSettings = false
                         showWelcomeReplay = true
                     },
                     onSignIn = {
-                        showSettings = false
+                        signInOrigin = NavigationIa.SignInOrigin.Settings
                         showSignIn = true
                     },
                     onBack = { showSettings = false },
@@ -338,11 +369,23 @@ fun RosaryGuideApp(
                 )
             }
 
+            if (inAppSignIn) {
+                SignInScreen(
+                    onGoogle = { finishInAppSignIn { viewModel.signInWithGoogle() } },
+                    onGuest = { finishInAppSignIn { viewModel.continueAsGuest() } },
+                    isSigningInWithGoogle = auth.isSigningInWithGoogle,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
             if (prayLaunch != null) {
                 BackHandler { prayLaunch = null }
             }
             if (showWelcomeReplay) {
                 BackHandler { showWelcomeReplay = false }
+            }
+            if (inAppSignIn) {
+                BackHandler { showSignIn = false; signInOrigin = null }
             }
         }
     }
@@ -441,7 +484,6 @@ private fun AppTabs(
                     onPray = onPray,
                     onResumePray = onResumePray,
                     onPrayDecade = onPrayDecade,
-                    onOpenSettings = onOpenSettings,
                     resumableCta = resumeCta,
                 )
             }

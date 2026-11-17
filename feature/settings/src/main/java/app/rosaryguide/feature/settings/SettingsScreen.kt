@@ -199,7 +199,7 @@ private fun SettingsRoot(
             .fillMaxSize()
             .background(palette.bg),
     ) {
-        GuideLargeTopAppBar(title = "Settings", onBack = onBack, closeInsteadOfBack = true)
+        GuideLargeTopAppBar(title = "Settings", onBack = onBack, closeInsteadOfBack = false)
         Column(
             modifier = Modifier
                 .fillMaxSize()
