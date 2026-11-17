@@ -2,6 +2,7 @@ package app.rosaryguide.feature.learn
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.ui.text.font.FontWeight
 import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
 import app.rosaryguide.core.model.PrayerLanguage
@@ -46,6 +47,7 @@ import app.rosaryguide.core.data.art.ArtCatalog
 import app.rosaryguide.core.data.catalog.LearnArticle
 import app.rosaryguide.core.data.catalog.MysteryCatalog
 import app.rosaryguide.core.designsystem.component.drawableIdByName
+import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
@@ -63,12 +65,12 @@ fun LearnArticleScreen(article: LearnArticle, modifier: Modifier = Modifier) {
             .padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg)
             .padding(bottom = RosarySpace.xxl),
     ) {
-        Text(text = article.eyebrow, style = RosaryType.caption, color = palette.accentText)
+        Text(text = article.eyebrow, style = RosaryType.caption, color = palette.dim)
         Spacer(Modifier.height(RosarySpace.xs))
         Text(text = article.title, style = RosaryType.headingPrimary, color = palette.ink)
         Spacer(Modifier.height(RosarySpace.lg))
         article.paragraphs.forEach { paragraph ->
-            Text(text = paragraph, style = RosaryType.serifBody, color = palette.ink)
+            Text(text = paragraph, style = RosaryType.body, color = palette.dim)
             Spacer(Modifier.height(RosarySpace.md))
         }
     }
@@ -140,54 +142,95 @@ fun PrayerReaderScreen(prayer: Prayer, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun MysterySetScreen(set: MysterySetKind, modifier: Modifier = Modifier) {
+fun MysterySetScreen(
+    set: MysterySetKind,
+    modifier: Modifier = Modifier,
+    onPray: (MysterySetKind) -> Unit = {},
+) {
     val palette = LocalThemePalette.current
     val context = LocalContext.current
     val heroId = drawableIdByName(context, ArtCatalog.heroName(set))
     val mysteries = MysteryCatalog.mysteries(set)
+    var expanded by remember { mutableStateOf(setOf<String>()) }
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(palette.bg)
             .verticalScroll(rememberScrollState())
-            .padding(bottom = RosarySpace.xxl),
+            .padding(horizontal = RosarySpace.gutter)
+            .padding(top = RosarySpace.xl, bottom = RosarySpace.xxl),
     ) {
         if (heroId != 0) {
             Image(
                 painter = painterResource(heroId),
-                contentDescription = set.titleText.english,
+                contentDescription = set.displayTitle,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp),
+                    .height(220.dp)
+                    .clip(RoundedCornerShape(RosarySpace.containerRadius)),
             )
-        }
-        Column(Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg)) {
-            Text(text = set.weekdayCaption, style = RosaryType.supportingLabel, color = palette.dim)
-            Spacer(Modifier.height(RosarySpace.sm))
-            Text(text = set.themeSummary, style = RosaryType.body, color = palette.ink)
             Spacer(Modifier.height(RosarySpace.xl))
-            mysteries.forEach { mystery ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = RosarySpace.lg)
-                        .clip(RoundedCornerShape(RosarySpace.nestedRadius)),
-                ) {
-                    Text(text = "${mystery.number}. ${mystery.title.english}", style = RosaryType.headingSecondary, color = palette.ink)
-                    if (mystery.summary.isNotBlank()) {
-                        Spacer(Modifier.height(RosarySpace.xs))
-                        Text(text = mystery.summary, style = RosaryType.supportingLabel, color = palette.dim)
+        }
+        Text(text = set.displayTitle, style = RosaryType.headingPrimary, color = palette.ink)
+        Spacer(Modifier.height(RosarySpace.md))
+        Text(text = set.learnDescription, style = RosaryType.body, color = palette.dim)
+        Spacer(Modifier.height(RosarySpace.xl))
+        val shape = RoundedCornerShape(RosarySpace.containerRadius)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .background(palette.surface)
+                .border(1.dp, palette.strokeRegular, shape)
+                .padding(horizontal = RosarySpace.lg),
+        ) {
+            mysteries.forEachIndexed { index, mystery ->
+                val isOpen = mystery.id in expanded
+                Column(Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                expanded = if (isOpen) expanded - mystery.id else expanded + mystery.id
+                            }
+                            .padding(vertical = RosarySpace.lg),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "${index + 1}",
+                            style = RosaryType.caption,
+                            color = palette.dim,
+                            modifier = Modifier.width(24.dp),
+                        )
+                        Text(
+                            text = mystery.title.english,
+                            style = RosaryType.headingSecondary,
+                            color = palette.ink,
+                            modifier = Modifier.weight(1f),
+                        )
                     }
-                    Spacer(Modifier.height(RosarySpace.xs))
-                    Text(text = mystery.scriptureReference, style = RosaryType.caption, color = palette.accentText)
-                    Spacer(Modifier.height(RosarySpace.xs))
-                    Text(text = mystery.scriptureExcerpt.english, style = RosaryType.serifBody, color = palette.ink)
-                    Spacer(Modifier.height(RosarySpace.xs))
-                    Text(text = "Fruit: ${mystery.fruit.english}", style = RosaryType.supportingLabel, color = palette.dim)
+                    if (isOpen) {
+                        Column(Modifier.padding(start = 24.dp, bottom = RosarySpace.lg)) {
+                            if (mystery.summary.isNotBlank()) {
+                                Text(mystery.summary, style = RosaryType.supportingLabel, color = palette.dim)
+                                Spacer(Modifier.height(RosarySpace.xs))
+                            }
+                            Text(mystery.scriptureReference, style = RosaryType.caption, color = palette.dim)
+                            Spacer(Modifier.height(RosarySpace.xs))
+                            Text(mystery.scriptureExcerpt.english, style = RosaryType.body, color = palette.dim)
+                            Spacer(Modifier.height(RosarySpace.xs))
+                            Text("Fruit: ${mystery.fruit.english}", style = RosaryType.supportingLabel, color = palette.dim)
+                        }
+                    }
+                }
+                if (index < mysteries.lastIndex) {
+                    androidx.compose.material3.HorizontalDivider(color = palette.strokeRegular)
                 }
             }
         }
+        Spacer(Modifier.height(RosarySpace.xl))
+        GuidePrimaryButton(title = "Pray these mysteries", onClick = { onPray(set) })
     }
 }
 
@@ -298,9 +341,10 @@ private fun RosaryPrayerGroup(
 fun AllPrayersScreen(
     onPrayer: (Prayer) -> Unit,
     modifier: Modifier = Modifier,
+    initialQuery: String = "",
 ) {
     val palette = LocalThemePalette.current
-    var query by remember { mutableStateOf("") }
+    var query by remember { mutableStateOf(initialQuery) }
     val term = query.trim()
     val results = remember(term) {
         PrayerCatalog.all

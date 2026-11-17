@@ -478,7 +478,7 @@ private fun AppTabs(
                 }
             }
             composable<HowToPrayRoute> {
-                DetailScaffold(title = "How to pray the Rosary", onBack = { navController.popBackStack() }) {
+                DetailScaffold(title = "How to pray", onBack = { navController.popBackStack() }) {
                     HowToPrayScreen()
                 }
             }
@@ -510,7 +510,7 @@ private fun AppTabs(
                 val route = entry.toRoute<MysterySetRoute>()
                 val set = runCatching { MysterySetKind.valueOf(route.set) }.getOrNull() ?: return@composable
                 DetailScaffold(title = set.shortName, onBack = { navController.popBackStack() }) {
-                    MysterySetScreen(set)
+                    MysterySetScreen(set, onPray = onPray)
                 }
             }
         }

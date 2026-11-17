@@ -122,6 +122,24 @@ enum class MysterySetKind {
             Glorious -> "Wednesday · Sunday"
         }
 
+    /** Learn mystery-set page title, matching iOS `MysterySetKind.displayTitle`. */
+    val displayTitle: String
+        get() = when (this) {
+            Joyful -> "The Joyful Mysteries"
+            Luminous -> "The Luminous Mysteries"
+            Sorrowful -> "The Sorrowful Mysteries"
+            Glorious -> "The Glorious Mysteries"
+        }
+
+    /** Longer Learn description under the title. */
+    val learnDescription: String
+        get() = when (this) {
+            Joyful -> "The Joyful Mysteries contemplate the coming of Christ: the Annunciation, Visitation, Nativity, Presentation, and Finding in the Temple."
+            Luminous -> "The Luminous Mysteries contemplate Christ revealed in his public ministry, from his Baptism to the gift of the Eucharist."
+            Sorrowful -> "The Sorrowful Mysteries contemplate the Passion of Jesus, staying close to his suffering, sacrifice, and love."
+            Glorious -> "The Glorious Mysteries contemplate the Resurrection, Ascension, Pentecost, and Mary’s share in the glory of her Son."
+        }
+
     fun days(inSeason: LiturgicalSeason): String {
         // The weekly pattern is the same in every season; Sundays are always Glorious.
         return when (this) {
