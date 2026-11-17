@@ -78,7 +78,10 @@ class AppViewModel @Inject constructor(
 
     fun signOut() {
         auth.signOut()
-        viewModelScope.launch { preferences.setAuth("guest", null) }
+        viewModelScope.launch {
+            preferences.setOnboardingCompleted(false)
+            preferences.setAuth("guest", null)
+        }
     }
 
     fun maybeRequestReview(activity: Activity, versionName: String) {

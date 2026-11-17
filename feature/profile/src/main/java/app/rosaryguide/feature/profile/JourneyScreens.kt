@@ -49,6 +49,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.rosaryguide.core.data.journey.JourneyPrayerDetailFacts
+import app.rosaryguide.core.data.navigation.NavigationIa
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material3.HorizontalDivider
 import app.rosaryguide.core.data.journey.JourneyDayDetail
 import app.rosaryguide.core.data.journey.JourneyDayEntry
 import app.rosaryguide.core.data.journey.JourneyDuration
@@ -93,6 +97,7 @@ fun JourneyScreen(
     val milestones = remember(completed, dayKeys, journey) { sessionStore.journeyMilestones() }
     var historyTab by remember { mutableStateOf(startOnHistory) }
     var selectedDay by remember { mutableStateOf(initialDay) }
+    var selectedHistoryRow by remember { mutableStateOf<JourneyHistoryRow?>(null) }
     var historyMonthsShown by remember { mutableIntStateOf(HistoryMonthsPerPage) }
     var visibleMonth by remember { mutableStateOf(YearMonth.from(today)) }
 
@@ -135,6 +140,7 @@ fun JourneyScreen(
                 monthsShown = historyMonthsShown,
                 onShowMore = { historyMonthsShown += HistoryMonthsPerPage },
                 onOpenDay = { selectedDay = it },
+                onOpenRow = { selectedHistoryRow = it },
             )
         } else {
             MilestonesTab(
@@ -155,10 +161,21 @@ fun JourneyScreen(
         )
         ModalBottomSheet(
             onDismissRequest = { selectedDay = null },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
             containerColor = palette.bg,
         ) {
             HistoryDaySheet(date = day, entries = entries, locale = locale)
+        }
+    }
+
+    val historyRow = selectedHistoryRow
+    if (historyRow != null) {
+        ModalBottomSheet(
+            onDismissRequest = { selectedHistoryRow = null },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+            containerColor = palette.bg,
+        ) {
+            JourneyPrayerDetailSheet(row = historyRow, zone = zone, locale = locale)
         }
     }
 }
@@ -285,6 +302,7 @@ private fun HistoryTab(
     monthsShown: Int,
     onShowMore: () -> Unit,
     onOpenDay: (LocalDate) -> Unit,
+    onOpenRow: (JourneyHistoryRow) -> Unit,
 ) {
     val palette = LocalThemePalette.current
     val sessions = sessionStore.completed
@@ -303,27 +321,25 @@ private fun HistoryTab(
         ).toSet()
     val partialDays = decadeDates.filter { it !in prayedDays }.toSet()
 
-    data class RowModel(
-        val date: LocalDate,
-        val label: String,
-        val status: String,
-        val intentionCount: String?,
-        val duration: String?,
-    )
-
     val rows = buildList {
         for (session in sessions) {
             val date = Instant.ofEpochMilli(session.completedAtEpochMs).atZone(zone).toLocalDate()
             if (date.isBefore(cutoff)) continue
-            val duration = JourneyDuration.reliable(session.duration)?.let { JourneyDuration.text(it) }
-            val status = duration?.let { "Rosary completed · $it" } ?: "Rosary completed"
+            val durationText = JourneyDuration.reliable(session.duration)?.let { JourneyDuration.text(it) }
+            val status = durationText?.let { "Rosary completed · $it" } ?: "Rosary completed"
             add(
-                RowModel(
+                JourneyHistoryRow(
                     date = date,
                     label = session.mysterySet.shortName + " Mysteries",
                     status = status,
                     intentionCount = OfferedIntentions.countText(session.allIntentionTitles),
-                    duration = duration,
+                    durationText = durationText,
+                    mysterySet = session.mysterySet,
+                    decade = null,
+                    completedAtEpochMs = session.completedAtEpochMs,
+                    startedAtEpochMs = session.startedAtEpochMs,
+                    durationSeconds = session.duration,
+                    intentionTitles = session.allIntentionTitles,
                 ),
             )
         }
@@ -331,16 +347,23 @@ private fun HistoryTab(
             val epoch = decade.startedAtEpochMs ?: decade.completedAtEpochMs
             val date = Instant.ofEpochMilli(epoch).atZone(zone).toLocalDate()
             if (date.isBefore(cutoff)) continue
-            val duration = JourneyDuration.reliable(decade.duration)?.let { JourneyDuration.text(it) }
+            val durationText = JourneyDuration.reliable(decade.duration)?.let { JourneyDuration.text(it) }
             val roman = runCatching { OrdinalWord.roman(decade.decade) }.getOrDefault(decade.decade.toString())
-            val status = duration?.let { "Decade $roman prayed · $it" } ?: "Decade $roman prayed"
+            val status = durationText?.let { "Decade $roman prayed · $it" } ?: "Decade $roman prayed"
+            val set = MysterySetKind.entries.find { it.name.equals(decade.mysterySet, ignoreCase = true) }
             add(
-                RowModel(
+                JourneyHistoryRow(
                     date = date,
                     label = mysterySetTitle(decade.mysterySet) ?: "Decade $roman",
                     status = status,
                     intentionCount = OfferedIntentions.countText(decade.intentionTitles),
-                    duration = duration,
+                    durationText = durationText,
+                    mysterySet = set,
+                    decade = decade.decade,
+                    completedAtEpochMs = decade.completedAtEpochMs,
+                    startedAtEpochMs = decade.startedAtEpochMs,
+                    durationSeconds = decade.duration,
+                    intentionTitles = decade.intentionTitles,
                 ),
             )
         }
@@ -349,12 +372,18 @@ private fun HistoryTab(
             val date = runCatching { LocalDate.parse(key) }.getOrNull() ?: continue
             if (date.isBefore(cutoff) || date in covered) continue
             add(
-                RowModel(
+                JourneyHistoryRow(
                     date = date,
                     label = "Rosary prayed",
                     status = "Prayed before times and mysteries were recorded",
                     intentionCount = null,
-                    duration = null,
+                    durationText = null,
+                    mysterySet = null,
+                    decade = null,
+                    completedAtEpochMs = date.atStartOfDay(zone).toInstant().toEpochMilli(),
+                    startedAtEpochMs = null,
+                    durationSeconds = null,
+                    intentionTitles = emptyList(),
                 ),
             )
         }
@@ -433,7 +462,13 @@ private fun HistoryTab(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(RosarySpace.containerRadius))
                             .background(palette.surface)
-                            .clickable { onOpenDay(row.date) }
+                            .clickable {
+                                when (NavigationIa.journeySheetForHistoryRow()) {
+                                    NavigationIa.JourneySheet.PrayerDetail -> onOpenRow(row)
+                                    NavigationIa.JourneySheet.DayDetail -> onOpenDay(row.date)
+                                }
+                            }
+                            .semantics { contentDescription = "Journey history row" }
                             .padding(RosarySpace.lg),
                     ) {
                         Text(row.label, style = RosaryType.body, color = palette.ink)
@@ -787,4 +822,99 @@ private fun milestoneGlyph(symbol: String): Int = when (symbol) {
     "building" -> R.drawable.ic_milestone_building
     "cross" -> R.drawable.ic_milestone_cross
     else -> R.drawable.ic_milestone_circle_dotted
+}
+
+data class JourneyHistoryRow(
+    val date: LocalDate,
+    val label: String,
+    val status: String,
+    val intentionCount: String?,
+    val durationText: String?,
+    val mysterySet: MysterySetKind?,
+    val decade: Int?,
+    val completedAtEpochMs: Long,
+    val startedAtEpochMs: Long?,
+    val durationSeconds: Double?,
+    val intentionTitles: List<String>,
+)
+
+@Composable
+fun JourneyPrayerDetailSheet(
+    row: JourneyHistoryRow,
+    zone: ZoneId,
+    locale: Locale,
+    modifier: Modifier = Modifier,
+) {
+    val palette = LocalThemePalette.current
+    val facts = JourneyPrayerDetailFacts.from(
+        mysterySet = row.mysterySet,
+        decade = row.decade,
+        completedAtEpochMs = row.completedAtEpochMs,
+        startedAtEpochMs = row.startedAtEpochMs,
+        durationSeconds = row.durationSeconds,
+        intentionTitles = row.intentionTitles,
+        zone = zone,
+        locale = locale,
+    )
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = RosarySpace.gutter)
+            .padding(bottom = RosarySpace.xl)
+            .navigationBarsPadding(),
+    ) {
+        Text(facts.title, style = RosaryType.headingSecondary, color = palette.ink)
+        Spacer(Modifier.height(RosarySpace.xs))
+        Text(facts.subtitle, style = RosaryType.supportingLabel, color = palette.textSecondary)
+        Spacer(Modifier.height(RosarySpace.lg))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(RosarySpace.containerRadius))
+                .background(palette.surface)
+                .padding(horizontal = RosarySpace.lg),
+        ) {
+            facts.facts.forEachIndexed { index, fact ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(fact.label, style = RosaryType.caption, color = palette.textSecondary)
+                    Spacer(Modifier.width(RosarySpace.md))
+                    Text(
+                        fact.value,
+                        style = RosaryType.caption,
+                        color = if (fact.value == "Not recorded") palette.dim else palette.ink,
+                        textAlign = TextAlign.End,
+                    )
+                }
+                if (index < facts.facts.lastIndex) {
+                    HorizontalDivider(color = palette.strokeRegular)
+                }
+            }
+        }
+        Spacer(Modifier.height(RosarySpace.xl))
+        GuideSectionLabel(text = "Offered for")
+        Spacer(Modifier.height(RosarySpace.md))
+        if (facts.intentionTitles.isEmpty()) {
+            Text(facts.emptyIntentionsLabel, style = RosaryType.caption, color = palette.dim)
+        } else {
+            facts.intentionTitles.forEach { title ->
+                Text(
+                    title,
+                    style = RosaryType.body,
+                    color = palette.ink,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(RosarySpace.containerRadius))
+                        .background(palette.surface)
+                        .padding(RosarySpace.lg),
+                )
+                Spacer(Modifier.height(RosarySpace.sm))
+            }
+        }
+    }
 }

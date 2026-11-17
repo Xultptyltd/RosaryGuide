@@ -52,6 +52,7 @@ import app.rosaryguide.core.data.catalog.LearnArticle
 import app.rosaryguide.core.data.catalog.PrayerCatalog
 import app.rosaryguide.core.data.launch.AppTab
 import app.rosaryguide.core.data.launch.LaunchGate
+import app.rosaryguide.core.data.sequence.RosarySequenceBuilder
 import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
 import app.rosaryguide.core.designsystem.component.LocalReduceMotion
@@ -165,18 +166,28 @@ fun RosaryGuideApp(
         var showWelcomeReplay by remember { mutableStateOf(false) }
         var consumeForceOnboarding by remember { mutableStateOf(false) }
 
-        fun openPray(set: MysterySetKind, fromDebug: Boolean = false, isResume: Boolean = false) {
+        fun openPray(
+            set: MysterySetKind,
+            fromDebug: Boolean = false,
+            isResume: Boolean = false,
+            startingDecade: Int? = null,
+        ) {
             val base = viewModel.settingsStore.current.rosaryConfig
             val config = base.copy(
                 showBeads = if (debugLaunch.hideBeads) false else base.showBeads,
                 saintMichael = debugLaunch.includeSaintMichael || base.saintMichael,
             )
+            val decadeStep = startingDecade?.let { decade ->
+                RosarySequenceBuilder.build(set, config)
+                    .indexOfFirst { it.decadeNumber == decade }
+                    .takeIf { it >= 0 }
+            }
             prayLaunch = PrayLaunch(
                 mysterySet = set,
-                startStep = debugLaunch.prayStep,
+                startStep = debugLaunch.prayStep ?: decadeStep,
                 showIntentions = fromDebug && debugLaunch.showIntentions,
                 showCompletion = fromDebug && debugLaunch.showCompletion,
-                forceFresh = fromDebug && (debugLaunch.forceFreshPray || debugLaunch.showCompletion || debugLaunch.showIntentions),
+                forceFresh = startingDecade != null || (fromDebug && (debugLaunch.forceFreshPray || debugLaunch.showCompletion || debugLaunch.showIntentions)),
                 isResume = isResume,
                 config = config,
             )
@@ -213,6 +224,7 @@ fun RosaryGuideApp(
                     onAskedForNotifications = viewModel::markAskedForNotifications,
                     onPray = { openPray(it) },
                     onResumePray = { openPray(it, isResume = true) },
+                    onPrayDecade = { set, decade -> openPray(set, startingDecade = decade) },
                     onPrayWith = { intention ->
                         val set = MysteryCalendar.assignment(today).set
                         prayLaunch = PrayLaunch(
@@ -299,7 +311,13 @@ fun RosaryGuideApp(
                     },
                     onAppIcon = { viewModel.setAppIcon(it) },
                     onClearHistory = { viewModel.clearAppHistory() },
-                    onSignOut = { viewModel.signOut() },
+                    onSignOut = {
+                        viewModel.signOut()
+                        showSettings = false
+                        showWelcomeReplay = false
+                        showSignIn = false
+                        prayLaunch = null
+                    },
                     onReplayWelcome = {
                         showSettings = false
                         showWelcomeReplay = true
@@ -338,6 +356,7 @@ private fun AppTabs(
     onAskedForNotifications: () -> Unit,
     onPray: (MysterySetKind) -> Unit,
     onResumePray: (MysterySetKind) -> Unit = onPray,
+    onPrayDecade: (MysterySetKind, Int) -> Unit = { set, _ -> onPray(set) },
     prayedDayKeys: Set<String> = emptySet(),
     onPrayWith: (OfferIntention) -> Unit = {},
     sessionStore: SessionStore,
@@ -421,6 +440,7 @@ private fun AppTabs(
                     },
                     onPray = onPray,
                     onResumePray = onResumePray,
+                    onPrayDecade = onPrayDecade,
                     onOpenSettings = onOpenSettings,
                     resumableCta = resumeCta,
                 )
