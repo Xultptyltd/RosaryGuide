@@ -2,6 +2,10 @@ package app.rosaryguide.feature.onboarding
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -60,11 +64,13 @@ fun SignInScreen(
                 .fillMaxWidth()
                 .weight(1f),
         ) {
-            val panelHeight = RosarySpace.signInPanelHeight(maxHeight)
+            val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            val panelHeight = RosarySpace.signInPanelHeight(maxHeight) + statusTop
             val reduceMotion = LocalReduceMotion.current
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
+                    .offset(y = -statusTop)
                     .padding(horizontal = RosarySpace.panelInset)
                     .fillMaxWidth()
                     .height(panelHeight)

@@ -50,6 +50,7 @@ data class DebugLaunch(
     val holdSignInTransition: Boolean = false,
     val openWeekFeastSheet: Boolean = false,
     val openMysteryDetailSheet: Boolean = false,
+    val nonce: Long = 0L,
 ) {
     companion object {
         fun from(intent: Intent?): DebugLaunch {
@@ -109,6 +110,11 @@ data class DebugLaunch(
                 holdSignInTransition = flag("hold_sign_in_transition") || flag("hold_signin_transition"),
                 openWeekFeastSheet = flag("open_week_feast_sheet") || flag("week_feast_sheet"),
                 openMysteryDetailSheet = flag("open_mystery_detail_sheet") || flag("mystery_detail_sheet"),
+                nonce = when {
+                    extras.containsKey("debug_nonce") -> extras.getLong("debug_nonce")
+                    extras.containsKey("nonce") -> extras.getLong("nonce")
+                    else -> 0L
+                },
             )
         }
     }

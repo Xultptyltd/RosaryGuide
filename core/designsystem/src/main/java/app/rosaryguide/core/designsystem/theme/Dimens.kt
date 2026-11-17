@@ -50,6 +50,12 @@ object RosarySpace {
         return (widthDp * 0.115f).coerceIn(43.2f, 56f)
     }
 
+    /** iOS week-feast detent: min(max(estimated, 460), 640). */
+    fun weekFeastSheetHeight(): Dp = 460.dp
+
+    /** iOS mystery-detail detent: min(max(estimated, 460), 760). */
+    fun mysteryDetailSheetHeight(): Dp = 680.dp
+
     fun signInPanelHeight(screenHeight: Dp, compact: Boolean = false): Dp {
         val fraction = if (compact) {
             if (screenHeight < 820.dp) 0.28f else 0.32f

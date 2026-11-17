@@ -86,6 +86,15 @@ import app.rosaryguide.core.data.catalog.resolvedTagline
 import app.rosaryguide.core.data.notify.NotificationPrompt
 import app.rosaryguide.core.designsystem.component.CroppedArt
 import app.rosaryguide.core.designsystem.component.GuideOutlineButton
+import app.rosaryguide.core.designsystem.component.mysteryPlateDrawableId
+import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.graphics.Path
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.Canvas
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideScreenHeader
 import app.rosaryguide.core.designsystem.component.GuideSectionDivider
@@ -119,6 +128,7 @@ fun TodayScreen(
     onPrayDecade: (MysterySetKind, Int) -> Unit = { set, _ -> onPray(set) },
     openWeekFeastSheet: Boolean = false,
     openMysteryDetailSheet: Boolean = false,
+    debugNonce: Long = 0L,
     appearance: AppearancePreference = AppearancePreference.System,
     onAppearance: (AppearancePreference) -> Unit = {},
 ) {
@@ -135,10 +145,17 @@ fun TodayScreen(
     val currentSet = assignment.shownSet(selectedSet, prefersWeekday)
     val todaysSet = assignment.defaultSet(prefersWeekday)
     val isShowingTodayMysteries = currentSet == todaysSet
-    var weekFeast by remember { mutableStateOf<DatedFeast?>(null) }
+    fun debugWeekFeast(): DatedFeast? {
+        if (!openWeekFeastSheet) return null
+        val target = LocalDate.of(2026, 11, 21)
+        return FeastCatalog.upcoming(today, limit = 20).firstOrNull {
+            it.date == target || it.feast.id.contains("presentation", ignoreCase = true)
+        } ?: FeastCatalog.upcoming(today, limit = 8).firstOrNull()
+    }
+    var weekFeast by remember(openWeekFeastSheet, debugNonce, today) { mutableStateOf(debugWeekFeast()) }
     var pendingFeastDetail by remember { mutableStateOf<DatedFeast?>(null) }
-    var showMysterySheet by remember { mutableStateOf(false) }
-    var lastMysteryIndex by remember { mutableIntStateOf(0) }
+    var showMysterySheet by remember(openMysteryDetailSheet, debugNonce) { mutableStateOf(openMysteryDetailSheet) }
+    var lastMysteryIndex by remember(openMysteryDetailSheet, debugNonce) { mutableIntStateOf(0) }
     var showAppearanceMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(weekFeast, pendingFeastDetail) {
@@ -181,9 +198,14 @@ fun TodayScreen(
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(palette.groupedBackground)) {
         val pageWidth = maxWidth
         val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val heroBody = RosarySpace.homeHeroHeight(maxHeight)
+        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+        // Use the device frame, not the iPhone 17 Pro Max's taller 956 pt window, so the
+        // first screen still shows "Today's mysteries" and a rail peek above the tab bar.
+        val viewport = screenHeight
+        val heroBody = RosarySpace.homeHeroHeight(viewport)
         val artworkTop = topInset * 0.6f
-        val heroHeight = heroBody + topInset + artworkTop
+        val rawHero = heroBody + topInset + artworkTop
+        val heroHeight = (rawHero - 18.dp).coerceAtLeast(460.dp)
         val titleSize = RosarySpace.homeTitleSizeSp(pageWidth.value)
         val heroName = ArtCatalog.heroName(currentSet)
         val heroRes = drawableIdByName(context, heroName)
@@ -201,10 +223,21 @@ fun TodayScreen(
                     .background(palette.groupedBackground),
             ) {
                 if (heroRes != 0) {
-                    Image(
-                        painter = painterResource(heroRes),
+                    val heroPainter = painterResource(heroRes)
+                    val src = heroPainter.intrinsicSize
+                    CroppedArt(
+                        painter = heroPainter,
+                        coverForFrame = { frameW, frameH ->
+                            ArtCatalog.coverForFocus(
+                                sourceWidth = if (src.width.isFinite() && src.width > 1f) src.width else 1280f,
+                                sourceHeight = if (src.height.isFinite() && src.height > 1f) src.height else 720f,
+                                frameWidth = frameW,
+                                frameHeight = frameH,
+                                focusX = 0.5f,
+                                focusY = 0.28f,
+                            )
+                        },
                         contentDescription = "${currentSet.shortName} Mysteries",
-                        contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = artworkTop)
@@ -232,7 +265,6 @@ fun TodayScreen(
                         .padding(top = topInset, end = RosarySpace.gutter),
                 ) {
                     val chipLabel = if (palette.isDark) "Dark" else "Light"
-                    val chipIcon = if (palette.isDark) "☾" else "☀"
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(percent = 50))
@@ -247,7 +279,7 @@ fun TodayScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        Text(chipIcon, style = RosaryType.caption.copy(fontWeight = FontWeight.Medium), color = palette.ink)
+                        AppearanceChipIcon(dark = palette.isDark, tint = palette.ink)
                         Text(chipLabel, style = RosaryType.caption.copy(fontWeight = FontWeight.Medium), color = palette.ink)
                     }
                     DropdownMenu(
@@ -278,11 +310,18 @@ fun TodayScreen(
                 Spacer(Modifier.height(RosarySpace.md))
                 Text(
                     text = "${currentSet.shortName}\nMysteries",
-                    color = palette.ink,
-                    fontFamily = RosaryFonts.sans,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = titleSize.sp,
-                    lineHeight = (titleSize * RosarySpace.TitleLineHeight).sp,
+                    style = TextStyle(
+                        color = palette.ink,
+                        fontFamily = RosaryFonts.sans,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = titleSize.sp,
+                        lineHeight = (titleSize * RosarySpace.TitleLineHeight).sp,
+                        lineHeightStyle = LineHeightStyle(
+                            alignment = LineHeightStyle.Alignment.Center,
+                            trim = LineHeightStyle.Trim.Both,
+                        ),
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    ),
                     modifier = Modifier.semantics { contentDescription = "${currentSet.shortName} Mysteries" },
                 )
                 Spacer(Modifier.height(RosarySpace.md))
@@ -305,7 +344,7 @@ fun TodayScreen(
                     },
                 )
                 Spacer(Modifier.height(RosarySpace.xxl))
-                GuideSectionLabel(text = railTitle)
+                GuideSectionLabel(text = railTitle, strong = true)
                 Spacer(Modifier.height(RosarySpace.sectionTitleGap))
             }
 
@@ -342,6 +381,7 @@ fun TodayScreen(
                 Spacer(Modifier.height(RosarySpace.xl))
                 GuideSectionLabel(
                     text = HomeCopy.UPCOMING_FEAST_DAYS,
+                    strong = true,
                     modifier = Modifier.padding(horizontal = RosarySpace.gutter),
                 )
                 if (featured != null) {
@@ -371,6 +411,7 @@ fun TodayScreen(
                 Spacer(Modifier.height(RosarySpace.xl))
                 GuideSectionLabel(
                     text = HomeCopy.THIS_WEEK,
+                    strong = true,
                     modifier = Modifier.padding(horizontal = RosarySpace.gutter),
                 )
                 week.forEachIndexed { index, (date, dayAssignment) ->
@@ -431,7 +472,7 @@ fun TodayScreen(
     if (feastForSheet != null) {
         ModalBottomSheet(
             onDismissRequest = { weekFeast = null },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = palette.bg,
             shape = RoundedCornerShape(topStart = RosarySpace.containerRadius, topEnd = RosarySpace.containerRadius),
         ) {
@@ -448,7 +489,7 @@ fun TodayScreen(
     if (showMysterySheet) {
         ModalBottomSheet(
             onDismissRequest = { showMysterySheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = palette.bg,
             shape = RoundedCornerShape(topStart = RosarySpace.containerRadius, topEnd = RosarySpace.containerRadius),
         ) {
@@ -474,7 +515,7 @@ private fun MysterySetPicker(
 ) {
     val palette = LocalThemePalette.current
     val options = MysterySetKind.displayOrder
-    val track = if (palette.isDark) palette.surface else Color(0xFFDCDCDF)
+    val track = if (palette.isDark) palette.surface else Color(0xFFE5E5EA)
     val thumb = if (palette.isDark) Color(0xFF2C2C2E) else Color.White
     Row(
         modifier = modifier
@@ -491,7 +532,7 @@ private fun MysterySetPicker(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxSize()
-                    .padding(3.dp)
+                    .padding(2.dp)
                     .clip(RoundedCornerShape(percent = 50))
                     .background(if (selected) thumb else Color.Transparent)
                     .clickable { onSelect(set) },
@@ -532,7 +573,7 @@ private fun MysteryRailCard(
 ) {
     val palette = LocalThemePalette.current
     val context = LocalContext.current
-    val resId = drawableIdByName(context, mystery.artSlug).takeIf { it != 0 }
+    val resId = mysteryPlateDrawableId(context, mystery.artSlug).takeIf { it != 0 }
         ?: drawableIdByName(context, fallbackArt)
     Column(
         modifier = modifier
@@ -818,21 +859,114 @@ private fun WeekFeastSheet(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = RosarySpace.gutter)
-            .padding(bottom = RosarySpace.xl),
+            .height(RosarySpace.weekFeastSheetHeight())
+            .navigationBarsPadding(),
     ) {
-        Text(
-            "${item.feast.rank.title} · $dateText",
-            style = RosaryType.caption,
-            color = palette.textSecondary,
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(top = RosarySpace.xxl),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(RosarySpace.xs),
+            ) {
+                FeastRankCrown()
+                Text(
+                    "${item.feast.rank.title} · $dateText",
+                    style = RosaryType.caption,
+                    color = palette.textSecondary,
+                )
+            }
+            Spacer(Modifier.height(RosarySpace.sm))
+            Text(item.feast.shortTitle, style = RosaryType.headingPrimary, color = palette.ink)
+            Spacer(Modifier.height(RosarySpace.xl))
+            Text(
+                NavigationIa.weekFeastDescription(item.feast),
+                style = RosaryType.body.copy(lineHeight = 21.sp),
+                color = palette.ink,
+            )
+        }
+        GuideSecondaryButton(
+            title = "Explore this feast",
+            onClick = onExplore,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(vertical = RosarySpace.lg),
         )
-        Spacer(Modifier.height(RosarySpace.sm))
-        Text(item.feast.shortTitle, style = RosaryType.headingPrimary, color = palette.ink)
-        Spacer(Modifier.height(RosarySpace.xl))
-        Text(NavigationIa.weekFeastDescription(item.feast), style = RosaryType.body, color = palette.ink)
-        Spacer(Modifier.height(RosarySpace.xl))
-        GuideOutlineButton(title = "Explore this feast", onClick = onExplore, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+@Composable
+private fun FeastRankCrown(modifier: Modifier = Modifier) {
+    val color = LocalThemePalette.current.feastIndicator
+    Canvas(modifier = modifier.size(12.dp)) {
+        val w = size.width
+        val h = size.height
+        val path = Path().apply {
+            moveTo(0f, h * 0.42f)
+            lineTo(w * 0.18f, h * 0.68f)
+            lineTo(w * 0.50f, h * 0.08f)
+            lineTo(w * 0.82f, h * 0.68f)
+            lineTo(w, h * 0.42f)
+            lineTo(w * 0.88f, h * 0.92f)
+            lineTo(w * 0.12f, h * 0.92f)
+            close()
+        }
+        drawPath(path, color)
+    }
+}
+
+@Composable
+private fun AppearanceChipIcon(dark: Boolean, tint: Color, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier.size(12.dp)) {
+        if (dark) {
+            val r = size.minDimension * 0.42f
+            val moon = Path().apply {
+                addOval(
+                    androidx.compose.ui.geometry.Rect(
+                        center.x - r,
+                        center.y - r,
+                        center.x + r,
+                        center.y + r,
+                    ),
+                )
+                addOval(
+                    androidx.compose.ui.geometry.Rect(
+                        center.x - r * 0.35f,
+                        center.y - r * 1.15f,
+                        center.x + r * 1.15f,
+                        center.y + r * 0.45f,
+                    ),
+                )
+                fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
+            }
+            drawPath(moon, tint)
+        } else {
+            val r = size.minDimension * 0.22f
+            drawCircle(color = tint, radius = r, center = center)
+            val ray = size.minDimension * 0.46f
+            val inner = size.minDimension * 0.32f
+            for (i in 0 until 8) {
+                val a = Math.toRadians(i * 45.0).toFloat()
+                drawLine(
+                    color = tint,
+                    start = androidx.compose.ui.geometry.Offset(
+                        center.x + kotlin.math.cos(a) * inner,
+                        center.y + kotlin.math.sin(a) * inner,
+                    ),
+                    end = androidx.compose.ui.geometry.Offset(
+                        center.x + kotlin.math.cos(a) * ray,
+                        center.y + kotlin.math.sin(a) * ray,
+                    ),
+                    strokeWidth = 1.2f,
+                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                )
+            }
+        }
     }
 }
 
@@ -845,7 +979,6 @@ private fun MysteryDetailPagerSheet(
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalThemePalette.current
-    val context = LocalContext.current
     val mysteries = MysteryCatalog.mysteries(set)
     val start = initialIndex.coerceIn(0, (mysteries.size - 1).coerceAtLeast(0))
     val pagerState = rememberPagerState(initialPage = start, pageCount = { mysteries.size })
@@ -854,20 +987,21 @@ private fun MysteryDetailPagerSheet(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(bottom = RosarySpace.lg),
+            .height(RosarySpace.mysteryDetailSheetHeight())
+            .navigationBarsPadding(),
     ) {
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 280.dp),
+                .weight(1f)
+                .fillMaxWidth(),
         ) { page ->
             MysteryDetailPage(mystery = mysteries[page], contextName = ArtCatalog.heroName(set))
         }
-        Spacer(Modifier.height(RosarySpace.md))
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = RosarySpace.sm),
             horizontalArrangement = Arrangement.Center,
         ) {
             mysteries.indices.forEach { index ->
@@ -880,13 +1014,13 @@ private fun MysteryDetailPagerSheet(
                 )
             }
         }
-        Spacer(Modifier.height(RosarySpace.md))
-        GuideOutlineButton(
+        GuideSecondaryButton(
             title = "Pray this decade",
             onClick = { current?.let { onPrayDecade(it.number) } },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = RosarySpace.gutter),
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(vertical = RosarySpace.lg),
         )
     }
 }
@@ -895,14 +1029,14 @@ private fun MysteryDetailPagerSheet(
 private fun MysteryDetailPage(mystery: Mystery, contextName: String) {
     val palette = LocalThemePalette.current
     val context = LocalContext.current
-    val resId = drawableIdByName(context, mystery.artSlug).takeIf { it != 0 }
+    val resId = mysteryPlateDrawableId(context, mystery.artSlug).takeIf { it != 0 }
         ?: drawableIdByName(context, contextName)
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter)
-            .padding(bottom = RosarySpace.md),
+            .padding(top = RosarySpace.xxl, bottom = RosarySpace.md),
     ) {
         if (resId != 0) {
             Image(
@@ -918,7 +1052,7 @@ private fun MysteryDetailPage(mystery: Mystery, contextName: String) {
         }
         val ordinal = runCatching { OrdinalWord.english(mystery.number) }.getOrDefault(mystery.number.toString())
         Text(
-            "$ordinal mystery · ${mystery.set.shortName}",
+            "$ordinal mystery · ${mystery.set.titleText.english}",
             style = RosaryType.caption,
             color = palette.dim,
         )
@@ -926,13 +1060,33 @@ private fun MysteryDetailPage(mystery: Mystery, contextName: String) {
         Text(mystery.title.english, style = RosaryType.headingPrimary, color = palette.ink)
         Spacer(Modifier.height(RosarySpace.xl))
         if (mystery.scriptureExcerpt.english.isNotBlank()) {
-            Text(mystery.scriptureExcerpt.english, style = RosaryType.body, color = palette.ink)
+            Text(
+                mystery.scriptureExcerpt.english,
+                style = RosaryType.body.copy(lineHeight = 21.sp),
+                color = palette.ink,
+            )
             Spacer(Modifier.height(RosarySpace.sm))
         }
         Text(mystery.scriptureReference, style = RosaryType.caption, color = palette.dim)
         if (mystery.fruit.english.isNotBlank()) {
             Spacer(Modifier.height(RosarySpace.lg))
-            Text("Fruit of the mystery: ${mystery.fruit.english}", style = RosaryType.supportingLabel, color = palette.ink)
+            MysteryFruitLine(fruit = mystery.fruit.english)
+        }
+    }
+}
+
+@Composable
+private fun MysteryFruitLine(fruit: String) {
+    val palette = LocalThemePalette.current
+    Column(verticalArrangement = Arrangement.spacedBy(RosarySpace.sm)) {
+        HorizontalDivider(color = palette.strokeSubtle, thickness = (1.dp / 3))
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(RosarySpace.sm)) {
+            Text(
+                "Fruit",
+                style = RosaryType.body.copy(fontWeight = FontWeight.Medium),
+                color = palette.textSecondary,
+            )
+            Text(fruit, style = RosaryType.body, color = palette.ink)
         }
     }
 }

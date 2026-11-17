@@ -2,7 +2,12 @@ package app.rosaryguide.feature.onboarding
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.DisposableEffect
@@ -120,11 +125,13 @@ private fun OnboardingPageBody(page: OnboardingPage) {
         else -> R.drawable.onboarding_intentions
     }
     val alignment = if (page.imageAlignment == "center") Alignment.Center else Alignment.TopCenter
+    val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Column(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .offset(y = -statusTop)
                 .padding(horizontal = RosarySpace.panelInset),
         ) {
             Image(
@@ -134,6 +141,7 @@ private fun OnboardingPageBody(page: OnboardingPage) {
                 alignment = alignment,
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(bottom = statusTop)
                     .clip(RoundedCornerShape(bottomStart = RosarySpace.panelRadius, bottomEnd = RosarySpace.panelRadius)),
             )
         }
@@ -155,17 +163,26 @@ private fun OnboardingPageBody(page: OnboardingPage) {
 private fun HideStatusBarInLightMode() {
     val palette = LocalThemePalette.current
     val view = LocalView.current
-    DisposableEffect(palette.isDark) {
+    DisposableEffect(palette.isDark, view) {
         val window = (view.context as? Activity)?.window
         if (window == null) {
             return@DisposableEffect onDispose { }
         }
         val controller = WindowCompat.getInsetsController(window, view)
+        val previousAppearance = controller.isAppearanceLightStatusBars
+        val previousBehavior = controller.systemBarsBehavior
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         if (!palette.isDark) {
             controller.hide(WindowInsetsCompat.Type.statusBars())
+        } else {
+            controller.show(WindowInsetsCompat.Type.statusBars())
+            controller.isAppearanceLightStatusBars = false
         }
         onDispose {
+            controller.systemBarsBehavior = previousBehavior
             controller.show(WindowInsetsCompat.Type.statusBars())
+            controller.isAppearanceLightStatusBars = previousAppearance
         }
     }
 }

@@ -96,4 +96,26 @@ object ArtCatalog {
         }
         return values[(number - 1).coerceIn(0, 4)]
     }
+
+    /**
+     * Cover-scale an image into a frame and align a focus point, matching iOS
+     * `FocusedRasterImage` (center-aligned aspect fill, then focus shift).
+     * Returned offset is top-left origin for [CroppedArt].
+     */
+    fun coverForFocus(
+        sourceWidth: Float,
+        sourceHeight: Float,
+        frameWidth: Float,
+        frameHeight: Float,
+        focusX: Float = 0.5f,
+        focusY: Float = 0.28f,
+    ): Triple<Float, Float, Float> {
+        if (sourceWidth <= 1f || sourceHeight <= 1f || frameWidth <= 1f || frameHeight <= 1f) {
+            return Triple(1f, 0f, 0f)
+        }
+        val scale = maxOf(frameWidth / sourceWidth, frameHeight / sourceHeight)
+        val extraW = sourceWidth * scale - frameWidth
+        val extraH = sourceHeight * scale - frameHeight
+        return Triple(scale, -focusX * extraW, -focusY * extraH)
+    }
 }

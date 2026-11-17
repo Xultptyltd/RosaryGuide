@@ -90,12 +90,13 @@ fun ProvideReduceMotion(content: @Composable () -> Unit) {
 fun GuideSectionLabel(
     text: String,
     modifier: Modifier = Modifier,
+    strong: Boolean = false,
 ) {
     val palette = LocalThemePalette.current
     Text(
         text = text,
-        style = RosaryType.supportingLabel,
-        color = palette.textSecondary,
+        style = if (strong) RosaryType.body else RosaryType.supportingLabel,
+        color = if (strong) palette.ink else palette.textSecondary,
         modifier = modifier.padding(bottom = RosarySpace.xs).guideHeading(),
     )
 }

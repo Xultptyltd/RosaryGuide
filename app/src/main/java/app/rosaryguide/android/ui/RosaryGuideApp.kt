@@ -491,30 +491,37 @@ private fun AppTabs(
             popExitTransition = { if (reduceMotion) ExitTransition.None else fadeOut() },
         ) {
             composable<TodayRoute> {
-                TodayScreen(
-                    today = today,
-                    prayedDayKeys = prayedDayKeys,
-                    hasAskedForNotifications = hasAskedForNotifications,
-                    onAskedForNotifications = onAskedForNotifications,
-                    onViewAllFeasts = {
-                        navController.navigate(FeastsRoute) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onFeastClick = { item ->
-                        navController.navigate(FeastDetailRoute(item.feast.id, item.date.toString()))
-                    },
-                    onPray = onPray,
-                    onResumePray = onResumePray,
-                    onPrayDecade = onPrayDecade,
-                    resumableCta = resumeCta,
-                    openWeekFeastSheet = debugLaunch.openWeekFeastSheet,
-                    openMysteryDetailSheet = debugLaunch.openMysteryDetailSheet,
-                    appearance = appearance,
-                    onAppearance = onAppearance,
-                )
+                androidx.compose.runtime.key(
+                    debugLaunch.nonce,
+                    debugLaunch.openWeekFeastSheet,
+                    debugLaunch.openMysteryDetailSheet,
+                ) {
+                    TodayScreen(
+                        today = today,
+                        prayedDayKeys = prayedDayKeys,
+                        hasAskedForNotifications = hasAskedForNotifications,
+                        onAskedForNotifications = onAskedForNotifications,
+                        onViewAllFeasts = {
+                            navController.navigate(FeastsRoute) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onFeastClick = { item ->
+                            navController.navigate(FeastDetailRoute(item.feast.id, item.date.toString()))
+                        },
+                        onPray = onPray,
+                        onResumePray = onResumePray,
+                        onPrayDecade = onPrayDecade,
+                        resumableCta = resumeCta,
+                        openWeekFeastSheet = debugLaunch.openWeekFeastSheet,
+                        openMysteryDetailSheet = debugLaunch.openMysteryDetailSheet,
+                        debugNonce = debugLaunch.nonce,
+                        appearance = appearance,
+                        onAppearance = onAppearance,
+                    )
+                }
             }
             composable<LearnRoute> {
                 LearnScreen(
@@ -613,12 +620,11 @@ private fun AppTabs(
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(start = RosarySpace.gutter, end = RosarySpace.gutter, bottom = RosarySpace.sm)
+                .padding(start = 20.dp, end = 20.dp, bottom = 10.dp)
                 .fillMaxWidth()
                 .onSizeChanged { size ->
                     if (size.height > 0) {
-                        val measured = with(density) { size.height.toDp() + RosarySpace.sm + 24.dp }
+                        val measured = with(density) { size.height.toDp() + 10.dp + 16.dp }
                         if (measured > tabBarHeight) tabBarHeight = measured
                     }
                 }
