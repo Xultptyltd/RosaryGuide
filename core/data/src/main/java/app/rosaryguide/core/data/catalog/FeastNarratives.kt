@@ -24,7 +24,7 @@ data class FeastNarrative(
 }
 
 object FeastRelatedPrayers {
-    private val catalogBackedIds: Set<String> = setOf("hail-holy-queen", "fatima", "saint-michael", "memorare", "angel-of-god", "glory-be", "apostles-creed", "our-father")
+    private val catalogBackedIds: Set<String> = setOf("hail-holy-queen", "fatima", "saint-michael", "memorare", "guardian-angel", "glory-be", "apostles-creed", "our-father")
 
     private val custom: Map<String, FeastRelatedPrayer> = mapOf(
         "angelus" to FeastRelatedPrayer(
@@ -168,10 +168,11 @@ O quam tristis et afflícta fuit illa benedícta Mater Unigéniti!""",
 
     fun byId(id: String): FeastRelatedPrayer? {
         custom[id]?.let { return it }
-        if (id in catalogBackedIds) {
+        val resolved = PrayerCatalog.canonicalId(id)
+        if (resolved in catalogBackedIds || id in catalogBackedIds) {
             val prayer = PrayerCatalog.prayer(id) ?: return null
             return FeastRelatedPrayer(
-                id = id,
+                id = prayer.id,
                 title = prayer.title.english,
                 english = prayer.text.english,
                 latin = prayer.text.latin,
@@ -441,7 +442,7 @@ Spiritually the feast renews vigilance and trust. Saint Michael especially is in
 Spiritually the day invites gratitude, reverence, and cooperation with our guardian. Asking their help is asking for the grace of guidance, protection from harm, and perseverance on the path to heaven.""",
             history = """Local angel feasts existed for centuries; the memorial on 2 October became universal. Scripture and Tradition affirm angelic guardianship over the faithful.""",
             indulgence = null,
-            relatedPrayerIds = listOf("angel-of-god", "saint-michael"),
+            relatedPrayerIds = listOf("guardian-angel", "saint-michael"),
         ),
         "rosary" to FeastNarrative(
             about = """Our Lady of the Rosary invites the whole Church to the daily beads. We celebrate this memorial because the Rosary is a school of the Gospel: with Mary we contemplate Christ’s life, and through that contemplation we are slowly changed.

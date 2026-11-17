@@ -84,9 +84,7 @@ fun LearnScreen(
             article.paragraphs.any { it.localizedStandardContains(trimmed) }
     }
     val prayers = PrayerCatalog.all.filter { prayer ->
-        trimmed.isEmpty() ||
-            prayer.title.english.localizedStandardContains(trimmed) ||
-            prayer.title.latin.localizedStandardContains(trimmed)
+        PrayerCatalog.matchesQuery(prayer, trimmed)
     }
     val sets = MysterySetKind.displayOrder.filter { set ->
         trimmed.isEmpty() ||

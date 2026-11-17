@@ -70,11 +70,6 @@ object PrayerCatalog {
             text = BilingualText("O Sacrament most holy, O Sacrament divine, all praise and all thanksgiving be every moment thine. Amen.", "O Sacraméntum sanctíssimum, o Sacraméntum divínum, omnis laus et omnis gratiárum áctio sit omni moménto tua. Amen."),
         ),
         Prayer(
-            id = "angel-of-god",
-            title = BilingualText("Angel of God", "Angele Dei"),
-            text = BilingualText("Angel of God, my guardian dear, to whom God's love commits me here, ever this day be at my side, to light and guard, to rule and guide. Amen.", "Ángele Dei, qui custos es mei, me, tibi commíssum pietáte supérna, illúmina, custódi, rege et gubérna. Amen."),
-        ),
-        Prayer(
             id = "litany-of-loreto",
             title = BilingualText("Litany of the Blessed Virgin Mary", ""),
             text = BilingualText("Lord have mercy.\n\nChrist have mercy.\n\nLord have mercy.\n\nChrist hear us.\n\nChrist graciously hear us.\n\nGod, the Father of heaven, have mercy on us.\n\nGod the Son, Redeemer of the world, have mercy on us.\n\nGod the Holy Spirit, have mercy on us.\n\nHoly Trinity, one God, have mercy on us.\n\nHoly Mary, pray for us.\n\nHoly Mother of God, pray for us.\n\nHoly Virgin of virgins, pray for us.\n\nMother of Christ, pray for us.\n\nMother of the Church, pray for us.\n\nMother of Mercy, pray for us.\n\nMother of divine grace, pray for us.\n\nMother of Hope, pray for us.\n\nMother most pure, pray for us.\n\nMother most chaste, pray for us.\n\nMother inviolate, pray for us.\n\nMother undefiled, pray for us.\n\nMother most amiable, pray for us.\n\nMother most admirable, pray for us.\n\nMother of good counsel, pray for us.\n\nMother of our Creator, pray for us.\n\nMother of our Saviour, pray for us.\n\nVirgin most prudent, pray for us.\n\nVirgin most venerable, pray for us.\n\nVirgin most renowned, pray for us.\n\nVirgin most powerful, pray for us.\n\nVirgin most merciful, pray for us.\n\nVirgin most faithful, pray for us.\n\nMirror of justice, pray for us.\n\nSeat of wisdom, pray for us.\n\nCause of our joy, pray for us.\n\nSpiritual vessel, pray for us.\n\nVessel of honour, pray for us.\n\nSingular vessel of devotion, pray for us.\n\nMystical rose, pray for us.\n\nTower of David, pray for us.\n\nTower of ivory, pray for us.\n\nHouse of gold, pray for us.\n\nArk of the covenant, pray for us.\n\nGate of heaven, pray for us.\n\nMorning star, pray for us.\n\nHealth of the sick, pray for us.\n\nRefuge of sinners, pray for us.\n\nSolace of Migrants, pray for us.\n\nComfort of the afflicted, pray for us.\n\nHelp of Christians, pray for us.\n\nQueen of Angels, pray for us.\n\nQueen of Patriarchs, pray for us.\n\nQueen of Prophets, pray for us.\n\nQueen of Apostles, pray for us.\n\nQueen of Martyrs, pray for us.\n\nQueen of Confessors, pray for us.\n\nQueen of Virgins, pray for us.\n\nQueen of all Saints, pray for us.\n\nQueen conceived without original sin, pray for us.\n\nQueen assumed into heaven, pray for us.\n\nQueen of the most holy Rosary, pray for us.\n\nQueen of families, pray for us.\n\nQueen of peace, pray for us.\n\nLamb of God, who takes away the sins of the world, spare us, O Lord.\n\nLamb of God, who takes away the sins of the world, graciously hear us, O Lord.\n\nLamb of God, who takes away the sins of the world, have mercy on us.\n\nV. Pray for us, O holy Mother of God.\n\nR. That we may be made worthy of the promises of Christ.\n\nLet us pray.\n\nGrant, we beseech thee, O Lord God, that we, your servants, may enjoy perpetual health of mind and body; and by the glorious intercession of the Blessed Mary, ever Virgin, may be delivered from present sorrow, and obtain eternal joy. Through Christ our Lord. Amen.", ""),
@@ -113,7 +108,28 @@ object PrayerCatalog {
 
     private val byId: Map<String, Prayer> = all.associateBy { it.id }
 
-    fun prayer(id: String): Prayer? = byId[id]
+    /**
+     * Resolves a prayer by id. The retired "angel-of-god" entry aliases to
+     * "guardian-angel" so a saved favourite or deep link does not crash.
+     */
+    fun prayer(id: String): Prayer? = byId[canonicalId(id)]
+
+    fun canonicalId(id: String): String = when (id) {
+        "angel-of-god" -> "guardian-angel"
+        else -> id
+    }
+
+    fun aliases(id: String): List<String> = when (canonicalId(id)) {
+        "guardian-angel" -> listOf("Angel of God", "Angele Dei")
+        else -> emptyList()
+    }
+
+    fun matchesQuery(prayer: Prayer, term: String): Boolean {
+        if (term.isBlank()) return true
+        if (prayer.title.english.contains(term, ignoreCase = true)) return true
+        if (prayer.title.latin.contains(term, ignoreCase = true)) return true
+        return aliases(prayer.id).any { it.contains(term, ignoreCase = true) }
+    }
 
     val signOfTheCross: Prayer get() = byId.getValue("sign-of-the-cross")
     val apostlesCreed: Prayer get() = byId.getValue("apostles-creed")

@@ -372,7 +372,7 @@ fun AllPrayersScreen(
     val term = query.trim()
     val results = remember(term) {
         PrayerCatalog.all
-            .filter { term.isEmpty() || it.title.english.contains(term, ignoreCase = true) || it.title.latin.contains(term, ignoreCase = true) }
+            .filter { PrayerCatalog.matchesQuery(it, term) }
             .sortedBy { it.title.english.lowercase() }
     }
     Column(

@@ -373,7 +373,7 @@ private fun prayersForDay(item: DatedFeast, related: List<FeastRelatedPrayer>): 
     return when {
         feast.isMarian -> listOfNotNull(of("hail-holy-queen"))
         feast.id == "michael" -> listOfNotNull(of("saint-michael"))
-        feast.id == "guardian-angels" -> listOfNotNull(of("angel-of-god"))
+        feast.id == "guardian-angels" -> listOfNotNull(of("guardian-angel"))
         else -> listOfNotNull(of("our-father"))
     }
 }
