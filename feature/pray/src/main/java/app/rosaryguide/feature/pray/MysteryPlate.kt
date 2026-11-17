@@ -48,8 +48,7 @@ fun MysteryPlate(
     val context = LocalContext.current
     val resId = mysteryPlateDrawableId(context, mystery.artSlug)
     val fade = palette.bg
-    val ordinal = ordinalWord(mystery.number)
-    val eyebrow = "$ordinal ${mystery.set.shortName}".uppercase()
+    val eyebrow = mystery.set.shortName.uppercase()
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (resId != 0) {

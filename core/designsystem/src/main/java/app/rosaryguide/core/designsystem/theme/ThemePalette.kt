@@ -145,6 +145,14 @@ data class ThemePalette(
     val completionMeta: Color get() = ceremonyTextTertiary
     val completionMetaValue: Color get() = ceremonyTextPrimary.copy(alpha = 0.94f)
 
+    val beadHighlight: Color get() = Color.White
+    val beadPulseFill: Color get() = accent.copy(alpha = if (isDark) 0.36f else 0.30f)
+    val beadPulseStroke: Color get() = accent.copy(alpha = if (isDark) 0.78f else 0.68f)
+    val beadMedalRim: Color get() = if (isDark) Color(0xFF8C8C8C) else Color(0xFFC7C2B3)
+    val beadMedalRimFuture: Color get() = if (isDark) Color(0xFF525252) else beadMedalRim
+    val beadMedalField: Color get() = if (isDark) Color(0xFF252525) else Color(0xFF332E29)
+    val beadMedalGlyph: Color get() = Color.White.copy(alpha = if (isDark) 0.70f else 0.55f)
+
     companion object {
         val Light = ThemePalette(isDark = false)
         val Dark = ThemePalette(isDark = true)

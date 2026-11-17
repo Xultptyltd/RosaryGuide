@@ -29,6 +29,11 @@ import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
 
 @Composable
 fun PrayIntentionSheet(
@@ -115,18 +120,23 @@ private fun IntentionRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = RosarySpace.xs)
-            .background(
-                if (selected) palette.accentTint else palette.surface,
-                RoundedCornerShape(RosarySpace.containerRadius),
+            .background(palette.surface, RoundedCornerShape(RosarySpace.containerRadius))
+            .then(
+                if (selected) Modifier.border(1.5.dp, palette.accent, RoundedCornerShape(RosarySpace.containerRadius))
+                else Modifier
             )
             .clickable(onClick = onClick)
             .padding(horizontal = RosarySpace.md, vertical = RosarySpace.sm),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(text = title, style = RosaryType.body, color = palette.ink, modifier = Modifier.weight(1f))
         if (selected) {
-            Text(text = "✓", style = RosaryType.body, color = palette.accentText)
+            Icon(
+                imageVector = Icons.Filled.Check,
+                contentDescription = "Selected",
+                tint = palette.accent,
+                modifier = Modifier.padding(end = RosarySpace.sm).size(18.dp),
+            )
         }
+        Text(text = title, style = RosaryType.body, color = palette.ink, modifier = Modifier.weight(1f))
     }
 }

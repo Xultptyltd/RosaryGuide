@@ -94,13 +94,21 @@ fun PrayFlowHeader(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = RosarySpace.sm, vertical = RosarySpace.xs),
-        verticalAlignment = Alignment.CenterVertically,
+        contentAlignment = Alignment.Center,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        GuideMarqueeText(
+            text = progressLabel,
+            style = RosaryType.navigationTitle,
+            modifier = Modifier.padding(horizontal = 72.dp),
+        )
+        Row(
+            modifier = Modifier.align(Alignment.CenterStart),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             if (canRetreat) {
                 PrayChromeButton(
                     icon = Icons.AutoMirrored.Filled.ArrowBack,
@@ -114,17 +122,11 @@ fun PrayFlowHeader(
                 onClick = onSettings,
             )
         }
-        GuideMarqueeText(
-            text = progressLabel,
-            style = RosaryType.navigationTitle,
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = RosarySpace.xs),
-        )
         PrayChromeButton(
             icon = Icons.Filled.Close,
             contentDescription = "Close",
             onClick = onClose,
+            modifier = Modifier.align(Alignment.CenterEnd),
         )
     }
 }

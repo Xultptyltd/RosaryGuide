@@ -68,10 +68,9 @@ fun CompletionScreen(
     val offered = intentionTitles.map { it.trim() }.filter { it.isNotEmpty() }
     val showQuote = offered.isEmpty()
     val context = LocalContext.current
-    // Same-set plate, not the Home hero (first mystery). Prefer the third mystery.
-    val plateMystery = MysteryCatalog.mysteries(mysterySet).let { list ->
-        list.getOrNull(2) ?: list.getOrNull(1) ?: list.firstOrNull()
-    }
+    // Match the iOS finish screen: the first mystery of the set just prayed
+    // (Annunciation for a Joyful Rosary).
+    val plateMystery = MysteryCatalog.mysteries(mysterySet).firstOrNull()
     val resId = plateMystery?.let { mysteryPlateDrawableId(context, it.artSlug) } ?: 0
 
     Column(
