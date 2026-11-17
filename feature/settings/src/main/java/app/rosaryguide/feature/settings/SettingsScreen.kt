@@ -54,7 +54,7 @@ enum class SettingsPage {
     License,
 }
 
-enum class SettingsConfirmDialog { None, ClearHistory, DeleteAccount }
+enum class SettingsConfirmDialog { None, ClearHistory, DeleteAccount, SignOut, ReportProblem }
 
 @Composable
 fun SettingsScreen(
@@ -185,10 +185,10 @@ private fun SettingsRoot(
     var themeMenu by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.ClearHistory) }
     var didClear by remember { mutableStateOf(false) }
-    var confirmSignOut by remember { mutableStateOf(false) }
+    var confirmSignOut by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.SignOut) }
     var confirmDelete by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.DeleteAccount) }
     var deleteStub by remember { mutableStateOf(false) }
-    var reportProblem by remember { mutableStateOf(false) }
+    var reportProblem by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.ReportProblem) }
 
     fun openUrl(url: String) {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

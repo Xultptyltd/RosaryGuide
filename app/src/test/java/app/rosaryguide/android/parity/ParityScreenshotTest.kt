@@ -1,6 +1,20 @@
 package app.rosaryguide.android.parity
 
 import android.app.Application
+import app.rosaryguide.feature.settings.CustomiseRosaryScreen
+import app.rosaryguide.feature.profile.IntentionDetailScreen
+import app.rosaryguide.feature.profile.ArchivedIntentionsScreen
+import app.rosaryguide.feature.learn.MysterySetScreen
+import app.rosaryguide.feature.learn.LearnArticleScreen
+import app.rosaryguide.feature.learn.HowToPrayScreen
+import app.rosaryguide.feature.feasts.FeastDetailScreen
+import app.rosaryguide.core.model.DatedFeast
+import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
+import app.rosaryguide.core.data.catalog.LearnArticle
+import app.rosaryguide.core.data.catalog.FeastCatalog
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -235,6 +249,54 @@ class ParityScreenshotTest {
         LaunchSplashScreen(onFinished = {}, previewProgress = 1f)
     }
 
+    @Test fun feastDetailLight() = shot("feast-detail", dark = false) { FeastDetail() }
+    @Test fun feastDetailDark() = shot("feast-detail", dark = true) { FeastDetail() }
+
+    @Test fun howtoLight() = shot("howto", dark = false) { Pushed("How to pray") { HowToPrayScreen() } }
+    @Test fun howtoDark() = shot("howto", dark = true) { Pushed("How to pray") { HowToPrayScreen() } }
+
+    @Test fun articleLight() = shot("article", dark = false) { Article() }
+    @Test fun articleDark() = shot("article", dark = true) { Article() }
+
+    @Test fun mysterySetLight() = shot("mystery-set", dark = false) { MysterySet() }
+    @Test fun mysterySetDark() = shot("mystery-set", dark = true) { MysterySet() }
+
+    @Test fun intentionDetailLight() = shot("intention-detail", dark = false) { IntentionDetail() }
+    @Test fun intentionDetailDark() = shot("intention-detail", dark = true) { IntentionDetail() }
+
+    @Test fun intentionsArchivedLight() = shot("intentions-archived", dark = false) { Archived(empty = false) }
+    @Test fun intentionsArchivedDark() = shot("intentions-archived", dark = true) { Archived(empty = false) }
+
+    @Test fun intentionsArchivedEmptyLight() = shot("intentions-archived-empty", dark = false) { Archived(empty = true) }
+    @Test fun intentionsArchivedEmptyDark() = shot("intentions-archived-empty", dark = true) { Archived(empty = true) }
+
+    @Test fun settingsReportProblemLight() = shot("settings-report-problem", dark = false) {
+        Settings(SettingsPage.Root, signedIn = true, confirm = SettingsConfirmDialog.ReportProblem)
+    }
+    @Test fun settingsReportProblemDark() = shot("settings-report-problem", dark = true) {
+        Settings(SettingsPage.Root, signedIn = true, confirm = SettingsConfirmDialog.ReportProblem)
+    }
+    @Test fun settingsSignOutLight() = shot("settings-sign-out", dark = false) {
+        Settings(SettingsPage.Root, signedIn = true, confirm = SettingsConfirmDialog.SignOut)
+    }
+    @Test fun settingsSignOutDark() = shot("settings-sign-out", dark = true) {
+        Settings(SettingsPage.Root, signedIn = true, confirm = SettingsConfirmDialog.SignOut)
+    }
+    @Test fun settingsResetRosaryLight() = shot("settings-reset-rosary", dark = false) {
+        CustomiseRosaryScreen(config = settings.rosaryConfig, onConfigChange = {}, onBack = {}, initialConfirmReset = true)
+    }
+    @Test fun settingsResetRosaryDark() = shot("settings-reset-rosary", dark = true) {
+        CustomiseRosaryScreen(config = settings.rosaryConfig, onConfigChange = {}, onBack = {}, initialConfirmReset = true)
+    }
+
+    @Test fun learnEmptyLight() = shot("learn-empty", dark = false) { LearnEmpty() }
+    @Test fun learnEmptyDark() = shot("learn-empty", dark = true) { LearnEmpty() }
+    @Test fun feastsEmptyLight() = shot("feasts-empty", dark = false) { Feasts(query = "zzzzzx") }
+    @Test fun feastsEmptyDark() = shot("feasts-empty", dark = true) { Feasts(query = "zzzzzx") }
+    @Test fun allPrayersEmptyLight() = shot("all-prayers-empty", dark = false) { AllPrayersScreen(onPrayer = {}, initialQuery = "zzzzzx") }
+    @Test fun allPrayersEmptyDark() = shot("all-prayers-empty", dark = true) { AllPrayersScreen(onPrayer = {}, initialQuery = "zzzzzx") }
+
+
 
     @Composable
     private fun Themed(dark: Boolean, content: @Composable () -> Unit) {
@@ -246,6 +308,80 @@ class ParityScreenshotTest {
         composeRule.waitForIdle()
         val suffix = if (dark) "dark" else "light"
         composeRule.onRoot().captureRoboImage("$OUT/$stem-$suffix.png")
+    }
+
+
+    @Composable
+    private fun Pushed(title: String, content: @Composable () -> Unit) {
+        Column(Modifier.fillMaxSize()) {
+            GuideDetailTopBar(title = title, onBack = {})
+            content()
+        }
+    }
+
+    @Composable
+    private fun FeastDetail() {
+        val feast = FeastCatalog.all.first { it.id == "annunciation" }
+        val date = feast.dateOn(2026) ?: java.time.LocalDate.of(2026, 3, 25)
+        Pushed(feast.shortTitle) {
+            FeastDetailScreen(item = DatedFeast(feast, date), onPray = {})
+        }
+    }
+
+    @Composable
+    private fun Article() {
+        val article = LearnArticle.commonQuestions.first()
+        Pushed(article.title) { LearnArticleScreen(article) }
+    }
+
+    @Composable
+    private fun MysterySet() {
+        Pushed(MysterySetKind.Joyful.shortName) {
+            MysterySetScreen(set = MysterySetKind.Joyful, onPray = {})
+        }
+    }
+
+    @Composable
+    private fun IntentionDetail() {
+        IntentionDetailScreen(
+            intention = OfferIntention(
+                id = "int-mum",
+                title = "For Mum",
+                note = "For her health and peace.",
+                category = IntentionCategory.Someone,
+                emoji = "💙",
+                isPinned = true,
+                createdAtEpochMs = java.time.LocalDate.of(2026, 3, 1).atStartOfDay(zone).toInstant().toEpochMilli(),
+                timesCarried = 2,
+            ),
+            hidden = false,
+            onBack = {},
+            onEdit = {},
+            onPray = {},
+            onPin = {},
+            onArchive = {},
+            onDelete = {},
+        )
+    }
+
+    @Composable
+    private fun Archived(empty: Boolean) {
+        val items = if (empty) emptyList() else listOf(
+            OfferIntention(id = "int-old", title = "For a friend", category = IntentionCategory.Someone, emoji = "🤝", archivedAtEpochMs = 1L),
+        )
+        ArchivedIntentionsScreen(intentions = items, hidden = false, onBack = {}, onRestore = {}, onDelete = {})
+    }
+
+    @Composable
+    private fun LearnEmpty() {
+        LearnScreen(
+            onHowToPray = {},
+            onArticle = {},
+            onPrayer = {},
+            onMysterySet = {},
+            todaySetTitle = "Joyful Mysteries",
+            initialQuery = "zzzzzx",
+        )
     }
 
     @Composable
@@ -290,8 +426,8 @@ class ParityScreenshotTest {
     }
 
     @Composable
-    private fun Feasts() {
-        FeastsScreen(onFeastClick = {}, today = today)
+    private fun Feasts(query: String = "") {
+        FeastsScreen(onFeastClick = {}, today = today, initialQuery = query)
     }
 
     @Composable

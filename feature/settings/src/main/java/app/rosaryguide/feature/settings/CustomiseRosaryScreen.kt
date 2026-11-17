@@ -37,9 +37,10 @@ fun CustomiseRosaryScreen(
     modifier: Modifier = Modifier,
     title: String = "Customise rosary",
     showChrome: Boolean = true,
+    initialConfirmReset: Boolean = false,
 ) {
     val palette = LocalThemePalette.current
-    var confirmReset by remember { mutableStateOf(false) }
+    var confirmReset by remember { mutableStateOf(initialConfirmReset) }
     Column(
         modifier = modifier
             .fillMaxSize()

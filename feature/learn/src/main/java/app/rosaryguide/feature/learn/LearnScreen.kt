@@ -71,9 +71,10 @@ fun LearnScreen(
     resumeCta: String? = null,
     startWalkthrough: Boolean = false,
     modifier: Modifier = Modifier,
+    initialQuery: String = "",
 ) {
     val palette = LocalThemePalette.current
-    var query by remember { mutableStateOf("") }
+    var query by remember { mutableStateOf(initialQuery) }
     var showWalkthrough by remember { mutableStateOf(startWalkthrough) }
     val trimmed = query.trim()
     val articles = LearnArticle.commonQuestions.filter { article ->

@@ -52,6 +52,7 @@ fun FeastsScreen(
     modifier: Modifier = Modifier,
     today: LocalDate = LocalDate.now(),
     initialFeastId: String? = null,
+    initialQuery: String = "",
 ) {
     val palette = LocalThemePalette.current
     val firstWeekday = WeekStart.firstWeekday()
@@ -59,7 +60,7 @@ fun FeastsScreen(
     var selected by remember(today, initialFeastId) {
         mutableStateOf(today)
     }
-    var query by remember { mutableStateOf("") }
+    var query by remember { mutableStateOf(initialQuery) }
 
     val items = remember(today) {
         val year = today.year
