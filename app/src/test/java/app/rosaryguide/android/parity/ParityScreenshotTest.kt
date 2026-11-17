@@ -2,6 +2,7 @@ package app.rosaryguide.android.parity
 
 import android.app.Application
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -44,6 +45,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import app.rosaryguide.core.data.catalog.MapQuotePreferences
+import app.rosaryguide.core.data.sequence.RosarySequenceBuilder
+import app.rosaryguide.core.model.RosaryStepKind
+import app.rosaryguide.feature.pray.PrayLaunch
+import app.rosaryguide.feature.pray.PrayScreen
 import org.robolectric.annotation.GraphicsMode
 
 /**
@@ -146,6 +152,34 @@ class ParityScreenshotTest {
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage("$OUT/settings-notifications-picker-dark.png")
     }
+
+
+    @Test fun prayOpeningLight() = shot("pray-opening", dark = false) { Pray(openingLaunch()) }
+    @Test fun prayOpeningDark() = shot("pray-opening", dark = true) { Pray(openingLaunch()) }
+
+    @Test fun prayIntentionsLight() = shot("pray-intentions", dark = false) { Pray(intentionLaunch()) }
+    @Test fun prayIntentionsDark() = shot("pray-intentions", dark = true) { Pray(intentionLaunch()) }
+
+    @Test fun prayPlateLight() = shot("pray-plate", dark = false) { Pray(stepLaunch(plateIndex)) }
+    @Test fun prayPlateDark() = shot("pray-plate", dark = true) { Pray(stepLaunch(plateIndex)) }
+
+    @Test fun prayDecadeLight() = shot("pray-decade", dark = false) { Pray(stepLaunch(hailIndex)) }
+    @Test fun prayDecadeDark() = shot("pray-decade", dark = true) { Pray(stepLaunch(hailIndex)) }
+
+    @Test fun prayDecadeEndLight() = shot("pray-decade-end", dark = false) { Pray(stepLaunch(decadeEndIndex)) }
+    @Test fun prayDecadeEndDark() = shot("pray-decade-end", dark = true) { Pray(stepLaunch(decadeEndIndex)) }
+
+    @Test fun prayClosingLight() = shot("pray-closing", dark = false) { Pray(stepLaunch(closingIndex)) }
+    @Test fun prayClosingDark() = shot("pray-closing", dark = true) { Pray(stepLaunch(closingIndex)) }
+
+    @Test fun prayCompletionLight() = shot("pray-completion", dark = false) { Pray(completionLaunch()) }
+    @Test fun prayCompletionDark() = shot("pray-completion", dark = true) { Pray(completionLaunch()) }
+
+    @Test fun prayCustomiseLight() = shot("pray-customise", dark = false) { Pray(customiseLaunch()) }
+    @Test fun prayCustomiseDark() = shot("pray-customise", dark = true) { Pray(customiseLaunch()) }
+
+    @Test fun prayMichaelLight() = shot("pray-michael", dark = false) { Pray(michaelLaunch()) }
+    @Test fun prayMichaelDark() = shot("pray-michael", dark = true) { Pray(michaelLaunch()) }
 
     @Composable
     private fun Themed(dark: Boolean, content: @Composable () -> Unit) {
@@ -270,6 +304,39 @@ class ParityScreenshotTest {
             onFeastEnabled = {},
             onFeastMinutes = {},
             onBack = {},
+        )
+    }
+
+
+    private val joyfulSteps = RosarySequenceBuilder.build(MysterySetKind.Joyful)
+    private val plateIndex = joyfulSteps.indexOfFirst { it.isPlate }
+    private val hailIndex = joyfulSteps.indexOfFirst {
+        it.kind == RosaryStepKind.HailMary && it.decadeNumber == 1 && it.hailMaryNumber == 4
+    }
+    private val decadeEndIndex = joyfulSteps.indexOfFirst { it.closesDecade && it.decadeNumber == 1 }
+    private val closingIndex = joyfulSteps.indexOfFirst { it.isLastPrayer }
+
+    private fun openingLaunch() = baseLaunch()
+    private fun intentionLaunch() = baseLaunch().copy(showIntentions = true)
+    private fun stepLaunch(start: Int) = baseLaunch().copy(startStep = start.coerceAtLeast(0))
+    private fun completionLaunch() = baseLaunch().copy(showCompletion = true)
+    private fun customiseLaunch() = baseLaunch().copy(showCustomise = true)
+    private fun michaelLaunch() = baseLaunch().copy(showSaintMichael = true)
+
+    private fun baseLaunch() = PrayLaunch(
+        mysterySet = MysterySetKind.Joyful,
+        forceFresh = true,
+        seedIntentions = listOf("mum" to "For Mum"),
+    )
+
+    @Composable
+    private fun Pray(launch: PrayLaunch) {
+        val store = remember { filledStore() }
+        PrayScreen(
+            launch = launch,
+            sessionStore = store,
+            quotePreferences = remember { MapQuotePreferences() },
+            onClose = {},
         )
     }
 

@@ -37,8 +37,10 @@ fun PrayIntentionSheet(
     onToggle: (OfferIntention) -> Unit,
     onClear: () -> Unit,
     onAdd: (String) -> Unit,
-    onContinue: () -> Unit,
+    onContinue: () -> Unit = {},
     modifier: Modifier = Modifier,
+    showComposer: Boolean = false,
+    showFooter: Boolean = false,
 ) {
     val palette = LocalThemePalette.current
     var draft by remember { mutableStateOf("") }
@@ -67,6 +69,7 @@ fun PrayIntentionSheet(
                 onClick = { onToggle(intention) },
             )
         }
+        if (showComposer) {
         Spacer(Modifier.height(RosarySpace.md))
         Text(text = "Add an intention", style = RosaryType.supportingLabel, color = palette.dim)
         Spacer(Modifier.height(RosarySpace.xs))
@@ -92,9 +95,12 @@ fun PrayIntentionSheet(
                 draft = ""
             }
         }
+        }
+        if (showFooter) {
         Spacer(Modifier.height(RosarySpace.lg))
-        GuidePrimaryButton(title = "Continue", onClick = onContinue)
+        GuidePrimaryButton(title = "Next", onClick = onContinue)
         Spacer(Modifier.height(RosarySpace.lg))
+        }
     }
 }
 

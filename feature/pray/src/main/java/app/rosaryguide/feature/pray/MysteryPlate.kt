@@ -21,11 +21,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.rosaryguide.core.designsystem.component.mysteryPlateDrawableId
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.model.Mystery
+import app.rosaryguide.core.model.OrdinalWord
 import app.rosaryguide.core.model.PrayerLanguage
 import app.rosaryguide.core.model.RosaryStep
 
@@ -73,11 +75,21 @@ fun MysteryPlate(
         }
         Column(Modifier.padding(horizontal = RosarySpace.gutter)) {
             Spacer(Modifier.height(RosarySpace.md))
-            Text(
-                text = eyebrow,
-                style = RosaryType.supportingLabel,
-                color = palette.dim,
-            )
+            Row(
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(RosarySpace.md),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = OrdinalWord.roman(mystery.number),
+                    style = RosaryType.body,
+                    color = palette.dim,
+                )
+                Text(
+                    text = eyebrow,
+                    style = RosaryType.caption.copy(letterSpacing = 1.2.sp),
+                    color = palette.dim,
+                )
+            }
             Spacer(Modifier.height(RosarySpace.xs))
             Text(
                 text = mystery.title.resolved(language),

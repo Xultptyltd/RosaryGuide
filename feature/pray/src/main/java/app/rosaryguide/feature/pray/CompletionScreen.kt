@@ -1,29 +1,51 @@
 package app.rosaryguide.feature.pray
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import app.rosaryguide.core.data.catalog.PrayerCatalog
-import app.rosaryguide.core.data.session.OfferedIntentions
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import app.rosaryguide.core.data.catalog.MysteryCatalog
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
+import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
+import app.rosaryguide.core.designsystem.component.mysteryPlateDrawableId
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.model.CompletionQuote
 import app.rosaryguide.core.model.MysterySetKind
-import app.rosaryguide.core.model.RosaryStepKind
+import kotlinx.coroutines.delay
 
 @Composable
 fun CompletionScreen(
@@ -33,6 +55,7 @@ fun CompletionScreen(
     includeSaintMichael: Boolean,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
+    onMichael: (() -> Unit)? = if (includeSaintMichael) ({}) else null,
     onReadyForReview: () -> Unit = {},
 ) {
     LaunchedEffect(Unit) {
@@ -41,66 +64,153 @@ fun CompletionScreen(
     }
 
     val palette = LocalThemePalette.current
+    val fade = palette.completionBackground
+    val offered = intentionTitles.map { it.trim() }.filter { it.isNotEmpty() }
+    val showQuote = offered.isEmpty()
+    val context = LocalContext.current
+    // Same-set plate, not the Home hero (first mystery). Prefer the third mystery.
+    val plateMystery = MysteryCatalog.mysteries(mysterySet).let { list ->
+        list.getOrNull(2) ?: list.getOrNull(1) ?: list.firstOrNull()
+    }
+    val resId = plateMystery?.let { mysteryPlateDrawableId(context, it.artSlug) } ?: 0
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = RosarySpace.gutter),
+            .background(fade)
+            .navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(RosarySpace.xxl))
-        Text(
-            text = "finis",
-            style = RosaryType.serifItalicBody,
-            color = palette.dim,
-        )
-        Spacer(Modifier.height(RosarySpace.sm))
-        Text(
-            text = "ROSARY COMPLETE",
-            style = RosaryType.headingPrimary,
-            color = palette.ink,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(RosarySpace.xs))
-        Text(
-            text = mysterySet.titleText.english,
-            style = RosaryType.body,
-            color = palette.dim,
-        )
-        Spacer(Modifier.height(RosarySpace.xl))
-        Text(
-            text = "“${quote.text}”",
-            style = RosaryType.serifBody,
-            color = palette.ink,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(RosarySpace.sm))
-        Text(
-            text = quote.attribution,
-            style = RosaryType.supportingLabel,
-            color = palette.dim,
-            textAlign = TextAlign.Center,
-        )
-        OfferedIntentions.summary(intentionTitles)?.let { summary ->
-            Spacer(Modifier.height(RosarySpace.xl))
-            Text(text = "Offered for", style = RosaryType.supportingLabel, color = palette.dim)
-            Spacer(Modifier.height(RosarySpace.xs))
-            Text(text = summary, style = RosaryType.body, color = palette.ink, textAlign = TextAlign.Center)
-        }
-        if (includeSaintMichael) {
-            val prayer = PrayerCatalog.prayer(RosaryStepKind.SaintMichael)
-            Spacer(Modifier.height(RosarySpace.xl))
-            Text(text = "Saint Michael Prayer", style = RosaryType.headingSecondary, color = palette.ink)
-            Spacer(Modifier.height(RosarySpace.sm))
-            Text(
-                text = prayer?.text?.english.orEmpty(),
-                style = RosaryType.serifBody,
-                color = palette.ink,
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .clipToBounds(),
+        ) {
+            if (resId != 0) {
+                Image(
+                    painter = painterResource(resId),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colorStops = arrayOf(
+                                    0f to fade.copy(alpha = 0.18f),
+                                    0.12f to Color.Transparent,
+                                    0.46f to Color.Transparent,
+                                    0.62f to fade.copy(alpha = 0.16f),
+                                    0.76f to fade.copy(alpha = 0.40f),
+                                    0.90f to fade.copy(alpha = 0.72f),
+                                    1f to fade,
+                                ),
+                            ),
+                        )
+                    },
             )
         }
-        Spacer(Modifier.height(RosarySpace.xxl))
-        GuidePrimaryButton(title = "Done", onClick = onDone)
-        Spacer(Modifier.height(RosarySpace.xl))
+        Box(
+            modifier = Modifier
+                .size(88.dp)
+                .clip(CircleShape)
+                .background(palette.surface),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Check,
+                contentDescription = null,
+                tint = palette.ink,
+                modifier = Modifier.size(36.dp),
+            )
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(top = RosarySpace.xs),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "ROSARY COMPLETE",
+                style = RosaryType.caption.copy(letterSpacing = 1.4.sp),
+                color = palette.completionMeta,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "${mysterySet.shortName} Mysteries",
+                style = RosaryType.headingPrimary,
+                color = palette.completionTitle,
+                textAlign = TextAlign.Center,
+            )
+            if (showQuote) {
+                Spacer(Modifier.height(40.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(palette.surface, RoundedCornerShape(RosarySpace.containerRadius))
+                        .padding(horizontal = RosarySpace.lg, vertical = 14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = quote.text,
+                        style = RosaryType.serifBody,
+                        color = palette.completionTitle.copy(alpha = 0.88f),
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(Modifier.height(RosarySpace.sm))
+                    Text(
+                        text = quote.attribution.uppercase(),
+                        style = RosaryType.supportingLabel.copy(letterSpacing = 0.8.sp),
+                        color = palette.completionLabel,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            } else {
+                Spacer(Modifier.height(32.dp))
+                Text(
+                    text = "OFFERED FOR",
+                    style = RosaryType.caption.copy(letterSpacing = 1.2.sp),
+                    color = palette.completionMeta,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start,
+                )
+                Spacer(Modifier.height(RosarySpace.sm))
+                Column(verticalArrangement = Arrangement.spacedBy(RosarySpace.sm)) {
+                    offered.forEach { title ->
+                        Text(
+                            text = title,
+                            style = RosaryType.body,
+                            color = palette.completionMetaValue,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(palette.surface, RoundedCornerShape(RosarySpace.nestedRadius))
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(36.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(bottom = RosarySpace.lg),
+            verticalArrangement = Arrangement.spacedBy(RosarySpace.md),
+        ) {
+            GuidePrimaryButton(title = "Done", onClick = onDone)
+            val michael = onMichael
+            if (includeSaintMichael && michael != null) {
+                GuideSecondaryButton(title = "Saint Michael Prayer", onClick = michael)
+            }
+        }
     }
 }

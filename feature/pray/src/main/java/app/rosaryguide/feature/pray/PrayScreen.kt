@@ -1,29 +1,22 @@
 package app.rosaryguide.feature.pray
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.data.catalog.QuoteCatalog
@@ -42,15 +36,9 @@ import app.rosaryguide.core.data.sequence.RosaryHaptics
 import app.rosaryguide.core.data.sequence.RosarySequenceBuilder
 import app.rosaryguide.core.data.session.OfferIntention
 import app.rosaryguide.core.data.session.SessionStore
-import app.rosaryguide.core.designsystem.component.GuideMarqueeText
-import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
-import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
-import app.rosaryguide.core.designsystem.component.GuideTertiaryButton
-import app.rosaryguide.feature.settings.CustomiseRosaryScreen
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
-import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
 import app.rosaryguide.core.model.CompletionQuote
 import app.rosaryguide.core.model.MysterySetKind
 import app.rosaryguide.core.model.PrayTrackStage
@@ -58,17 +46,21 @@ import app.rosaryguide.core.model.PrayerLanguage
 import app.rosaryguide.core.model.RosaryConfig
 import app.rosaryguide.core.model.RosaryStep
 import app.rosaryguide.core.model.RosaryStepKind
+import app.rosaryguide.feature.settings.CustomiseRosaryScreen
 
 data class PrayLaunch(
     val mysterySet: MysterySetKind,
     val startStep: Int? = null,
     val showIntentions: Boolean = false,
     val showCompletion: Boolean = false,
+    val showSaintMichael: Boolean = false,
+    val showCustomise: Boolean = false,
     val forceFresh: Boolean = false,
     val config: RosaryConfig = RosaryConfig.default,
     val seedIntentions: List<Pair<String, String>> = emptyList(),
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrayScreen(
     launch: PrayLaunch,
@@ -89,16 +81,18 @@ fun PrayScreen(
 
     var config by remember { mutableStateOf(launch.config) }
     var steps by remember { mutableStateOf(RosarySequenceBuilder.build(launch.mysterySet, launch.config)) }
-    var index by remember { mutableIntStateOf(0) }
-    var showingIntentionStep by remember { mutableStateOf(false) }
-    var showingCompletion by remember { mutableStateOf(false) }
+    var index by remember { mutableIntStateOf(launch.startStep ?: 0) }
+    var showingIntentionStep by remember { mutableStateOf(launch.showIntentions) }
+    var showingCompletion by remember { mutableStateOf(launch.showCompletion || launch.showSaintMichael) }
+    var showingMichael by remember { mutableStateOf(launch.showSaintMichael) }
     var celebrated by remember { mutableStateOf(setOf<Int>()) }
     var language by remember { mutableStateOf(PrayerLanguage.English) }
     var selectedIds by remember { mutableStateOf(listOf<String>()) }
     var selectedTitles by remember { mutableStateOf(listOf<String>()) }
     var completionQuote by remember { mutableStateOf<CompletionQuote?>(null) }
     var lastAdvanceAt by remember { mutableStateOf(0L) }
-    var showCustomise by remember { mutableStateOf(false) }
+    var showCustomise by remember { mutableStateOf(launch.showCustomise) }
+    var showComposer by remember { mutableStateOf(false) }
 
     LaunchedEffect(launch) {
         haptics.prepare(hapticEnabled)
@@ -108,7 +102,7 @@ fun PrayScreen(
             }
         }
         val existing = saved?.takeIf { it.mysterySet == launch.mysterySet && it.isResumable(System.currentTimeMillis()) }
-        if (!launch.forceFresh && !launch.showCompletion && existing != null) {
+        if (!launch.forceFresh && !launch.showCompletion && !launch.showSaintMichael && existing != null) {
             config = existing.rosaryConfig
             steps = RosarySequenceBuilder.build(existing.mysterySet, existing.rosaryConfig)
             index = existing.stepIndex.coerceIn(0, steps.lastIndex)
@@ -130,10 +124,12 @@ fun PrayScreen(
             sessionStore.updateStep(index)
         }
         showingIntentionStep = launch.showIntentions
-        if (launch.showCompletion) {
+        if (launch.showCompletion || launch.showSaintMichael) {
             completionQuote = QuoteCatalog.freshCompletionQuote(quotePreferences)
             showingCompletion = true
         }
+        showingMichael = launch.showSaintMichael
+        showCustomise = launch.showCustomise
     }
 
     DisposableEffect(Unit) {
@@ -221,6 +217,11 @@ fun PrayScreen(
         goTo(closing, current, viaCompleteDecade = true)
     }
 
+    fun jumpTo(stage: PrayTrackStage) {
+        val target = steps.indexOfFirst { it.stage == stage }
+        if (target >= 0) goTo(target, steps.getOrNull(index))
+    }
+
     fun toggleIntention(intention: OfferIntention) {
         val ids = selectedIds.toMutableList()
         val titles = selectedTitles.toMutableList()
@@ -240,219 +241,223 @@ fun PrayScreen(
 
     val current = steps.getOrNull(index)
     val isPlate = current?.isPlate == true
-    val header = when {
-        isPlate && current?.mystery != null ->
-            "${current.stage.label}  ·  ${current.mystery!!.title.english}"
-        else -> current?.mystery?.title?.english ?: launch.mysterySet.titleText.english
-    }
+    val canRetreat = index > 0 || showingIntentionStep
     val showCompleteDecade = current?.kind == RosaryStepKind.HailMary &&
         (current.hailMaryNumber ?: 0) in 1..9 &&
         current.decadeNumber != null &&
         !showingIntentionStep &&
         !showingCompletion
+    val showBeads = config.showBeads &&
+        language != PrayerLanguage.Bilingual &&
+        !showingIntentionStep &&
+        !isPlate &&
+        current?.isFinis != true
+    val progressLabel = when {
+        showingIntentionStep -> current?.progressLabel ?: "Opening prayers"
+        else -> current?.progressLabel ?: launch.mysterySet.titleText.english
+    }
+    val nextTitle = current?.nextLabel ?: "Next"
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+    val plateArtHeight = screenHeight * 0.58f
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.bg)
-            .statusBarsPadding()
-            .navigationBarsPadding(),
+            .background(palette.prayBg),
     ) {
-        if (showingCompletion) {
-            CompletionScreen(
-                mysterySet = launch.mysterySet,
-                quote = completionQuote ?: QuoteCatalog.all.first(),
-                intentionTitles = selectedTitles,
-                includeSaintMichael = config.saintMichael,
-                onDone = {
-                    sessionStore.discard()
-                    onClose()
-                },
-                onReadyForReview = onReadyForReview,
-            )
-            return@Box
-        }
-
-        Column(Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = RosarySpace.xs),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Close",
-                    style = RosaryType.body,
-                    color = palette.accentText,
-                    modifier = Modifier
-                        .sizeIn(minWidth = RosarySpace.minHitTarget, minHeight = RosarySpace.minHitTarget)
-                        .clickable(onClick = onClose)
-                        .padding(RosarySpace.sm),
+        when {
+            showingMichael -> {
+                SaintMichaelScreen(
+                    onDone = { showingMichael = false },
+                    onClose = { showingMichael = false },
+                    initialLanguage = language,
+                    modifier = Modifier.fillMaxSize(),
                 )
-                Spacer(Modifier.weight(1f))
-                IconButton(onClick = { showCustomise = true }) {
-                    Icon(
-                        imageVector = Icons.Filled.Settings,
-                        contentDescription = "Customise rosary",
-                        tint = palette.ink,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
             }
-            GuideMarqueeText(
-                text = header,
-                style = if (isPlate) RosaryType.supportingLabel else RosaryType.headingPrimary,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = RosarySpace.gutter),
-            )
-            if (!isPlate) {
-                current?.stage?.label?.let { label ->
-                    Text(
-                        text = label,
-                        style = RosaryType.supportingLabel,
-                        color = palette.dim,
-                        modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.xs),
-                    )
-                }
-            }
-
-            if (showingIntentionStep) {
-                PrayIntentionSheet(
-                    intentions = savedIntentions,
-                    selectedIds = selectedIds,
-                    onToggle = { toggleIntention(it) },
-                    onClear = {
-                        selectedIds = emptyList()
-                        selectedTitles = emptyList()
-                        sessionStore.updateIntentions(emptyList(), emptyList())
+            showingCompletion -> {
+                CompletionScreen(
+                    mysterySet = launch.mysterySet,
+                    quote = completionQuote ?: QuoteCatalog.all.first(),
+                    intentionTitles = selectedTitles,
+                    includeSaintMichael = true,
+                    onDone = {
+                        sessionStore.discard()
+                        onClose()
                     },
-                    onAdd = { title ->
-                        val added = sessionStore.addIntention(title)
-                        toggleIntention(added)
-                    },
-                    onContinue = { advance() },
-                    modifier = Modifier.weight(1f),
+                    onMichael = { showingMichael = true },
+                    onReadyForReview = onReadyForReview,
                 )
-            } else {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .then(if (isPlate) Modifier else Modifier.padding(horizontal = RosarySpace.gutter)),
-                ) {
-                    if (isPlate && current != null) {
-                        MysteryPlate(step = current, language = language)
+            }
+            else -> {
+                val header: @Composable () -> Unit = {
+                    Column(Modifier.statusBarsPadding()) {
+                        PrayFlowHeader(
+                            progressLabel = progressLabel,
+                            canRetreat = canRetreat,
+                            onBack = { goBack() },
+                            onSettings = { showCustomise = true },
+                            onClose = onClose,
+                        )
+                        current?.stage?.let { stage ->
+                            SevenStageTrack(current = stage, onJump = { jumpTo(it) })
+                        }
+                    }
+                }
+                val footer: @Composable () -> Unit = {
+                    if (showingIntentionStep) {
+                        IntentionActionFooter(
+                            onAdd = { showComposer = true },
+                            onNext = { advance() },
+                            modifier = Modifier.navigationBarsPadding(),
+                        )
                     } else {
-                        current?.title?.resolved(language)?.takeIf { it.isNotBlank() }?.let { title ->
-                            Text(text = title, style = RosaryType.headingSecondary, color = palette.ink)
-                            Spacer(Modifier.height(RosarySpace.sm))
+                        PrayActionFooter(
+                            nextTitle = nextTitle,
+                            showCompleteDecade = showCompleteDecade,
+                            showLanguage = !isPlate,
+                            language = language,
+                            onNext = { advance() },
+                            onCompleteDecade = { completeDecade() },
+                            onLanguageChange = { language = it },
+                            modifier = Modifier.navigationBarsPadding(),
+                        )
+                    }
+                }
+
+                if (isPlate && current != null) {
+                    Box(Modifier.fillMaxSize()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
+                        ) {
+                            MysteryPlate(
+                                step = current,
+                                language = language,
+                                artHeight = plateArtHeight,
+                            )
+                            Spacer(Modifier.height(96.dp))
                         }
-                        current?.subtitle?.english?.takeIf { it.isNotBlank() }?.let { subtitle ->
-                            Text(text = subtitle, style = RosaryType.supportingLabel, color = palette.dim)
-                            Spacer(Modifier.height(RosarySpace.sm))
-                        }
-                        current?.body?.let { body ->
-                            Text(text = body.primary(language), style = RosaryType.serifBody, color = palette.ink)
-                            body.secondary(language)?.let { latin ->
-                                Spacer(Modifier.height(RosarySpace.md))
-                                Text(text = latin, style = RosaryType.serifItalicBody, color = palette.dim)
+                        header()
+                        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) { footer() }
+                    }
+                } else {
+                    Column(
+                        Modifier
+                            .fillMaxSize()
+                            .navigationBarsPadding(),
+                    ) {
+                        header()
+                        if (showingIntentionStep) {
+                            PrayIntentionSheet(
+                                intentions = savedIntentions,
+                                selectedIds = selectedIds,
+                                onToggle = { toggleIntention(it) },
+                                onClear = {
+                                    selectedIds = emptyList()
+                                    selectedTitles = emptyList()
+                                    sessionStore.updateIntentions(emptyList(), emptyList())
+                                },
+                                onAdd = { title ->
+                                    val added = sessionStore.addIntention(title)
+                                    toggleIntention(added)
+                                    showComposer = false
+                                },
+                                showComposer = showComposer,
+                                modifier = Modifier.weight(1f),
+                            )
+                        } else {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(horizontal = RosarySpace.gutter),
+                            ) {
+                                current?.let { step ->
+                                    if (step.kind == RosaryStepKind.HailMary &&
+                                        step.decadeNumber != null &&
+                                        step.hailMaryNumber != null
+                                    ) {
+                                        Text(
+                                            text = "${step.hailMaryNumber} of 10",
+                                            style = RosaryType.navigationTitle,
+                                            color = palette.dim,
+                                        )
+                                        Spacer(Modifier.height(RosarySpace.sm))
+                                    }
+                                    step.title.resolved(language).takeIf { it.isNotBlank() }?.let { title ->
+                                        Text(text = title, style = RosaryType.headingPrimary, color = palette.ink)
+                                        Spacer(Modifier.height(RosarySpace.sm))
+                                    }
+                                    if (language == PrayerLanguage.Bilingual) {
+                                        step.title.latin.takeIf { it.isNotBlank() && it != step.title.english }?.let { latin ->
+                                            Text(text = latin, style = RosaryType.body, color = palette.dim)
+                                            Spacer(Modifier.height(RosarySpace.sm))
+                                        }
+                                    }
+                                    step.body.let { body ->
+                                        Text(text = body.primary(language), style = RosaryType.serifBody, color = palette.ink)
+                                        body.secondary(language)?.let { latin ->
+                                            Spacer(Modifier.height(RosarySpace.md))
+                                            Text(text = latin, style = RosaryType.serifItalicBody, color = palette.dim)
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.height(RosarySpace.lg))
                             }
                         }
+                        if (showBeads) {
+                            BeadRail(current = current?.bead, modifier = Modifier.fillMaxWidth())
+                        }
+                        footer()
                     }
-                    Spacer(Modifier.height(RosarySpace.lg))
-                    Box(Modifier.padding(horizontal = if (isPlate) RosarySpace.gutter else 0.dp)) {
-                        LanguageChips(language) { language = it }
-                    }
-                    Spacer(Modifier.height(RosarySpace.xl))
                 }
             }
+        }
 
-            if (config.showBeads && !showingIntentionStep && !isPlate) {
-                BeadRail(current = current?.bead, modifier = Modifier.fillMaxWidth())
-            }
-
-            val axFooter = isAccessibilitySize()
-            if (axFooter) {
+        if (showCustomise) {
+            ModalBottomSheet(
+                onDismissRequest = { showCustomise = false },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.sm),
-                    verticalArrangement = Arrangement.spacedBy(RosarySpace.sm),
-                ) {
-                    GuidePrimaryButton(
-                        title = if (current?.isLastPrayer == true) "Finish" else "Next",
-                        onClick = { advance() },
-                    )
-                    if (index > 0 || showingIntentionStep) {
-                        GuideSecondaryButton(title = "Back", onClick = { goBack() })
-                    }
-                }
-            } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.sm),
-                horizontalArrangement = Arrangement.spacedBy(RosarySpace.sm),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (index > 0 || showingIntentionStep) {
-                    Box(Modifier.weight(1f)) {
-                        GuideSecondaryButton(title = "Back", onClick = { goBack() })
-                    }
-                }
-                Box(Modifier.weight(1f)) {
-                    GuidePrimaryButton(
-                        title = if (current?.isLastPrayer == true) "Finish" else "Next",
-                        onClick = { advance() },
-                    )
-                }
-            }
-            }
-            if (showCompleteDecade) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = RosarySpace.gutter)
                         .padding(bottom = RosarySpace.md),
                 ) {
-                    GuideTertiaryButton(title = "Complete decade", onClick = { completeDecade() })
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = RosarySpace.gutter),
+                    ) {
+                        Text(
+                            text = "Customise rosary",
+                            style = RosaryType.navigationTitle,
+                            color = palette.ink,
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+                        TextButton(
+                            onClick = { showCustomise = false },
+                            modifier = Modifier.align(Alignment.CenterEnd),
+                        ) {
+                            Text("Done")
+                        }
+                    }
+                    CustomiseRosaryScreen(
+                        config = settingsConfig.copy(showBeads = config.showBeads),
+                        onConfigChange = { next ->
+                            onRosaryConfigChange(next)
+                            config = config.copy(showBeads = next.showBeads)
+                            sessionStore.updateRosaryConfig(config)
+                        },
+                        onBack = { showCustomise = false },
+                        showChrome = false,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(screenHeight * 0.75f),
+                    )
                 }
             }
-        }
-        if (showCustomise) {
-            CustomiseRosaryScreen(
-                config = settingsConfig.copy(showBeads = config.showBeads),
-                onConfigChange = { next ->
-                    onRosaryConfigChange(next)
-                    config = config.copy(showBeads = next.showBeads)
-                    sessionStore.updateRosaryConfig(config)
-                },
-                onBack = { showCustomise = false },
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-    }
-}
-
-@Composable
-private fun LanguageChips(
-    language: PrayerLanguage,
-    onChange: (PrayerLanguage) -> Unit,
-) {
-    val palette = LocalThemePalette.current
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(RosarySpace.sm)) {
-        PrayerLanguage.entries.forEach { option ->
-            val selected = option == language
-            Text(
-                text = option.chip,
-                style = RosaryType.caption,
-                color = if (selected) palette.accentText else palette.dim,
-                modifier = Modifier
-                    .sizeIn(minWidth = RosarySpace.minHitTarget, minHeight = RosarySpace.minHitTarget)
-                    .clickable { onChange(option) }
-                    .padding(vertical = RosarySpace.xs, horizontal = RosarySpace.sm),
-            )
         }
     }
 }

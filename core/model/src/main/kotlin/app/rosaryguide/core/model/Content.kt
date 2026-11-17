@@ -213,6 +213,24 @@ data class RosaryStep(
         get() = RosaryStepIdentity(kind, stage, decadeNumber, hailMaryNumber)
 
     val isPlate: Boolean get() = kind == RosaryStepKind.MysteryAnnouncement
+    val isFinis: Boolean get() = kind == RosaryStepKind.Completion
+
+    /** Matches website `#pnow`: Opening / Closing prayers, or `I · The Annunciation` in a decade. */
+    val progressLabel: String
+        get() = when (stage) {
+            PrayTrackStage.Opening -> "Opening prayers"
+            PrayTrackStage.Closing -> "Closing prayers"
+            else -> mystery?.let { "${OrdinalWord.roman(it.number)} · ${it.title.english}" }
+                ?: OrdinalWord.roman(stage.ordinal)
+        }
+
+    val nextLabel: String
+        get() = when {
+            isLastPrayer -> "Finish"
+            isPlate -> "Next" // iOS nextLabel is "Continue" on plates; PrayView remaps it to "Next"
+            isFinis -> "Amen"
+            else -> "Next"
+        }
 }
 
 /**
