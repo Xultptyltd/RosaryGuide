@@ -11,6 +11,8 @@ import app.rosaryguide.core.data.prefs.SessionFlags
 import app.rosaryguide.core.data.prefs.SettingsStore
 import app.rosaryguide.core.data.session.SessionStore
 import app.rosaryguide.core.model.AppIconOption
+import app.rosaryguide.core.model.DatedFeast
+import java.time.ZoneId
 import app.rosaryguide.notifications.ReminderScheduler
 import android.app.Activity
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -82,6 +84,10 @@ class AppViewModel @Inject constructor(
             preferences.setOnboardingCompleted(false)
             preferences.setAuth("guest", null)
         }
+    }
+
+    fun scheduleFeastReminder(item: DatedFeast, zone: ZoneId = ZoneId.of("Australia/Perth")) {
+        reminderScheduler.scheduleRemindMe(item.feast, item.date, settingsStore.current, zone)
     }
 
     fun maybeRequestReview(activity: Activity, versionName: String) {

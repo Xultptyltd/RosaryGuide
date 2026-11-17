@@ -42,6 +42,7 @@ import app.rosaryguide.core.data.session.SessionStore
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
+import app.rosaryguide.feature.profile.IntentionEditorScreen
 import app.rosaryguide.core.model.CompletionQuote
 import app.rosaryguide.core.model.MysterySetKind
 import app.rosaryguide.core.model.PrayTrackStage
@@ -459,12 +460,7 @@ fun PrayScreen(
                                     selectedTitles = emptyList()
                                     sessionStore.updateIntentions(emptyList(), emptyList())
                                 },
-                                onAdd = { title ->
-                                    val added = sessionStore.addIntention(title)
-                                    toggleIntention(added)
-                                    showComposer = false
-                                },
-                                showComposer = showComposer,
+                                onAdd = { _ -> showComposer = true },
                                 modifier = Modifier.weight(1f),
                             )
                         } else {
@@ -513,6 +509,33 @@ fun PrayScreen(
                         footer()
                     }
                 }
+            }
+        }
+
+        if (showComposer) {
+            val paletteSheet = LocalThemePalette.current
+            ModalBottomSheet(
+                onDismissRequest = { showComposer = false },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                containerColor = paletteSheet.bg,
+            ) {
+                IntentionEditorScreen(
+                    existing = null,
+                    onBack = { showComposer = false },
+                    onSave = { draft ->
+                        val added = sessionStore.addIntention(
+                            title = draft.title,
+                            note = draft.note,
+                            category = draft.category,
+                            accent = draft.accent,
+                            emoji = draft.emoji,
+                            pin = draft.isPinned,
+                        )
+                        toggleIntention(added)
+                        showComposer = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
 

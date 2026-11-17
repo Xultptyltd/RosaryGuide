@@ -5,6 +5,7 @@ import app.rosaryguide.core.model.Feast
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import kotlin.math.abs
 
 enum class ReminderKind { Daily, Feast }
 
@@ -25,6 +26,7 @@ object NotificationPlan {
     const val MAX_FEAST_DAYS = 30
     const val DAILY_ID_BASE = 100
     const val FEAST_ID_BASE = 200
+    const val REMIND_ME_ID_BASE = 500
 
     data class Settings(
         val dailyEnabled: Boolean,
@@ -88,5 +90,30 @@ object NotificationPlan {
             .entries
             .take(MAX_FEAST_DAYS)
             .associate { it.key to it.value }
+    }
+
+    /**
+     * A one-off feast reminder for the feast-detail “Remind me” action.
+     * Uses the same copy and time-of-day as the regular feast-alert plan.
+     * If that time has already passed, the reminder fires one minute from [now].
+     */
+    fun remindMeReminder(
+        feast: Feast,
+        date: LocalDate,
+        minutes: Int,
+        now: LocalDateTime,
+        zone: ZoneId,
+    ): ScheduledReminder {
+        var at = TimeOfDay.atDate(date, minutes, zone)
+        if (!at.isAfter(now)) {
+            at = now.plusMinutes(1)
+        }
+        return ScheduledReminder(
+            id = REMIND_ME_ID_BASE + (abs(feast.id.hashCode()) % 100),
+            kind = ReminderKind.Feast,
+            triggerEpochMs = at.atZone(zone).toInstant().toEpochMilli(),
+            body = ReminderCopy.feastBody(listOf(feast)),
+            dayKey = date.toString(),
+        )
     }
 }

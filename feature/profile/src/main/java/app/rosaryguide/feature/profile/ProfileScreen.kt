@@ -22,6 +22,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -76,6 +80,7 @@ data class ProfileLaunch(
     val openPapal: Boolean = false,
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     sessionStore: SessionStore,
@@ -110,7 +115,6 @@ fun ProfileScreen(
     var destination by remember {
         mutableStateOf(
             when {
-                launch.openEditor -> ProfileDestination.Editor
                 launch.openAllIntentions -> ProfileDestination.AllIntentions
                 launch.openArchived -> ProfileDestination.Archived
                 launch.openJourney -> ProfileDestination.Journey
@@ -120,6 +124,7 @@ fun ProfileScreen(
         )
     }
     var editing by remember { mutableStateOf<OfferIntention?>(null) }
+    var showEditor by remember { mutableStateOf(launch.openEditor) }
     var detail by remember { mutableStateOf<OfferIntention?>(null) }
     var journeyHistoryTab by remember { mutableStateOf(launch.journeyHistory) }
     var historyDay by remember { mutableStateOf(launch.historyDay) }
@@ -137,6 +142,7 @@ fun ProfileScreen(
     }
     val milestones = remember(completed, dayKeys, journey, intentions) { sessionStore.journeyMilestones() }
 
+    Box(modifier) {
     when (destination) {
         ProfileDestination.Root -> ProfileHome(
             rhythm = rhythm,
@@ -150,11 +156,11 @@ fun ProfileScreen(
             onOpenPapal = { destination = ProfileDestination.Papal },
             onOpenRhythm = { journeyHistoryTab = false; destination = ProfileDestination.Journey },
             onOpenJourney = { journeyHistoryTab = false; destination = ProfileDestination.Journey },
-            onAdd = { editing = null; destination = ProfileDestination.Editor },
+            onAdd = { editing = null; showEditor = true },
             onOpenAll = { destination = ProfileDestination.AllIntentions },
             onOpenArchived = { destination = ProfileDestination.Archived },
             onOpenDetail = { detail = it; destination = ProfileDestination.Detail },
-            onEdit = { editing = it; destination = ProfileDestination.Editor },
+            onEdit = { editing = it; showEditor = true },
             onPin = { sessionStore.setPinned(it.id, !it.isPinned) },
             onDelete = { sessionStore.removeIntention(it.id) },
             onPray = onPrayWith,
@@ -167,32 +173,17 @@ fun ProfileScreen(
             archivedCount = archived.size,
             hidden = hidden,
             onBack = { destination = ProfileDestination.Root },
-            onAdd = { editing = null; destination = ProfileDestination.Editor },
+            onAdd = { editing = null; showEditor = true },
             onOpenArchived = { destination = ProfileDestination.Archived },
             onOpenDetail = { detail = it; destination = ProfileDestination.Detail },
-            onEdit = { editing = it; destination = ProfileDestination.Editor },
+            onEdit = { editing = it; showEditor = true },
             onPin = { sessionStore.setPinned(it.id, !it.isPinned) },
             onDelete = { sessionStore.removeIntention(it.id) },
             onPray = onPrayWith,
             onToggleHide = { sessionStore.setHideIntentionText(!hidden) },
             modifier = modifier,
         )
-        ProfileDestination.Editor -> IntentionEditorScreen(
-            existing = editing,
-            onBack = { destination = if (editing != null && detail?.id == editing?.id) ProfileDestination.Detail else ProfileDestination.Root },
-            onSave = { draft ->
-                if (editing == null) sessionStore.addIntention(
-                    title = draft.title,
-                    note = draft.note,
-                    category = draft.category,
-                    accent = draft.accent,
-                    emoji = draft.emoji,
-                    pin = draft.isPinned,
-                ) else sessionStore.updateIntention(draft)
-                destination = ProfileDestination.Root
-            },
-            modifier = modifier,
-        )
+        ProfileDestination.Editor -> Unit
         ProfileDestination.Detail -> {
             val item = detail
             if (item == null) destination = ProfileDestination.Root
@@ -200,7 +191,7 @@ fun ProfileScreen(
                 intention = item,
                 hidden = hidden,
                 onBack = { destination = ProfileDestination.Root },
-                onEdit = { editing = item; destination = ProfileDestination.Editor },
+                onEdit = { editing = item; showEditor = true },
                 onPray = { onPrayWith(item) },
                 onPin = { sessionStore.setPinned(item.id, !item.isPinned); detail = item.copy(isPinned = !item.isPinned) },
                 onArchive = { sessionStore.archiveIntention(item.id); destination = ProfileDestination.Root },
@@ -247,6 +238,38 @@ fun ProfileScreen(
             onBack = { destination = ProfileDestination.Root; historyDay = null },
             modifier = modifier,
         )
+    }
+
+    if (showEditor) {
+        val palette = LocalThemePalette.current
+        ModalBottomSheet(
+            onDismissRequest = { showEditor = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = palette.bg,
+        ) {
+            IntentionEditorScreen(
+                existing = editing,
+                onBack = { showEditor = false },
+                onSave = { draft ->
+                    if (editing == null) sessionStore.addIntention(
+                        title = draft.title,
+                        note = draft.note,
+                        category = draft.category,
+                        accent = draft.accent,
+                        emoji = draft.emoji,
+                        pin = draft.isPinned,
+                    ) else {
+                        sessionStore.updateIntention(draft)
+                        if (detail?.id == draft.id) detail = draft
+                    }
+                    showEditor = false
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding(),
+            )
+        }
+    }
     }
 }
 

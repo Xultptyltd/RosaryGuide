@@ -66,14 +66,7 @@ class NavigationIaTest {
     @Test
     fun profileEditorAndFeastSecondaryAndLearnSearchRoutes() {
         assertEquals(NavigationIa.ProfileEditorPresentation.Sheet, NavigationIa.profileEditorPresentation())
-        assertEquals(
-            listOf(
-                NavigationIa.FeastSecondaryPage.RelatedPrayers,
-                NavigationIa.FeastSecondaryPage.Patronages,
-                NavigationIa.FeastSecondaryPage.Scripture,
-            ),
-            NavigationIa.feastSecondaryPages(),
-        )
+        assertFalse(NavigationIa.feastSecondaryPagesArePushes())
         assertTrue(NavigationIa.isLiveLearnSearchDestination(NavigationIa.LearnSearchDestination.Prayer))
         assertTrue(NavigationIa.isLiveLearnSearchDestination(NavigationIa.LearnSearchDestination.MysterySet))
         assertTrue(NavigationIa.isLiveLearnSearchDestination(NavigationIa.LearnSearchDestination.Feast))

@@ -251,6 +251,7 @@ fun RosaryGuideApp(
                     onPray = { openPray(it) },
                     onResumePray = { openPray(it, isResume = true) },
                     onPrayDecade = { set, decade -> openPray(set, startingDecade = decade) },
+                    onRemindMe = { viewModel.scheduleFeastReminder(it) },
                     onPrayWith = { intention ->
                         val set = MysteryCalendar.assignment(today).set
                         prayLaunch = PrayLaunch(
@@ -400,6 +401,7 @@ private fun AppTabs(
     onPray: (MysterySetKind) -> Unit,
     onResumePray: (MysterySetKind) -> Unit = onPray,
     onPrayDecade: (MysterySetKind, Int) -> Unit = { set, _ -> onPray(set) },
+    onRemindMe: (DatedFeast) -> Unit = {},
     prayedDayKeys: Set<String> = emptySet(),
     onPrayWith: (OfferIntention) -> Unit = {},
     sessionStore: SessionStore,
@@ -536,7 +538,11 @@ private fun AppTabs(
                 val feast = FeastCatalog.all.find { it.id == route.feastId } ?: return@composable
                 val date = runCatching { LocalDate.parse(route.date) }.getOrDefault(today)
                 DetailScaffold(title = feast.shortTitle, onBack = { navController.popBackStack() }) {
-                    FeastDetailScreen(item = DatedFeast(feast, date), onPray = onPray)
+                    FeastDetailScreen(
+                        item = DatedFeast(feast, date),
+                        onPray = onPray,
+                        onRemindMe = { onRemindMe(DatedFeast(feast, date)) },
+                    )
                 }
             }
             composable<HowToPrayRoute> {

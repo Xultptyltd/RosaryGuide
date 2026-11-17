@@ -59,7 +59,12 @@ object NavigationIa {
 
     enum class FeastSecondaryPage { RelatedPrayers, Patronages, Scripture }
 
-    fun feastSecondaryPages(): List<FeastSecondaryPage> = FeastSecondaryPage.entries.toList()
+    /**
+     * Live iOS feast detail inlines related prayers and scripture on the detail
+     * page (Keep the day too). The FeastSecondaryPage types exist in iOS source
+     * but are not mounted, so Android stays in-page as well.
+     */
+    fun feastSecondaryPagesArePushes(): Boolean = false
 
     enum class LearnSearchDestination { Prayer, MysterySet, Feast, HowToPray, Article }
 

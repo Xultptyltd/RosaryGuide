@@ -92,10 +92,7 @@ fun LearnScreen(
             set.titleText.english.localizedStandardContains(trimmed) ||
             set.themeSummary.localizedStandardContains(trimmed)
     }
-    val howToVisible = trimmed.isEmpty() ||
-        LearnCopy.HOW_TO_PRAY_TITLE.localizedStandardContains(trimmed) ||
-        "how to pray".localizedStandardContains(trimmed)
-    val empty = trimmed.isNotEmpty() && !howToVisible && articles.isEmpty() && prayers.isEmpty() && sets.isEmpty()
+    val empty = trimmed.isNotEmpty() && prayers.isEmpty() && sets.isEmpty()
     val searching = trimmed.isNotEmpty()
 
     Box(modifier.fillMaxSize().background(palette.bg)) {
@@ -113,11 +110,6 @@ fun LearnScreen(
                 if (empty) {
                     Text(text = LearnCopy.EMPTY, style = RosaryType.body, color = palette.dim)
                 } else if (searching) {
-                    if (howToVisible) {
-                        GuideSectionLabel(text = "Guide")
-                        LearnLinkRow(title = LearnCopy.HOW_TO_PRAY_TITLE, onClick = onHowToPray)
-                        Spacer(Modifier.height(RosarySpace.lg))
-                    }
                     if (sets.isNotEmpty()) {
                         GuideSectionLabel(text = LearnCopy.THE_MYSTERIES)
                         sets.forEach { MysteryTile(it, onClick = { onMysterySet(it) }) }
@@ -129,12 +121,6 @@ fun LearnScreen(
                             LearnLinkRow(title = prayer.title.english, onClick = { onPrayer(prayer) })
                         }
                         Spacer(Modifier.height(RosarySpace.lg))
-                    }
-                    if (articles.isNotEmpty()) {
-                        GuideSectionLabel(text = LearnCopy.COMMON_QUESTIONS)
-                        articles.forEach { article ->
-                            LearnLinkRow(title = article.title, caption = article.eyebrow, onClick = { onArticle(article) })
-                        }
                     }
                 } else {
                     IntroCard(onWalkthrough = { showWalkthrough = true })

@@ -5,6 +5,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -123,7 +127,7 @@ fun AllIntentionsScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun IntentionEditorScreen(
     existing: OfferIntention?,
@@ -138,10 +142,11 @@ fun IntentionEditorScreen(
     var accent by remember { mutableStateOf(existing?.accent ?: IntentionCategory.Personal.defaultAccent) }
     var emoji by remember { mutableStateOf(existing?.displayEmoji ?: "🙏") }
     var pinned by remember { mutableStateOf(existing?.isPinned ?: false) }
+    var showIconPicker by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .background(palette.bg)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter)
@@ -217,24 +222,18 @@ fun IntentionEditorScreen(
         }
         Spacer(Modifier.height(RosarySpace.lg))
         GuideSectionLabel(text = "Icon")
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(RosarySpace.sm),
-            verticalArrangement = Arrangement.spacedBy(RosarySpace.sm),
-            modifier = Modifier.fillMaxWidth(),
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(RosarySpace.containerRadius))
+                .background(palette.surface)
+                .clickable { showIconPicker = true }
+                .padding(RosarySpace.md),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            INTENTION_EMOJIS.forEach { item ->
-                val selected = emoji == item
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(if (selected) palette.accentTint else palette.surface)
-                        .clickable { emoji = item },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(item, style = RosaryType.body)
-                }
-            }
+            Text(emoji, style = RosaryType.headingSecondary)
+            Spacer(Modifier.width(RosarySpace.md))
+            Text("Choose icon", style = RosaryType.body, color = palette.ink)
         }
         Spacer(Modifier.height(RosarySpace.lg))
         Text(
@@ -260,6 +259,59 @@ fun IntentionEditorScreen(
                 )
             },
         )
+    }
+
+    if (showIconPicker) {
+        ModalBottomSheet(
+            onDismissRequest = { showIconPicker = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+            containerColor = palette.bg,
+        ) {
+            IntentionIconPickerSheet(
+                selected = emoji,
+                onSelect = {
+                    emoji = it
+                    showIconPicker = false
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = RosarySpace.gutter)
+                    .padding(bottom = RosarySpace.xl),
+            )
+        }
+    }
+}
+
+@Composable
+fun IntentionIconPickerSheet(
+    selected: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = LocalThemePalette.current
+    Column(modifier = modifier) {
+        Text("Choose icon", style = RosaryType.headingSecondary, color = palette.ink)
+        Spacer(Modifier.height(RosarySpace.lg))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(RosarySpace.sm),
+            verticalArrangement = Arrangement.spacedBy(RosarySpace.sm),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            INTENTION_EMOJIS.forEach { item ->
+                val isSelected = selected == item
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(if (isSelected) palette.accentTint else palette.surface)
+                        .clickable { onSelect(item) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(item, style = RosaryType.body)
+                }
+            }
+        }
     }
 }
 

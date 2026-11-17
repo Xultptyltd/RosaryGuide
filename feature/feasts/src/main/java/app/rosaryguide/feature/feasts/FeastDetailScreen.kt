@@ -68,6 +68,7 @@ fun FeastDetailScreen(
     onPray: (MysterySetKind) -> Unit,
     modifier: Modifier = Modifier,
     chromeOverlapPx: Float = 0f,
+    onRemindMe: () -> Unit = {},
 ) {
     val palette = LocalThemePalette.current
     val context = LocalContext.current
@@ -84,6 +85,7 @@ fun FeastDetailScreen(
     val metadata = "${item.date.format(DateTimeFormatter.ofPattern("d MMMM", Locale.getDefault()))}. ${feast.rank.title}".uppercase(Locale.getDefault())
     val dateValue = item.date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.getDefault()))
     var expandedPrayerId by remember { mutableStateOf<String?>(null) }
+    var reminderSet by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -122,6 +124,26 @@ fun FeastDetailScreen(
             if (feast.summary.isNotBlank()) {
                 Spacer(Modifier.height(RosarySpace.md))
                 Text(text = feast.summary, style = RosaryType.body, color = palette.dim)
+            }
+
+            Spacer(Modifier.height(RosarySpace.lg))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(RosarySpace.md),
+            ) {
+                FeastActionCard(
+                    title = if (reminderSet) "Reminder set" else "Remind me",
+                    onClick = {
+                        onRemindMe()
+                        reminderSet = true
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+                FeastActionCard(
+                    title = "Pray",
+                    onClick = { onPray(rosarySet) },
+                    modifier = Modifier.weight(1f),
+                )
             }
 
             Spacer(Modifier.height(26.dp))
@@ -432,5 +454,25 @@ internal object FeastDayPractices {
                 "Carry one line" to "Take one phrase from the feast into the rest of the day.",
             )
         }
+    }
+}
+
+@Composable
+private fun FeastActionCard(
+    title: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = LocalThemePalette.current
+    Box(
+        modifier = modifier
+            .height(76.dp)
+            .clip(RoundedCornerShape(RosarySpace.containerRadius))
+            .background(palette.surface)
+            .border(1.dp, palette.strokeRegular, RoundedCornerShape(RosarySpace.containerRadius))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(title, style = RosaryType.caption, color = palette.ink)
     }
 }

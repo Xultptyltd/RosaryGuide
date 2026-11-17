@@ -62,4 +62,32 @@ class NotificationPlanTest {
         )
         assertTrue(plan.isEmpty())
     }
+
+    @Test
+    fun remindMeUsesFeastCopyAndScheduledTime() {
+        val feast = Feast(
+            id = "rosary",
+            name = BilingualText("Our Lady of the Rosary", ""),
+            summary = "",
+            suggestedMysterySet = null,
+            isMarian = true,
+            rank = FeastRank.Memorial,
+            dateOn = { null },
+        )
+        val date = LocalDate.of(2026, 11, 20)
+        val reminder = NotificationPlan.remindMeReminder(
+            feast = feast,
+            date = date,
+            minutes = 9 * 60,
+            now = now,
+            zone = zone,
+        )
+        assertEquals(ReminderKind.Feast, reminder.kind)
+        assertTrue(reminder.id >= NotificationPlan.REMIND_ME_ID_BASE)
+        assertEquals(date.toString(), reminder.dayKey)
+        assertTrue(reminder.body.contains("Our Lady of the Rosary"))
+        val trigger = java.time.Instant.ofEpochMilli(reminder.triggerEpochMs).atZone(zone).toLocalDateTime()
+        assertEquals(date, trigger.toLocalDate())
+        assertEquals(9, trigger.hour)
+    }
 }

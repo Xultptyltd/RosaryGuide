@@ -58,17 +58,46 @@ class ReminderScheduler(private val context: Context) {
 
     fun show(reminder: ScheduledReminder) {
         ensureChannel()
+        val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
+            ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val contentIntent = launch?.let {
+            PendingIntent.getActivity(
+                context,
+                reminder.id,
+                it,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_rosary)
             .setContentTitle(context.getString(android.R.string.unknownName).takeIf { false } ?: "")
             .setContentText(reminder.body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(reminder.body))
+            .setContentIntent(contentIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
         runCatching {
             NotificationManagerCompat.from(context).notify(reminder.id, notification)
         }
+    }
+
+    fun scheduleRemindMe(
+        feast: app.rosaryguide.core.model.Feast,
+        date: java.time.LocalDate,
+        settings: UserSettings,
+        zone: ZoneId = ZoneId.systemDefault(),
+        now: LocalDateTime = LocalDateTime.now(zone),
+    ): ScheduledReminder {
+        val reminder = NotificationPlan.remindMeReminder(
+            feast = feast,
+            date = date,
+            minutes = settings.feastAlertMinutes,
+            now = now,
+            zone = zone,
+        )
+        schedule(reminder)
+        return reminder
     }
 
     fun canScheduleExactAlarms(): Boolean {
