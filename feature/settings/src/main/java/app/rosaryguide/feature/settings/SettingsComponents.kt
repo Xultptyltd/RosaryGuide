@@ -26,6 +26,7 @@ import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
+import androidx.compose.foundation.layout.size
 
 @Composable
 fun SettingsSection(
@@ -105,6 +106,7 @@ fun SettingsToggleRow(
     title: String,
     checked: Boolean,
     modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
     enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
 ) {
@@ -117,11 +119,16 @@ fun SettingsToggleRow(
                 .sizeIn(minHeight = RosarySpace.minHitTarget)
                 .padding(vertical = 8.dp),
         ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (icon != null) {
+                    Icon(icon, contentDescription = null, tint = palette.dim, modifier = Modifier.size(22.dp).padding(end = RosarySpace.sm))
+                }
             Text(
                 title,
                 style = RosaryType.body,
                 color = if (enabled) palette.ink else palette.dim,
             )
+            }
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
@@ -140,6 +147,16 @@ fun SettingsToggleRow(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = palette.dim,
+                modifier = Modifier
+                    .size(22.dp)
+                    .padding(end = RosarySpace.sm),
+            )
+        }
         Text(
             title,
             style = RosaryType.body,

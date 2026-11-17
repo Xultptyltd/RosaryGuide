@@ -28,6 +28,9 @@ import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.model.AppIconOption
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
 
 @Composable
 fun AppIconScreen(
@@ -60,6 +63,14 @@ fun AppIconScreen(
                     .clip(RoundedCornerShape(22.dp)),
             )
             Spacer(Modifier.height(RosarySpace.xl))
+            Text(
+                text = "Available",
+                style = RosaryType.supportingLabel,
+                color = palette.dim,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = RosarySpace.sm),
+            )
             AppIconOption.entries.forEach { option ->
                 val isOn = option == selected
                 Row(
@@ -85,8 +96,18 @@ fun AppIconScreen(
                         text = option.title,
                         style = RosaryType.body,
                         color = palette.ink,
-                        modifier = Modifier.padding(start = RosarySpace.md),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = RosarySpace.md),
                     )
+                    if (isOn) {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = "Selected",
+                            tint = palette.accent,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
                 }
                 Spacer(Modifier.height(RosarySpace.sm))
             }

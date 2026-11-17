@@ -39,6 +39,9 @@ import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.DateRange
 
 enum class NotificationPermissionState { Granted, Denied, NotDetermined }
 
@@ -110,6 +113,7 @@ fun NotificationsSettingsScreen(
         ) {
             SettingsToggleRow(
                 title = "Daily rosary reminder",
+                icon = Icons.Filled.Notifications,
                 checked = settings.dailyReminderEnabled,
                 onCheckedChange = { requestOrApply(it, onDailyEnabled) },
             )
@@ -117,6 +121,7 @@ fun NotificationsSettingsScreen(
                 SettingsDivider()
                 SettingsNavigationRow(
                     title = "Reminder time",
+                    icon = Icons.Filled.DateRange,
                     value = TimeOfDay.format(settings.dailyReminderMinutes),
                     onClick = { timePickerTarget = "daily" },
                 )
@@ -124,6 +129,7 @@ fun NotificationsSettingsScreen(
             SettingsDivider()
             SettingsToggleRow(
                 title = "Feast day alerts",
+                icon = Icons.Filled.DateRange,
                 checked = settings.feastAlertsEnabled,
                 onCheckedChange = { requestOrApply(it, onFeastEnabled) },
             )
@@ -131,6 +137,7 @@ fun NotificationsSettingsScreen(
                 SettingsDivider()
                 SettingsNavigationRow(
                     title = "Alert time",
+                    icon = Icons.Filled.DateRange,
                     value = TimeOfDay.format(settings.feastAlertMinutes),
                     onClick = { timePickerTarget = "feast" },
                 )
