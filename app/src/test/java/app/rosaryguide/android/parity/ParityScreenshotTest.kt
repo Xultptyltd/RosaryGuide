@@ -32,6 +32,7 @@ import app.rosaryguide.feature.profile.PapalIntentionScreen
 import app.rosaryguide.feature.profile.ProfileLaunch
 import app.rosaryguide.feature.profile.ProfileScreen
 import app.rosaryguide.feature.settings.NotificationsSettingsScreen
+import app.rosaryguide.feature.settings.SettingsConfirmDialog
 import app.rosaryguide.feature.settings.SettingsPage
 import app.rosaryguide.feature.settings.SettingsScreen
 import app.rosaryguide.feature.today.TodayScreen
@@ -50,6 +51,10 @@ import app.rosaryguide.core.data.sequence.RosarySequenceBuilder
 import app.rosaryguide.core.model.RosaryStepKind
 import app.rosaryguide.feature.pray.PrayLaunch
 import app.rosaryguide.feature.pray.PrayScreen
+import app.rosaryguide.feature.onboarding.LaunchSplashScreen
+import app.rosaryguide.feature.onboarding.OnboardingScreen
+import app.rosaryguide.feature.onboarding.SignInScreen
+import app.rosaryguide.core.model.AppIconOption
 import org.robolectric.annotation.GraphicsMode
 
 /**
@@ -181,6 +186,56 @@ class ParityScreenshotTest {
     @Test fun prayMichaelLight() = shot("pray-michael", dark = false) { Pray(michaelLaunch()) }
     @Test fun prayMichaelDark() = shot("pray-michael", dark = true) { Pray(michaelLaunch()) }
 
+    @Test fun prayReplaceDialogLight() = shot("pray-replace-dialog", dark = false) {
+        Pray(baseLaunch().copy(showReplaceDialog = true))
+    }
+    @Test fun prayReplaceDialogDark() = shot("pray-replace-dialog", dark = true) {
+        Pray(baseLaunch().copy(showReplaceDialog = true))
+    }
+
+    @Test fun settingsCustomiseLight() = shot("settings-customise", dark = false) { Settings(SettingsPage.CustomiseRosary) }
+    @Test fun settingsCustomiseDark() = shot("settings-customise", dark = true) { Settings(SettingsPage.CustomiseRosary) }
+
+    @Test fun settingsAppIconLight() = shot("settings-app-icon", dark = false) { Settings(SettingsPage.AppIcon) }
+    @Test fun settingsAppIconDark() = shot("settings-app-icon", dark = true) { Settings(SettingsPage.AppIcon) }
+
+    @Test fun settingsLegalLight() = shot("settings-legal", dark = false) { Settings(SettingsPage.Terms) }
+    @Test fun settingsLegalDark() = shot("settings-legal", dark = true) { Settings(SettingsPage.Terms) }
+
+    @Test fun settingsAcknowledgementsLight() = shot("settings-acknowledgements", dark = false) { Settings(SettingsPage.Acknowledgements) }
+    @Test fun settingsAcknowledgementsDark() = shot("settings-acknowledgements", dark = true) { Settings(SettingsPage.Acknowledgements) }
+
+    @Test fun settingsClearHistoryLight() = shot("settings-clear-history", dark = false) {
+        Settings(SettingsPage.Root, signedIn = true, confirm = SettingsConfirmDialog.ClearHistory)
+    }
+    @Test fun settingsClearHistoryDark() = shot("settings-clear-history", dark = true) {
+        Settings(SettingsPage.Root, signedIn = true, confirm = SettingsConfirmDialog.ClearHistory)
+    }
+    @Test fun settingsDeleteAccountLight() = shot("settings-delete-account", dark = false) {
+        Settings(SettingsPage.Root, signedIn = true, confirm = SettingsConfirmDialog.DeleteAccount)
+    }
+    @Test fun settingsDeleteAccountDark() = shot("settings-delete-account", dark = true) {
+        Settings(SettingsPage.Root, signedIn = true, confirm = SettingsConfirmDialog.DeleteAccount)
+    }
+
+    @Test fun onboarding1Light() = shot("onboarding-1", dark = false) { OnboardingScreen(onBegin = {}, initialPage = 0) }
+    @Test fun onboarding1Dark() = shot("onboarding-1", dark = true) { OnboardingScreen(onBegin = {}, initialPage = 0) }
+    @Test fun onboarding2Light() = shot("onboarding-2", dark = false) { OnboardingScreen(onBegin = {}, initialPage = 1) }
+    @Test fun onboarding2Dark() = shot("onboarding-2", dark = true) { OnboardingScreen(onBegin = {}, initialPage = 1) }
+    @Test fun onboarding3Light() = shot("onboarding-3", dark = false) { OnboardingScreen(onBegin = {}, initialPage = 2) }
+    @Test fun onboarding3Dark() = shot("onboarding-3", dark = true) { OnboardingScreen(onBegin = {}, initialPage = 2) }
+
+    @Test fun signinLight() = shot("signin", dark = false) { SignInScreen(onGoogle = {}, onGuest = {}) }
+    @Test fun signinDark() = shot("signin", dark = true) { SignInScreen(onGoogle = {}, onGuest = {}) }
+
+    @Test fun splashLight() = shot("splash", dark = false) {
+        LaunchSplashScreen(onFinished = {}, previewProgress = 1f)
+    }
+    @Test fun splashDark() = shot("splash", dark = true) {
+        LaunchSplashScreen(onFinished = {}, previewProgress = 1f)
+    }
+
+
     @Composable
     private fun Themed(dark: Boolean, content: @Composable () -> Unit) {
         RosaryGuideTheme(darkTheme = dark, content = content)
@@ -273,11 +328,17 @@ class ParityScreenshotTest {
     }
 
     @Composable
-    private fun Settings(page: SettingsPage) {
+    private fun Settings(
+        page: SettingsPage,
+        signedIn: Boolean = false,
+        confirm: SettingsConfirmDialog =
+            SettingsConfirmDialog.None,
+    ) {
         SettingsScreen(
             settings = settings,
             appVersion = "0.7.0-m7",
-            isSignedIn = false,
+            isSignedIn = signedIn,
+            initialConfirm = confirm,
             hasAppHistory = true,
             initialPage = page,
             onAppearance = {},

@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -23,9 +24,8 @@ import app.rosaryguide.core.designsystem.component.LocalReduceMotion
 import app.rosaryguide.core.designsystem.theme.RosaryHex
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.LottieCompositionFactory
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
-import com.airbnb.lottie.compose.rememberLottieComposition
 import kotlinx.coroutines.delay
 
 /** Marian blue canvas. Lottie plays at 1.4×; Reduce Motion shows a serif “R” and finishes at 0.8s. */
@@ -38,11 +38,13 @@ private const val PLAY_CAP_MS = 6_000L
 fun LaunchSplashScreen(
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
+    previewProgress: Float? = null,
 ) {
-    val reduceMotion = LocalReduceMotion.current
-    val composition by rememberLottieComposition(
-        LottieCompositionSpec.Asset("rosary_loader_intro_dark.json"),
-    )
+    val reduceMotion = LocalReduceMotion.current && previewProgress == null
+    val context = LocalContext.current
+    val composition = remember(context) {
+        LottieCompositionFactory.fromAssetSync(context, "rosary_loader_intro_dark.json").value
+    }
     val progress = animateLottieCompositionAsState(
         composition = composition,
         iterations = 1,
@@ -52,6 +54,7 @@ fun LaunchSplashScreen(
     )
     var finished by remember { mutableStateOf(false) }
     fun finish() {
+        if (previewProgress != null) return
         if (!finished) {
             finished = true
             onFinished()
@@ -106,7 +109,7 @@ fun LaunchSplashScreen(
         } else if (composition != null) {
             LottieAnimation(
                 composition = composition,
-                progress = { progress.progress },
+                progress = { previewProgress ?: progress.progress },
                 modifier = Modifier.size(280.dp),
             )
         }
