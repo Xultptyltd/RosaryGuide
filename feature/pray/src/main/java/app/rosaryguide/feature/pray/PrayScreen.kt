@@ -50,6 +50,12 @@ import app.rosaryguide.core.model.RosaryConfig
 import app.rosaryguide.core.model.RosaryStep
 import app.rosaryguide.core.model.RosaryStepKind
 import app.rosaryguide.feature.settings.CustomiseRosaryScreen
+import androidx.compose.runtime.snapshotFlow
+import app.rosaryguide.core.data.motion.ScrollMorph
+import app.rosaryguide.core.designsystem.component.LocalReduceMotion
+import app.rosaryguide.core.designsystem.theme.MotionTokens
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.animate
 
 data class PrayLaunch(
     val mysterySet: MysterySetKind,
@@ -100,6 +106,11 @@ fun PrayScreen(
     var showComposer by remember { mutableStateOf(false) }
     var confirmReplace by remember { mutableStateOf(launch.showReplaceDialog) }
     val prayerScroll = rememberScrollState()
+    val reduceMotion = LocalReduceMotion.current
+    var actionLocked by remember { mutableStateOf(false) }
+    var arrowArmed by remember { mutableStateOf(false) }
+    var lastDragAtMs by remember { mutableStateOf(0L) }
+    val showScrollCircle = prayerScroll.maxValue > ScrollMorph.minimumOffset && !actionLocked
     val scope = rememberCoroutineScope()
 
 
@@ -157,7 +168,24 @@ fun PrayScreen(
     }
 
     LaunchedEffect(index, showingIntentionStep) {
+        actionLocked = false
+        arrowArmed = false
         prayerScroll.scrollTo(0)
+    }
+
+    LaunchedEffect(prayerScroll) {
+        var lastY = prayerScroll.value
+        snapshotFlow { prayerScroll.value to prayerScroll.maxValue }.collect { (value, max) ->
+            val y = value.toFloat()
+            val maxOffset = max.toFloat()
+            if (kotlin.math.abs(value - lastY) > 0.5f && !arrowArmed) {
+                lastDragAtMs = System.currentTimeMillis()
+            }
+            lastY = value
+            val next = ScrollMorph.resolve(actionLocked, arrowArmed, y, maxOffset)
+            if (next.locked != actionLocked) actionLocked = next.locked
+            if (next.armed != arrowArmed) arrowArmed = next.armed
+        }
     }
 
 
@@ -379,8 +407,20 @@ fun PrayScreen(
                             onCompleteDecade = { completeDecade() },
                             onLanguageChange = { language = it },
                             modifier = Modifier.navigationBarsPadding(),
-                            showScroll = prayerScroll.canScrollForward,
-                            onScroll = { scope.launch { prayerScroll.animateScrollTo(prayerScroll.maxValue) } },
+                            showScroll = showScrollCircle,
+                            resetKey = index,
+                            onScroll = {
+                                val now = System.currentTimeMillis()
+                                if (now - lastDragAtMs > 250L) {
+                                    val maxOffset = prayerScroll.maxValue
+                                    arrowArmed = (maxOffset - prayerScroll.value) > ScrollMorph.minimumOffset
+                                    actionLocked = true
+                                    scope.launch {
+                                        prayerScroll.animateScrollTo(maxOffset)
+                                        arrowArmed = false
+                                    }
+                                }
+                            },
                         )
                     }
                 }

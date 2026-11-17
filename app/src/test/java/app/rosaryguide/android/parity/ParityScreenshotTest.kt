@@ -71,6 +71,14 @@ import app.rosaryguide.feature.onboarding.OnboardingScreen
 import app.rosaryguide.feature.onboarding.SignInScreen
 import app.rosaryguide.core.model.AppIconOption
 import org.robolectric.annotation.GraphicsMode
+import app.rosaryguide.feature.pray.GuideScrollActionButton
+import app.rosaryguide.feature.pray.PrayActionFooter
+import app.rosaryguide.core.model.PrayerLanguage
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.RosarySpace
 
 /**
  * JVM / Robolectric screenshots at Pixel 7 size (1080×2400, 420 dpi).
@@ -176,6 +184,17 @@ class ParityScreenshotTest {
 
     @Test fun prayOpeningLight() = shot("pray-opening", dark = false) { Pray(openingLaunch()) }
     @Test fun prayOpeningDark() = shot("pray-opening", dark = true) { Pray(openingLaunch()) }
+
+    @Test fun scrollCircleStartLight() = shot("scroll-circle-start", dark = false) { ScrollCircle(showScroll = true) }
+    @Test fun scrollCircleStartDark() = shot("scroll-circle-start", dark = true) { ScrollCircle(showScroll = true) }
+    @Test fun scrollCircleMidLight() = shot("scroll-circle-mid", dark = false) { ScrollCircle(showScroll = false, progress = 0.35f) }
+    @Test fun scrollCircleMidDark() = shot("scroll-circle-mid", dark = true) { ScrollCircle(showScroll = false, progress = 0.35f) }
+    @Test fun scrollCircleMid2Light() = shot("scroll-circle-mid2", dark = false) { ScrollCircle(showScroll = false, progress = 0.7f) }
+    @Test fun scrollCircleMid2Dark() = shot("scroll-circle-mid2", dark = true) { ScrollCircle(showScroll = false, progress = 0.7f) }
+    @Test fun scrollCircleEndLight() = shot("scroll-circle-end", dark = false) { ScrollCircle(showScroll = false) }
+    @Test fun scrollCircleEndDark() = shot("scroll-circle-end", dark = true) { ScrollCircle(showScroll = false) }
+    @Test fun scrollCirclePairEndLight() = shot("scroll-circle-pair-end", dark = false) { ScrollCircleFooter(showScroll = false, showCompleteDecade = true) }
+    @Test fun scrollCirclePairEndDark() = shot("scroll-circle-pair-end", dark = true) { ScrollCircleFooter(showScroll = false, showCompleteDecade = true) }
 
     @Test fun prayIntentionsLight() = shot("pray-intentions", dark = false) { Pray(intentionLaunch(), emptyKeepList = true) }
     @Test fun prayIntentionsDark() = shot("pray-intentions", dark = true) { Pray(intentionLaunch(), emptyKeepList = true) }
@@ -314,6 +333,49 @@ class ParityScreenshotTest {
         composeRule.onRoot().captureRoboImage("$OUT/$stem-$suffix.png")
     }
 
+
+    @Composable
+    private fun ScrollCircle(showScroll: Boolean, progress: Float? = null) {
+        val palette = LocalThemePalette.current
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(palette.prayBg)
+                .padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg),
+            contentAlignment = androidx.compose.ui.Alignment.BottomEnd,
+        ) {
+            GuideScrollActionButton(
+                showScroll = showScroll,
+                title = "Next",
+                onScroll = {},
+                onAdvance = {},
+                morphProgressOverride = progress,
+            )
+        }
+    }
+
+    @Composable
+    private fun ScrollCircleFooter(showScroll: Boolean, showCompleteDecade: Boolean) {
+        val palette = LocalThemePalette.current
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(palette.prayBg),
+            contentAlignment = androidx.compose.ui.Alignment.BottomCenter,
+        ) {
+            PrayActionFooter(
+                nextTitle = "Next",
+                showCompleteDecade = showCompleteDecade,
+                showLanguage = true,
+                language = PrayerLanguage.English,
+                onNext = {},
+                onCompleteDecade = {},
+                onLanguageChange = {},
+                showScroll = showScroll,
+                resetKey = "shot",
+            )
+        }
+    }
 
     @Composable
     private fun Pushed(title: String, content: @Composable () -> Unit) {
