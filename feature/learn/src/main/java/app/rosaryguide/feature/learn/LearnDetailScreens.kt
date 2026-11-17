@@ -53,6 +53,10 @@ import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.model.MysterySetKind
 import app.rosaryguide.core.model.Prayer
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 
 @Composable
 fun LearnArticleScreen(article: LearnArticle, modifier: Modifier = Modifier) {
@@ -97,8 +101,6 @@ fun PrayerReaderScreen(prayer: Prayer, modifier: Modifier = Modifier) {
         }
         if (prayer.text.hasDistinctLatin) {
             Spacer(Modifier.height(RosarySpace.lg))
-            Text("Prayer language", style = RosaryType.caption, color = palette.dim)
-            Spacer(Modifier.height(RosarySpace.sm))
             val options = listOf(PrayerLanguage.English, PrayerLanguage.Latin, PrayerLanguage.Bilingual)
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 options.forEachIndexed { index, option ->
@@ -197,21 +199,43 @@ fun MysterySetScreen(
                             .padding(vertical = RosarySpace.lg),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            text = "${index + 1}",
-                            style = RosaryType.caption,
-                            color = palette.dim,
-                            modifier = Modifier.width(24.dp),
-                        )
-                        Text(
-                            text = mystery.title.english,
-                            style = RosaryType.headingSecondary,
-                            color = palette.ink,
-                            modifier = Modifier.weight(1f),
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .border(1.dp, palette.strokeRegular, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = "${index + 1}",
+                                style = RosaryType.caption,
+                                color = palette.dim,
+                            )
+                        }
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = RosarySpace.md, end = RosarySpace.sm),
+                        ) {
+                            Text(
+                                text = mystery.title.english,
+                                style = RosaryType.headingSecondary,
+                                color = palette.ink,
+                            )
+                            val fruit = mystery.fruit.english
+                            if (fruit.isNotBlank() && !isOpen) {
+                                Spacer(Modifier.height(2.dp))
+                                Text(text = fruit, style = RosaryType.supportingLabel, color = palette.dim)
+                            }
+                        }
+                        Icon(
+                            imageVector = if (isOpen) Icons.Filled.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = if (isOpen) "Collapse" else "Expand",
+                            tint = palette.dim,
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                     if (isOpen) {
-                        Column(Modifier.padding(start = 24.dp, bottom = RosarySpace.lg)) {
+                        Column(Modifier.padding(start = 40.dp, bottom = RosarySpace.lg)) {
                             if (mystery.summary.isNotBlank()) {
                                 Text(mystery.summary, style = RosaryType.supportingLabel, color = palette.dim)
                                 Spacer(Modifier.height(RosarySpace.xs))

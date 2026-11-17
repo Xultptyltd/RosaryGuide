@@ -502,7 +502,7 @@ private fun AppTabs(
             composable<PrayerRoute> { entry ->
                 val route = entry.toRoute<PrayerRoute>()
                 val prayer = PrayerCatalog.prayer(route.id) ?: return@composable
-                DetailScaffold(title = prayer.title.english, onBack = { navController.popBackStack() }) {
+                DetailScaffold(title = "", onBack = { navController.popBackStack() }) {
                     PrayerReaderScreen(prayer)
                 }
             }

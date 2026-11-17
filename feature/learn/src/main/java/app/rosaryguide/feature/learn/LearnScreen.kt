@@ -72,6 +72,7 @@ fun LearnScreen(
     startWalkthrough: Boolean = false,
     modifier: Modifier = Modifier,
     initialQuery: String = "",
+    initialExpandedArticleId: String? = null,
 ) {
     val palette = LocalThemePalette.current
     var query by remember { mutableStateOf(initialQuery) }
@@ -147,7 +148,7 @@ fun LearnScreen(
                     PrayersTiles(onRosaryPrayers = onRosaryPrayers, onAllPrayers = onAllPrayers)
                     Spacer(Modifier.height(RosarySpace.xl))
                     GuideSectionLabel(text = LearnCopy.COMMON_QUESTIONS)
-                    QuestionsAccordion(articles)
+                    QuestionsAccordion(articles, initialExpandedArticleId)
                     Spacer(Modifier.height(RosarySpace.xl))
                     PrayTodayCard(title = todaySetTitle, resumeCta = resumeCta, onPray = if (resumeCta != null) onResumeRosary else onBeginRosary)
                 }
@@ -293,9 +294,9 @@ private fun PrayerTile(title: String, subtitle: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun QuestionsAccordion(articles: List<LearnArticle>) {
+private fun QuestionsAccordion(articles: List<LearnArticle>, initialExpandedArticleId: String? = null) {
     val palette = LocalThemePalette.current
-    var expandedId by remember { mutableStateOf<String?>(null) }
+    var expandedId by remember { mutableStateOf(initialExpandedArticleId) }
     val shape = RoundedCornerShape(RosarySpace.containerRadius)
     Column(
         modifier = Modifier
