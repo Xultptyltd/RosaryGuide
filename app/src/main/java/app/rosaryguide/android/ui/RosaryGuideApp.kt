@@ -13,12 +13,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Icon
+import app.rosaryguide.feature.onboarding.SignInTransitionScreen
+import app.rosaryguide.core.model.AppearancePreference
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -140,7 +147,7 @@ fun RosaryGuideApp(
                 context.packageManager.getPackageInfo(context.packageName, 0).versionName
             }.getOrNull().orEmpty().ifBlank { "0.7.0-m7" }
         }
-        var showSplash by remember { mutableStateOf(!debugLaunch.skipSplash) }
+        var showSplash by remember { mutableStateOf(debugLaunch.holdSplash || !debugLaunch.skipSplash) }
         var showSignIn by remember { mutableStateOf(debugLaunch.forceSignIn) }
         var prayLaunch by remember { mutableStateOf<PrayLaunch?>(null) }
         var showSettings by remember {
@@ -167,6 +174,11 @@ fun RosaryGuideApp(
         }
         var showWelcomeReplay by remember { mutableStateOf(false) }
         var consumeForceOnboarding by remember { mutableStateOf(false) }
+        androidx.compose.runtime.LaunchedEffect(debugLaunch) {
+            showSplash = debugLaunch.holdSplash || !debugLaunch.skipSplash
+            showSignIn = debugLaunch.forceSignIn
+            consumeForceOnboarding = false
+        }
         var signInOrigin by remember { mutableStateOf<NavigationIa.SignInOrigin?>(null) }
         var tabsResetKey by remember { mutableIntStateOf(0) }
 
@@ -246,7 +258,7 @@ fun RosaryGuideApp(
                     debugLaunch = debugLaunch,
                     today = today,
                     prayedDayKeys = prayedDayKeys,
-                    hasAskedForNotifications = flags.askedForNotifications,
+                    hasAskedForNotifications = flags.askedForNotifications || debugLaunch.forceTabs,
                     onAskedForNotifications = viewModel::markAskedForNotifications,
                     onPray = { openPray(it) },
                     onResumePray = { openPray(it, isResume = true) },
@@ -270,6 +282,8 @@ fun RosaryGuideApp(
                         settingsPage = SettingsPage.Root
                         showSettings = true
                     },
+                    appearance = settings.appearance,
+                    onAppearance = { viewModel.settingsStore.setAppearance(it) },
                 )
                 }
             } else if (firstRunSignIn) {
@@ -296,7 +310,10 @@ fun RosaryGuideApp(
             }
 
             if (showSplash) {
-                LaunchSplashScreen(onFinished = { showSplash = false })
+                LaunchSplashScreen(onFinished = { showSplash = false }, hold = debugLaunch.holdSplash)
+            }
+            if (debugLaunch.holdSignInTransition) {
+                SignInTransitionScreen(onSkip = { })
             }
 
             prayLaunch?.let { launch ->
@@ -408,6 +425,8 @@ private fun AppTabs(
     isSignedIn: Boolean = false,
     onSignIn: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    appearance: AppearancePreference = AppearancePreference.System,
+    onAppearance: (AppearancePreference) -> Unit = {},
 ) {
     val navController = rememberNavController()
     val palette = LocalThemePalette.current
@@ -444,12 +463,16 @@ private fun AppTabs(
     val density = LocalDensity.current
     val fontScale = density.fontScale
     var tabBarHeight by remember { mutableStateOf(80.dp) }
-    val tabClearance = if (fontScale >= 1.6f) maxOf(tabBarHeight, 148.dp) else tabBarHeight
+    val tabClearance = if (fontScale >= 1.6f) maxOf(tabBarHeight, RosarySpace.tabBarContentClearance) else tabBarHeight
+    val onToday = destination?.hierarchy?.any { it.hasRoute(TodayRoute::class) } == true
+    val tabInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).let { horizontal ->
+        if (onToday) horizontal else horizontal.union(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(palette.bg)
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)),
+            .background(if (onToday) palette.groupedBackground else palette.bg)
+            .windowInsetsPadding(tabInsets),
     ) {
         val reduceMotion = LocalReduceMotion.current
         Box(
@@ -487,6 +510,10 @@ private fun AppTabs(
                     onResumePray = onResumePray,
                     onPrayDecade = onPrayDecade,
                     resumableCta = resumeCta,
+                    openWeekFeastSheet = debugLaunch.openWeekFeastSheet,
+                    openMysteryDetailSheet = debugLaunch.openMysteryDetailSheet,
+                    appearance = appearance,
+                    onAppearance = onAppearance,
                 )
             }
             composable<LearnRoute> {
@@ -583,50 +610,53 @@ private fun AppTabs(
             }
         }
         }
-        NavigationBar(
+        Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(start = RosarySpace.gutter, end = RosarySpace.gutter, bottom = RosarySpace.sm)
+                .fillMaxWidth()
                 .onSizeChanged { size ->
                     if (size.height > 0) {
-                        val measured = with(density) { size.height.toDp() }
+                        val measured = with(density) { size.height.toDp() + RosarySpace.sm + 24.dp }
                         if (measured > tabBarHeight) tabBarHeight = measured
                     }
-                },
-            containerColor = palette.groupedBackground,
-            windowInsets = WindowInsets.safeDrawing.only(
-                WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
-            ),
+                }
+                .clip(RoundedCornerShape(percent = 50))
+                .background(if (palette.isDark) palette.surface else palette.background)
+                .padding(horizontal = RosarySpace.sm, vertical = RosarySpace.xs),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             tabs.forEach { tab ->
                 val selected = destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true
-                NavigationBarItem(
-                    selected = selected,
-                    onClick = {
-                        navController.navigate(tab.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(if (selected && !palette.isDark) palette.groupedBackground else androidx.compose.ui.graphics.Color.Transparent)
+                        .clickable {
+                            navController.navigate(tab.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
-                    },
-                    icon = {
-                        Icon(
-                            painter = painterResource(if (selected) tab.selectedIcon else tab.unselectedIcon),
-                            contentDescription = tab.tab.title,
-                        )
-                    },
-                    label = {
-                        Text(text = tab.tab.title, style = RosaryType.caption.copy(fontSize = 12.sp))
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = palette.tabSelected,
-                        selectedTextColor = palette.tabSelected,
-                        unselectedIconColor = palette.textSecondary,
-                        unselectedTextColor = palette.textSecondary,
-                        indicatorColor = palette.accent.copy(alpha = 0.12f),
-                    ),
-                )
+                        .padding(vertical = RosarySpace.sm),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(
+                        painter = painterResource(if (selected) tab.selectedIcon else tab.unselectedIcon),
+                        contentDescription = tab.tab.title,
+                        tint = if (selected) palette.tabSelected else palette.textSecondary,
+                    )
+                    Text(
+                        text = tab.tab.title,
+                        style = RosaryType.caption.copy(fontSize = 12.sp),
+                        color = if (selected) palette.tabSelected else palette.textSecondary,
+                    )
+                }
             }
         }
     }

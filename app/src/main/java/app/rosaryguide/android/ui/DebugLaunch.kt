@@ -46,6 +46,10 @@ data class DebugLaunch(
     val openAppIcon: Boolean = false,
     val openLegal: Boolean = false,
     val openAcknowledgements: Boolean = false,
+    val holdSplash: Boolean = false,
+    val holdSignInTransition: Boolean = false,
+    val openWeekFeastSheet: Boolean = false,
+    val openMysteryDetailSheet: Boolean = false,
 ) {
     companion object {
         fun from(intent: Intent?): DebugLaunch {
@@ -101,6 +105,10 @@ data class DebugLaunch(
                 openAppIcon = flag("open_app_icon"),
                 openLegal = flag("open_legal") || flag("open_terms"),
                 openAcknowledgements = flag("open_acknowledgements"),
+                holdSplash = flag("hold_splash"),
+                holdSignInTransition = flag("hold_sign_in_transition") || flag("hold_signin_transition"),
+                openWeekFeastSheet = flag("open_week_feast_sheet") || flag("week_feast_sheet"),
+                openMysteryDetailSheet = flag("open_mystery_detail_sheet") || flag("mystery_detail_sheet"),
             )
         }
     }

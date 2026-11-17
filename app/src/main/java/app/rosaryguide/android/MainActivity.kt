@@ -1,5 +1,6 @@
 package app.rosaryguide.android
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -7,6 +8,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import app.rosaryguide.android.ui.DebugLaunch
 import app.rosaryguide.android.ui.RosaryGuideApp
@@ -21,13 +24,15 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     @Inject lateinit var settingsStore: SettingsStore
 
+    private var debugLaunch by mutableStateOf(DebugLaunch())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
-        val debug = DebugLaunch.from(intent)
+        debugLaunch = DebugLaunch.from(intent)
         // Keep the system splash (Marian blue + app mark) up until the first Compose frame
         // so the handoff onto the same blue Lottie canvas has no white flash.
-        var keepSplash = !debug.skipSplash
+        var keepSplash = !debugLaunch.skipSplash
         splash.setKeepOnScreenCondition { keepSplash }
         enableEdgeToEdge()
         setContent {
@@ -43,10 +48,16 @@ class MainActivity : ComponentActivity() {
                 contrast = contrast,
             ) {
                 RosaryGuideApp(
-                    debugLaunch = debug,
+                    debugLaunch = debugLaunch,
                     onFirstFrame = { keepSplash = false },
                 )
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        debugLaunch = DebugLaunch.from(intent)
     }
 }

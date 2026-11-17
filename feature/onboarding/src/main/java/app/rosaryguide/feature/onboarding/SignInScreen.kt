@@ -60,15 +60,15 @@ fun SignInScreen(
                 .fillMaxWidth()
                 .weight(1f),
         ) {
-            val panelHeight = maxHeight * 0.5f
+            val panelHeight = RosarySpace.signInPanelHeight(maxHeight)
             val reduceMotion = LocalReduceMotion.current
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(horizontal = 24.dp)
+                    .padding(horizontal = RosarySpace.panelInset)
                     .fillMaxWidth()
                     .height(panelHeight)
-                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                    .clip(RoundedCornerShape(bottomStart = RosarySpace.panelRadius, bottomEnd = RosarySpace.panelRadius))
                     .background(ThemePalette.brandCanvas(palette.isDark)),
                 contentAlignment = Alignment.BottomCenter,
             ) {
@@ -89,17 +89,17 @@ fun SignInScreen(
         ) {
             Text(
                 text = OnboardingCopy.signInQuote,
-                style = RosaryType.serifTitle,
+                style = RosaryType.headingPrimary,
                 color = palette.ink,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.semantics {
                     contentDescription = OnboardingCopy.signInQuoteAccessibilityLabel
                 },
             )
-            Spacer(Modifier.height(RosarySpace.sm))
+            Spacer(Modifier.height(RosarySpace.md))
             Text(
                 text = OnboardingCopy.signInQuoteAttribution,
-                style = RosaryType.caption,
+                style = RosaryType.body,
                 color = palette.dim,
                 textAlign = TextAlign.Center,
             )
@@ -124,13 +124,13 @@ fun SignInScreen(
             val legal = buildAnnotatedString {
                 append(OnboardingCopy.LEGAL_PREFIX)
                 withLink(LinkAnnotation.Url(OnboardingCopy.TERMS_URL)) {
-                    withStyle(SpanStyle(color = palette.accentText, textDecoration = TextDecoration.Underline)) {
+                    withStyle(SpanStyle(color = palette.ink, textDecoration = TextDecoration.Underline)) {
                         append(OnboardingCopy.TERMS_LABEL)
                     }
                 }
                 append(" and ")
                 withLink(LinkAnnotation.Url(OnboardingCopy.PRIVACY_URL)) {
-                    withStyle(SpanStyle(color = palette.accentText, textDecoration = TextDecoration.Underline)) {
+                    withStyle(SpanStyle(color = palette.ink, textDecoration = TextDecoration.Underline)) {
                         append(OnboardingCopy.PRIVACY_LABEL)
                     }
                 }

@@ -142,8 +142,6 @@ fun IntentionEditorScreen(
     var accent by remember { mutableStateOf(existing?.accent ?: IntentionCategory.Personal.defaultAccent) }
     var emoji by remember { mutableStateOf(existing?.displayEmoji ?: "🙏") }
     var pinned by remember { mutableStateOf(existing?.isPinned ?: false) }
-    var showIconPicker by remember { mutableStateOf(false) }
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -221,21 +219,6 @@ fun IntentionEditorScreen(
             }
         }
         Spacer(Modifier.height(RosarySpace.lg))
-        GuideSectionLabel(text = "Icon")
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(RosarySpace.containerRadius))
-                .background(palette.surface)
-                .clickable { showIconPicker = true }
-                .padding(RosarySpace.md),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(emoji, style = RosaryType.headingSecondary)
-            Spacer(Modifier.width(RosarySpace.md))
-            Text("Choose icon", style = RosaryType.body, color = palette.ink)
-        }
-        Spacer(Modifier.height(RosarySpace.lg))
         Text(
             text = if (pinned) "Pinned for your next Rosary" else "Pin for your next Rosary",
             style = RosaryType.body,
@@ -260,60 +243,8 @@ fun IntentionEditorScreen(
             },
         )
     }
-
-    if (showIconPicker) {
-        ModalBottomSheet(
-            onDismissRequest = { showIconPicker = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
-            containerColor = palette.bg,
-        ) {
-            IntentionIconPickerSheet(
-                selected = emoji,
-                onSelect = {
-                    emoji = it
-                    showIconPicker = false
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(horizontal = RosarySpace.gutter)
-                    .padding(bottom = RosarySpace.xl),
-            )
-        }
-    }
 }
 
-@Composable
-fun IntentionIconPickerSheet(
-    selected: String,
-    onSelect: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val palette = LocalThemePalette.current
-    Column(modifier = modifier) {
-        Text("Choose icon", style = RosaryType.headingSecondary, color = palette.ink)
-        Spacer(Modifier.height(RosarySpace.lg))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(RosarySpace.sm),
-            verticalArrangement = Arrangement.spacedBy(RosarySpace.sm),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            INTENTION_EMOJIS.forEach { item ->
-                val isSelected = selected == item
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(if (isSelected) palette.accentTint else palette.surface)
-                        .clickable { onSelect(item) },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(item, style = RosaryType.body)
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun IntentionDetailScreen(

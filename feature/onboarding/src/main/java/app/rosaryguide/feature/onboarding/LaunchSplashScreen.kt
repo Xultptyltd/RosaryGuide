@@ -39,6 +39,7 @@ fun LaunchSplashScreen(
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
     previewProgress: Float? = null,
+    hold: Boolean = false,
 ) {
     val reduceMotion = LocalReduceMotion.current && previewProgress == null
     val context = LocalContext.current
@@ -54,7 +55,7 @@ fun LaunchSplashScreen(
     )
     var finished by remember { mutableStateOf(false) }
     fun finish() {
-        if (previewProgress != null) return
+        if (previewProgress != null || hold) return
         if (!finished) {
             finished = true
             onFinished()
@@ -110,7 +111,7 @@ fun LaunchSplashScreen(
             LottieAnimation(
                 composition = composition,
                 progress = { previewProgress ?: progress.progress },
-                modifier = Modifier.size(280.dp),
+                modifier = Modifier.size(144.dp),
             )
         }
     }

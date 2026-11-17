@@ -17,6 +17,23 @@ import app.rosaryguide.core.model.Mystery
 import app.rosaryguide.core.model.MysterySetKind
 import app.rosaryguide.core.model.OrdinalWord
 import kotlinx.coroutines.launch
+
+import android.content.Intent
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import app.rosaryguide.core.designsystem.theme.RosaryFonts
+import app.rosaryguide.core.model.AppearancePreference
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -100,20 +117,29 @@ fun TodayScreen(
     hasAskedForNotifications: Boolean = true,
     onAskedForNotifications: () -> Unit = {},
     onPrayDecade: (MysterySetKind, Int) -> Unit = { set, _ -> onPray(set) },
+    openWeekFeastSheet: Boolean = false,
+    openMysteryDetailSheet: Boolean = false,
+    appearance: AppearancePreference = AppearancePreference.System,
+    onAppearance: (AppearancePreference) -> Unit = {},
 ) {
     val palette = LocalThemePalette.current
+    val context = LocalContext.current
     val firstWeekday = WeekStart.firstWeekday()
-    var selected by remember(today) { mutableStateOf(today) }
-    val assignment = remember(selected) { MysteryCalendar.assignment(selected) }
+    val assignment = remember(today) { MysteryCalendar.assignment(today) }
     val week = remember(today, firstWeekday) { MysteryCalendar.week(today, firstWeekday) }
     val upcoming = remember(today) { FeastCatalog.upcoming(today, limit = 8) }
     val featured = upcoming.firstOrNull()
     val rest = if (featured == null) emptyList() else upcoming.drop(1).take(2)
-    val isToday = selected == today
+    var selectedSet by remember { mutableStateOf<MysterySetKind?>(null) }
+    var prefersWeekday by remember { mutableStateOf(false) }
+    val currentSet = assignment.shownSet(selectedSet, prefersWeekday)
+    val todaysSet = assignment.defaultSet(prefersWeekday)
+    val isShowingTodayMysteries = currentSet == todaysSet
     var weekFeast by remember { mutableStateOf<DatedFeast?>(null) }
     var pendingFeastDetail by remember { mutableStateOf<DatedFeast?>(null) }
     var showMysterySheet by remember { mutableStateOf(false) }
     var lastMysteryIndex by remember { mutableIntStateOf(0) }
+    var showAppearanceMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(weekFeast, pendingFeastDetail) {
         val pending = pendingFeastDetail
@@ -122,106 +148,281 @@ fun TodayScreen(
             pendingFeastDetail = null
         }
     }
+    LaunchedEffect(openWeekFeastSheet, today) {
+        if (openWeekFeastSheet && weekFeast == null) {
+            val target = LocalDate.of(2026, 11, 21)
+            weekFeast = FeastCatalog.upcoming(today, limit = 20).firstOrNull {
+                it.date == target || it.feast.id.contains("presentation", ignoreCase = true)
+            } ?: FeastCatalog.upcoming(today, limit = 8).firstOrNull()
+        }
+    }
+    LaunchedEffect(openMysteryDetailSheet) {
+        if (openMysteryDetailSheet) {
+            lastMysteryIndex = 0
+            showMysterySheet = true
+        }
+    }
 
     NotificationPermissionEffect(
         hasAsked = hasAskedForNotifications,
         onAsked = onAskedForNotifications,
     )
 
-    Box(modifier = modifier.fillMaxSize().background(palette.bg)) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(bottom = RosarySpace.xxl),
-    ) {
-        GuideScreenHeader(
-            title = "Today",
-            modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg),
-        )
+    val dateLabel = today.format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.forLanguageTag("en-AU")))
+    val ctaTitle = when {
+        isShowingTodayMysteries && resumableCta != null -> resumableCta
+        isShowingTodayMysteries && today.toString() in prayedDayKeys -> HomeCopy.PRAY_AGAIN
+        isShowingTodayMysteries -> HomeCopy.PRAY_TODAYS_MYSTERIES
+        else -> HomeCopy.prayTheMysteries(currentSet)
+    }
+    val mysteries = MysteryCatalog.mysteries(currentSet)
+    val railTitle = if (isShowingTodayMysteries) "Today's mysteries" else currentSet.titleText.english
 
-        MysteryCard(
-            setName = assignment.set.shortName,
-            reason = assignment.reason,
-            heroName = ArtCatalog.heroName(assignment.set),
-            onClick = { showMysterySheet = true },
-            modifier = Modifier.padding(horizontal = RosarySpace.gutter),
-        )
+    BoxWithConstraints(modifier = modifier.fillMaxSize().background(palette.groupedBackground)) {
+        val pageWidth = maxWidth
+        val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        val heroBody = RosarySpace.homeHeroHeight(maxHeight)
+        val artworkTop = topInset * 0.6f
+        val heroHeight = heroBody + topInset + artworkTop
+        val titleSize = RosarySpace.homeTitleSizeSp(pageWidth.value)
+        val heroName = ArtCatalog.heroName(currentSet)
+        val heroRes = drawableIdByName(context, heroName)
 
-        Spacer(Modifier.height(RosarySpace.md))
-        GuidePrimaryButton(
-            title = when {
-                isToday && resumableCta != null -> resumableCta
-                isToday && today.toString() in prayedDayKeys -> HomeCopy.PRAY_AGAIN
-                isToday -> HomeCopy.PRAY_TODAYS_MYSTERIES
-                else -> HomeCopy.prayTheMysteries(assignment.set)
-            },
-            onClick = {
-                if (isToday && resumableCta != null) onResumePray(assignment.set) else onPray(assignment.set)
-            },
-            modifier = Modifier.padding(horizontal = RosarySpace.gutter),
-        )
-
-        Spacer(Modifier.height(RosarySpace.xl))
-        GuideSectionDivider(Modifier.padding(horizontal = RosarySpace.gutter))
-        Spacer(Modifier.height(RosarySpace.xl))
-
-        GuideSectionLabel(
-            text = HomeCopy.UPCOMING_FEAST_DAYS,
-            modifier = Modifier.padding(horizontal = RosarySpace.gutter),
-        )
-
-        if (featured != null) {
-            FeaturedFeastCard(
-                item = featured,
-                today = today,
-                onClick = { onFeastClick(featured) },
-                modifier = Modifier.padding(horizontal = RosarySpace.gutter),
-            )
-            Spacer(Modifier.height(RosarySpace.sm))
-        }
-        rest.forEach { item ->
-            FeastRow(
-                item = item,
-                onClick = { onFeastClick(item) },
-                modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.xs),
-            )
-        }
-        GuideOutlineButton(
-            title = HomeCopy.VIEW_ALL_FEASTS,
-            onClick = onViewAllFeasts,
-            modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.md),
-        )
-
-        Spacer(Modifier.height(RosarySpace.xl))
-        GuideSectionDivider(Modifier.padding(horizontal = RosarySpace.gutter))
-        Spacer(Modifier.height(RosarySpace.xl))
-        GuideSectionLabel(
-            text = HomeCopy.THIS_WEEK,
-            modifier = Modifier.padding(horizontal = RosarySpace.gutter),
-        )
-        week.forEachIndexed { index, (date, dayAssignment) ->
-            val isTodayRow = date == today
-            val nextIsToday = index < week.lastIndex && week[index + 1].first == today
-            WeekGlanceRow(
-                date = date,
-                assignment = dayAssignment,
-                isToday = isTodayRow,
-                prayed = date.toString() in prayedDayKeys,
-                onClick = {
-                    when (val action = NavigationIa.weekDayAction(date, dayAssignment.feast)) {
-                        is NavigationIa.WeekDayAction.SelectDay -> selected = action.date
-                        is NavigationIa.WeekDayAction.OpenWeekFeastSheet -> weekFeast = action.feast
-                    }
-                },
-                modifier = Modifier.padding(horizontal = RosarySpace.gutter),
-            )
-            if (index < week.lastIndex && !isTodayRow && !nextIsToday) {
-                androidx.compose.material3.HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = RosarySpace.gutter),
-                    color = palette.strokeSubtle,
-                    thickness = 1.dp,
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = RosarySpace.xxl),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(heroHeight)
+                    .background(palette.groupedBackground),
+            ) {
+                if (heroRes != 0) {
+                    Image(
+                        painter = painterResource(heroRes),
+                        contentDescription = "${currentSet.shortName} Mysteries",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = artworkTop)
+                            .height(heroBody + topInset)
+                            .align(Alignment.TopCenter),
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(heroHeight)
+                        .background(
+                            Brush.verticalGradient(
+                                0.00f to palette.groupedBackground.copy(alpha = if (palette.isDark) 0.34f else 0.18f),
+                                0.22f to Color.Transparent,
+                                0.64f to palette.groupedBackground.copy(alpha = 0.55f),
+                                0.86f to palette.groupedBackground,
+                                1.00f to palette.groupedBackground,
+                            ),
+                        ),
                 )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = topInset, end = RosarySpace.gutter),
+                ) {
+                    val chipLabel = if (palette.isDark) "Dark" else "Light"
+                    val chipIcon = if (palette.isDark) "☾" else "☀"
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(percent = 50))
+                            .background(
+                                if (palette.isDark) Color.White.copy(alpha = 0.12f)
+                                else Color.White.copy(alpha = 0.88f),
+                            )
+                            .clickable { showAppearanceMenu = true }
+                            .semantics { contentDescription = "Appearance" }
+                            .padding(horizontal = 14.dp)
+                            .heightIn(min = 44.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(chipIcon, style = RosaryType.caption.copy(fontWeight = FontWeight.Medium), color = palette.ink)
+                        Text(chipLabel, style = RosaryType.caption.copy(fontWeight = FontWeight.Medium), color = palette.ink)
+                    }
+                    DropdownMenu(
+                        expanded = showAppearanceMenu,
+                        onDismissRequest = { showAppearanceMenu = false },
+                    ) {
+                        AppearancePreference.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option.title, style = RosaryType.body) },
+                                onClick = {
+                                    onAppearance(option)
+                                    showAppearanceMenu = false
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .offset(y = -RosarySpace.homeSheetOverlap)
+                    .padding(horizontal = RosarySpace.gutter)
+                    .padding(top = RosarySpace.sm),
+            ) {
+                Text(text = dateLabel, style = RosaryType.caption, color = palette.dim)
+                Spacer(Modifier.height(RosarySpace.md))
+                Text(
+                    text = "${currentSet.shortName}\nMysteries",
+                    color = palette.ink,
+                    fontFamily = RosaryFonts.sans,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = titleSize.sp,
+                    lineHeight = (titleSize * RosarySpace.TitleLineHeight).sp,
+                    modifier = Modifier.semantics { contentDescription = "${currentSet.shortName} Mysteries" },
+                )
+                Spacer(Modifier.height(RosarySpace.md))
+                Text(
+                    text = currentSet.themeSummary,
+                    style = RosaryType.body.copy(lineHeight = 21.sp),
+                    color = palette.dim,
+                )
+                Spacer(Modifier.height(RosarySpace.xl))
+                MysterySetPicker(
+                    current = currentSet,
+                    todaySet = assignment.pickerDotSet,
+                    onSelect = { selectedSet = it },
+                )
+                Spacer(Modifier.height(RosarySpace.lg))
+                GuidePrimaryButton(
+                    title = ctaTitle,
+                    onClick = {
+                        if (isShowingTodayMysteries && resumableCta != null) onResumePray(currentSet) else onPray(currentSet)
+                    },
+                )
+                Spacer(Modifier.height(RosarySpace.xxl))
+                GuideSectionLabel(text = railTitle)
+                Spacer(Modifier.height(RosarySpace.sectionTitleGap))
+            }
+
+            val cardWidth = (pageWidth * RosarySpace.mysteryCardWidthFraction)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .offset(y = -RosarySpace.homeSheetOverlap)
+                    .padding(horizontal = RosarySpace.gutter)
+                    .padding(bottom = RosarySpace.sm),
+                horizontalArrangement = Arrangement.spacedBy(RosarySpace.md),
+            ) {
+                mysteries.forEachIndexed { index, mystery ->
+                    MysteryRailCard(
+                        mystery = mystery,
+                        fallbackArt = heroName,
+                        width = cardWidth,
+                        onClick = {
+                            lastMysteryIndex = index
+                            showMysterySheet = true
+                        },
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .offset(y = -RosarySpace.homeSheetOverlap)
+                    .padding(bottom = RosarySpace.xxl),
+            ) {
+                GuideSectionDivider(Modifier.padding(horizontal = RosarySpace.gutter))
+                Spacer(Modifier.height(RosarySpace.xl))
+                GuideSectionLabel(
+                    text = HomeCopy.UPCOMING_FEAST_DAYS,
+                    modifier = Modifier.padding(horizontal = RosarySpace.gutter),
+                )
+                if (featured != null) {
+                    FeaturedFeastCard(
+                        item = featured,
+                        today = today,
+                        onClick = { onFeastClick(featured) },
+                        modifier = Modifier.padding(horizontal = RosarySpace.gutter),
+                    )
+                    Spacer(Modifier.height(RosarySpace.sm))
+                }
+                rest.forEach { item ->
+                    FeastRow(
+                        item = item,
+                        onClick = { onFeastClick(item) },
+                        modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.xs),
+                    )
+                }
+                GuideOutlineButton(
+                    title = HomeCopy.VIEW_ALL_FEASTS,
+                    onClick = onViewAllFeasts,
+                    modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.md),
+                )
+
+                Spacer(Modifier.height(RosarySpace.xl))
+                GuideSectionDivider(Modifier.padding(horizontal = RosarySpace.gutter))
+                Spacer(Modifier.height(RosarySpace.xl))
+                GuideSectionLabel(
+                    text = HomeCopy.THIS_WEEK,
+                    modifier = Modifier.padding(horizontal = RosarySpace.gutter),
+                )
+                week.forEachIndexed { index, (date, dayAssignment) ->
+                    val isTodayRow = date == today
+                    val nextIsToday = index < week.lastIndex && week[index + 1].first == today
+                    WeekGlanceRow(
+                        date = date,
+                        assignment = dayAssignment,
+                        isToday = isTodayRow,
+                        prayed = date.toString() in prayedDayKeys,
+                        onClick = {
+                            when (val action = NavigationIa.weekDayAction(date, dayAssignment.feast)) {
+                                is NavigationIa.WeekDayAction.SelectDay -> selectedSet = dayAssignment.set
+                                is NavigationIa.WeekDayAction.OpenWeekFeastSheet -> weekFeast = action.feast
+                            }
+                        },
+                        modifier = Modifier.padding(horizontal = RosarySpace.gutter),
+                    )
+                    if (index < week.lastIndex && !isTodayRow && !nextIsToday) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = RosarySpace.gutter),
+                            color = palette.strokeSubtle,
+                            thickness = 1.dp,
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(RosarySpace.xxl))
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(percent = 50))
+                            .background(palette.buttonTertiaryFill)
+                            .clickable {
+                                val send = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_SUBJECT, "Rosary Guide")
+                                    putExtra(
+                                        Intent.EXTRA_TEXT,
+                                        "I've been praying the Rosary with Rosary Guide. Take a look:\nhttps://rosaryguide.app",
+                                    )
+                                }
+                                context.startActivity(Intent.createChooser(send, "Share Rosary Guide"))
+                            }
+                            .padding(horizontal = RosarySpace.lg)
+                            .heightIn(min = 44.dp)
+                            .semantics { contentDescription = "Share Rosary Guide" },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("Share Rosary Guide", style = RosaryType.body, color = palette.buttonTertiaryText)
+                    }
+                }
             }
         }
     }
@@ -232,6 +433,7 @@ fun TodayScreen(
             onDismissRequest = { weekFeast = null },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
             containerColor = palette.bg,
+            shape = RoundedCornerShape(topStart = RosarySpace.containerRadius, topEnd = RosarySpace.containerRadius),
         ) {
             WeekFeastSheet(
                 item = feastForSheet,
@@ -248,18 +450,110 @@ fun TodayScreen(
             onDismissRequest = { showMysterySheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
             containerColor = palette.bg,
+            shape = RoundedCornerShape(topStart = RosarySpace.containerRadius, topEnd = RosarySpace.containerRadius),
         ) {
             MysteryDetailPagerSheet(
-                set = assignment.set,
+                set = currentSet,
                 initialIndex = lastMysteryIndex,
                 onIndexChanged = { lastMysteryIndex = it },
                 onPrayDecade = { decade ->
                     showMysterySheet = false
-                    onPrayDecade(assignment.set, decade)
+                    onPrayDecade(currentSet, decade)
                 },
             )
         }
     }
+}
+
+@Composable
+private fun MysterySetPicker(
+    current: MysterySetKind,
+    todaySet: MysterySetKind,
+    onSelect: (MysterySetKind) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = LocalThemePalette.current
+    val options = MysterySetKind.displayOrder
+    val track = if (palette.isDark) palette.surface else Color(0xFFDCDCDF)
+    val thumb = if (palette.isDark) Color(0xFF2C2C2E) else Color.White
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(44.dp)
+            .clip(RoundedCornerShape(percent = 50))
+            .background(track)
+            .semantics { contentDescription = "Mystery set" },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        options.forEach { set ->
+            val selected = current == set
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .padding(3.dp)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(if (selected) thumb else Color.Transparent)
+                    .clickable { onSelect(set) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (set == todaySet) {
+                        Box(
+                            modifier = Modifier
+                                .padding(bottom = 2.dp)
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(if (selected) palette.ink else palette.dim.copy(alpha = 0.45f)),
+                        )
+                    } else {
+                        Spacer(Modifier.height(6.dp))
+                    }
+                    Text(
+                        text = set.shortName,
+                        style = RosaryType.segmentedControl,
+                        color = palette.ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MysteryRailCard(
+    mystery: Mystery,
+    fallbackArt: String,
+    width: androidx.compose.ui.unit.Dp,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = LocalThemePalette.current
+    val context = LocalContext.current
+    val resId = drawableIdByName(context, mystery.artSlug).takeIf { it != 0 }
+        ?: drawableIdByName(context, fallbackArt)
+    Column(
+        modifier = modifier
+            .width(width)
+            .clip(RoundedCornerShape(RosarySpace.featureRadius))
+            .background(palette.cardSurface(PageStyle.Grouped))
+            .clickable(onClick = onClick),
+    ) {
+        if (resId != 0) {
+            Image(
+                painter = painterResource(resId),
+                contentDescription = mystery.title.english,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(RosarySpace.mysteryCardArtAspect),
+            )
+        }
+        Column(Modifier.padding(RosarySpace.lg)) {
+            Text(text = mystery.title.english, style = RosaryType.headingCard, color = palette.ink)
+        }
     }
 }
 
@@ -299,7 +593,7 @@ private fun MysteryCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(RosarySpace.featureRadius))
-            .background(palette.cardSurface(PageStyle.Plain))
+            .background(palette.cardSurface(PageStyle.Grouped))
             .clickable(onClick = onClick)
             .semantics { contentDescription = "$setName Mysteries" },
     ) {
@@ -340,7 +634,7 @@ private fun FeaturedFeastCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(RosarySpace.featureRadius))
-            .background(palette.cardSurface(PageStyle.Plain))
+            .background(palette.cardSurface(PageStyle.Grouped))
             .clickable(onClick = onClick),
     ) {
         if (resId != 0) {
@@ -617,7 +911,7 @@ private fun MysteryDetailPage(mystery: Mystery, contextName: String) {
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1.4f)
+                    .aspectRatio(RosarySpace.mysteryCardArtAspect)
                     .clip(RoundedCornerShape(RosarySpace.containerRadius)),
             )
             Spacer(Modifier.height(RosarySpace.xl))

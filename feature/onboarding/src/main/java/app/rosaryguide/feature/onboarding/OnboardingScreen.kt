@@ -1,6 +1,12 @@
 package app.rosaryguide.feature.onboarding
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.heightIn
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowCompat
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.runtime.DisposableEffect
+import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,6 +55,8 @@ fun OnboardingScreen(
     val scope = rememberCoroutineScope()
     val reduceMotion = LocalReduceMotion.current
 
+    HideStatusBarInLightMode()
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -67,9 +75,11 @@ fun OnboardingScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(min = RosarySpace.onboardingControlsHeight)
                 .padding(horizontal = RosarySpace.gutter)
                 .padding(bottom = RosarySpace.xl),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Bottom,
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -115,7 +125,7 @@ private fun OnboardingPageBody(page: OnboardingPage) {
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = RosarySpace.panelInset),
         ) {
             Image(
                 painter = painterResource(image),
@@ -124,7 +134,7 @@ private fun OnboardingPageBody(page: OnboardingPage) {
                 alignment = alignment,
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)),
+                    .clip(RoundedCornerShape(bottomStart = RosarySpace.panelRadius, bottomEnd = RosarySpace.panelRadius)),
             )
         }
         Column(
@@ -135,8 +145,27 @@ private fun OnboardingPageBody(page: OnboardingPage) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(text = page.title, style = RosaryType.headingPrimary, color = palette.ink, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(RosarySpace.sm))
+            Spacer(Modifier.height(RosarySpace.lg))
             Text(text = page.body, style = RosaryType.body, color = palette.dim, textAlign = TextAlign.Center)
+        }
+    }
+}
+
+@Composable
+private fun HideStatusBarInLightMode() {
+    val palette = LocalThemePalette.current
+    val view = LocalView.current
+    DisposableEffect(palette.isDark) {
+        val window = (view.context as? Activity)?.window
+        if (window == null) {
+            return@DisposableEffect onDispose { }
+        }
+        val controller = WindowCompat.getInsetsController(window, view)
+        if (!palette.isDark) {
+            controller.hide(WindowInsetsCompat.Type.statusBars())
+        }
+        onDispose {
+            controller.show(WindowInsetsCompat.Type.statusBars())
         }
     }
 }

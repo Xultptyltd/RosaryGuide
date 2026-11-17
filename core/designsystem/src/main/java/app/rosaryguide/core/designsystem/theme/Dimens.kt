@@ -20,6 +20,7 @@ object RosarySpace {
     val xl: Dp = 24.dp
     val xxl: Dp = 32.dp
     val section: Dp = 44.dp
+    val sectionTitleGap: Dp = 20.dp
     const val ScaleLimit = 1.5f
     val gutter: Dp = 16.dp
     val minHitTarget: Dp = 48.dp
@@ -29,6 +30,34 @@ object RosarySpace {
     val featureRadius: Dp = 24.dp
     val panelRadius: Dp = 32.dp
     val nestedRadius: Dp = 12.dp
+    val panelInset: Dp = 24.dp
+    val onboardingControlsHeight: Dp = 132.dp
+    val tabBarContentClearance: Dp = 108.dp
+    val sheetOverlap: Dp = 56.dp
+    val homeSheetOverlap: Dp = 36.dp
+    val mysteryCardWidthFraction = 0.85f
+    val mysteryCardArtAspect = 1.3f
+    const val TitleLineHeight = 1.02f
+
+    fun homeHeroHeight(viewport: Dp): Dp {
+        val raw = viewport * 0.46f
+        return minOf(maxOf(320.dp, raw), 464.dp)
+    }
+
+    /** clamp(43.2, width × 0.115, 56), with a 38.4 compact override at ≤ 376 dp. */
+    fun homeTitleSizeSp(widthDp: Float): Float {
+        if (widthDp <= 376f) return 38.4f
+        return (widthDp * 0.115f).coerceIn(43.2f, 56f)
+    }
+
+    fun signInPanelHeight(screenHeight: Dp, compact: Boolean = false): Dp {
+        val fraction = if (compact) {
+            if (screenHeight < 820.dp) 0.28f else 0.32f
+        } else {
+            if (screenHeight < 820.dp) 0.45f else 0.5f
+        }
+        return (screenHeight * fraction)
+    }
 }
 
 @Composable
