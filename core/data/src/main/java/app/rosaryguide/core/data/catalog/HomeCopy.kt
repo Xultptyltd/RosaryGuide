@@ -9,6 +9,7 @@ object HomeCopy {
     const val THIS_WEEK = "This week"
     const val VIEW_ALL_FEASTS = "View all feasts"
     const val PRAY_TODAYS_MYSTERIES = "Pray today's mysteries"
+    const val PRAY_AGAIN = "Pray again"
 
     fun prayTheMysteries(set: MysterySetKind): String =
         "Pray the ${set.shortName} Mysteries"

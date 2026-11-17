@@ -58,6 +58,7 @@ import app.rosaryguide.core.data.catalog.HomeCopy
 import app.rosaryguide.core.data.catalog.resolvedTagline
 import app.rosaryguide.core.data.notify.NotificationPrompt
 import app.rosaryguide.core.designsystem.component.CroppedArt
+import app.rosaryguide.core.designsystem.component.GuideOutlineButton
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideScreenHeader
 import app.rosaryguide.core.designsystem.component.GuideSectionDivider
@@ -133,6 +134,7 @@ fun TodayScreen(
         GuidePrimaryButton(
             title = when {
                 isToday && resumableCta != null -> resumableCta
+                isToday && today.toString() in prayedDayKeys -> HomeCopy.PRAY_AGAIN
                 isToday -> HomeCopy.PRAY_TODAYS_MYSTERIES
                 else -> HomeCopy.prayTheMysteries(assignment.set)
             },
@@ -144,42 +146,10 @@ fun TodayScreen(
         GuideSectionDivider(Modifier.padding(horizontal = RosarySpace.gutter))
         Spacer(Modifier.height(RosarySpace.xl))
 
-        val ax = isAccessibilitySize()
-        if (ax) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = RosarySpace.gutter),
-            ) {
-                GuideSectionLabel(text = HomeCopy.UPCOMING_FEAST_DAYS)
-                Text(
-                    text = HomeCopy.VIEW_ALL_FEASTS,
-                    style = RosaryType.caption,
-                    color = palette.accentText,
-                    modifier = Modifier
-                        .clickable(onClick = onViewAllFeasts)
-                        .padding(vertical = RosarySpace.sm),
-                )
-            }
-        } else {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = RosarySpace.gutter),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            GuideSectionLabel(text = HomeCopy.UPCOMING_FEAST_DAYS, modifier = Modifier)
-            Text(
-                text = HomeCopy.VIEW_ALL_FEASTS,
-                style = RosaryType.caption,
-                color = palette.accentText,
-                modifier = Modifier
-                    .clickable(onClick = onViewAllFeasts)
-                    .padding(vertical = RosarySpace.sm),
-            )
-        }
-        }
+        GuideSectionLabel(
+            text = HomeCopy.UPCOMING_FEAST_DAYS,
+            modifier = Modifier.padding(horizontal = RosarySpace.gutter),
+        )
 
         if (featured != null) {
             FeaturedFeastCard(
@@ -197,7 +167,14 @@ fun TodayScreen(
                 modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.xs),
             )
         }
+        GuideOutlineButton(
+            title = HomeCopy.VIEW_ALL_FEASTS,
+            onClick = onViewAllFeasts,
+            modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.md),
+        )
 
+        Spacer(Modifier.height(RosarySpace.xl))
+        GuideSectionDivider(Modifier.padding(horizontal = RosarySpace.gutter))
         Spacer(Modifier.height(RosarySpace.xl))
         GuideSectionLabel(
             text = HomeCopy.THIS_WEEK,
@@ -352,7 +329,8 @@ private fun FeastRow(
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalThemePalette.current
-    val date = item.date.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
+    val day = item.date.format(DateTimeFormatter.ofPattern("dd", Locale.getDefault()))
+    val month = item.date.format(DateTimeFormatter.ofPattern("MMM", Locale.getDefault())).uppercase(Locale.getDefault())
     val ax = isAccessibilitySize()
     val rowMod = modifier
         .fillMaxWidth()
@@ -361,7 +339,7 @@ private fun FeastRow(
         .padding(vertical = RosarySpace.sm)
     if (ax) {
         Column(modifier = rowMod) {
-            Text(text = date, style = RosaryType.supportingLabel, color = palette.dim)
+            Text(text = "$day $month", style = RosaryType.supportingLabel, color = palette.dim)
             Text(text = item.feast.shortTitle, style = RosaryType.body, color = palette.ink)
         }
     } else {
@@ -369,7 +347,13 @@ private fun FeastRow(
         modifier = rowMod,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = date, style = RosaryType.supportingLabel, color = palette.dim, modifier = Modifier.width(72.dp))
+        Column(
+            modifier = Modifier.width(44.dp).padding(end = RosarySpace.xs),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(text = day, style = RosaryType.headingSecondary, color = palette.ink)
+            Text(text = month, style = RosaryType.caption, color = palette.dim)
+        }
         Text(text = item.feast.shortTitle, style = RosaryType.body, color = palette.ink, modifier = Modifier.weight(1f))
     }
     }
