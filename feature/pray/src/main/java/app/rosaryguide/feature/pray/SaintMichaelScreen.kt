@@ -70,28 +70,43 @@ fun SaintMichaelScreen(
         ) {
             Text(
                 text = title?.resolved(language) ?: "Saint Michael the Archangel",
-                style = RosaryType.headingPrimary,
+                style = RosaryType.headingPrimaryPray,
                 color = palette.ink,
             )
             if (language != PrayerLanguage.Latin) {
                 title?.latin?.takeIf { it.isNotBlank() && it != title.english }?.let { latin ->
-                    Spacer(Modifier.height(RosarySpace.xs))
-                    Text(text = latin, style = RosaryType.body, color = palette.dim)
+                    Spacer(Modifier.height(RosarySpace.sm))
+                    Text(text = latin, style = RosaryType.themeSummary, color = palette.dim)
                 }
             }
-            Spacer(Modifier.height(RosarySpace.lg))
+            Spacer(Modifier.height(RosarySpace.xl))
             PrayerLanguageToggle(
                 language = language,
                 onChange = { language = it },
                 useFullTitles = true,
                 modifier = Modifier.fillMaxWidth(),
             )
+            // iOS PrayerReaderBlock: stack Space.xl plus prayerReader padding.vertical lg.
             Spacer(Modifier.height(RosarySpace.xl))
             body?.let { text ->
-                Text(text = text.primary(language), style = RosaryType.prayerText, color = palette.ink)
+                PrayerBody(
+                    text = text.primary(language),
+                    style = RosaryType.prayerTextMichael,
+                    color = palette.ink,
+                    paragraphGap = RosarySpace.xl,
+                    modifier = Modifier.padding(
+                        horizontal = RosarySpace.sm,
+                        vertical = RosarySpace.lg,
+                    ),
+                )
                 text.secondary(language)?.let { latin ->
-                    Spacer(Modifier.height(RosarySpace.md))
-                    Text(text = latin, style = RosaryType.serifItalicBody, color = palette.dim)
+                    PrayerBody(
+                        text = latin,
+                        style = RosaryType.prayerTextMichael,
+                        color = palette.dim,
+                        paragraphGap = RosarySpace.xl,
+                        modifier = Modifier.padding(horizontal = RosarySpace.sm),
+                    )
                 }
             }
             Spacer(Modifier.height(RosarySpace.xl))

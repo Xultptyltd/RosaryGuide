@@ -1,4 +1,4 @@
-# Visual parity status (22 Nov 2026, Roborazzi Pixel 7 chrome pass)
+# Visual parity status (22 Nov 2026, Pray typography pass)
 
 Reference: `/workspace/ios-parity-refs-v2/` (iPhone 17 Pro Max, 3×, 1320×2868 px = 440×956 pt, Dynamic Type Large, status bar 9:41, captured 17 Nov 2026 Australia/Perth).
 Android captures for onboarding/Today: Pixel 7 AVD `RosaryGuide_Pixel7` on the Mac (1080×2400, 2.625×, ≈411.4×914.3 dp), `en-AU`, `clock_date=2026-11-17`, demo-mode clock 9:41. Light onboarding is captured with **demo mode off** so a hidden status bar stays hidden.
@@ -25,21 +25,22 @@ Status values: `spec-written` · `captured` · `matched` · `mismatch` · `defer
 | profile-sign-in | Profile/Settings | deferred | | | | Same as `sign-in`, presented from Profile. |
 | today | Today | spec-written | captured | matched | user-approved | Date/title/CTA/“Today's mysteries” all within 1%. Appearance chip and tab bar use a translucent fill and hairline (glass approximation; no true backdrop blur). |
 | mystery-detail-sheet | Today | spec-written | captured | matched | user-approved | Fruit and CTA within 2%. Fruit is above the fold (760 dp cap). Sheet top is 3.3% higher because both sides cap at 760 on different frame heights (see table). |
-| pray-* / rosary-settings-sheet | Pray flow | spec-written | captured | close | | Roborazzi with Pixel 7 system chrome (Mac still offline). See per-screen rows and the Pray measurement section. |
-| pray-opening | Pray flow | spec-written | captured | close | | Roborazzi + insets. Next CTA bottom Δ 0.54%. Bead rail is padded by `Space.md` so the whole loop sits inside the margins. Language control is a custom capsule (raised thumb, no dividers). Dark crucifix pulse is captured mid-cycle as a large faint halo, not a tight blue circle. |
-| pray-intention-step | Pray flow | spec-written | captured | close | | Roborazzi + insets. Title Δ 0.41%; Next CTA bottom Δ 0.85%. Selected row now uses a filled accent circle with a white check, matching the iOS selected chip. |
-| pray-mystery-plate | Pray flow | spec-written | captured | close | | Roborazzi + insets. Art window now follows iOS `rosaryMysteryArtworkTopInset` / `0.58` bottom with `bandFocus` fill (Annunciation y = 0.51), so the whole composition sits on a plain backdrop with the dove under the header. Dark shots set the `+night` qualifier so `drawable-night-nodpi` is used. Header chips are 40 dp milky circles. Title Δ 0.50%; Fruit last ink Δ 0.49% (same-method). All landmarks within 2%. Still Roborazzi — recapture on the Mac before `matched`. |
-| pray-hail-mary-bead | Pray flow | spec-written | captured | close | | Roborazzi + insets. Next + Complete decade, bead highlight, and “1 of 10” match; CTA bottom Δ 0.54%. Same rail fit, capsule language control, and pulse phase as opening. |
-| pray-decade-end | Pray flow | spec-written | captured | close | | Roborazzi + insets. Fatima copy and bead locus match; CTA bottom Δ 0.54%. Same rail fit, capsule language control, and pulse phase as opening. |
-| pray-final-prayers | Pray flow | spec-written | captured | close | | Roborazzi + insets. Still the short-prayer Next pill, as on the Pro Max ref; CTA bottom Δ 0.54%. Same rail fit, capsule language control, and pulse phase as opening. |
-| pray-completion | Pray flow | spec-written | captured | close | | Roborazzi + insets. Hero art fills the leftover edge to edge with the iOS focus crop and fade (figures large, sides cropped, no lectern). 16 dp bottom inset gives Saint Michael breathing room above the gesture pill. Title “Joyful Mysteries” Δ 1.44%; ROSARY COMPLETE Δ 1.58%; tick Δ 1.88%; Done bottom Δ 0.37%; Saint Michael bottom Δ 0.71%. All landmarks within 2%. Quote `jp2-contemplate`. Still Roborazzi — recapture on the Mac before `matched`. |
-| pray-michael | Pray flow | spec-written | captured | close | | Roborazzi + insets. Labels are exactly “English”, “Latin”, “English + Latin”. Title Δ 1.26%; Done CTA bottom Δ 0.85%. Language control is a custom full-width capsule with a raised thumb, matching the iOS control (not M3 segmented). |
-| rosary-settings-sheet | Pray flow | spec-written | captured | close | | Roborazzi + insets. Rows sit in 20 dp-radius inset cards on `groupedBackground`, with ~8 dp grouped section gaps. Reset is pinned below the list; last-card-to-Reset gap is 7.6% of the frame (iOS ~6%). Rows use a 56 dp min height like iOS `profileRowHeight`. Done stays an M3 accent text button; switches stay M3 on-colour with a stronger off-track. Title Δ 1.75%, sheet edge Δ 1.53%. |
+| pray-* / rosary-settings-sheet | Pray flow | spec-written | captured | close | | Roborazzi with Pixel 7 system chrome (Mac still offline). Typography and spacing retuned to iOS TypeRole / Space this pass; see `docs/parity-v2/pray-typography.md` and the typography table below. Still `close` until a Mac recapture. |
+| pray-opening | Pray flow | spec-written | captured | close | | Roborazzi + insets. Body pitch 31.23 dp vs iOS 31.00 pt (Δ 0.23). Header progress is 12 pt medium (`progressLabel`), not 17. Next CTA bottom Δ 0.54%. Bead-header language control stays a 36 dp custom capsule. |
+| pray-intention-step | Pray flow | spec-written | captured | close | | Roborazzi + insets. Title-to-row ink gap Δ −0.19 dp after removing an extra 4 dp pad. Title Δ 0.41%; Next CTA bottom Δ 0.85%. |
+| pray-mystery-plate | Pray flow | spec-written | captured | close | | Roborazzi + insets. Scripture pitch 31.24 dp vs iOS 31.00 pt (Δ 0.24). Eyebrow→title ink gap Δ 0.43 after first-baseline alignment of I / JOYFUL. Plate art / crop / inset unchanged. Title Δ 0.50%; Fruit last ink Δ 0.49%. Still Roborazzi — recapture on the Mac before `matched`. |
+| pray-hail-mary-bead | Pray flow | spec-written | captured | close | | Roborazzi + insets. Body pitch Δ 0.24; paragraph b2b Δ 0.10; title→body ink Δ 0.43. CTA bottom Δ 0.54%. |
+| pray-decade-end | Pray flow | spec-written | captured | close | | Roborazzi + insets. Body pitch Δ 0.24; title→body ink Δ 0.38. Fatima wraps one line earlier on the 412 dp frame. CTA bottom Δ 0.54%. |
+| pray-final-prayers | Pray flow | spec-written | captured | close | | Roborazzi + insets. Body pitch Δ 0.24; paragraph b2b Δ 0.10. Hail Holy Queen wraps earlier on the narrower frame. CTA bottom Δ 0.54%. |
+| pray-completion | Pray flow | spec-written | captured | close | | Roborazzi + insets. Quote pitch 21.71 vs 21.67 (Δ 0.04); attribution is 12 pt caption + tracking 0.8 (was 15 pt). Hero crop / fade unchanged. Title Δ 1.44%; tick Δ 1.88%. Still Roborazzi — recapture on the Mac before `matched`. |
+| pray-michael | Pray flow | spec-written | captured | close | | Roborazzi + insets. Body pitch 30.10 vs 30.00 (Δ 0.10). Full-width language capsule is now 44 dp (`segmentedControlHeight`); Latin→control b2b is still 2.05 dp short, control→body 1.38 dp short (UIKit large segmented padding). Title Δ 1.26%; Done bottom Δ 0.85%. |
+| rosary-settings-sheet | Pray flow | spec-written | captured | close | | Roborazzi + insets. In-card row pitch 56.38 dp vs iOS 56 pt (Δ 0.38). Rows use `bodyPray` 16 / 19.52. Grouped inset cards, M3 Done, and M3 switches unchanged. Title Δ 1.75%, sheet edge Δ 1.53%. |
 | pray-replace-dialog | Pray flow | spec-written | captured | close | | Roborazzi + insets. Copy matches; title Δ 1.28%. Dialog surface is untinted (`tonalElevation = 0`). Material 3 alert (side-by-side accent actions) vs iOS stacked red “Replace saved place” / black Cancel — kept as a native M3 swap. |
 | Learn / Profile / Settings screens | later groups | deferred | | | | Not in this run. |
 
 Pairs: `/workspace/android/shots/v2/pairs/<screen-id>-<light|dark>.png` (iOS left, Android right).
 Sign-off sheets: `/workspace/android/shots/v2/signoff/<screen-id>.png` (iOS \| Android-before \| Android-after; light on top, dark below). Before frames for splash/onboarding/sign-in/today come from the earlier parity pass. Sheets and sign-in-transition are labelled “new screen”.
+Zoomed 2× baseline-guide crops (Pray typography pass): `/workspace/android/shots/v2/signoff/zoom/<screen-id>.png`.
 
 ## Measurement tables (light, unless noted)
 
@@ -171,6 +172,32 @@ Android frames are 1078×2399 with emulated Pixel 7 insets and chrome. iOS refs 
 | rosary-settings-sheet | last card bottom → Reset top | ~0.061 | 0.0759 | 1.49% | iOS gap is ~6% of the frame (card edge to Reset); Android is 7.6% |
 | pray-replace-dialog | title | 0.4132 | 0.4260 | 1.28% | copy matches; Material vs UIKit chrome |
 
+
+
+### Pray typography (equal-scale pt/dp, 22 Nov 2026 typography pass)
+
+Frame-fraction landmarks above are unchanged from the previous visual pass (art, chrome, CTA positions). This pass retunes type size, line pitch, and spacing. Full role table: `docs/parity-v2/pray-typography.md`. Historical `RosaryType.body` / `headingPrimary` tokens used by approved Today and onboarding screens were left alone; Pray uses `*Pray` styles with typo line heights, `includeFontPadding = false`, and `LineHeightStyle` trim.
+
+Body-only line pitch (CTA labels excluded). Target ≤ 0.5 sp.
+
+| screen | metric | iOS (pt) | Android (dp) | Δ |
+| --- | --- | --- | --- | --- |
+| pray-opening | body pitch | 31.00 | 31.23 | 0.23 |
+| pray-hail-mary-bead | body pitch | 31.00 | 31.24 | 0.24 |
+| pray-hail-mary-bead | paragraph b2b | 54.00 | 54.10 | 0.10 |
+| pray-decade-end | body pitch | 31.00 | 31.24 | 0.24 |
+| pray-final-prayers | body pitch | 31.00 | 31.24 | 0.24 |
+| pray-mystery-plate | scripture pitch | 31.00 | 31.24 | 0.24 |
+| pray-mystery-plate | eyebrow → title (ink) | 21.67 | 22.10 | 0.43 |
+| pray-completion | quote pitch | 21.67 | 21.71 | 0.04 |
+| pray-michael | body pitch | 30.00 | 30.10 | 0.10 |
+| pray-michael | Latin → language (b2b) | 57.67 | 55.62 | 2.05 |
+| pray-michael | language → body (b2b) | 75.67 | 74.29 | 1.38 |
+| pray-intention-step | title → first row (ink) | 60.00 | 59.81 | 0.19 |
+| rosary-settings-sheet | in-card row pitch | 56.00 | 56.38 | 0.38 |
+
+Wrapping can still differ: Pixel 7 is ~412 dp wide, the iPhone 17 Pro Max is 440 pt.
+
 In-flow Saint Michael (the optional closing *step*, toggle off by default) has no v2 iOS ref; `pray-michael` is the post-completion overlay. The scroll-to-continue morph’s collapsed (circle) state is now shown on `pray-mystery-plate` via `scrollPlateToEnd` and a plate end-spacer that includes `ScrollMorph.minimumRange`. There is no mid-lerp iOS ref to chase.
 
 Visual review (22 Nov 2026, second sign-off pass): the mystery plate is unchanged from the prior pass (accepted). Completion hero art now fills the leftover edge to edge with the iOS crop and fade — figures are large and side-cropped, the lectern is gone, and the sculpture fades into the tick; Saint Michael has breathing room above the gesture pill. Customise “Reset to default” no longer sits on the last card; the last-card-to-Reset gap is 7.6% of the Pixel 7 frame (iOS ~6%), with 8 dp section gaps and 20 dp card corners. “No specific intention” is a taller rounded-rect card with a hairline; “Add intention” is a filled surface pill in both modes. The bead rail fits inside the margins on every bead step; the dark crucifix highlight is a large faint halo (pulse phase offset 0.72 so Roborazzi does not freeze on the tight burst). Language pickers are a custom Compose capsule with a raised thumb, not an M3 segmented control.
@@ -192,3 +219,4 @@ Remaining visual differences to be candid about: replace-dialog actions stay sid
 2. **week-feast-sheet** detent is still the 460 dp minimum, so the sheet starts lower than the iOS estimated height on this copy. User-approved as is.
 3. **mystery-detail-sheet** sheet top is 3.3% higher on Pixel 7 because both sides cap the detent at 760 on frames of different height (914.3 dp vs 956 pt). Fruit and CTA are within 2%.
 4. **Pray flow frames** are still Roborazzi, not Mac-emulator captures. Landmarks remain within 2% after this pass (plate title Δ 0.50%, Fruit last ink Δ 0.49%, completion title Δ 1.44%, tick Δ 1.88%, Saint Michael bottom Δ 0.71%). Recapture every Pray screen on the Mac Pixel 7 emulator before marking any of them `matched`, especially the Lottie tick on a real device, plate overflow/scroll-circle, and sheet/dialog chrome.
+5. **Pray typography** is much closer (body pitch typically Δ 0.24 sp, most gaps within 1 dp) but two Saint Michael language-control gaps stay 2.05 / 1.38 dp short of UIKit's large segmented control, and wrapping still differs on the narrower Pixel 7. See `docs/parity-v2/pray-typography.md`.

@@ -68,29 +68,85 @@ object RosaryType {
         fontSize = 16.sp,
         lineHeight = 23.sp,
     )
-    /** iOS `TypeRole.prayerText(scale: 1)` = sans max(16, 18). */
-    val prayerText = TextStyle(
-        fontFamily = RosaryFonts.sans,
-        fontWeight = FontWeight.Normal,
-        fontSize = 18.sp,
-        lineHeight = 21.sp,
-        platformStyle = PlatformTextStyle(includeFontPadding = false),
-    )
     /**
-     * iOS `BilingualStack` adds `lineSpacing` so 18 pt prayer text lands at a
-     * measured 31 pt line pitch on the mystery plate (`21 × 1.65` minus the
-     * 21 pt font's native line height, applied on top of the 18 pt face).
+     * Typo line height of bundled Instrument Sans (asc 970, desc −250, lineGap 0,
+     * UPM 1000) — the same metrics as the iOS variable font.
      */
-    val prayerTextReading = prayerText.copy(
-        lineHeight = 31.sp,
-        // SwiftUI lineSpacing adds space between lines only. Compose lineHeight
-        // also pads the first and last line; trim that so the block isn't taller
-        // than the iOS plate.
-        lineHeightStyle = LineHeightStyle(
-            alignment = LineHeightStyle.Alignment.Proportional,
-            trim = LineHeightStyle.Trim.Both,
-        ),
+    fun sansLineHeightSp(sizeSp: Float): Float = sizeSp * 1.22f
+
+    private val noFontPadding = PlatformTextStyle(includeFontPadding = false)
+    private val naturalLeading = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Proportional,
+        trim = LineHeightStyle.Trim.None,
     )
+    /** SwiftUI `.lineSpacing` adds space between lines only, not above/below the block. */
+    private val betweenLines = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Proportional,
+        trim = LineHeightStyle.Trim.Both,
+    )
+
+    /**
+     * Instrument Sans role with iOS metrics: `includeFontPadding = false` and
+     * typo line height, plus optional SwiftUI `lineSpacing` and `tracking`.
+     * Prefer these on Pray screens; the older roles below keep their historical
+     * rounded line heights so approved Today / onboarding frames stay put.
+     */
+    fun sansRole(
+        sizeSp: Float,
+        weight: FontWeight = FontWeight.Normal,
+        extraLineSpacingSp: Float = 0f,
+        letterSpacingSp: Float = 0f,
+    ): TextStyle {
+        val pitch = sansLineHeightSp(sizeSp) + extraLineSpacingSp
+        return TextStyle(
+            fontFamily = RosaryFonts.sans,
+            fontWeight = weight,
+            fontSize = sizeSp.sp,
+            lineHeight = pitch.sp,
+            letterSpacing = letterSpacingSp.sp,
+            platformStyle = noFontPadding,
+            lineHeightStyle = if (extraLineSpacingSp > 0f) betweenLines else naturalLeading,
+        )
+    }
+
+    /** iOS `TypeRole.body` / `callout` / `settingsRow` at Large: 16 pt, no extra lineSpacing. */
+    val bodyPray = sansRole(16f)
+    /** iOS `TypeRole.caption` / `label` / `sectionLabel` / `quoteAttribution`. */
+    val captionPray = sansRole(12f)
+    val captionMediumPray = sansRole(12f, weight = FontWeight.Medium)
+    /** iOS `TypeRole.modalTitle` / `headingSecondary` with `.tracking(-0.2)`. */
+    val modalTitlePray = sansRole(22f, letterSpacingSp = -0.2f)
+    /** iOS `TypeRole.headingPrimary` / `screenTitle` / `title2`. */
+    val headingPrimaryPray = sansRole(32f)
+    /** iOS `TypeRole.navigationTitleUIFont`: 17 pt medium. */
+    val navigationTitlePray = sansRole(17f, weight = FontWeight.Medium)
+    /** iOS Pray header `progressNowLabel`: `TypeRole.label(weight: .medium)` = 12 pt medium. */
+    val progressLabel = captionMediumPray
+    /** iOS `TypeRole.supportingLabel`: 15 pt. */
+    val supportingLabelPray = sansRole(15f)
+    /** iOS `TypeRole.segmentedControl`: 14 pt medium. */
+    val segmentedControlPray = sansRole(14f, weight = FontWeight.Medium)
+    /** iOS `scriptureReference(isMystery: true)`: 11 pt. */
+    val scriptureReferenceMystery = sansRole(11f)
+    /** iOS `guideThemeSummaryStyle`: body/callout 16 + `lineSpacing(5)`. */
+    val themeSummary = sansRole(16f, extraLineSpacingSp = 5f)
+    /** iOS `TypeRole.completionQuote` (`body`) + `.lineSpacing(2)`. */
+    val completionQuote = sansRole(16f, extraLineSpacingSp = 2f)
+    /** iOS `TypeRole.quoteAttribution` (`caption`) + `.tracking(0.8)`. */
+    val quoteAttribution = sansRole(12f, letterSpacingSp = 0.8f)
+
+    /** iOS `TypeRole.prayerText(scale: 1)` = sans max(16, 18), no extra spacing. */
+    val prayerText = sansRole(18f)
+    /**
+     * iOS `BilingualStack` lineSpacing: `21 * 1.65 − native(21 pt Instrument Sans)`.
+     * Native typo LH at 21 is 25.62, so extra is 9.03, applied on the 18 pt face
+     * (native 21.96) → 30.99 pt pitch, used on every rosary prayer and the plate.
+     */
+    val prayerTextReading = sansRole(18f, extraLineSpacingSp = 9.03f)
+    /**
+     * iOS `PrayerReaderBlock` (Saint Michael): `prayerText` + `.lineSpacing(Space.sm)` = +8.
+     */
+    val prayerTextMichael = sansRole(18f, extraLineSpacingSp = 8f)
     /** Alias of `headingSecondary` / iOS `modalTitle` (22 / 28). */
     val modalTitle = headingSecondary
     val supportingLabel = TextStyle(

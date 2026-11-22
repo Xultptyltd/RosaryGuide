@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
@@ -114,85 +115,75 @@ fun MysteryPlateReading(
     Column(modifier.padding(horizontal = RosarySpace.gutter).padding(top = 6.dp)) {
         Row(
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(RosarySpace.md),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
         ) {
             Text(
                 text = OrdinalWord.roman(mystery.number),
-                style = RosaryType.body.copy(
-                    fontWeight = FontWeight.Medium,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
-                ),
-                color = palette.dim,
+                style = RosaryType.bodyPray.copy(fontWeight = FontWeight.Medium),
+                color = palette.textSecondary,
             )
+            // iOS HStack firstTextBaseline: 16 pt roman and 12 pt eyebrow share a
+            // baseline. typo ascent is 0.97 of size, so the caption sits 3.88 dp lower.
             Text(
                 text = eyebrow,
-                style = RosaryType.caption.copy(
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 2.sp,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
-                ),
+                style = RosaryType.captionMediumPray.copy(letterSpacing = 2.sp),
                 color = palette.dim,
+                modifier = Modifier.padding(top = 3.88.dp),
             )
         }
         // iOS locus stack is Space.sm (8) plus padding.bottom xs (4) under the eyebrow.
         Spacer(Modifier.height(12.dp))
         Text(
             text = mystery.title.resolved(language),
-            style = RosaryType.modalTitle.copy(
-                letterSpacing = (-0.2).sp,
-                platformStyle = PlatformTextStyle(includeFontPadding = false),
-            ),
+            style = RosaryType.modalTitlePray,
             color = palette.ink,
         )
         // iOS `locus` padding.bottom Space.lg before the scripture.
         Spacer(Modifier.height(RosarySpace.lg))
         val excerpt = step.body
-        Text(
+        PrayerBody(
             text = excerpt.primary(language),
             style = RosaryType.prayerTextReading,
             color = palette.ink,
         )
         excerpt.secondary(language)?.let { latin ->
-            Spacer(Modifier.height(RosarySpace.sm))
-            Text(text = latin, style = RosaryType.serifItalicBody, color = palette.dim)
-        }
-        step.scriptureReference?.let { ref ->
-            // iOS `scriptureReference(isMystery: true)` is 11 pt.
-            Spacer(Modifier.height(RosarySpace.xs))
-            Text(
-                text = ref,
-                style = RosaryType.caption.copy(
-                    fontSize = 11.sp,
-                    lineHeight = 14.sp,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
-                ),
+            Spacer(Modifier.height(RosarySpace.xxl))
+            PrayerBody(
+                text = latin,
+                style = RosaryType.prayerTextReading,
                 color = palette.dim,
             )
         }
-        // iOS fruit: 16 pt above the hairline, then Space.sm to the row.
-        Spacer(Modifier.height(RosarySpace.lg))
+        step.scriptureReference?.let { ref ->
+            // iOS announceBody stack spacing (sm) under the scripture block.
+            Spacer(Modifier.height(RosarySpace.sm))
+            Text(
+                text = ref,
+                style = RosaryType.scriptureReferenceMystery,
+                color = palette.dim,
+            )
+        }
+        // iOS FruitLine `.padding(.top, Space.lg)` plus announceBody Space.sm = 24.
+        Spacer(Modifier.height(RosarySpace.lg + RosarySpace.sm))
         HorizontalDivider(color = palette.strokeSubtle)
         Spacer(Modifier.height(RosarySpace.sm))
         val fruit = mystery.fruit.resolved(language)
         if (fruit.isNotBlank()) {
             Row(
                 horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(RosarySpace.sm),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "Fruit",
-                    style = RosaryType.body.copy(
+                    style = RosaryType.bodyPray.copy(
                         fontWeight = FontWeight.Medium,
                         letterSpacing = 0.8.sp,
-                        platformStyle = PlatformTextStyle(includeFontPadding = false),
                     ),
-                    color = palette.dim,
+                    color = palette.textSecondary,
                 )
                 Text(
                     text = fruit,
-                    style = RosaryType.body.copy(
-                        platformStyle = PlatformTextStyle(includeFontPadding = false),
-                    ),
+                    style = RosaryType.bodyPray,
                     color = palette.ink,
                 )
             }

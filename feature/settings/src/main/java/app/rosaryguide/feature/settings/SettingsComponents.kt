@@ -52,7 +52,7 @@ fun SettingsSection(
             .fillMaxWidth()
             .then(if (carded) Modifier.settingsGroupCard() else Modifier),
     ) {
-        GuideSectionLabel(text = title, strong = carded, icon = icon)
+        GuideSectionLabel(text = title, strong = carded, icon = icon, style = if (carded) RosaryType.bodyPray else RosaryType.captionPray)
         Spacer(Modifier.height(if (carded) RosarySpace.sectionTitleGap else RosarySpace.sm))
         content()
     }
@@ -221,14 +221,14 @@ fun SettingsNavigationRow(
                 if (icon != null) {
                     Icon(icon, contentDescription = null, tint = color, modifier = Modifier.padding(end = RosarySpace.md))
                 }
-                Text(title, style = RosaryType.body, color = color, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(title, style = RosaryType.bodyPray, color = color, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
                     tint = palette.dim,
                 )
             }
-            Text(value, style = RosaryType.body, color = palette.dim, modifier = Modifier.padding(top = RosarySpace.xs), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(value, style = RosaryType.bodyPray, color = palette.dim, modifier = Modifier.padding(top = RosarySpace.xs), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     } else {
         Row(
@@ -238,11 +238,11 @@ fun SettingsNavigationRow(
             if (icon != null) {
                 Icon(icon, contentDescription = null, tint = color, modifier = Modifier.padding(end = RosarySpace.md))
             }
-            Text(title, style = RosaryType.body, color = color, maxLines = 1, overflow = TextOverflow.Clip)
+            Text(title, style = RosaryType.bodyPray, color = color, maxLines = 1, overflow = TextOverflow.Clip)
             if (value != null) {
                 Text(
                     value,
-                    style = RosaryType.body,
+                    style = RosaryType.bodyPray,
                     color = palette.dim,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -287,7 +287,7 @@ fun SettingsToggleRow(
                 }
             Text(
                 title,
-                style = RosaryType.body,
+                style = RosaryType.bodyPray,
                 color = if (enabled) palette.ink else palette.dim,
             )
             }
@@ -317,7 +317,7 @@ fun SettingsToggleRow(
         }
         Text(
             title,
-            style = RosaryType.body,
+            style = RosaryType.bodyPray,
             color = if (enabled) palette.ink else palette.dim,
             modifier = Modifier.weight(1f),
         )
@@ -335,7 +335,7 @@ fun SettingsFootnote(text: String, modifier: Modifier = Modifier) {
     val palette = LocalThemePalette.current
     Text(
         text = text,
-        style = RosaryType.caption,
+        style = RosaryType.captionPray,
         color = palette.dim,
         modifier = modifier
             .fillMaxWidth()

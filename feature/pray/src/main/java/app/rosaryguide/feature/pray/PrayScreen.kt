@@ -555,41 +555,48 @@ fun PrayScreen(
                                     .padding(horizontal = RosarySpace.gutter),
                             ) {
                                 current?.let { step ->
+                                    // iOS locus: padding.top 2, then "1 of 10" / title
+                                    // with Space.sm + 4 pt under the count.
+                                    Spacer(Modifier.height(2.dp))
                                     if (step.kind == RosaryStepKind.HailMary &&
                                         step.decadeNumber != null &&
                                         step.hailMaryNumber != null
                                     ) {
                                         Text(
                                             text = "${step.hailMaryNumber} of 10",
-                                            style = RosaryType.caption.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium),
+                                            style = RosaryType.captionMediumPray,
                                             color = palette.dim,
                                         )
-                                        Spacer(Modifier.height(RosarySpace.sm))
+                                        Spacer(Modifier.height(RosarySpace.sm + RosarySpace.xs))
                                     }
                                     step.title.resolved(language).takeIf { it.isNotBlank() }?.let { title ->
-                                        Text(text = title, style = RosaryType.modalTitle, color = palette.ink)
-                                        val titleGap = if (step.kind == RosaryStepKind.SignOfTheCross) {
-                                            RosarySpace.lg
-                                        } else {
-                                            RosarySpace.prayerTitleBodyGap
-                                        }
-                                        Spacer(Modifier.height(titleGap))
+                                        Text(text = title, style = RosaryType.modalTitlePray, color = palette.ink)
                                     }
                                     if (language == PrayerLanguage.Bilingual) {
                                         step.title.latin.takeIf { it.isNotBlank() && it != step.title.english }?.let { latin ->
-                                            Text(text = latin, style = RosaryType.body, color = palette.dim)
                                             Spacer(Modifier.height(RosarySpace.sm))
+                                            Text(text = latin, style = RosaryType.bodyPray, color = palette.dim)
                                         }
                                     }
+                                    val titleGap = if (step.kind == RosaryStepKind.SignOfTheCross) {
+                                        RosarySpace.lg
+                                    } else {
+                                        RosarySpace.prayerTitleBodyGap
+                                    }
+                                    Spacer(Modifier.height(titleGap))
                                     step.body.let { body ->
-                                        Text(
+                                        PrayerBody(
                                             text = body.primary(language),
-                                            style = RosaryType.prayerText,
+                                            style = RosaryType.prayerTextReading,
                                             color = palette.ink,
                                         )
                                         body.secondary(language)?.let { latin ->
-                                            Spacer(Modifier.height(RosarySpace.md))
-                                            Text(text = latin, style = RosaryType.serifItalicBody, color = palette.dim)
+                                            Spacer(Modifier.height(RosarySpace.xl))
+                                            PrayerBody(
+                                                text = latin,
+                                                style = RosaryType.prayerTextReading,
+                                                color = palette.dim,
+                                            )
                                         }
                                     }
                                 }
@@ -669,7 +676,7 @@ fun PrayScreen(
                     ) {
                         Text(
                             text = "Customise rosary",
-                            style = RosaryType.navigationTitle,
+                            style = RosaryType.navigationTitlePray,
                             color = palette.ink,
                             modifier = Modifier.align(Alignment.Center),
                         )

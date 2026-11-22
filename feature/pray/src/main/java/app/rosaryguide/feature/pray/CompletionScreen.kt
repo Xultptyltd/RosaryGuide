@@ -156,19 +156,14 @@ fun CompletionScreen(
         ) {
             Text(
                 text = "ROSARY COMPLETE",
-                style = RosaryType.caption.copy(
-                    letterSpacing = 1.4.sp,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
-                ),
+                style = RosaryType.captionPray.copy(letterSpacing = 1.4.sp),
                 color = palette.completionMeta,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(6.dp))
             Text(
                 text = "${mysterySet.shortName} Mysteries",
-                style = RosaryType.headingPrimary.copy(
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
-                ),
+                style = RosaryType.headingPrimaryPray,
                 color = palette.completionTitle,
                 textAlign = TextAlign.Center,
             )
@@ -183,14 +178,14 @@ fun CompletionScreen(
                 ) {
                     Text(
                         text = quote.text,
-                        style = RosaryType.body,
+                        style = RosaryType.completionQuote,
                         color = palette.completionTitle.copy(alpha = 0.88f),
                         textAlign = TextAlign.Center,
                     )
                     Spacer(Modifier.height(RosarySpace.sm))
                     Text(
                         text = quote.attribution.uppercase(),
-                        style = RosaryType.supportingLabel.copy(letterSpacing = 0.8.sp),
+                        style = RosaryType.quoteAttribution,
                         color = palette.completionLabel,
                         textAlign = TextAlign.Center,
                     )
@@ -199,7 +194,7 @@ fun CompletionScreen(
                 Spacer(Modifier.height(32.dp))
                 Text(
                     text = "OFFERED FOR",
-                    style = RosaryType.caption.copy(letterSpacing = 1.2.sp),
+                    style = RosaryType.captionPray.copy(letterSpacing = 1.2.sp),
                     color = palette.completionMeta,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
@@ -209,7 +204,7 @@ fun CompletionScreen(
                     offered.forEach { title ->
                         Text(
                             text = title,
-                            style = RosaryType.body,
+                            style = RosaryType.bodyPray,
                             color = palette.completionMetaValue,
                             modifier = Modifier
                                 .fillMaxWidth()

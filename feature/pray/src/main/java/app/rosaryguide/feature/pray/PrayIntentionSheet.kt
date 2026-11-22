@@ -62,43 +62,44 @@ fun PrayIntentionSheet(
     ) {
         Text(
             text = "Offer this Rosary for",
-            style = RosaryType.headingSecondary.copy(
-                platformStyle = PlatformTextStyle(includeFontPadding = false),
-            ),
+            style = RosaryType.modalTitlePray,
             color = palette.ink,
         )
-        Spacer(Modifier.height(RosarySpace.sm))
+        // iOS in-flow stack: Space.xxl between the title and the first row.
+        Spacer(Modifier.height(RosarySpace.xxl))
         OfferedIntentions.summary(selectedTitles)?.let {
-            Text(text = it, style = RosaryType.body, color = palette.dim)
-            Spacer(Modifier.height(RosarySpace.sm))
+            Text(text = it, style = RosaryType.bodyPray, color = palette.dim)
+            Spacer(Modifier.height(RosarySpace.md))
         }
-        IntentionRow(
-            title = "No specific intention",
-            selected = selectedIds.isEmpty(),
-            onClick = onClear,
-        )
-        intentions.forEach { intention ->
+        Column(verticalArrangement = Arrangement.spacedBy(RosarySpace.md)) {
             IntentionRow(
-                title = intention.title,
-                selected = intention.id in selectedIds,
-                onClick = { onToggle(intention) },
+                title = "No specific intention",
+                selected = selectedIds.isEmpty(),
+                onClick = onClear,
             )
+            intentions.forEach { intention ->
+                IntentionRow(
+                    title = intention.title,
+                    selected = intention.id in selectedIds,
+                    onClick = { onToggle(intention) },
+                )
+            }
         }
         if (showComposer) {
         Spacer(Modifier.height(RosarySpace.md))
-        Text(text = "Add an intention", style = RosaryType.supportingLabel, color = palette.dim)
+        Text(text = "Add an intention", style = RosaryType.supportingLabelPray, color = palette.dim)
         Spacer(Modifier.height(RosarySpace.xs))
         BasicTextField(
             value = draft,
             onValueChange = { draft = it },
-            textStyle = RosaryType.body.copy(color = palette.ink),
+            textStyle = RosaryType.bodyPray.copy(color = palette.ink),
             modifier = Modifier
                 .fillMaxWidth()
                 .background(palette.surface, RoundedCornerShape(RosarySpace.containerRadius))
                 .padding(horizontal = RosarySpace.md, vertical = RosarySpace.sm),
             decorationBox = { inner ->
                 if (draft.isEmpty()) {
-                    Text("A person, a cause, a hope…", style = RosaryType.body, color = palette.dim)
+                    Text("A person, a cause, a hope…", style = RosaryType.bodyPray, color = palette.dim)
                 }
                 inner()
             },
@@ -133,7 +134,6 @@ private fun IntentionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = RosarySpace.xs)
             .heightIn(min = 64.dp)
             .background(palette.surface, shape)
             .border(
@@ -161,6 +161,6 @@ private fun IntentionRow(
                 )
             }
         }
-        Text(text = title, style = RosaryType.body, color = palette.ink, modifier = Modifier.weight(1f))
+        Text(text = title, style = RosaryType.bodyPray, color = palette.ink, modifier = Modifier.weight(1f))
     }
 }

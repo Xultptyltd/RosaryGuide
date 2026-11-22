@@ -95,10 +95,11 @@ fun GuideSectionLabel(
     modifier: Modifier = Modifier,
     strong: Boolean = false,
     icon: ImageVector? = null,
+    style: TextStyle? = null,
 ) {
     val palette = LocalThemePalette.current
     val color = if (strong) palette.ink else palette.textSecondary
-    val style = if (strong) RosaryType.body else RosaryType.supportingLabel
+    val style = style ?: if (strong) RosaryType.body else RosaryType.supportingLabel
     val labelMod = modifier.padding(bottom = RosarySpace.xs).guideHeading()
     if (icon != null) {
         Row(

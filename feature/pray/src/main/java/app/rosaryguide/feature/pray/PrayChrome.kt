@@ -122,12 +122,12 @@ fun PrayFlowHeader(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = RosarySpace.sm, vertical = RosarySpace.xs),
+            .padding(horizontal = RosarySpace.lg, vertical = RosarySpace.xs),
         contentAlignment = Alignment.Center,
     ) {
         GuideMarqueeText(
             text = progressLabel,
-            style = RosaryType.navigationTitle,
+            style = RosaryType.progressLabel,
             modifier = Modifier.padding(horizontal = 72.dp),
         )
         Row(
@@ -231,7 +231,7 @@ fun PrayerLanguageToggle(
                 ) {
                     Text(
                         text = option.title,
-                        style = RosaryType.segmentedControl,
+                        style = RosaryType.segmentedControlPray,
                         color = if (selected) palette.onAccent else palette.ink,
                     )
                 }
@@ -245,10 +245,13 @@ fun PrayerLanguageToggle(
     val thumb = if (palette.isDark) Color(0xFF1C1C1E) else Color.White
     val selectedIndex = options.indexOf(language).coerceAtLeast(0)
     val width = if (ax) modifier else modifier.width(220.dp)
+    // Bead-header chip stays 36 dp. The Saint Michael / reader control uses
+    // iOS `Component.segmentedControlHeight` (44 pt, controlSize large).
+    val controlHeight = if (ax) 44.dp else 36.dp
     val cap = RoundedCornerShape(percent = 50)
     BoxWithConstraints(
         modifier = width
-            .height(36.dp)
+            .height(controlHeight)
             .background(track, cap)
             .semantics { contentDescription = "Prayer language" },
     ) {
@@ -260,7 +263,7 @@ fun PrayerLanguageToggle(
                 .align(Alignment.CenterStart)
                 .padding(start = inset + thumbWidth * selectedIndex, top = inset, bottom = inset)
                 .width(thumbWidth)
-                .height(32.dp)
+                .height(controlHeight - inset * 2)
                 .shadow(1.5.dp, cap, clip = false)
                 .background(thumb, cap),
         )
@@ -276,7 +279,7 @@ fun PrayerLanguageToggle(
                 ) {
                     Text(
                         text = if (ax) option.title else option.chip,
-                        style = RosaryType.segmentedControl,
+                        style = RosaryType.segmentedControlPray,
                         color = if (selected) palette.ink else palette.dim,
                         maxLines = 1,
                     )
@@ -442,7 +445,7 @@ fun IntentionActionFooter(
             ),
             border = if (palette.isDark) null else BorderStroke(0.5.dp, palette.cardSurfaceStroke),
         ) {
-            Text(text = "Add intention", style = RosaryType.body)
+            Text(text = "Add intention", style = RosaryType.bodyPray)
         }
         GuidePrimaryButton(title = "Next", onClick = onNext)
     }
