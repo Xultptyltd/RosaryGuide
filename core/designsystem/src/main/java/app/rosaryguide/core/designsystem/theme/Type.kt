@@ -111,6 +111,8 @@ object RosaryType {
 
     /** iOS `TypeRole.body` / `callout` / `settingsRow` at Large: 16 pt, no extra lineSpacing. */
     val bodyPray = sansRole(16f)
+    /** iOS `TypeRole.body` + `lineSpacing(8)` (Learn mystery intro). */
+    val bodyReading = sansRole(16f, extraLineSpacingSp = 8f)
     /** iOS `TypeRole.caption` / `label` / `sectionLabel` / `quoteAttribution`. */
     val captionPray = sansRole(12f)
     val captionMediumPray = sansRole(12f, weight = FontWeight.Medium)

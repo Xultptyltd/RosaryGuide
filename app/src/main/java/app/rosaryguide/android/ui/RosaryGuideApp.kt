@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.onSizeChanged
@@ -63,6 +64,7 @@ import app.rosaryguide.core.data.launch.LaunchGate
 import app.rosaryguide.core.data.navigation.NavigationIa
 import app.rosaryguide.core.data.sequence.RosarySequenceBuilder
 import app.rosaryguide.core.designsystem.R
+import app.rosaryguide.core.designsystem.component.AppPageBackground
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
 import app.rosaryguide.core.designsystem.component.GuideGlassSurface
 import app.rosaryguide.core.designsystem.component.LocalReduceMotion
@@ -612,7 +614,7 @@ private fun AppTabs(
                 }
             }
             composable<RosaryPrayersRoute> {
-                DetailScaffold(title = "Rosary prayers", onBack = { navController.popBackStack() }) {
+                DetailScaffold(title = "Rosary prayers", onBack = { navController.popBackStack() }, ambient = true) {
                     RosaryPrayersScreen(onPrayer = { navController.navigate(PrayerRoute(it.id)) })
                 }
             }
@@ -624,21 +626,21 @@ private fun AppTabs(
             composable<ArticleRoute> { entry ->
                 val route = entry.toRoute<ArticleRoute>()
                 val article = LearnArticle.byId(route.id) ?: return@composable
-                DetailScaffold(title = article.title, onBack = { navController.popBackStack() }) {
+                DetailScaffold(title = article.title, onBack = { navController.popBackStack() }, ambient = true) {
                     LearnArticleScreen(article)
                 }
             }
             composable<PrayerRoute> { entry ->
                 val route = entry.toRoute<PrayerRoute>()
                 val prayer = PrayerCatalog.prayer(route.id) ?: return@composable
-                DetailScaffold(title = "", onBack = { navController.popBackStack() }) {
+                DetailScaffold(title = "", onBack = { navController.popBackStack() }, ambient = true) {
                     PrayerReaderScreen(prayer)
                 }
             }
             composable<MysterySetRoute> { entry ->
                 val route = entry.toRoute<MysterySetRoute>()
                 val set = runCatching { MysterySetKind.valueOf(route.set) }.getOrNull() ?: return@composable
-                DetailScaffold(title = set.shortName, onBack = { navController.popBackStack() }) {
+                DetailScaffold(title = set.shortName, onBack = { navController.popBackStack() }, ambient = true) {
                     MysterySetScreen(set, onPray = onPray)
                 }
             }
@@ -705,11 +707,20 @@ private fun AppTabs(
 private fun DetailScaffold(
     title: String,
     onBack: () -> Unit,
+    ambient: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val palette = LocalThemePalette.current
-    Column(Modifier.fillMaxSize().background(palette.bg)) {
-        GuideDetailTopBar(title = title, onBack = onBack)
-        Box(Modifier.weight(1f)) { content() }
+    Box(Modifier.fillMaxSize()) {
+        if (ambient) AppPageBackground()
+        else Box(Modifier.fillMaxSize().background(palette.bg))
+        Column(Modifier.fillMaxSize()) {
+            GuideDetailTopBar(
+                title = title,
+                onBack = onBack,
+                containerColor = if (ambient) Color.Transparent else palette.bg,
+            )
+            Box(Modifier.weight(1f)) { content() }
+        }
     }
 }

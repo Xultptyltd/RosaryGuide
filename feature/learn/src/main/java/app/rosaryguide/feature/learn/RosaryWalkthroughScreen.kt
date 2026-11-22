@@ -32,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -101,15 +102,12 @@ fun RosaryWalkthroughScreen(
             .background(palette.bg),
     ) {
         val panelHeight = RosarySpace.signInPanelHeight(maxHeight)
-        Column(
-            Modifier
-                .fillMaxSize()
-                .navigationBarsPadding(),
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-            ) { index ->
+        val ctaTop = maxHeight * RosarySpace.ParityFractions.onboardingCtaTop
+        val ctaBottomPad = (maxHeight - ctaTop - RosarySpace.pillHeight).coerceAtLeast(0.dp)
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+        ) { index ->
                 val page = pages[index]
                 Column(
                     Modifier.fillMaxSize(),
@@ -119,6 +117,7 @@ fun RosaryWalkthroughScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(panelHeight)
+                            .padding(horizontal = RosarySpace.panelInset)
                             .clip(
                                 RoundedCornerShape(
                                     bottomStart = RosarySpace.panelRadius,
@@ -132,7 +131,12 @@ fun RosaryWalkthroughScreen(
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             alignment = if (page.centerCrop) Alignment.Center else Alignment.TopCenter,
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    scaleX = 1.018f
+                                    scaleY = 1.018f
+                                },
                         )
                     }
                     Column(
@@ -159,39 +163,39 @@ fun RosaryWalkthroughScreen(
                     }
                 }
             }
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = RosarySpace.gutter)
-                    .padding(bottom = RosarySpace.xl),
-                horizontalAlignment = Alignment.CenterHorizontally,
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(bottom = ctaBottomPad),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(bottom = RosarySpace.lg),
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(bottom = RosarySpace.lg),
-                ) {
-                    pages.forEachIndexed { i, _ ->
-                        val active = i == pagerState.currentPage
-                        Box(
-                            modifier = Modifier
-                                .size(if (active) 8.dp else 7.dp)
-                                .clip(CircleShape)
-                                .background(if (active) palette.ink else palette.strokeStrong),
-                        )
-                    }
+                pages.forEachIndexed { i, _ ->
+                    val active = i == pagerState.currentPage
+                    Box(
+                        modifier = Modifier
+                            .size(if (active) 8.dp else 7.dp)
+                            .clip(CircleShape)
+                            .background(if (active) palette.ink else palette.strokeStrong),
+                    )
                 }
-                val isLast = pagerState.currentPage == pages.lastIndex
-                GuidePrimaryButton(title = if (isLast) "Begin Rosary" else "Continue") {
-                    if (isLast) onBegin()
-                    else scope.launch {
-                        if (reduceMotion) pagerState.scrollToPage(pagerState.currentPage + 1)
-                        else pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                    }
+            }
+            val isLast = pagerState.currentPage == pages.lastIndex
+            GuidePrimaryButton(title = if (isLast) "Begin Rosary" else "Continue") {
+                if (isLast) onBegin()
+                else scope.launch {
+                    if (reduceMotion) pagerState.scrollToPage(pagerState.currentPage + 1)
+                    else pagerState.animateScrollToPage(pagerState.currentPage + 1)
                 }
-                if (isLast) {
-                    TextButton(onClick = onClose) {
-                        Text("Done", style = RosaryType.bodyPray, color = palette.accentText)
-                    }
+            }
+            if (isLast) {
+                TextButton(onClick = onClose) {
+                    Text("Done", style = RosaryType.bodyPray, color = palette.accentText)
                 }
             }
         }

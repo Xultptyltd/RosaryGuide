@@ -59,9 +59,24 @@ Auto-detected medians are unreliable on screens that mix art, icons, and titles 
 | walkthrough-1…5 | Body pitch (`themeSummary`) | 24.67 pt | 24.76 dp | 0.10 |
 | walkthrough-1…5 | Title → body ink (line1→2) | 28.33 | 28.19 | −0.14 |
 | learn-mystery-detail | Title → body ink | 32.33 | 32.00 | −0.33 |
-| learn-mystery-detail | Intro body pitch | 24.33 | 24.76 | 0.43 |
+| learn-mystery-detail | Intro body pitch (`bodyReading` 16/27.52) | 27.67 | 27.81 | 0.14 |
 | learn-search-empty | Field → empty-copy ink | 46.33 | 46.10 | −0.24 |
-| all-prayers | Row ink-to-ink (title band) | 65.00 | 62.10 | −2.90 |
+| all-prayers | Row pitch (baseline-to-baseline) | 73.00 | 73.14 | 0.14 |
+| learn | Large-title cap (logical dp) | 127.7 | 128.0 | 0.3 |
+| learn | Large-title baseline (logical dp) | 150.7 | 150.9 | 0.2 |
 
-Body pitch on FAQ, walkthrough, prayer reader, and mystery-detail intro is within the 0.5 sp budget. The all-prayers row band is 2.90 dp tighter than iOS (over the 1 dp gap budget) — listed as a remaining difference. Hub intro / search-row detectors mixed in chrome, so those screens were reviewed visually rather than from the auto median.
+Body pitch on FAQ, walkthrough, prayer reader, and mystery-detail intro is within the 0.5 sp budget. The all-prayers row pitch now matches (previous −2.90 figure was inter-ink gap from a taller Android ink box, not the 72 dp row band). Hub intro / search-row auto-detectors still mix chrome, so the large title was measured by hand in logical dp. Frame-fraction Y differs slightly because the Pixel 7 logical height is 913.9 dp vs iOS 956 pt.
+
+## 22 Nov 2026 review pass
+
+Designer review of `learn` and `learn-mystery-detail` (plus remaining fixable items):
+
+- Large title moved up (`LearnLargeTitle`, 56 dp after status bars). Cap 128.0 vs 127.7 dp.
+- `AppPageBackground` Marian-blue orbs (static, Roborazzi-stable) on Learn hub, FAQ, search, mystery-detail, rosary-prayers, and prayer-reader. All-prayers stays plain `palette.bg`.
+- Mystery row titles use `bodyPray` 16; fruit `captionPray` 12; 28 dp surface badge; `maxLines = 1` so “The Presentation in the Temple” fits.
+- Intro uses `bodyReading` (16 / 27.52) for iOS `TypeRole.body` + `lineSpacing(8)`.
+- Hero uses `ArtCatalog.heroWideFocus` + `CroppedArt.focusedCover`.
+- Pushed Learn screens use a milky circular back on `GuideTopAppBar` and a transparent bar over the wash. Today / onboarding / Pray do not use this bar, so approved frames were not recaptured.
+- Light-mode Roborazzi `ParityTabBar` is a visible floating capsule. Production `GuideGlassSurface` was left unchanged.
+- Search clear is a filled-circle X. All-prayers rows are `heightIn(72)` with `xl` padding inside that minimum. Walkthrough restored 24 dp inset, 1.018 scale, and Continue at `onboardingCtaTop` 0.868.
 

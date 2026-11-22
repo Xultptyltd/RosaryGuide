@@ -2,6 +2,7 @@ package app.rosaryguide.android.parity
 
 import android.view.View
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -25,6 +26,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
@@ -126,14 +129,7 @@ fun Pixel7DeviceFrame(
 
     Box(modifier = Modifier.fillMaxSize().background(palette.bg)) {
         if (showTabBar) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = tabClearance)
-                    .clipToBounds(),
-            ) {
-                content()
-            }
+            content()
             ParityTabBar(
                 selected = selectedTab,
                 isDark = palette.isDark,
@@ -213,13 +209,19 @@ private fun ParityTabBar(
         AppTab.Feasts to (R.drawable.tab_feasts_filled to R.drawable.tab_feasts_outline),
         AppTab.Profile to (R.drawable.tab_profile_filled to R.drawable.tab_profile_outline),
     )
-    GuideGlassSurface(
-        isDark = isDark,
-        shape = RoundedCornerShape(percent = 50),
-        modifier = modifier
-            .padding(start = 20.dp, end = 20.dp, bottom = 10.dp)
-            .fillMaxWidth(),
-    ) {
+    val tabShape = RoundedCornerShape(percent = 50)
+    val tabMod = modifier
+        .padding(start = 20.dp, end = 20.dp, bottom = 10.dp)
+        .fillMaxWidth()
+        .then(if (isDark) Modifier else Modifier.shadow(16.dp, tabShape, clip = false))
+        .clip(tabShape)
+        .background(if (isDark) Color.White.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.96f))
+        .border(
+            width = 0.5.dp,
+            color = if (isDark) Color.White.copy(alpha = 0.28f) else Color.Black.copy(alpha = 0.08f),
+            shape = tabShape,
+        )
+    Box(tabMod) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

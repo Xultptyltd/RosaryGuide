@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -52,6 +53,8 @@ import app.rosaryguide.core.data.catalog.MysteryCatalog
 import app.rosaryguide.core.designsystem.component.drawableIdByName
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.component.CroppedArt
+import app.rosaryguide.core.designsystem.component.focusedCover
 import app.rosaryguide.core.designsystem.theme.PageStyle
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
@@ -70,10 +73,9 @@ fun LearnArticleScreen(article: LearnArticle, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.groupedBackground)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg)
-            .padding(bottom = RosarySpace.xxl),
+            .padding(bottom = 96.dp),
     ) {
         Text(text = article.eyebrow, style = RosaryType.captionPray, color = palette.dim)
         Spacer(Modifier.height(RosarySpace.xs))
@@ -95,10 +97,10 @@ fun PrayerReaderScreen(prayer: Prayer, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.groupedBackground)
+            
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg)
-            .padding(bottom = RosarySpace.xxl),
+            .padding(bottom = 96.dp),
     ) {
         Text(text = prayer.title.english, style = RosaryType.headingPrimaryPray, color = palette.ink)
         if (prayer.title.latin.isNotBlank() && prayer.title.latin != prayer.title.english) {
@@ -147,26 +149,30 @@ fun MysterySetScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.groupedBackground)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter)
-            .padding(top = RosarySpace.xl, bottom = RosarySpace.xxl),
+            .padding(top = RosarySpace.xl, bottom = 96.dp),
     ) {
         if (heroId != 0) {
-            Image(
-                painter = painterResource(heroId),
-                contentDescription = set.displayTitle,
-                contentScale = ContentScale.Crop,
+            val painter = painterResource(heroId)
+            val (fx, fy) = ArtCatalog.heroWideFocus(set)
+            val src = painter.intrinsicSize
+            CroppedArt(
+                painter = painter,
+                coverForFrame = { fw, fh ->
+                    focusedCover(src.width, src.height, fw, fh, fx, fy)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
                     .clip(RoundedCornerShape(RosarySpace.containerRadius)),
+                contentDescription = set.displayTitle,
             )
             Spacer(Modifier.height(RosarySpace.xl))
         }
         Text(text = set.displayTitle, style = RosaryType.headingPrimaryPray, color = palette.ink)
         Spacer(Modifier.height(RosarySpace.md))
-        Text(text = set.learnDescription, style = RosaryType.bodyPray, color = palette.dim)
+        Text(text = set.learnDescription, style = RosaryType.bodyReading, color = palette.dim)
         Spacer(Modifier.height(RosarySpace.xl))
         val shape = RoundedCornerShape(RosarySpace.containerRadius)
         Column(
@@ -186,13 +192,14 @@ fun MysterySetScreen(
                             .clickable {
                                 expanded = if (isOpen) expanded - mystery.id else expanded + mystery.id
                             }
-                            .padding(vertical = RosarySpace.lg),
+                            .padding(vertical = RosarySpace.md),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(
                             modifier = Modifier
                                 .size(28.dp)
-                                .border(1.dp, palette.strokeRegular, CircleShape),
+                                .clip(CircleShape)
+                                .background(palette.surface),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
@@ -208,20 +215,21 @@ fun MysterySetScreen(
                         ) {
                             Text(
                                 text = mystery.title.english,
-                                style = RosaryType.modalTitlePray,
+                                style = RosaryType.bodyPray,
                                 color = palette.ink,
+                                maxLines = 1,
                             )
                             val fruit = mystery.fruit.english
                             if (fruit.isNotBlank() && !isOpen) {
                                 Spacer(Modifier.height(2.dp))
-                                Text(text = fruit, style = RosaryType.themeSummary, color = palette.dim)
+                                Text(text = fruit, style = RosaryType.captionPray, color = palette.dim)
                             }
                         }
                         Icon(
                             imageVector = Icons.Filled.KeyboardArrowDown,
                             contentDescription = if (isOpen) "Collapse" else "Expand",
                             tint = palette.dim,
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(14.dp),
                         )
                     }
                     if (isOpen) {
@@ -257,10 +265,10 @@ fun RosaryPrayersScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.groupedBackground)
+            
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter)
-            .padding(top = RosarySpace.lg, bottom = RosarySpace.xxl),
+            .padding(top = RosarySpace.lg, bottom = 96.dp),
     ) {
         RosaryPrayerGroup(
             title = "Opening prayers",
@@ -368,10 +376,10 @@ fun AllPrayersScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.groupedBackground)
+            .background(palette.bg)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter)
-            .padding(top = RosarySpace.lg, bottom = RosarySpace.xxl),
+            .padding(top = RosarySpace.lg, bottom = 96.dp),
     ) {
         val fieldPalette = palette
         val searchShape = RoundedCornerShape(percent = 50)
@@ -401,6 +409,23 @@ fun AllPrayersScreen(
                         }
                         inner()
                     }
+                    if (query.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clip(RoundedCornerShape(percent = 50))
+                                .background(fieldPalette.dim)
+                                .clickable { query = "" },
+                            contentAlignment = androidx.compose.ui.Alignment.Center,
+                        ) {
+                            androidx.compose.material3.Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = "Clear search",
+                                tint = androidx.compose.ui.graphics.Color.White,
+                                modifier = Modifier.size(12.dp),
+                            )
+                        }
+                    }
                 }
             },
         )
@@ -413,8 +438,8 @@ fun AllPrayersScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onPrayer(prayer) }
-                        .padding(vertical = RosarySpace.lg)
-                        .heightIn(min = 40.dp),
+                        .heightIn(min = 72.dp)
+                        .padding(vertical = RosarySpace.xl),
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                 ) {
                     Text(prayer.title.english, style = RosaryType.bodyPray, color = palette.ink, modifier = Modifier.weight(1f))

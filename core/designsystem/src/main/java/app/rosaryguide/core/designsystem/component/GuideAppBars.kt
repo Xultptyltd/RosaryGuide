@@ -1,5 +1,12 @@
 package app.rosaryguide.core.designsystem.component
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
@@ -83,9 +90,12 @@ fun GuideTopAppBar(
     modifier: Modifier = Modifier,
     closeInsteadOfBack: Boolean = false,
     actions: @Composable RowScope.() -> Unit = {},
+    containerColor: Color? = null,
+    milkyBack: Boolean = true,
 ) {
     val palette = LocalThemePalette.current
     val ax = isAccessibilitySize()
+    val barColor = containerColor ?: palette.bg
     CenterAlignedTopAppBar(
         title = {
             Text(
@@ -104,17 +114,37 @@ fun GuideTopAppBar(
                     onClick = onBack,
                     modifier = Modifier.heightIn(min = RosarySpace.minHitTarget),
                 ) {
-                    Icon(
-                        imageVector = if (closeInsteadOfBack) Icons.Filled.Close else Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = if (closeInsteadOfBack) "Close" else "Back",
-                        tint = palette.ink,
-                    )
+                    val icon = if (closeInsteadOfBack) Icons.Filled.Close else Icons.AutoMirrored.Filled.ArrowBack
+                    val label = if (closeInsteadOfBack) "Close" else "Back"
+                    if (milkyBack && !closeInsteadOfBack) {
+                        val chip = if (palette.isDark) Color.White.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.92f)
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(chip),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = label,
+                                tint = palette.ink,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = label,
+                            tint = palette.ink,
+                        )
+                    }
                 }
             }
         },
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = palette.bg,
+            containerColor = barColor,
             titleContentColor = palette.ink,
             navigationIconContentColor = palette.ink,
             actionIconContentColor = palette.ink,

@@ -1,4 +1,4 @@
-# Visual parity status (22 Nov 2026, Pray typography pass)
+# Visual parity status (22 Nov 2026, Learn review pass)
 
 Reference: `/workspace/ios-parity-refs-v2/` (iPhone 17 Pro Max, 3×, 1320×2868 px = 440×956 pt, Dynamic Type Large, status bar 9:41, captured 17 Nov 2026 Australia/Perth).
 Android captures for onboarding/Today: Pixel 7 AVD `RosaryGuide_Pixel7` on the Mac (1080×2400, 2.625×, ≈411.4×914.3 dp), `en-AU`, `clock_date=2026-11-17`, demo-mode clock 9:41. Light onboarding is captured with **demo mode off** so a hidden status bar stays hidden.
@@ -6,7 +6,7 @@ Pray-flow frames in this pass were recorded with **Roborazzi** because the Mac e
 The harness was validated against the approved Mac captures: today-light title 0.5429 vs 0.5440 (Δ 0.11%); onboarding-1 title/CTA within ~0.02%.
 pt and dp are 1:1 at mdpi. iOS PNG measurements are pixels ÷ 3. A screen is marked `matched` only when the measured frame fractions agree within about 2%.
 
-Onboarding/launch, Today, and the **Pray flow** group are **user-approved**. This pass starts the **Learn** group. Profile/Settings and Feasts (as a group) are still deferred.
+Onboarding/launch, Today, and the **Pray flow** group are **user-approved**. This pass is a second designer review of the **Learn** group. Profile/Settings and Feasts (as a group) are still deferred.
 
 `intention-icon-picker` is **not** in the live iOS editor. It stays removed.
 
@@ -36,19 +36,19 @@ Status values: `spec-written` · `captured` · `matched` · `mismatch` · `defer
 | pray-michael | Pray flow | spec-written | captured | close | user-approved | Roborazzi + insets. Body pitch 30.10 vs 30.00 (Δ 0.10). Full-width language capsule is now 44 dp (`segmentedControlHeight`); Latin→control b2b is still 2.05 dp short, control→body 1.38 dp short (UIKit large segmented padding). Title Δ 1.26%; Done bottom Δ 0.85%. |
 | rosary-settings-sheet | Pray flow | spec-written | captured | close | user-approved | Roborazzi + insets. In-card row pitch 56.38 dp vs iOS 56 pt (Δ 0.38). Rows use `bodyPray` 16 / 19.52. Grouped inset cards, M3 Done, and M3 switches unchanged. Title Δ 1.75%, sheet edge Δ 1.53%. |
 | pray-replace-dialog | Pray flow | spec-written | captured | close | user-approved | Roborazzi + insets. Copy matches; title Δ 1.28%. Dialog surface is untinted (`tonalElevation = 0`). Material 3 alert (side-by-side accent actions) vs iOS stacked red “Replace saved place” / black Cancel — kept as a native M3 swap. |
-| learn | Learn | spec-written | captured | close |  | Roborazzi + insets. Grouped page, white cards, 56 dp mystery-set icons, typo-accurate intro title (`headingPrimaryPray`). Intro book glyph is a stroke stand-in for SF `book.closed`. iOS page wash is cooler than `#F8F8FA`. Still `close` until a Mac recapture. |
-| learn-faq | Learn | spec-written | captured | close |  | Scrolled to Common questions with a compact “Learn” title; first question expanded. Answer pitch 24.76 vs 24.67 (Δ 0.10). Wraps earlier on the 412 dp frame. |
-| learn-search | Learn | spec-written | captured | close |  | Query `Hail`, flat list, search icon + clear, hairlines. Clear control is a plain X, not iOS `xmark.circle.fill`. |
-| learn-search-empty | Learn | spec-written | captured | close |  | Query `zzzznotfoundxyz`. Copy matches. Field → message ink Δ −0.24. |
-| learn-mystery-detail | Learn | spec-written | captured | close |  | Title→body ink Δ −0.33; intro pitch Δ 0.43. Hero crop is looser than iOS (more torso/hands). Presentation title wraps. Plain back chevron vs milky circular back. |
-| rosary-prayers | Learn | spec-written | captured | close |  | Grouped white cards, strong section labels, ×3/×10 captions. Plain back chevron. |
-| all-prayers | Learn | spec-written | captured | close |  | Search chrome + flat list. Row band 62.10 vs 65.00 (Δ −2.90, over the 1 dp budget). Plain back chevron. |
-| prayer-reader | Learn | spec-written | captured | close |  | Body pitch 30.10 vs 30.00 (Δ 0.10). 44 dp language capsule. Latin is sans `themeSummary`. Plain back chevron. |
-| walkthrough-1 | Learn | spec-written | captured | close |  | No status bar, edge-to-edge art, centred 32/41.04 title. Body pitch Δ 0.10; title→body ink Δ −0.14. Art crop is slightly looser than iOS. |
-| walkthrough-2 | Learn | spec-written | captured | close |  | Same panel/type as walkthrough-1. Body pitch Δ 0.10. |
-| walkthrough-3 | Learn | spec-written | captured | close |  | Same panel/type as walkthrough-1. Body pitch Δ 0.10. |
-| walkthrough-4 | Learn | spec-written | captured | close |  | Same panel/type as walkthrough-1. Body pitch Δ 0.10. |
-| walkthrough-5 | Learn | spec-written | captured | close |  | Last page; Continue becomes Begin Rosary + Done. Body pitch Δ 0.10. |
+| learn | Learn | spec-written | captured | close |  | Roborazzi + insets. Custom large title: cap 128.0 dp vs iOS 127.7 (Δ 0.3); baseline 150.9 vs 150.7. Soft Marian-blue `AppPageBackground` wash in light and dark. Light Roborazzi tab is a floating capsule (opaque fill, hairline, shadow, 20/10 dp margin). Intro icon is an outlined `book.closed` in a 56 dp accent-tint tile (foot/proportions still shy of SF). Sorrowful crown is unclipped; iOS still overflows the circle more. Still `close` until a Mac recapture. |
+| learn-faq | Learn | spec-written | captured | close |  | Scrolled to Common questions with a compact “Learn” title; first question expanded. Ambient wash behind the compact title. Answer pitch 24.76 vs 24.67 (Δ 0.10). Wraps earlier on the 412 dp frame. |
+| learn-search | Learn | spec-written | captured | close |  | Query `Hail`, flat list, search icon + filled-circle clear (`xmark.circle.fill`). Ambient wash. |
+| learn-search-empty | Learn | spec-written | captured | close |  | Query `zzzznotfoundxyz`. Copy matches. Field → message ink Δ −0.24. Ambient wash. |
+| learn-mystery-detail | Learn | spec-written | captured | close |  | Ambient wash + milky circular back. Hero uses `heroWideFocus` so Mary, Joseph and the child are fully framed (slightly looser than iOS on the narrower Pixel 7). Row titles are `bodyPray` 16; fruit is `captionPray` 12; 28 dp plain surface badge. “The Presentation in the Temple” fits on one line. Intro pitch 27.81 vs 27.67 (Δ 0.14); title→body ink Δ −0.33. |
+| rosary-prayers | Learn | spec-written | captured | close |  | Ambient wash + milky circular back. Grouped white cards, strong section labels, ×3/×10 captions. |
+| all-prayers | Learn | spec-written | captured | close |  | Plain `palette.bg` (no wash, matching iOS `guidePlainPageBackground`). Search chrome + filled-circle clear. Row pitch 73.14 vs 73.00 dp (Δ 0.14). Milky circular back. |
+| prayer-reader | Learn | spec-written | captured | close |  | Ambient wash + milky circular back. Body pitch 30.10 vs 30.00 (Δ 0.10). 44 dp language capsule. Latin is sans `themeSummary`. |
+| walkthrough-1 | Learn | spec-written | captured | close |  | No status bar. 24 dp panel inset + 1.018 scale, same panel as onboarding. Continue top is 0.8679 of the frame vs iOS 0.8682. Body pitch Δ 0.10; title→body ink Δ −0.14. Art crop is slightly tighter / lower than iOS on this aspect. |
+| walkthrough-2 | Learn | spec-written | captured | close |  | Same panel/type as walkthrough-1. Body pitch Δ 0.10. Continue fraction matches onboarding. |
+| walkthrough-3 | Learn | spec-written | captured | close |  | Same panel/type as walkthrough-1. Body pitch Δ 0.10. Continue fraction matches onboarding. |
+| walkthrough-4 | Learn | spec-written | captured | close |  | Same panel/type as walkthrough-1. Body pitch Δ 0.10. Continue fraction matches onboarding. |
+| walkthrough-5 | Learn | spec-written | captured | close |  | Last page; Continue becomes Begin Rosary + Done. Body pitch Δ 0.10. Continue fraction matches onboarding. |
 | Profile / Settings screens | later groups | deferred | | | | Not in this run. |
 
 Pairs: `/workspace/android/shots/v2/pairs/<screen-id>-<light|dark>.png` (iOS left, Android right).
@@ -234,5 +234,5 @@ Remaining visual differences to be candid about: replace-dialog actions stay sid
 2. **week-feast-sheet** detent is still the 460 dp minimum, so the sheet starts lower than the iOS estimated height on this copy. User-approved as is.
 3. **mystery-detail-sheet** sheet top is 3.3% higher on Pixel 7 because both sides cap the detent at 760 on frames of different height (914.3 dp vs 956 pt). Fruit and CTA are within 2%.
 4. **Pray flow frames** are still Roborazzi, not Mac-emulator captures. Landmarks remain within 2% after this pass (plate title Δ 0.50%, Fruit last ink Δ 0.49%, completion title Δ 1.44%, tick Δ 1.88%, Saint Michael bottom Δ 0.71%). Recapture every Pray screen on the Mac Pixel 7 emulator before marking any of them `matched`, especially the Lottie tick on a real device, plate overflow/scroll-circle, and sheet/dialog chrome.
-5. **Learn flow frames** are Roborazzi, not Mac-emulator captures. Body pitch on FAQ, walkthrough, prayer reader, and mystery-detail intro is within 0.5 sp (typically Δ 0.10). Remaining designer-eye diffs: intro book glyph, cooler iOS grouped wash, mystery-detail hero crop, all-prayers row band Δ −2.90 dp, plain back chevrons vs milky circular back, walkthrough art crop, wrapping on the narrower Pixel 7, and a slight clip on the Sorrowful set icon. See `docs/parity-v2/learn-typography.md`.
+5. **Learn flow frames** are Roborazzi, not Mac-emulator captures. Large-title cap is 128.0 dp vs iOS 127.7; FAQ / walkthrough / prayer-reader / mystery intro body pitch is within 0.5 sp (typically Δ 0.10–0.14). Remaining designer-eye diffs: `book.closed` foot and proportions are not a perfect SF match; the dark Marian wash is a bit weaker than iOS; the Sorrowful crown sits inside the circle instead of overflowing it; walkthrough art is slightly tighter and lower than iOS on the Pixel 7 aspect; the light Roborazzi tab capsule is more opaque than iOS frosted glass (production `GuideGlassSurface` was left unchanged so approved Today frames were not recaptured); wrapping still differs on the narrower 412 dp frame. See `docs/parity-v2/learn-typography.md`.
 6. **Pray typography** is much closer (body pitch typically Δ 0.24 sp, most gaps within 1 dp) but two Saint Michael language-control gaps stay 2.05 / 1.38 dp short of UIKit's large segmented control, and wrapping still differs on the narrower Pixel 7. See `docs/parity-v2/pray-typography.md`.

@@ -88,3 +88,22 @@ fun heroDrawableId(context: Context, setName: String): Int =
 
 fun mysteryPlateDrawableId(context: Context, artSlug: String): Int =
     drawableIdByName(context, "mystery_" + artSlug.replace('-', '_'))
+
+/** iOS `ArtCatalog.offset` expressed as a top-left cover for [CroppedArt]. */
+fun focusedCover(
+    srcWidth: Float,
+    srcHeight: Float,
+    frameWidth: Float,
+    frameHeight: Float,
+    focusX: Float,
+    focusY: Float,
+): Triple<Float, Float, Float> {
+    val srcW = srcWidth.coerceAtLeast(1f)
+    val srcH = srcHeight.coerceAtLeast(1f)
+    val frameW = frameWidth.coerceAtLeast(1f)
+    val frameH = frameHeight.coerceAtLeast(1f)
+    val scale = maxOf(frameW / srcW, frameH / srcH)
+    val extraW = srcW * scale - frameW
+    val extraH = srcH * scale - frameH
+    return Triple(scale, -focusX * extraW, -focusY * extraH)
+}

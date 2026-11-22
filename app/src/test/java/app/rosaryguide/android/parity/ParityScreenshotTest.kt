@@ -10,11 +10,14 @@ import app.rosaryguide.feature.learn.LearnArticleScreen
 import app.rosaryguide.feature.learn.HowToPrayScreen
 import app.rosaryguide.feature.feasts.FeastDetailScreen
 import app.rosaryguide.core.model.DatedFeast
+import app.rosaryguide.core.designsystem.component.AppPageBackground
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
 import app.rosaryguide.core.data.catalog.LearnArticle
 import app.rosaryguide.core.data.catalog.FeastCatalog
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -159,14 +162,14 @@ class ParityScreenshotTest {
     @Test fun learnWalkthroughLight() = shot("learn-walkthrough", dark = false) { Walkthrough() }
     @Test fun learnWalkthroughDark() = shot("learn-walkthrough", dark = true) { Walkthrough() }
 
-    @Test fun rosaryPrayersLight() = shot("rosary-prayers", dark = false) { Pushed("Rosary prayers") { RosaryPrayers() } }
-    @Test fun rosaryPrayersDark() = shot("rosary-prayers", dark = true) { Pushed("Rosary prayers") { RosaryPrayers() } }
+    @Test fun rosaryPrayersLight() = shot("rosary-prayers", dark = false) { Pushed("Rosary prayers", ambient = true) { RosaryPrayers() } }
+    @Test fun rosaryPrayersDark() = shot("rosary-prayers", dark = true) { Pushed("Rosary prayers", ambient = true) { RosaryPrayers() } }
 
     @Test fun allPrayersLight() = shot("all-prayers", dark = false) { Pushed("All prayers") { AllPrayers() } }
     @Test fun allPrayersDark() = shot("all-prayers", dark = true) { Pushed("All prayers") { AllPrayers() } }
 
-    @Test fun prayerReaderLight() = shot("prayer-reader", dark = false) { Pushed("") { Reader() } }
-    @Test fun prayerReaderDark() = shot("prayer-reader", dark = true) { Pushed("") { Reader() } }
+    @Test fun prayerReaderLight() = shot("prayer-reader", dark = false) { Pushed("", ambient = true) { Reader() } }
+    @Test fun prayerReaderDark() = shot("prayer-reader", dark = true) { Pushed("", ambient = true) { Reader() } }
 
     @Test fun feastsLight() = shot("feasts", dark = false) { Feasts() }
     @Test fun feastsDark() = shot("feasts", dark = true) { Feasts() }
@@ -465,10 +468,18 @@ class ParityScreenshotTest {
     }
 
     @Composable
-    private fun Pushed(title: String, content: @Composable () -> Unit) {
-        Column(Modifier.fillMaxSize()) {
-            GuideDetailTopBar(title = title, onBack = {})
-            content()
+    private fun Pushed(title: String, ambient: Boolean = false, content: @Composable () -> Unit) {
+        val palette = LocalThemePalette.current
+        Box(Modifier.fillMaxSize()) {
+            if (ambient) AppPageBackground()
+            Column(Modifier.fillMaxSize()) {
+                GuideDetailTopBar(
+                    title = title,
+                    onBack = {},
+                    containerColor = if (ambient) Color.Transparent else palette.bg,
+                )
+                content()
+            }
         }
     }
 
@@ -484,12 +495,12 @@ class ParityScreenshotTest {
     @Composable
     private fun Article() {
         val article = LearnArticle.commonQuestions.first()
-        Pushed(article.title) { LearnArticleScreen(article) }
+        Pushed(article.title, ambient = true) { LearnArticleScreen(article) }
     }
 
     @Composable
     private fun MysterySet() {
-        Pushed(MysterySetKind.Joyful.shortName) {
+        Pushed(MysterySetKind.Joyful.shortName, ambient = true) {
             MysterySetScreen(set = MysterySetKind.Joyful, onPray = {})
         }
     }

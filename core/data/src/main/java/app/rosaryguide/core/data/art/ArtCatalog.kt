@@ -67,6 +67,14 @@ object ArtCatalog {
 
     fun crucifixName(): String = "crucifix"
 
+    /** iOS `ArtCatalog.heroWideFocus` — alignment bias for Learn mystery-detail heroes. */
+    fun heroWideFocus(set: MysterySetKind): Pair<Float, Float> = when (set) {
+        MysterySetKind.Joyful -> 0.5f to 0.10f
+        MysterySetKind.Luminous -> 0.5f to 0.04f
+        MysterySetKind.Sorrowful -> 0.5f to 0.18f
+        MysterySetKind.Glorious -> 0.5f to 0.02f
+    }
+
     /**
      * Complete-screen art. Home always shows the set's hero file, so the complete
      * screen uses one of the set's five scene plates, rotating by day of year.

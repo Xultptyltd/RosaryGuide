@@ -46,8 +46,11 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.data.catalog.LearnArticle
 import app.rosaryguide.core.data.catalog.LearnCopy
@@ -55,6 +58,7 @@ import app.rosaryguide.core.data.catalog.PrayerCatalog
 import app.rosaryguide.core.data.search.localizedStandardContains
 import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.feature.learn.R as LearnR
+import app.rosaryguide.core.designsystem.component.AppPageBackground
 import app.rosaryguide.core.designsystem.component.GuideLargeTopAppBar
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
@@ -113,19 +117,20 @@ fun LearnScreen(
             scroll.scrollTo(questionsY)
         }
     }
-    Box(modifier.fillMaxSize().background(palette.groupedBackground)) {
+    Box(modifier.fillMaxSize()) {
+        AppPageBackground()
         Column(Modifier.fillMaxSize()) {
             if (initialScrollToQuestions) {
                 CompactLearnTitle()
             } else {
-                GuideLargeTopAppBar(title = "Learn", containerColor = palette.groupedBackground)
+                LearnLargeTitle()
             }
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(scroll)
                     .padding(horizontal = RosarySpace.gutter)
-                    .padding(bottom = RosarySpace.xxl),
+                    .padding(bottom = 96.dp),
             ) {
                 BoxSearch(value = query, onValueChange = { query = it }, placeholder = LearnCopy.SEARCH_PROMPT)
                 Spacer(Modifier.height(RosarySpace.xl))
@@ -404,13 +409,35 @@ private val rosaryPrayerIds = setOf(
 )
 
 
+
+@Composable
+private fun LearnLargeTitle() {
+    val palette = LocalThemePalette.current
+    // iOS large-title cap is 127.7 dp (0.1335). Status 52.57 + 56 dp targets that after Trim.Both.
+    val title = RosaryType.h1Navigation.copy(
+        platformStyle = PlatformTextStyle(includeFontPadding = false),
+        lineHeightStyle = LineHeightStyle(
+            alignment = LineHeightStyle.Alignment.Center,
+            trim = LineHeightStyle.Trim.Both,
+        ),
+    )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = RosarySpace.gutter)
+            .padding(top = 56.dp, bottom = 8.dp),
+    ) {
+        Text("Learn", style = title, color = palette.ink)
+    }
+}
+
 @Composable
 private fun CompactLearnTitle() {
     val palette = LocalThemePalette.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(palette.groupedBackground)
             .statusBarsPadding()
             .padding(vertical = 10.dp),
         contentAlignment = Alignment.Center,
@@ -429,17 +456,21 @@ private fun MysterySetAvatar(set: MysterySetKind, size: androidx.compose.ui.unit
         MysterySetKind.Glorious -> LearnR.drawable.ic_mystery_glorious
     }
     Box(
-        modifier = Modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(palette.accent),
+        modifier = Modifier.size(size),
         contentAlignment = Alignment.Center,
     ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(CircleShape)
+                .background(palette.accent),
+        )
+        val glyph = if (set == MysterySetKind.Sorrowful) size * 0.96f else size * 0.78f
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
             tint = palette.onAccent,
-            modifier = Modifier.size(size * 0.72f),
+            modifier = Modifier.size(glyph),
         )
     }
 }
@@ -486,14 +517,21 @@ private fun BoxSearch(
                     inner()
                 }
                 if (value.isNotEmpty()) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = "Clear search",
-                        tint = palette.dim,
+                    Box(
                         modifier = Modifier
                             .size(20.dp)
+                            .clip(CircleShape)
+                            .background(palette.dim)
                             .clickable { onValueChange("") },
-                    )
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Clear search",
+                            tint = Color.White,
+                            modifier = Modifier.size(12.dp),
+                        )
+                    }
                 }
             }
         },
