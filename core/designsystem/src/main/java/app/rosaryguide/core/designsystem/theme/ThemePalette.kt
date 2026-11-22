@@ -101,6 +101,10 @@ data class ThemePalette(
     val todayPillText: Color = Color.Black
 
     val strokeSubtle: Color get() = textPrimary.copy(alpha = if (!isDark) 0.07f else 0.12f)
+    /** UIKit `UIColor.separator` — the colour of list and row hairlines. */
+    val hair: Color
+        get() = if (isDark) Color(0xFF545458).copy(alpha = 0.60f)
+        else Color(0xFF3C3C43).copy(alpha = 0.29f)
     val strokeRegular: Color get() = textPrimary.copy(alpha = if (!isDark) 0.12f else 0.22f)
     val strokeStrong: Color get() = textPrimary.copy(alpha = 0.28f)
     val strokeSelected: Color get() = textPrimary.copy(alpha = 0.85f)

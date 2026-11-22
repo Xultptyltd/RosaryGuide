@@ -65,6 +65,7 @@ import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.PageStyle
+import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
@@ -353,7 +354,8 @@ private fun QuestionsAccordion(articles: List<LearnArticle>, initialExpandedArti
                     Spacer(Modifier.height(RosarySpace.sm))
                 }
             }
-            if (index < articles.lastIndex) HorizontalDivider(color = palette.strokeRegular)
+            if (index < articles.lastIndex) HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
         }
     }
 }
@@ -399,7 +401,8 @@ private fun LearnLinkRow(title: String, caption: String? = null, onClick: () -> 
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = palette.dim)
         }
-        if (showDivider) HorizontalDivider(color = palette.strokeRegular)
+        if (showDivider) HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
     }
 }
 

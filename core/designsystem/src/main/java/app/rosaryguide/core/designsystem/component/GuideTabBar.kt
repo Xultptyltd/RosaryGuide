@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 
@@ -70,7 +71,7 @@ fun GuideTabBar(
             .then(if (palette.isDark) Modifier else Modifier.shadow(16.dp, shape, clip = false))
             .clip(shape)
             .background(fill)
-            .border(0.5.dp, hairline, shape)
+            .border(Hairline.thickness, hairline, shape)
             .padding(horizontal = RosarySpace.sm, vertical = RosarySpace.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {

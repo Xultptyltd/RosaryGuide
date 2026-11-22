@@ -54,6 +54,7 @@ import app.rosaryguide.core.designsystem.component.GuideSectionLabel
 import app.rosaryguide.core.designsystem.component.LocalReduceMotion
 import app.rosaryguide.core.designsystem.component.feastHeroDrawableId
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.model.DatedFeast
@@ -160,12 +161,15 @@ fun FeastDetailScreen(
 
             FeastCard {
                 QuickFactRow("Observed as", feast.rank.title)
-                HorizontalDivider(color = palette.strokeRegular)
+                HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
                 QuickFactRow("Date", dateValue)
-                HorizontalDivider(color = palette.strokeRegular)
+                HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
                 QuickFactRow("Rosary", "${rosarySet.shortName} Mysteries")
                 if (isLikelyHolyDayOfObligation(feast.id)) {
-                    HorizontalDivider(color = palette.strokeRegular)
+                    HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
                     QuickFactRow("Note", "May be a holy day of obligation depending on country and year")
                 }
             }
@@ -181,7 +185,8 @@ fun FeastDetailScreen(
                         Spacer(Modifier.height(RosarySpace.sm))
                         Text(practice.second, style = RosaryType.supportingLabel, color = palette.dim)
                     }
-                    if (index < practices.lastIndex) HorizontalDivider(color = palette.strokeRegular)
+                    if (index < practices.lastIndex) HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
                 }
             }
 
@@ -241,7 +246,8 @@ fun FeastDetailScreen(
                             Spacer(Modifier.height(RosarySpace.sm))
                             Text(passage.text, style = RosaryType.supportingLabel, color = palette.dim)
                         }
-                        if (index < passages.take(3).lastIndex) HorizontalDivider(color = palette.strokeRegular)
+                        if (index < passages.take(3).lastIndex) HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
                     }
                 }
             }

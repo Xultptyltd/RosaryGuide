@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 
 /**
@@ -63,7 +64,7 @@ fun GuideSheetDragHandle(modifier: Modifier = Modifier) {
 fun Modifier.guideGlass(isDark: Boolean, shape: Shape, blur: Boolean = false): Modifier = composed {
     val fill = if (isDark) Color.White.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.58f)
     val stroke = if (isDark) Color.White.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.72f)
-    val hairline = 0.5.dp
+    val hairline = Hairline.thickness
     val base = this.clip(shape)
     val maybeBlur = if (blur && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         base.graphicsLayer {

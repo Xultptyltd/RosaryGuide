@@ -28,6 +28,7 @@ import app.rosaryguide.core.data.art.ArtCatalog
 import app.rosaryguide.core.designsystem.component.CroppedArt
 import app.rosaryguide.core.designsystem.component.mysteryPlateDrawableId
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.model.Mystery
@@ -165,7 +166,8 @@ fun MysteryPlateReading(
         }
         // iOS FruitLine `.padding(.top, Space.lg)` plus announceBody Space.sm = 24.
         Spacer(Modifier.height(RosarySpace.lg + RosarySpace.sm))
-        HorizontalDivider(color = palette.strokeSubtle)
+        HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
         Spacer(Modifier.height(RosarySpace.sm))
         val fruit = mystery.fruit.resolved(language)
         if (fruit.isNotBlank()) {

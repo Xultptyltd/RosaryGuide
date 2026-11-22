@@ -50,6 +50,7 @@ import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideTertiaryButton
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.PageStyle
+import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
@@ -96,7 +97,7 @@ fun PrayChromeButton(
                 .size(ChromeCircle)
                 .shadow(2.dp, CircleShape, clip = false)
                 .background(fill, CircleShape)
-                .border(0.5.dp, stroke, CircleShape),
+                .border(Hairline.thickness, stroke, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -443,7 +444,7 @@ fun IntentionActionFooter(
                 containerColor = fill,
                 contentColor = palette.ink,
             ),
-            border = if (palette.isDark) null else BorderStroke(0.5.dp, palette.cardSurfaceStroke),
+            border = if (palette.isDark) null else BorderStroke(Hairline.thickness, palette.cardSurfaceStroke),
         ) {
             Text(text = "Add intention", style = RosaryType.bodyPray)
         }

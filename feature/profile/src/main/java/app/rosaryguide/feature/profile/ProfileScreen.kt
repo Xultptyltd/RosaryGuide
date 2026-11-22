@@ -56,6 +56,7 @@ import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.designsystem.theme.guideHeading
@@ -353,8 +354,8 @@ private fun ProfileHome(
                 )
                 if (index != rest.lastIndex) {
                     HorizontalDivider(
-                        modifier = Modifier.padding(start = 56.dp),
-                        color = palette.strokeSubtle,
+                    thickness = Hairline.thickness, modifier = Modifier.padding(start = 56.dp),
+                        color = palette.hair,
                     )
                 }
             }

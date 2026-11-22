@@ -105,6 +105,7 @@ import app.rosaryguide.core.designsystem.component.drawableIdByName
 import app.rosaryguide.core.designsystem.component.feastHeroDrawableId
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.PageStyle
+import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
@@ -436,8 +437,8 @@ fun TodayScreen(
                     if (index < week.lastIndex && !isTodayRow && !nextIsToday) {
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = RosarySpace.gutter),
-                            color = palette.strokeSubtle,
-                            thickness = 1.dp,
+                            color = palette.hair,
+                            thickness = Hairline.thickness,
                         )
                     }
                 }
@@ -1098,7 +1099,7 @@ private fun MysteryDetailPage(mystery: Mystery, contextName: String) {
 private fun MysteryFruitLine(fruit: String) {
     val palette = LocalThemePalette.current
     Column(verticalArrangement = Arrangement.spacedBy(RosarySpace.sm)) {
-        HorizontalDivider(color = palette.strokeSubtle, thickness = (1.dp / 3))
+        HorizontalDivider(color = palette.hair, thickness = Hairline.thickness)
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(RosarySpace.sm)) {
             Text(
                 "Fruit",

@@ -63,6 +63,7 @@ import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.model.MysterySetKind
@@ -892,7 +893,8 @@ fun JourneyPrayerDetailSheet(
                     )
                 }
                 if (index < facts.facts.lastIndex) {
-                    HorizontalDivider(color = palette.strokeRegular)
+                    HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
                 }
             }
         }

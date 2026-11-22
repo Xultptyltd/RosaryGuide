@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.PageStyle
+import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
@@ -79,7 +80,7 @@ private fun Modifier.settingsGroupCard(): Modifier {
     return this
         .clip(shape)
         .background(palette.cardSurface(on = PageStyle.Grouped), shape)
-        .border(0.5.dp, palette.cardSurfaceStroke, shape)
+        .border(Hairline.thickness, palette.cardSurfaceStroke, shape)
         // iOS guideRowGroup has no inner vertical inset; keep a hair of
         // padding so the first/last row clears the 20 dp corner radius.
         .padding(horizontal = RosarySpace.sm, vertical = 8.dp)
@@ -346,5 +347,5 @@ fun SettingsFootnote(text: String, modifier: Modifier = Modifier) {
 @Composable
 fun SettingsDivider() {
     val palette = LocalThemePalette.current
-    HorizontalDivider(color = palette.strokeRegular, thickness = 0.5.dp)
+    HorizontalDivider(color = palette.hair, thickness = Hairline.thickness)
 }

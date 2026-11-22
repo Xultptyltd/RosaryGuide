@@ -56,6 +56,7 @@ import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.component.CroppedArt
 import app.rosaryguide.core.designsystem.component.focusedCover
 import app.rosaryguide.core.designsystem.theme.PageStyle
+import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.model.MysterySetKind
@@ -247,7 +248,8 @@ fun MysterySetScreen(
                     }
                 }
                 if (index < mysteries.lastIndex) {
-                    androidx.compose.material3.HorizontalDivider(color = palette.strokeRegular)
+                    androidx.compose.material3.HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
                 }
             }
         }
@@ -351,7 +353,7 @@ private fun RosaryPrayerGroup(
             }
             if (index < rows.lastIndex) {
                 androidx.compose.material3.HorizontalDivider(
-                    color = palette.strokeRegular,
+                    thickness = Hairline.thickness, color = palette.hair,
                     modifier = Modifier.padding(start = RosarySpace.lg),
                 )
             }
@@ -449,7 +451,8 @@ fun AllPrayersScreen(
                         tint = palette.dim,
                     )
                 }
-                if (index < results.lastIndex) androidx.compose.material3.HorizontalDivider(color = palette.strokeRegular)
+                if (index < results.lastIndex) androidx.compose.material3.HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
             }
         }
     }

@@ -44,6 +44,7 @@ import app.rosaryguide.core.data.catalog.HowToPrayStep
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
 import app.rosaryguide.core.designsystem.component.LocalReduceMotion
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
@@ -83,7 +84,8 @@ fun HowToPrayScreen(modifier: Modifier = Modifier) {
                     Spacer(Modifier.height(RosarySpace.xs))
                     Text(body, style = RosaryType.supportingLabel, color = palette.dim)
                 }
-                if (index < pathOverview.lastIndex) HorizontalDivider(color = palette.strokeRegular)
+                if (index < pathOverview.lastIndex) HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
             }
         }
         Spacer(Modifier.height(RosarySpace.xl))
@@ -97,7 +99,8 @@ fun HowToPrayScreen(modifier: Modifier = Modifier) {
                 if (index < HowToPrayContent.steps.lastIndex) {
                     HorizontalDivider(
                         modifier = Modifier.padding(start = 52.dp),
-                        color = palette.strokeRegular,
+                        color = palette.hair,
+                        thickness = Hairline.thickness,
                     )
                 }
             }
@@ -123,7 +126,8 @@ fun HowToPrayScreen(modifier: Modifier = Modifier) {
                         Text(set, style = RosaryType.caption, color = palette.dim, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
                     }
                 }
-                if (index < HowToPrayContent.weekdayGuide.lastIndex) HorizontalDivider(color = palette.strokeRegular)
+                if (index < HowToPrayContent.weekdayGuide.lastIndex) HorizontalDivider(
+                    thickness = Hairline.thickness, color = palette.hair)
             }
         }
         Spacer(Modifier.height(RosarySpace.xl))
