@@ -51,6 +51,8 @@ object RosarySpace {
      */
     val sheetHandleToContent: Dp = 24.dp
     val tabBarContentClearance: Dp = 108.dp
+    val tabBarSideMargin: Dp = 20.dp
+    val tabBarBottomMargin: Dp = 10.dp
     val sheetOverlap: Dp = 56.dp
     val homeSheetOverlap: Dp = 36.dp
     val mysteryCardWidthFraction = 0.85f

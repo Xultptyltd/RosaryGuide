@@ -6,11 +6,9 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.union
@@ -18,18 +16,9 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Icon
 import app.rosaryguide.feature.onboarding.SignInTransitionScreen
 import app.rosaryguide.core.model.AppearancePreference
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,11 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -66,7 +50,7 @@ import app.rosaryguide.core.data.sequence.RosarySequenceBuilder
 import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.component.AppPageBackground
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
-import app.rosaryguide.core.designsystem.component.GuideGlassSurface
+import app.rosaryguide.core.designsystem.component.GuideTabBar
 import app.rosaryguide.core.designsystem.component.LocalReduceMotion
 import app.rosaryguide.core.designsystem.component.ProvideReduceMotion
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
@@ -489,10 +473,6 @@ private fun AppTabs(
         }
     }
 
-    val density = LocalDensity.current
-    val fontScale = density.fontScale
-    var tabBarHeight by remember { mutableStateOf(80.dp) }
-    val tabClearance = if (fontScale >= 1.6f) maxOf(tabBarHeight, RosarySpace.tabBarContentClearance) else tabBarHeight
     val onToday = destination?.hierarchy?.any { it.hasRoute(TodayRoute::class) } == true
     val tabInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).let { horizontal ->
         if (onToday) horizontal else horizontal.union(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
@@ -504,10 +484,12 @@ private fun AppTabs(
             .windowInsetsPadding(tabInsets),
     ) {
         val reduceMotion = LocalReduceMotion.current
+        // Tab floats over content, as on iOS. Clip only the 10 dp margin below the
+        // capsule so a bottom CTA cannot peek out under the bar.
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = tabClearance)
+                .padding(bottom = RosarySpace.tabBarBottomMargin)
                 .clipToBounds(),
         ) {
         NavHost(
@@ -646,60 +628,23 @@ private fun AppTabs(
             }
         }
         }
-        val tabShape = RoundedCornerShape(percent = 50)
-        GuideGlassSurface(
-            isDark = palette.isDark,
-            shape = tabShape,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(start = 20.dp, end = 20.dp, bottom = 10.dp)
-                .fillMaxWidth()
-                .onSizeChanged { size ->
-                    if (size.height > 0) {
-                        val measured = with(density) { size.height.toDp() + 10.dp + 16.dp }
-                        if (measured > tabBarHeight) tabBarHeight = measured
+        val selectedIndex = tabs.indexOfFirst { tab ->
+            destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true
+        }.let { if (it < 0) 0 else it }
+        GuideTabBar(
+            selectedIndex = selectedIndex,
+            onSelected = { index ->
+                val tab = tabs[index]
+                navController.navigate(tab.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
                     }
-                },
-        ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = RosarySpace.sm, vertical = RosarySpace.xs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            tabs.forEach { tab ->
-                val selected = destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(percent = 50))
-                        .background(if (selected && !palette.isDark) palette.groupedBackground else androidx.compose.ui.graphics.Color.Transparent)
-                        .clickable {
-                            navController.navigate(tab.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                        .padding(vertical = RosarySpace.sm),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Icon(
-                        painter = painterResource(if (selected) tab.selectedIcon else tab.unselectedIcon),
-                        contentDescription = tab.tab.title,
-                        tint = if (selected) palette.tabSelected else palette.textSecondary,
-                    )
-                    Text(
-                        text = tab.tab.title,
-                        style = RosaryType.caption.copy(fontSize = 12.sp),
-                        color = if (selected) palette.tabSelected else palette.textSecondary,
-                    )
+                    launchSingleTop = true
+                    restoreState = true
                 }
-            }
-        }
-        }
+            },
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 

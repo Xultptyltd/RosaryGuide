@@ -46,7 +46,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.data.launch.AppTab
-import app.rosaryguide.core.designsystem.component.GuideGlassSurface
+import app.rosaryguide.core.designsystem.component.GuideTabBar
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
@@ -119,28 +119,32 @@ fun Pixel7DeviceFrame(
     content: @Composable () -> Unit,
 ) {
     val view = LocalView.current
-    val density = LocalDensity.current
     LaunchedEffect(view) {
         applyPixel7WindowInsets(view)
     }
 
     val palette = LocalThemePalette.current
-    var tabClearance by remember { mutableStateOf(80.dp) }
 
     Box(modifier = Modifier.fillMaxSize().background(palette.bg)) {
         if (showTabBar) {
-            content()
-            ParityTabBar(
-                selected = selectedTab,
-                isDark = palette.isDark,
+            Box(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .onSizeChanged { size ->
-                        if (size.height > 0) {
-                            val measured = with(density) { size.height.toDp() + 10.dp + 16.dp }
-                            if (measured > tabClearance) tabClearance = measured
-                        }
-                    },
+                    .fillMaxSize()
+                    .padding(bottom = RosarySpace.tabBarBottomMargin)
+                    .clipToBounds(),
+            ) {
+                content()
+            }
+            val selectedIndex = when (selectedTab) {
+                AppTab.Today -> 0
+                AppTab.Learn -> 1
+                AppTab.Feasts -> 2
+                AppTab.Profile -> 3
+            }
+            GuideTabBar(
+                selectedIndex = selectedIndex,
+                onSelected = {},
+                modifier = Modifier.align(Alignment.BottomCenter),
             )
         } else {
             content()
@@ -194,65 +198,4 @@ private fun GesturePill(dark: Boolean, modifier: Modifier = Modifier) {
             .clip(RoundedCornerShape(percent = 50))
             .background(color),
     )
-}
-
-@Composable
-private fun ParityTabBar(
-    selected: AppTab,
-    isDark: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val palette = LocalThemePalette.current
-    val tabs = listOf(
-        AppTab.Today to (R.drawable.tab_today_filled to R.drawable.tab_today_outline),
-        AppTab.Learn to (R.drawable.tab_learn_filled to R.drawable.tab_learn_outline),
-        AppTab.Feasts to (R.drawable.tab_feasts_filled to R.drawable.tab_feasts_outline),
-        AppTab.Profile to (R.drawable.tab_profile_filled to R.drawable.tab_profile_outline),
-    )
-    val tabShape = RoundedCornerShape(percent = 50)
-    val tabMod = modifier
-        .padding(start = 20.dp, end = 20.dp, bottom = 10.dp)
-        .fillMaxWidth()
-        .then(if (isDark) Modifier else Modifier.shadow(16.dp, tabShape, clip = false))
-        .clip(tabShape)
-        .background(if (isDark) Color.White.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.96f))
-        .border(
-            width = 0.5.dp,
-            color = if (isDark) Color.White.copy(alpha = 0.28f) else Color.Black.copy(alpha = 0.08f),
-            shape = tabShape,
-        )
-    Box(tabMod) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = RosarySpace.sm, vertical = RosarySpace.xs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            tabs.forEach { (tab, icons) ->
-                val isSelected = tab == selected
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(percent = 50))
-                        .background(
-                            if (isSelected && !isDark) palette.groupedBackground
-                            else Color.Transparent,
-                        )
-                        .padding(vertical = RosarySpace.sm),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Icon(
-                        painter = painterResource(if (isSelected) icons.first else icons.second),
-                        contentDescription = tab.title,
-                        tint = if (isSelected) palette.tabSelected else palette.textSecondary,
-                    )
-                    Text(
-                        text = tab.title,
-                        style = RosaryType.caption.copy(fontSize = 12.sp),
-                        color = if (isSelected) palette.tabSelected else palette.textSecondary,
-                    )
-                }
-            }
-        }
-    }
 }
