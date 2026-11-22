@@ -386,9 +386,9 @@ class ParityScreenshotTest {
     ) {
         // Night drawables (`drawable-night-nodpi`) only resolve when the
         // Robolectric configuration is actually night. Theme(darkTheme)
-        // alone still loads the light asset. Scope this to Pray stems so
-        // approved today/onboarding dark recordings stay comparable.
-        val useNightResources = dark && (stem.startsWith("pray-") || stem == "rosary-settings-sheet" || stem.startsWith("learn") || stem.startsWith("walkthrough") || stem in setOf("prayer-reader", "rosary-prayers", "all-prayers"))
+        // alone still loads the light asset. Every dark capture uses night
+        // resources, matching a real device.
+        val useNightResources = dark
         RuntimeEnvironment.setQualifiers(if (useNightResources) "+night" else "+notnight")
         val app = RuntimeEnvironment.getApplication()
         val config = Configuration(app.resources.configuration)
