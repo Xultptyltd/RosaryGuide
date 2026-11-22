@@ -53,6 +53,14 @@ object RosarySpace {
     val tabBarContentClearance: Dp = 108.dp
     val tabBarSideMargin: Dp = 20.dp
     val tabBarBottomMargin: Dp = 10.dp
+    /**
+     * Height of the bottom scroll-edge fade behind the floating tab bar.
+     * Approximates iOS 26 `scrollEdgeEffect` on tab roots: iOS only hides
+     * that effect at the top (custom frosted nav); the bottom edge stays
+     * on and softens content under and beside the bar. Compose has no
+     * system equivalent, so this is a 90 dp fade to the page background.
+     */
+    val tabBarScrollEdgeScrimHeight: Dp = 90.dp
     val sheetOverlap: Dp = 56.dp
     val homeSheetOverlap: Dp = 36.dp
     val mysteryCardWidthFraction = 0.85f

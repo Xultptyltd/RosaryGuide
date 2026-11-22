@@ -51,6 +51,7 @@ import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.component.AppPageBackground
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
 import app.rosaryguide.core.designsystem.component.GuideTabBar
+import app.rosaryguide.core.designsystem.component.GuideTabBarScrollEdgeScrim
 import app.rosaryguide.core.designsystem.component.LocalReduceMotion
 import app.rosaryguide.core.designsystem.component.ProvideReduceMotion
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
@@ -631,6 +632,11 @@ private fun AppTabs(
         val selectedIndex = tabs.indexOfFirst { tab ->
             destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true
         }.let { if (it < 0) 0 else it }
+        val tabScrimColor = if (onToday) palette.groupedBackground else palette.bg
+        GuideTabBarScrollEdgeScrim(
+            color = tabScrimColor,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
         GuideTabBar(
             selectedIndex = selectedIndex,
             onSelected = { index ->

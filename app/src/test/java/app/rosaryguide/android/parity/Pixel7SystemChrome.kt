@@ -47,6 +47,7 @@ import androidx.core.view.WindowInsetsCompat
 import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.data.launch.AppTab
 import app.rosaryguide.core.designsystem.component.GuideTabBar
+import app.rosaryguide.core.designsystem.component.GuideTabBarScrollEdgeScrim
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
@@ -141,6 +142,11 @@ fun Pixel7DeviceFrame(
                 AppTab.Feasts -> 2
                 AppTab.Profile -> 3
             }
+            val tabScrimColor = if (selectedTab == AppTab.Today) palette.groupedBackground else palette.bg
+            GuideTabBarScrollEdgeScrim(
+                color = tabScrimColor,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
             GuideTabBar(
                 selectedIndex = selectedIndex,
                 onSelected = {},
