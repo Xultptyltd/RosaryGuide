@@ -391,11 +391,12 @@ fun AllPrayersScreen(
             singleLine = true,
             textStyle = RosaryType.bodyPray.copy(color = fieldPalette.ink),
             cursorBrush = androidx.compose.ui.graphics.SolidColor(fieldPalette.accent),
+            // iOS all-prayers is a plain white page, so the capsule uses
+            // `cardSurface(.plain)` (#F2F3F7 in light) and no visible border.
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(searchShape)
-                .background(fieldPalette.cardSurface(PageStyle.Grouped))
-                .border(1.dp, fieldPalette.cardSurfaceStroke, searchShape)
+                .background(fieldPalette.cardSurface(PageStyle.Plain))
                 .padding(horizontal = RosarySpace.md, vertical = RosarySpace.md),
             decorationBox = { inner ->
                 androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {

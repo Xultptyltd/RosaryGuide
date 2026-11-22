@@ -262,7 +262,12 @@ fun RosaryWalkthroughScreen(
         // iOS close: 13 pt semibold xmark in a 40 pt `guideFloatingGlass` circle,
         // 48 pt hit target, padded `gutter + Space.sm` from the trailing edge
         // and `Space.xs` below the safe area.
-        val closeFill = if (palette.isDark) Color.White.copy(alpha = 0.16f) else Color(0xFFF4F4F5)
+        // Dark: iOS `guideFloatingGlass` / `.regularMaterial` is a visible grey
+        // milky chip. A white veil (even at 0.28–0.32) lightens the cream
+        // sculpture and disappears; a mid-grey 0.60 fill matches the sampled
+        // iOS colour on marble (~#8F8988) and still reads as a filled disk
+        // on the black panel (~#3B3B3D).
+        val closeFill = if (palette.isDark) Color(0xFF636366).copy(alpha = 0.60f) else Color(0xFFF4F4F5)
         val closeStroke = if (palette.isDark) Color.White.copy(alpha = 0.28f) else Color.Black.copy(alpha = 0.08f)
         Box(
             modifier = Modifier

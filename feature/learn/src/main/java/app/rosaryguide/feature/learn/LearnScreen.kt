@@ -503,7 +503,7 @@ private fun BoxSearch(
             .fillMaxWidth()
             .clip(shape)
             .background(palette.cardSurface(PageStyle.Grouped))
-            .border(1.dp, palette.cardSurfaceStroke, shape)
+            .border(Hairline.thickness, palette.cardSurfaceStroke, shape)
             .padding(horizontal = RosarySpace.md, vertical = RosarySpace.md),
         decorationBox = { inner ->
             Row(verticalAlignment = Alignment.CenterVertically) {
