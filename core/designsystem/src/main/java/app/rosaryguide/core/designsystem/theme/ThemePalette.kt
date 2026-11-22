@@ -144,6 +144,10 @@ data class ThemePalette(
     val completionTitle: Color get() = ceremonyTextPrimary
     val completionMeta: Color get() = ceremonyTextTertiary
     val completionMetaValue: Color get() = ceremonyTextPrimary.copy(alpha = 0.94f)
+    /** iOS `completionTick` — the Lottie tick is recolored to `textPrimary`. */
+    val completionTick: Color get() = textPrimary
+    /** iOS `completionGlow`. */
+    val completionGlow: Color get() = accentText
 
     val beadHighlight: Color get() = Color.White
     val beadPulseFill: Color get() = accent.copy(alpha = if (isDark) 0.36f else 0.30f)

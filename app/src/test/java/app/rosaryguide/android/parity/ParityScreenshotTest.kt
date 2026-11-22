@@ -21,6 +21,10 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import org.junit.Before
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows
+import app.rosaryguide.core.data.launch.AppTab
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.rosaryguide.core.data.calendar.WeekStart
 import app.rosaryguide.core.data.catalog.PrayerCatalog
@@ -101,6 +105,26 @@ class ParityScreenshotTest {
     private val locale: Locale = Locale.forLanguageTag("en-AU")
     private val firstWeekday: Int = WeekStart.firstWeekday(locale)
     private val settings = UserSettings(appearance = AppearancePreference.Light)
+
+    @Before
+    fun configurePixel7Display() {
+        val metrics = RuntimeEnvironment.getApplication().resources.displayMetrics
+        metrics.density = Pixel7Chrome.Density
+        metrics.scaledDensity = Pixel7Chrome.Density
+        metrics.densityDpi = Pixel7Chrome.DensityDpi
+        metrics.widthPixels = Pixel7Chrome.WidthPx
+        metrics.heightPixels = Pixel7Chrome.HeightPx
+        metrics.xdpi = Pixel7Chrome.DensityDpi.toFloat()
+        metrics.ydpi = Pixel7Chrome.DensityDpi.toFloat()
+        val windowManager = RuntimeEnvironment.getApplication()
+            .getSystemService(android.content.Context.WINDOW_SERVICE) as android.view.WindowManager
+        Shadows.shadowOf(windowManager.defaultDisplay).apply {
+            setWidth(Pixel7Chrome.WidthPx)
+            setHeight(Pixel7Chrome.HeightPx)
+            setDensity(Pixel7Chrome.Density)
+            setDensityDpi(Pixel7Chrome.DensityDpi)
+        }
+    }
 
     @Test fun todayLight() = shot("today", dark = false) { Today() }
     @Test fun todayDark() = shot("today", dark = true) { Today() }
@@ -199,8 +223,8 @@ class ParityScreenshotTest {
     @Test fun prayIntentionsLight() = shot("pray-intention-step", dark = false) { Pray(intentionLaunch(), emptyKeepList = true) }
     @Test fun prayIntentionsDark() = shot("pray-intention-step", dark = true) { Pray(intentionLaunch(), emptyKeepList = true) }
 
-    @Test fun prayPlateLight() = shot("pray-mystery-plate", dark = false) { Pray(stepLaunch(plateIndex)) }
-    @Test fun prayPlateDark() = shot("pray-mystery-plate", dark = true) { Pray(stepLaunch(plateIndex)) }
+    @Test fun prayPlateLight() = shot("pray-mystery-plate", dark = false) { Pray(stepLaunch(plateIndex).copy(scrollPlateToEnd = true)) }
+    @Test fun prayPlateDark() = shot("pray-mystery-plate", dark = true) { Pray(stepLaunch(plateIndex).copy(scrollPlateToEnd = true)) }
 
     @Test fun prayDecadeLight() = shot("pray-hail-mary-bead", dark = false) { Pray(stepLaunch(hailIndex)) }
     @Test fun prayDecadeDark() = shot("pray-hail-mary-bead", dark = true) { Pray(stepLaunch(hailIndex)) }
@@ -326,8 +350,33 @@ class ParityScreenshotTest {
         RosaryGuideTheme(darkTheme = dark, content = content)
     }
 
-    private fun shot(stem: String, dark: Boolean, content: @Composable () -> Unit) {
-        composeRule.setContent { Themed(dark = dark, content = content) }
+    private fun shot(
+        stem: String,
+        dark: Boolean,
+        showTabBar: Boolean = stem in TAB_ROOTS,
+        showStatusBar: Boolean = !(stem.startsWith("onboarding") && !dark),
+        content: @Composable () -> Unit,
+    ) {
+        composeRule.setContent {
+            Themed(dark = dark) {
+                Pixel7DeviceFrame(
+                    dark = dark,
+                    showStatusBar = showStatusBar,
+                    showTabBar = showTabBar,
+                    selectedTab = when (stem) {
+                        "learn", "learn-walkthrough" -> AppTab.Learn
+                        "feasts" -> AppTab.Feasts
+                        "profile", "profile-empty" -> AppTab.Profile
+                        else -> AppTab.Today
+                    },
+                    content = content,
+                )
+            }
+        }
+        composeRule.waitForIdle()
+        // Insets are dispatched in a LaunchedEffect; give Compose a second frame
+        // so statusBars / navigationBars padding is applied before capture.
+        composeRule.mainClock.advanceTimeBy(16L)
         composeRule.waitForIdle()
         val suffix = if (dark) "dark" else "light"
         composeRule.onRoot().captureRoboImage("$OUT/$stem-$suffix.png")
@@ -456,7 +505,8 @@ class ParityScreenshotTest {
             onViewAllFeasts = {},
             onFeastClick = {},
             onPray = {},
-            today = today,
+            // Approved Mac captures were taken with clock_date=2026-11-17 (Sorrowful).
+            today = LocalDate.of(2026, 11, 17),
         )
     }
 
@@ -660,6 +710,10 @@ class ParityScreenshotTest {
 
     companion object {
         private const val OUT = "/workspace/android/shots/parity"
+        private val TAB_ROOTS = setOf(
+            "today", "learn", "learn-walkthrough", "feasts",
+            "profile", "profile-empty",
+        )
         private val PopeMonthIntentionFallback = app.rosaryguide.core.data.journey.PopeMonthIntention(
             yearMonth = "2026-11",
             title = "For the prevention of suicide",

@@ -236,6 +236,7 @@ fun RosaryGuideApp(
                 showReplaceDialog = fromDebug && debugLaunch.showReplaceDialog,
                 config = config,
                 completionQuoteId = debugLaunch.completionQuoteId,
+                scrollPlateToEnd = fromDebug && debugLaunch.scrollPlateToEnd,
             )
         }
 

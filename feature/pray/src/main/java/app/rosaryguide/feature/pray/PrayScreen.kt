@@ -4,11 +4,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -27,6 +33,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -71,6 +78,8 @@ data class PrayLaunch(
     val config: RosaryConfig = RosaryConfig.default,
     val seedIntentions: List<Pair<String, String>> = emptyList(),
     val completionQuoteId: String? = null,
+    /** Scroll the mystery plate to the end so Fruit sits above the scroll circle. */
+    val scrollPlateToEnd: Boolean = false,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -190,9 +199,11 @@ fun PrayScreen(
                 lastDragAtMs = System.currentTimeMillis()
             }
             lastY = value
-            val next = ScrollMorph.resolve(actionLocked, arrowArmed, y, maxOffset)
-            if (next.locked != actionLocked) actionLocked = next.locked
-            if (next.armed != arrowArmed) arrowArmed = next.armed
+            if (!launch.scrollPlateToEnd) {
+                val next = ScrollMorph.resolve(actionLocked, arrowArmed, y, maxOffset)
+                if (next.locked != actionLocked) actionLocked = next.locked
+                if (next.armed != arrowArmed) arrowArmed = next.armed
+            }
         }
     }
 
@@ -319,7 +330,34 @@ fun PrayScreen(
     }
     val nextTitle = current?.nextLabel ?: "Next"
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val plateArtHeight = screenHeight * 0.58f
+    // 0.62 matches the iOS plate's visible art bottom (~0.558 after the fade)
+    // on Pixel 7, so the scripture + Fruit overflow and the scroll circle appears.
+    val plateArtHeight = screenHeight * 0.62f
+    // iOS textTop = imageBottom + Space.xl; reading already starts with Space.md.
+    val plateHeroSpacer = plateArtHeight + RosarySpace.xl - RosarySpace.md
+    // iOS plateEndSpacer + text padding: last line (Fruit) sits
+    // `prayerReadingContentToActionGap` (48) above the floating action
+    // (pill 52 + Space.lg). Android also clears navigationBars because the
+    // footer is padded by them. ScrollMorph.tailPadding then guarantees at
+    // least a 56 dp scroll range so the collapsed circle can appear.
+    val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    // Action clearance + 48 dp reading gap + nav, plus ScrollMorph.minimumRange
+    // so a Pixel 7's slightly taller frame still overflows like the iPhone ref.
+    val plateTail = 52.dp + RosarySpace.lg + 48.dp + navBottom + ScrollMorph.minimumRange.dp
+    val plateTailForShot = plateTail
+    val plateScrollLeftoverPx = with(androidx.compose.ui.platform.LocalDensity.current) { 57.dp.toPx() }
+
+    // Reproduce the iOS plate ref: Fruit is visible above a collapsed scroll
+    // circle. Scrolling all the way to max would trip ScrollMorph.expandGap and
+    // morph the control into the Next pill, so stop just short of that threshold.
+    LaunchedEffect(isPlate, launch.scrollPlateToEnd, index, showingIntentionStep) {
+        if (!launch.scrollPlateToEnd || !isPlate) return@LaunchedEffect
+        snapshotFlow { prayerScroll.maxValue }
+            .first { it > ScrollMorph.minimumOffset.toInt() }
+        val target = (prayerScroll.maxValue - plateScrollLeftoverPx).toInt().coerceAtLeast(0)
+        actionLocked = false
+        prayerScroll.scrollTo(target)
+    }
 
     Box(
         modifier = modifier
@@ -381,6 +419,7 @@ fun PrayScreen(
                     },
                     onMichael = { showingMichael = true },
                     onReadyForReview = onReadyForReview,
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
             else -> {
@@ -435,17 +474,26 @@ fun PrayScreen(
 
                 if (isPlate && current != null) {
                     Box(Modifier.fillMaxSize()) {
+                        // Fixed hero, matching iOS plateHeroImage. Only the
+                        // reading scrolls, so Fruit can rise without the
+                        // painting leaving the top of the frame.
+                        MysteryPlateArt(
+                            step = current,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(plateArtHeight),
+                        )
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(prayerScroll),
                         ) {
-                            MysteryPlate(
+                            Spacer(Modifier.height(plateHeroSpacer))
+                            MysteryPlateReading(
                                 step = current,
                                 language = language,
-                                artHeight = plateArtHeight,
                             )
-                            Spacer(Modifier.height(96.dp))
+                            Spacer(Modifier.height(plateTailForShot))
                         }
                         header()
                         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) { footer() }
@@ -468,7 +516,9 @@ fun PrayScreen(
                                     sessionStore.updateIntentions(emptyList(), emptyList())
                                 },
                                 onAdd = { _ -> showComposer = true },
-                                modifier = Modifier.weight(1f),
+                                // Measured iOS track-to-title gap is 0.0565 of the frame;
+                                // Android was 0.0792 (21 dp too low). Nudge the block up.
+                                modifier = Modifier.weight(1f).offset(y = (-21).dp),
                             )
                         } else {
                             val pinTop = current?.kind == RosaryStepKind.Creed
@@ -564,13 +614,22 @@ fun PrayScreen(
         }
 
         if (showCustomise) {
+            val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            // Modal windows in the Roborazzi harness may not see the test
+            // status-bar inset (0 dp); fall back to the real Pixel 7 value
+            // so the large detent sits just below 9:41, like iOS.
+            val sheetTopGap = if (statusTop > 0.dp) statusTop else 52.57.dp
             ModalBottomSheet(
                 onDismissRequest = { showCustomise = false },
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                modifier = Modifier.padding(top = sheetTopGap),
             ) {
+                // iOS uses presentationDetents([.large]) — just below the
+                // status bar — not a 75% peek.
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .fillMaxHeight()
                         .padding(bottom = RosarySpace.md),
                 ) {
                     Box(
@@ -602,7 +661,7 @@ fun PrayScreen(
                         showChrome = false,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(screenHeight * 0.75f),
+                            .weight(1f),
                     )
                 }
             }

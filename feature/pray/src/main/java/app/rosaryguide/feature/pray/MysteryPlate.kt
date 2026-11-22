@@ -35,6 +35,9 @@ import app.rosaryguide.core.model.RosaryStep
  * Mystery-announcement plate, ported from iOS `PlateArtView` / `plateScrim`
  * (the rg-plate-fade treatment): wide art with a top vignette and a bottom
  * dissolve into the page, then the ordinal eyebrow, title, scripture, and fruit.
+ *
+ * The art is a fixed hero (iOS `plateHeroImage`); only [MysteryPlateReading]
+ * scrolls, so scripture moves over the painting.
  */
 @Composable
 fun MysteryPlate(
@@ -43,82 +46,98 @@ fun MysteryPlate(
     modifier: Modifier = Modifier,
     artHeight: androidx.compose.ui.unit.Dp = 320.dp,
 ) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        MysteryPlateArt(step = step, modifier = Modifier.fillMaxWidth().height(artHeight))
+        MysteryPlateReading(step = step, language = language)
+    }
+}
+
+@Composable
+fun MysteryPlateArt(
+    step: RosaryStep,
+    modifier: Modifier = Modifier,
+) {
     val palette = LocalThemePalette.current
     val mystery = step.mystery ?: return
     val context = LocalContext.current
     val resId = mysteryPlateDrawableId(context, mystery.artSlug)
     val fade = palette.bg
-    val eyebrow = mystery.set.shortName.uppercase()
+    if (resId == 0) return
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clipToBounds(),
+    ) {
+        Image(
+            painter = painterResource(resId),
+            contentDescription = mystery.title.english,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+        // Top vignette + bottom dissolve (iOS plateScrim with bottomFade).
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .plateFade(fade),
+        )
+    }
+}
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        if (resId != 0) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(artHeight)
-                    .clipToBounds(),
-            ) {
-                Image(
-                    painter = painterResource(resId),
-                    contentDescription = mystery.title.english,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-                // Top vignette + bottom dissolve (iOS plateScrim with bottomFade).
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .plateFade(fade),
-                )
-            }
+@Composable
+fun MysteryPlateReading(
+    step: RosaryStep,
+    language: PrayerLanguage,
+    modifier: Modifier = Modifier,
+) {
+    val palette = LocalThemePalette.current
+    val mystery = step.mystery ?: return
+    val eyebrow = mystery.set.shortName.uppercase()
+    Column(modifier.padding(horizontal = RosarySpace.gutter)) {
+        Spacer(Modifier.height(RosarySpace.md))
+        Row(
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(RosarySpace.md),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            Text(
+                text = OrdinalWord.roman(mystery.number),
+                style = RosaryType.body,
+                color = palette.dim,
+            )
+            Text(
+                text = eyebrow,
+                style = RosaryType.caption.copy(letterSpacing = 1.2.sp),
+                color = palette.dim,
+            )
         }
-        Column(Modifier.padding(horizontal = RosarySpace.gutter)) {
-            Spacer(Modifier.height(RosarySpace.md))
-            Row(
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(RosarySpace.md),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = OrdinalWord.roman(mystery.number),
-                    style = RosaryType.body,
-                    color = palette.dim,
-                )
-                Text(
-                    text = eyebrow,
-                    style = RosaryType.caption.copy(letterSpacing = 1.2.sp),
-                    color = palette.dim,
-                )
-            }
-            Spacer(Modifier.height(RosarySpace.xs))
-            Text(
-                text = mystery.title.resolved(language),
-                style = RosaryType.headingPrimary,
-                color = palette.ink,
-            )
+        Spacer(Modifier.height(RosarySpace.xs))
+        Text(
+            text = mystery.title.resolved(language),
+            style = RosaryType.headingPrimary,
+            color = palette.ink,
+        )
+        Spacer(Modifier.height(RosarySpace.sm))
+        val excerpt = step.body
+        Text(
+            text = excerpt.primary(language),
+            style = RosaryType.prayerText,
+            color = palette.ink,
+        )
+        excerpt.secondary(language)?.let { latin ->
             Spacer(Modifier.height(RosarySpace.sm))
-            val excerpt = step.body
-            Text(
-                text = excerpt.primary(language),
-                style = RosaryType.prayerText,
-                color = palette.ink,
-            )
-            excerpt.secondary(language)?.let { latin ->
-                Spacer(Modifier.height(RosarySpace.sm))
-                Text(text = latin, style = RosaryType.serifItalicBody, color = palette.dim)
-            }
-            step.scriptureReference?.let { ref ->
-                Spacer(Modifier.height(RosarySpace.xs))
-                Text(text = ref, style = RosaryType.caption, color = palette.dim)
-            }
-            Spacer(Modifier.height(RosarySpace.lg))
-            HorizontalDivider(color = palette.strokeSubtle)
-            Spacer(Modifier.height(RosarySpace.md))
-            val fruit = mystery.fruit.resolved(language)
-            if (fruit.isNotBlank()) {
-                Row {
-                    Text(text = "Fruit  ", style = RosaryType.supportingLabel, color = palette.dim)
-                    Text(text = fruit, style = RosaryType.body, color = palette.ink)
-                }
+            Text(text = latin, style = RosaryType.serifItalicBody, color = palette.dim)
+        }
+        step.scriptureReference?.let { ref ->
+            Spacer(Modifier.height(RosarySpace.xs))
+            Text(text = ref, style = RosaryType.caption, color = palette.dim)
+        }
+        Spacer(Modifier.height(RosarySpace.lg))
+        HorizontalDivider(color = palette.strokeSubtle)
+        Spacer(Modifier.height(RosarySpace.md))
+        val fruit = mystery.fruit.resolved(language)
+        if (fruit.isNotBlank()) {
+            Row {
+                Text(text = "Fruit  ", style = RosaryType.supportingLabel, color = palette.dim)
+                Text(text = fruit, style = RosaryType.body, color = palette.ink)
             }
         }
     }

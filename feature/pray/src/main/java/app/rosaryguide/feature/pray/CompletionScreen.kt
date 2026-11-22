@@ -116,9 +116,13 @@ fun CompletionScreen(
             )
         }
         val playTick = android.os.Build.FINGERPRINT.lowercase() != "robolectric"
+        // iOS title sits ~3% lower; the art Box is weight(1f) so this spacer
+        // shrinks the painting and drops the tick / title without moving Done.
+        Spacer(Modifier.height(28.dp))
         RosaryTickPlayer(
             size = 88.dp,
             plays = playTick,
+            tickColor = palette.completionTick,
             modifier = Modifier.padding(top = RosarySpace.xs),
         )
         Column(

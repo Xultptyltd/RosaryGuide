@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.PlatformTextStyle
 import app.rosaryguide.core.data.session.OfferIntention
 import app.rosaryguide.core.data.session.OfferedIntentions
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
@@ -56,7 +57,13 @@ fun PrayIntentionSheet(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter),
     ) {
-        Text(text = "Offer this Rosary for", style = RosaryType.headingSecondary, color = palette.ink)
+        Text(
+            text = "Offer this Rosary for",
+            style = RosaryType.headingSecondary.copy(
+                platformStyle = PlatformTextStyle(includeFontPadding = false),
+            ),
+            color = palette.ink,
+        )
         Spacer(Modifier.height(RosarySpace.sm))
         OfferedIntentions.summary(selectedTitles)?.let {
             Text(text = it, style = RosaryType.body, color = palette.dim)
