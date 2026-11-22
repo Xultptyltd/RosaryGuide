@@ -64,6 +64,7 @@ import app.rosaryguide.core.data.navigation.NavigationIa
 import app.rosaryguide.core.data.sequence.RosarySequenceBuilder
 import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
+import app.rosaryguide.core.designsystem.component.GuideGlassSurface
 import app.rosaryguide.core.designsystem.component.LocalReduceMotion
 import app.rosaryguide.core.designsystem.component.ProvideReduceMotion
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
@@ -617,7 +618,10 @@ private fun AppTabs(
             }
         }
         }
-        Row(
+        val tabShape = RoundedCornerShape(percent = 50)
+        GuideGlassSurface(
+            isDark = palette.isDark,
+            shape = tabShape,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(start = 20.dp, end = 20.dp, bottom = 10.dp)
@@ -627,9 +631,11 @@ private fun AppTabs(
                         val measured = with(density) { size.height.toDp() + 10.dp + 16.dp }
                         if (measured > tabBarHeight) tabBarHeight = measured
                     }
-                }
-                .clip(RoundedCornerShape(percent = 50))
-                .background(if (palette.isDark) palette.surface else palette.background)
+                },
+        ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
                 .padding(horizontal = RosarySpace.sm, vertical = RosarySpace.xs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -664,6 +670,7 @@ private fun AppTabs(
                     )
                 }
             }
+        }
         }
     }
 }

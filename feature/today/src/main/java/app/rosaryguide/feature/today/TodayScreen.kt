@@ -12,6 +12,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.mutableIntStateOf
 import app.rosaryguide.core.data.catalog.MysteryCatalog
+import app.rosaryguide.core.designsystem.component.GuideGlassSurface
+import app.rosaryguide.core.designsystem.component.GuideSheetDragHandle
 import app.rosaryguide.core.data.navigation.NavigationIa
 import app.rosaryguide.core.model.Mystery
 import app.rosaryguide.core.model.MysterySetKind
@@ -265,22 +267,23 @@ fun TodayScreen(
                         .padding(top = topInset, end = RosarySpace.gutter),
                 ) {
                     val chipLabel = if (palette.isDark) "Dark" else "Light"
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(percent = 50))
-                            .background(
-                                if (palette.isDark) Color.White.copy(alpha = 0.12f)
-                                else Color.White.copy(alpha = 0.88f),
-                            )
-                            .clickable { showAppearanceMenu = true }
-                            .semantics { contentDescription = "Appearance" }
-                            .padding(horizontal = 14.dp)
-                            .heightIn(min = 44.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    val chipShape = RoundedCornerShape(percent = 50)
+                    GuideGlassSurface(
+                        isDark = palette.isDark,
+                        shape = chipShape,
+                        modifier = Modifier.clickable { showAppearanceMenu = true },
                     ) {
-                        AppearanceChipIcon(dark = palette.isDark, tint = palette.ink)
-                        Text(chipLabel, style = RosaryType.caption.copy(fontWeight = FontWeight.Medium), color = palette.ink)
+                        Row(
+                            modifier = Modifier
+                                .semantics { contentDescription = "Appearance" }
+                                .padding(horizontal = 14.dp)
+                                .heightIn(min = 44.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            AppearanceChipIcon(dark = palette.isDark, tint = palette.ink)
+                            Text(chipLabel, style = RosaryType.caption.copy(fontWeight = FontWeight.Medium), color = palette.ink)
+                        }
                     }
                     DropdownMenu(
                         expanded = showAppearanceMenu,
@@ -475,6 +478,8 @@ fun TodayScreen(
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = palette.bg,
             shape = RoundedCornerShape(topStart = RosarySpace.containerRadius, topEnd = RosarySpace.containerRadius),
+            dragHandle = { GuideSheetDragHandle() },
+            contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
         ) {
             WeekFeastSheet(
                 item = feastForSheet,
@@ -492,6 +497,8 @@ fun TodayScreen(
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = palette.bg,
             shape = RoundedCornerShape(topStart = RosarySpace.containerRadius, topEnd = RosarySpace.containerRadius),
+            dragHandle = { GuideSheetDragHandle() },
+            contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
         ) {
             MysteryDetailPagerSheet(
                 set = currentSet,
@@ -867,7 +874,7 @@ private fun WeekFeastSheet(
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(horizontal = RosarySpace.gutter)
-                .padding(top = RosarySpace.xxl),
+                .padding(top = RosarySpace.sheetHandleToContent),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -1036,7 +1043,7 @@ private fun MysteryDetailPage(mystery: Mystery, contextName: String) {
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter)
-            .padding(top = RosarySpace.xxl, bottom = RosarySpace.md),
+            .padding(top = RosarySpace.sheetHandleToContent, bottom = RosarySpace.md),
     ) {
         if (resId != 0) {
             Image(

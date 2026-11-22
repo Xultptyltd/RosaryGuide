@@ -32,6 +32,20 @@ object RosarySpace {
     val nestedRadius: Dp = 12.dp
     val panelInset: Dp = 24.dp
     val onboardingControlsHeight: Dp = 132.dp
+    /** iOS footerClearance: controlsHeight (132) + Space.xl (24). */
+    val onboardingFooterClearance: Dp = onboardingControlsHeight + xl
+    val signInLoopBottomPadding: Dp = 40.dp
+    val signInStrandOverflow: Dp = 36.dp
+    const val SignInBeadsAspect = 600f / 680f
+    val sheetDragHandleWidth: Dp = 36.dp
+    val sheetDragHandleHeight: Dp = 4.dp
+    /** iOS handle sits ~5 pt below the sheet's top edge. */
+    val sheetDragHandleTopPadding: Dp = 5.dp
+    /**
+     * Gap from the drag-indicator bottom to the first content line.
+     * Measured on the iOS Pro Max week-feast ref: 72 px ÷ 3 = 24 pt (0.0251 of the frame).
+     */
+    val sheetHandleToContent: Dp = 24.dp
     val tabBarContentClearance: Dp = 108.dp
     val sheetOverlap: Dp = 56.dp
     val homeSheetOverlap: Dp = 36.dp
@@ -53,8 +67,14 @@ object RosarySpace {
     /** iOS week-feast detent: min(max(estimated, 460), 640). */
     fun weekFeastSheetHeight(): Dp = 460.dp
 
-    /** iOS mystery-detail detent: min(max(estimated, 460), 760). */
-    fun mysteryDetailSheetHeight(): Dp = 680.dp
+    /** iOS mystery-detail detent: min(max(estimated, 460), 760). Pixel 7 needs the cap so Fruit stays above the fold. */
+    fun mysteryDetailSheetHeight(): Dp = 760.dp
+
+    /** iOS SignInLayout.beadsWidth(panelHeight). */
+    fun signInBeadsWidth(panelHeight: Dp): Dp {
+        val raw = (panelHeight - signInLoopBottomPadding + signInStrandOverflow) * SignInBeadsAspect
+        return kotlin.math.round(raw.value).dp
+    }
 
     fun signInPanelHeight(screenHeight: Dp, compact: Boolean = false): Dp {
         val fraction = if (compact) {
