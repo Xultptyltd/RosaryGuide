@@ -148,16 +148,16 @@ class ParityScreenshotTest {
     @Test fun learnMysteryDetailLight() = shot("learn-mystery-detail", dark = false) { MysterySet() }
     @Test fun learnMysteryDetailDark() = shot("learn-mystery-detail", dark = true) { MysterySet() }
 
-    @Test fun walkthrough1Light() = shot("walkthrough-1", dark = false, showStatusBar = false) { Walkthrough(0) }
-    @Test fun walkthrough1Dark() = shot("walkthrough-1", dark = true, showStatusBar = false) { Walkthrough(0) }
-    @Test fun walkthrough2Light() = shot("walkthrough-2", dark = false, showStatusBar = false) { Walkthrough(1) }
-    @Test fun walkthrough2Dark() = shot("walkthrough-2", dark = true, showStatusBar = false) { Walkthrough(1) }
-    @Test fun walkthrough3Light() = shot("walkthrough-3", dark = false, showStatusBar = false) { Walkthrough(2) }
-    @Test fun walkthrough3Dark() = shot("walkthrough-3", dark = true, showStatusBar = false) { Walkthrough(2) }
-    @Test fun walkthrough4Light() = shot("walkthrough-4", dark = false, showStatusBar = false) { Walkthrough(3) }
-    @Test fun walkthrough4Dark() = shot("walkthrough-4", dark = true, showStatusBar = false) { Walkthrough(3) }
-    @Test fun walkthrough5Light() = shot("walkthrough-5", dark = false, showStatusBar = false) { Walkthrough(4) }
-    @Test fun walkthrough5Dark() = shot("walkthrough-5", dark = true, showStatusBar = false) { Walkthrough(4) }
+    @Test fun walkthrough1Light() = shot("walkthrough-1", dark = false) { Walkthrough(0) }
+    @Test fun walkthrough1Dark() = shot("walkthrough-1", dark = true) { Walkthrough(0) }
+    @Test fun walkthrough2Light() = shot("walkthrough-2", dark = false) { Walkthrough(1) }
+    @Test fun walkthrough2Dark() = shot("walkthrough-2", dark = true) { Walkthrough(1) }
+    @Test fun walkthrough3Light() = shot("walkthrough-3", dark = false) { Walkthrough(2) }
+    @Test fun walkthrough3Dark() = shot("walkthrough-3", dark = true) { Walkthrough(2) }
+    @Test fun walkthrough4Light() = shot("walkthrough-4", dark = false) { Walkthrough(3) }
+    @Test fun walkthrough4Dark() = shot("walkthrough-4", dark = true) { Walkthrough(3) }
+    @Test fun walkthrough5Light() = shot("walkthrough-5", dark = false) { Walkthrough(4) }
+    @Test fun walkthrough5Dark() = shot("walkthrough-5", dark = true) { Walkthrough(4) }
 
     @Test fun learnWalkthroughLight() = shot("learn-walkthrough", dark = false) { Walkthrough() }
     @Test fun learnWalkthroughDark() = shot("learn-walkthrough", dark = true) { Walkthrough() }
@@ -381,7 +381,7 @@ class ParityScreenshotTest {
         stem: String,
         dark: Boolean,
         showTabBar: Boolean = stem in TAB_ROOTS,
-        showStatusBar: Boolean = !(stem.startsWith("onboarding") && !dark) && !stem.startsWith("walkthrough"),
+        showStatusBar: Boolean = !((stem.startsWith("onboarding") || "walkthrough" in stem) && !dark),
         content: @Composable () -> Unit,
     ) {
         // Night drawables (`drawable-night-nodpi`) only resolve when the
