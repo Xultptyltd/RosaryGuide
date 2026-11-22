@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
@@ -31,6 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,6 +68,10 @@ fun OnboardingScreen(
     ) {
         // Full window height from y=0, matching iOS SignInLayout.panelHeight (0.5 when height ≥ 820).
         val panelHeight = RosarySpace.signInPanelHeight(maxHeight)
+        // Place Continue at the iOS frame fraction so Pixel 7's shorter window
+        // still matches the Pro Max composition (CTA top 0.868, mid 0.895).
+        val ctaTop = maxHeight * RosarySpace.ParityFractions.onboardingCtaTop
+        val ctaBottomPad = (maxHeight - ctaTop - RosarySpace.pillHeight).coerceAtLeast(0.dp)
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
@@ -75,6 +79,7 @@ fun OnboardingScreen(
             OnboardingPageBody(
                 page = pages[index],
                 panelHeight = panelHeight,
+                frameHeight = maxHeight,
             )
         }
 
@@ -82,9 +87,8 @@ fun OnboardingScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .navigationBarsPadding()
                 .padding(horizontal = RosarySpace.gutter)
-                .padding(bottom = RosarySpace.xl),
+                .padding(bottom = ctaBottomPad),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(RosarySpace.lg),
         ) {
@@ -121,6 +125,7 @@ fun OnboardingScreen(
 private fun OnboardingPageBody(
     page: OnboardingPage,
     panelHeight: Dp,
+    frameHeight: Dp,
 ) {
     val palette = LocalThemePalette.current
     val image = when (page.imageName) {
@@ -154,32 +159,37 @@ private fun OnboardingPageBody(
                 modifier = Modifier.fillMaxSize(),
             )
         }
-        Spacer(Modifier.height(RosarySpace.lg))
+        val titleTopPad = (frameHeight * RosarySpace.ParityFractions.onboardingTitleTop - panelHeight)
+            .coerceAtLeast(RosarySpace.lg)
+        val tightTitle = RosaryType.headingPrimary.copy(
+            lineHeight = 34.sp,
+            platformStyle = PlatformTextStyle(includeFontPadding = false),
+        )
+        val tightBody = RosaryType.body.copy(
+            lineHeight = 21.sp,
+            platformStyle = PlatformTextStyle(includeFontPadding = false),
+        )
         Column(
             modifier = Modifier
-                .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = RosarySpace.gutter)
-                .padding(bottom = RosarySpace.xl),
+                .padding(top = titleTopPad)
+                .padding(horizontal = RosarySpace.gutter),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
         ) {
             Text(
                 text = page.title,
-                style = RosaryType.headingPrimary.copy(lineHeight = 34.sp),
+                style = tightTitle,
                 color = palette.ink,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(RosarySpace.lg))
             Text(
                 text = page.body,
-                style = RosaryType.body.copy(lineHeight = 21.sp),
+                style = tightBody,
                 color = palette.dim,
                 textAlign = TextAlign.Center,
             )
         }
-        Spacer(Modifier.height(RosarySpace.lg))
-        Spacer(Modifier.height(RosarySpace.onboardingFooterClearance))
     }
 }
 

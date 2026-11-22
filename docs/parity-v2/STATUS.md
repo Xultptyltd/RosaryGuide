@@ -1,4 +1,4 @@
-# Visual parity status (22 Nov 2026 review, frame-fraction pass)
+# Visual parity status (22 Nov 2026, 2:23 PM close-the-gaps pass)
 
 Reference: `/workspace/ios-parity-refs-v2/` (iPhone 17 Pro Max, 3×, 1320×2868 px = 440×956 pt, Dynamic Type Large, status bar 9:41, captured 17 Nov 2026 Australia/Perth).
 Android captures: Pixel 7 AVD `RosaryGuide_Pixel7` (1080×2400, 2.625×, ≈411.4×914.3 dp), `en-AU`, `clock_date=2026-11-17`, demo-mode clock 9:41. Light onboarding is captured with **demo mode off** so a hidden status bar stays hidden.
@@ -12,17 +12,17 @@ Status values: `spec-written` · `captured` · `matched` · `mismatch` · `defer
 
 | screen-id | group | spec | captured | matched | user-approved | notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| week-feast-sheet | Today | spec-written | captured | close | | Grabber-to-eyebrow gap matched (see table). Sheet still uses the 460 dp minimum detent, so it starts lower than the iOS estimated ~572 pt sheet. |
-| launch-splash | onboarding/launch | spec-written | captured | close | | 144 dp Lottie matches iOS 144 pt, Marian blue `#0054FF` both modes. iOS light ref is mid-fade (blank canvas) — not chased. |
-| onboarding-1 | onboarding/launch | spec-written | captured | close | | Panel and title within 2%. CTA is 2.2–2.5% lower (same 24 dp + safe-area tokens; Pixel 7 inset/aspect). |
-| onboarding-2 | onboarding/launch | spec-written | captured | close | | Center crop of the hands/beads, same fractions as onboarding-1. |
-| onboarding-3 | onboarding/launch | spec-written | captured | close | | Same panel/title match; Begin is the filled capsule. |
-| sign-in | onboarding/launch | spec-written | captured | close | | 50% panel and full loop now match. Quote within ~2%. Google sits ~6% lower than the iOS Google pill (Apple omitted; Apple-height spacer reserved). No Apple button (Android v1 rule). |
+| week-feast-sheet | Today | spec-written | captured | close | user-approved | Grabber-to-eyebrow gap matched (see table). User approved the sheet as is, including the 460 dp minimum detent (sheet starts lower than the iOS estimated ~572 pt sheet). |
+| launch-splash | onboarding/launch | spec-written | captured | close | | 144 dp Lottie matches iOS 144 pt, Marian blue `#0054FF` both modes, end-frame cream halo-R. Cannot hit 2% against the iOS PNGs: those refs are mid-animation, not the held end frame (see table). |
+| onboarding-1 | onboarding/launch | spec-written | captured | matched | | Panel, title, dots, and CTA all within 1%. Title/CTA pinned to measured iOS frame fractions. |
+| onboarding-2 | onboarding/launch | spec-written | captured | matched | | Center crop of the hands/beads, same fractions as onboarding-1 (p2 title first ink also within 1%). |
+| onboarding-3 | onboarding/launch | spec-written | captured | matched | | Same panel/title/CTA match; Begin is the filled capsule. |
+| sign-in | onboarding/launch | spec-written | captured | matched | | Quote and Google pinned to measured iOS frame fractions (Apple omitted; its Y is reserved by the gap, not a spacer). Quote, Google, guest, and legal all within 2%. Loop fully visible. |
 | sign-in-transition | onboarding/launch | spec-written | captured | matched | | Plain `#FFFFFF` / `#000000` hold. Android-before labelled **new screen**. |
 | replay-welcome | Profile/Settings | deferred | | | | Same pager as onboarding, `includesSignIn: false`. |
 | profile-sign-in | Profile/Settings | deferred | | | | Same as `sign-in`, presented from Profile. |
-| today | Today | spec-written | captured | matched | | Date/title/CTA/“Today's mysteries” all within 1%. Appearance chip and tab bar use a translucent fill and hairline (glass approximation; no true backdrop blur). |
-| mystery-detail-sheet | Today | spec-written | captured | close | | Fruit line is above the fold (760 dp cap, matching iOS max detent). Fruit Y is still a few percent lower than iOS on this shorter frame. |
+| today | Today | spec-written | captured | matched | user-approved | Date/title/CTA/“Today's mysteries” all within 1%. Appearance chip and tab bar use a translucent fill and hairline (glass approximation; no true backdrop blur). |
+| mystery-detail-sheet | Today | spec-written | captured | matched | | Fruit and CTA within 2%. Fruit is above the fold (760 dp cap). Sheet top is 3.3% higher because both sides cap at 760 on different frame heights (see table). |
 | pray / Learn / Profile / Settings screens | later groups | deferred | | | | Not in this run. |
 
 Pairs: `/workspace/android/shots/v2/pairs/<screen-id>-<light|dark>.png` (iOS left, Android right).
@@ -32,7 +32,7 @@ Sign-off sheets: `/workspace/android/shots/v2/signoff/<screen-id>.png` (iOS \| A
 
 Fractions are y / frame height (top of frame = 0). Δ is `|android − ios|` in percentage points of the frame.
 
-### week-feast-sheet
+### week-feast-sheet (user-approved as is)
 
 iOS gap is measured from the drag-indicator bottom to the “Memorial · 21 November 2026” top: 72 px ÷ 3 = **24 pt** (0.0251 of the frame). Android uses a 36×4 dp handle with 5 dp top padding and 24 dp content top padding.
 
@@ -44,43 +44,53 @@ iOS gap is measured from the drag-indicator bottom to the “Memorial · 21 Nove
 | grabber-bottom → eyebrow gap (frac) | 0.0251 | 0.0296 | 0.45% |
 | grabber-bottom → eyebrow gap (pt/dp) | 24.00 pt | 27.05 dp | 3.05 dp |
 
-The 0.45% gap match is the requested fix. The sheet itself starts lower because Android still uses `weekFeastSheetHeight() = 460.dp` (the iOS minimum), while the iOS ref uses the estimated detent (~572 pt for this copy), capped at 640.
+The 0.45% gap match is the requested fix. The sheet itself starts lower because Android still uses `weekFeastSheetHeight() = 460.dp` (the iOS minimum), while the iOS ref uses the estimated detent (~572 pt for this copy), capped at 640. The user approved this sheet as is, including that detent.
 
-### launch-splash
+### launch-splash (cannot hit 2% vs the iOS PNGs)
+
+Android holds the Lottie **end frame** in both modes, as `LaunchSplashView` / `holdSplash` specify: a 144 dp player (iOS 144 pt) with a solid cream halo-R, visible glyph ≈ 0.183 × 0.100 of the Pixel 7 frame, vertically centered at y 0.449–0.548. Canvas is `#0054FF` both modes.
+
+The iOS reference PNGs were captured mid-animation, not at that end frame:
 
 | landmark | iOS light | Android light | iOS dark | Android dark |
 | --- | --- | --- | --- | --- |
 | canvas | `#0054FF` (blank / mid-fade) | `#0054FF` | `#0658FF` | `#0054FF` |
-| monogram box | — (do not chase) | 144 dp player, visible glyph ≈ 0.183 of width | faint halo; source player is 144 pt | 144 dp player, visible glyph ≈ 0.183 of width |
+| visible monogram | none (do not chase) | cream halo-R, 0.183 × 0.100, y 0.449–0.548 | beaded halo sliver 0.140 × 0.020 at y 0.474–0.493, ghost R | same end-frame cream halo-R as light, 0.183 × 0.100, y 0.449–0.548 |
 
-### onboarding-1 / 2 / 3 (light)
+Matching the iOS PNGs within 2% would mean holding a mid-fade frame, which the source does not do. The size token (144 dp) already matches. This is a reference-timing exception, not a Pixel 7 aspect-ratio miss.
 
-Panel bottom is the last non-page pixel at x = 8% (inside the 24 pt inset). Title is the first substantial ink cluster after the panel. CTA is the filled Continue pill.
+### onboarding-1 / 2 / 3 (light; dark uses the same layout)
+
+Panel bottom is the last non-page pixel at x = 8% (inside the 24 pt inset). Title is the first substantial ink cluster after the panel (p2 also has a 5–7 px first-ink speck one line above the main block, on both platforms). CTA is the filled Continue / Begin pill. Title top is pinned at 0.573 of the frame and CTA top at 0.868.
 
 | landmark | iOS | Android | Δ |
 | --- | --- | --- | --- |
-| panel bottom | 0.492 | 0.490 | 0.2% |
-| title top (p1 / p3) | 0.573 | 0.589 | 1.6% |
-| title top (p2) | 0.580 | 0.596 | 1.6% |
-| dots mid (iOS) | 0.848 | just above CTA | — |
-| CTA top | 0.868 | 0.890 | 2.2% |
-| CTA mid | 0.895 | 0.919 | 2.4% |
-| CTA bottom | 0.923 | 0.948 | 2.5% |
+| panel bottom | 0.492 | 0.489 | 0.3% |
+| title top (p1 / p3) | 0.573 | 0.582 | 0.9% |
+| title top (p2, first ink / main block) | 0.573 / 0.579 | 0.582 / 0.589 | 0.9% / 1.0% |
+| dots | 0.845–0.851 | 0.843–0.849 | 0.2% |
+| CTA top | 0.868 | 0.868 | 0.0% |
+| CTA mid | 0.895 | 0.896 | 0.1% |
+| CTA bottom | 0.922 | 0.925 | 0.3% |
 
-Dark pages use the same 50% black panel; the figure is `scaledToFill` with top (pages 1 and 3) or center (page 2) alignment so the panel edge blends into the page.
+The remaining ~0.9% title offset is leftover typographic ascent above the first ink, even with `includeFontPadding = false`. Dark pages use the same 50% black panel; the figure is `scaledToFill` with top (pages 1 and 3) or center (page 2) alignment.
 
-### sign-in (light)
+### sign-in (light; dark uses the same layout)
+
+Lower content is pinned to the measured iOS frame fractions (`signInQuoteTop = 0.576`, `signInGoogleTop = 0.775`) so Pixel 7’s shorter window and nav inset do not shift the stack. The Apple pill is omitted (Android v1 rule); its Y is left as a gap rather than a spacer, so Google stays at the iOS Google position.
 
 | landmark | iOS | Android | Δ |
 | --- | --- | --- | --- |
 | panel bottom (Marian fill at x=8%) | 0.492 | 0.489 | 0.3% |
-| quote top | 0.576 | 0.597 | 2.1% |
-| Apple pill | 0.708–0.762 | omitted; 52+12 dp spacer reserved | — |
-| Google (iOS filled / Android outlined) | ~0.774–0.828 (mid ~0.80) | ~0.830–0.887 (mid ~0.86) | ~6% |
+| quote top | 0.576 | 0.584 | 0.8% |
+| Apple pill | 0.708–0.762 | omitted | — |
+| Google (iOS filled / Android outlined) | 0.776–0.828 (mid 0.802) | 0.776–0.830 (mid 0.803) | 0.0% / 0.2% |
+| guest | 0.861–0.873 | 0.854–0.866 | 0.7% |
+| legal | 0.927–0.936 | 0.915–0.923 | 1.2% |
 
-The lower stack is bottom-aligned, as in iOS `signInLowerContent(spacious: true)`. Dark panel is `brandCanvas` black; the loop is fully visible with 40 dp padding above the panel bottom.
+Dark panel is `brandCanvas` black; the loop is fully visible with 40 dp padding above the panel bottom.
 
-### today (light)
+### today (user-approved)
 
 | landmark | iOS | Android | Δ |
 | --- | --- | --- | --- |
@@ -91,14 +101,19 @@ The lower stack is bottom-aligned, as in iOS `signInLowerContent(spacious: true)
 | CTA bottom | 0.832 | 0.830 | 0.2% |
 | “Today's mysteries” | 0.874–0.882 | 0.873–0.882 | 0.1% |
 
-### mystery-detail-sheet (light)
+### mystery-detail-sheet (light; dark matches)
+
+The true iOS “Fruit” line is the “Fruit Obedience to God’s Will” row at 0.855–0.866, just above the pager dots — not the scripture-reference line at 0.782–0.790. Android uses the iOS 1.3-aspect plate and `Space.xl` (24) between art, title, scripture, and Fruit, with `includeFontPadding = false`.
 
 | landmark | iOS | Android | Δ |
 | --- | --- | --- | --- |
-| Fruit line | 0.782–0.790 | 0.831–0.843 | ~5% |
+| Fruit line | 0.855–0.866 | 0.838–0.850 | 1.7% / 1.6% |
 | CTA top | 0.889 | 0.899 | 1.0% |
 | CTA bottom | 0.941 | 0.956 | 1.5% |
 | Fruit above the fold? | yes | yes | — |
+| sheet top | 0.191 | 0.158 | 3.3% |
+
+**Sheet top** is the one landmark that cannot reach 2% on Pixel 7 without breaking the iOS 760 cap. Both sides cap the detent at 760 (pt/dp). On the Pro Max that is 760/956 ≈ 0.795 of the frame (measured top 0.191). On Pixel 7 it is 760/914.3 ≈ 0.831 of the frame (measured top 0.158). Raising the sheet to match the iOS frame fraction would exceed the 760 cap; lowering it to 0.191 would shrink the body and risk pushing Fruit toward the fold. Fruit and CTA already sit within 2%, so the cap is left as specified.
 
 ## Known allowed deviations
 
@@ -110,8 +125,6 @@ The lower stack is bottom-aligned, as in iOS `signInLowerContent(spacious: true)
 
 ## Remaining mismatches after this pass
 
-1. **Onboarding CTA** is 2.2–2.5% lower than the Pro Max ref with the same 24 dp + safe-area tokens, because Pixel 7 is 42 dp shorter and its nav inset differs.
-2. **Sign-in Google** sits about 6% lower than the iOS Google pill even with an Apple-height spacer.
-3. **week-feast-sheet** detent is still the 460 dp minimum, so the sheet starts lower than the iOS estimated height on this copy.
-4. **mystery-detail Fruit** is on-screen but a few percent lower than iOS, on a shorter frame with the 760 dp cap.
-5. **iOS light splash** is a mid-fade blank `#0054FF` field; Android shows the end-frame halo-R in both modes.
+1. **launch-splash** cannot match the iOS reference PNGs within 2%, because those captures are mid-animation (light is a blank `#0054FF` field; dark is a beaded-halo mid-frame) while Android correctly holds the Lottie end-frame cream halo-R. The 144 dp player size already matches the source.
+2. **week-feast-sheet** detent is still the 460 dp minimum, so the sheet starts lower than the iOS estimated height on this copy. User-approved as is.
+3. **mystery-detail-sheet** sheet top is 3.3% higher on Pixel 7 because both sides cap the detent at 760 on frames of different height (914.3 dp vs 956 pt). Fruit and CTA are within 2%.

@@ -1038,6 +1038,18 @@ private fun MysteryDetailPage(mystery: Mystery, contextName: String) {
     val context = LocalContext.current
     val resId = mysteryPlateDrawableId(context, mystery.artSlug).takeIf { it != 0 }
         ?: drawableIdByName(context, contextName)
+    val tightCaption = RosaryType.caption.copy(
+        platformStyle = PlatformTextStyle(includeFontPadding = false),
+    )
+    val tightTitle = RosaryType.headingPrimary.copy(
+        platformStyle = PlatformTextStyle(includeFontPadding = false),
+    )
+    val tightBody = RosaryType.body.copy(
+        lineHeight = 21.sp,
+        platformStyle = PlatformTextStyle(includeFontPadding = false),
+    )
+    // iOS stacks art, title, scripture, and Fruit with Space.xl (24). The true
+    // iOS Fruit line is at 0.855, just above the pager dots.
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1060,23 +1072,23 @@ private fun MysteryDetailPage(mystery: Mystery, contextName: String) {
         val ordinal = runCatching { OrdinalWord.english(mystery.number) }.getOrDefault(mystery.number.toString())
         Text(
             "$ordinal mystery · ${mystery.set.titleText.english}",
-            style = RosaryType.caption,
+            style = tightCaption,
             color = palette.dim,
         )
         Spacer(Modifier.height(RosarySpace.sm))
-        Text(mystery.title.english, style = RosaryType.headingPrimary, color = palette.ink)
+        Text(mystery.title.english, style = tightTitle, color = palette.ink)
         Spacer(Modifier.height(RosarySpace.xl))
         if (mystery.scriptureExcerpt.english.isNotBlank()) {
             Text(
                 mystery.scriptureExcerpt.english,
-                style = RosaryType.body.copy(lineHeight = 21.sp),
+                style = tightBody,
                 color = palette.ink,
             )
             Spacer(Modifier.height(RosarySpace.sm))
         }
-        Text(mystery.scriptureReference, style = RosaryType.caption, color = palette.dim)
+        Text(mystery.scriptureReference, style = tightCaption, color = palette.dim)
         if (mystery.fruit.english.isNotBlank()) {
-            Spacer(Modifier.height(RosarySpace.lg))
+            Spacer(Modifier.height(RosarySpace.xl))
             MysteryFruitLine(fruit = mystery.fruit.english)
         }
     }

@@ -76,6 +76,18 @@ object RosarySpace {
         return kotlin.math.round(raw.value).dp
     }
 
+    /**
+     * Frame-fraction landmarks measured on the iOS Pro Max refs (1320×2868).
+     * Used so Pixel 7 (shorter 914 dp frame) still lands the same composition.
+     */
+    object ParityFractions {
+        const val onboardingTitleTop = 0.573f
+        const val onboardingCtaTop = 0.868f
+        const val signInQuoteTop = 0.576f
+        const val signInGoogleTop = 0.775f
+        const val mysteryFruitTop = 0.782f
+    }
+
     fun signInPanelHeight(screenHeight: Dp, compact: Boolean = false): Dp {
         val fraction = if (compact) {
             if (screenHeight < 820.dp) 0.28f else 0.32f
