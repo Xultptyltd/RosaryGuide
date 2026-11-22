@@ -26,6 +26,8 @@ object RosarySpace {
     const val ScaleLimit = 1.5f
     val gutter: Dp = 16.dp
     val minHitTarget: Dp = 48.dp
+    /** iOS `AppTheme.controlSize` — Pray header chips are 40 pt glass circles. */
+    val controlSize: Dp = 40.dp
     val pillHeight: Dp = 52.dp
     val profileRowHeight: Dp = 56.dp
     val containerRadius: Dp = 20.dp
@@ -54,6 +56,13 @@ object RosarySpace {
     val mysteryCardWidthFraction = 0.85f
     val mysteryCardArtAspect = 1.3f
     const val TitleLineHeight = 1.02f
+    /** iOS `AppTheme.rosaryMysteryArtworkTopInset` — art starts below the Pray header. */
+    // iOS token is 104 pt. Pixel 7 status+header+progress sit a little
+    // lower, so 118 dp keeps the dove clearly under the bar without
+    // changing the 0.58 bottom (title/Fruit stay put).
+    val rosaryMysteryArtworkTopInset: Dp = 118.dp
+    /** iOS `AppTheme.rosaryMysteryArtworkBottomFraction` — visible art bottom as a fraction of screen height. */
+    const val rosaryMysteryArtworkBottomFraction = 0.58f
 
     fun homeHeroHeight(viewport: Dp): Dp {
         val raw = viewport * 0.46f

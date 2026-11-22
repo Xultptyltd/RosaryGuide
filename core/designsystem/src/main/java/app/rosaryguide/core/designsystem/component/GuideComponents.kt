@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -32,6 +34,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -91,14 +94,35 @@ fun GuideSectionLabel(
     text: String,
     modifier: Modifier = Modifier,
     strong: Boolean = false,
+    icon: ImageVector? = null,
 ) {
     val palette = LocalThemePalette.current
-    Text(
-        text = text,
-        style = if (strong) RosaryType.body else RosaryType.supportingLabel,
-        color = if (strong) palette.ink else palette.textSecondary,
-        modifier = modifier.padding(bottom = RosarySpace.xs).guideHeading(),
-    )
+    val color = if (strong) palette.ink else palette.textSecondary
+    val style = if (strong) RosaryType.body else RosaryType.supportingLabel
+    val labelMod = modifier.padding(bottom = RosarySpace.xs).guideHeading()
+    if (icon != null) {
+        Row(
+            modifier = labelMod,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier
+                    .padding(end = RosarySpace.sm)
+                    .size(18.dp),
+            )
+            Text(text = text, style = style, color = color)
+        }
+    } else {
+        Text(
+            text = text,
+            style = style,
+            color = color,
+            modifier = labelMod,
+        )
+    }
 }
 
 @Composable

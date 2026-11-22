@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -62,7 +63,7 @@ import app.rosaryguide.core.designsystem.component.LocalReduceMotion
 import app.rosaryguide.core.designsystem.theme.MotionTokens
 import kotlinx.coroutines.delay
 
-private val ChromeCircle = 36.dp
+private val ChromeCircle = RosarySpace.controlSize
 
 @Composable
 fun PrayChromeButton(
@@ -80,19 +81,25 @@ fun PrayChromeButton(
             .semantics { this.contentDescription = contentDescription },
         contentAlignment = Alignment.Center,
     ) {
+        // iOS `guideFloatingGlass` chips are milky 40 pt circles. A 0.58
+        // white fill disappears on pale art and on a white page; use a
+        // nearly-opaque surface in light and a frosted dark fill at night.
+        val fill = if (palette.isDark) Color.White.copy(alpha = 0.16f) else Color(0xFFF4F4F5)
+        val stroke = if (palette.isDark) Color.White.copy(alpha = 0.28f) else Color.Black.copy(alpha = 0.08f)
         Box(
             modifier = Modifier
                 .size(ChromeCircle)
                 .shadow(2.dp, CircleShape, clip = false)
-                .background(palette.surface.copy(alpha = 0.94f), CircleShape)
-                .border(0.5.dp, palette.strokeSubtle, CircleShape),
+                .background(fill, CircleShape)
+                .border(0.5.dp, stroke, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = palette.ink,
-                modifier = Modifier.size(18.dp),
+                // Material icons include padding; 16.dp reads closer to iOS 13 pt semibold.
+                modifier = Modifier.size(16.dp),
             )
         }
     }

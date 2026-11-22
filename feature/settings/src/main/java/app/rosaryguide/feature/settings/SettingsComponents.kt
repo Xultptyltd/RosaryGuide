@@ -1,6 +1,9 @@
 package app.rosaryguide.feature.settings
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,11 +21,19 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.PageStyle
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
@@ -32,14 +43,152 @@ import androidx.compose.foundation.layout.size
 fun SettingsSection(
     title: String,
     modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    carded: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        GuideSectionLabel(text = title)
-        Spacer(Modifier.height(RosarySpace.sm))
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (carded) Modifier.settingsGroupCard() else Modifier),
+    ) {
+        GuideSectionLabel(text = title, strong = carded, icon = icon)
+        Spacer(Modifier.height(if (carded) RosarySpace.sectionTitleGap else RosarySpace.sm))
         content()
     }
 }
+
+@Composable
+fun SettingsGroupCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .settingsGroupCard(),
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun Modifier.settingsGroupCard(): Modifier {
+    val palette = LocalThemePalette.current
+    val shape = RoundedCornerShape(RosarySpace.containerRadius)
+    return this
+        .clip(shape)
+        .background(palette.cardSurface(on = PageStyle.Grouped), shape)
+        .border(0.5.dp, palette.cardSurfaceStroke, shape)
+        .padding(horizontal = RosarySpace.sm, vertical = RosarySpace.md)
+}
+
+@Composable
+internal fun settingsSwitchColors(): androidx.compose.material3.SwitchColors {
+    val palette = LocalThemePalette.current
+    // Keep the M3 on-colour (accent), but lift the off-track so it reads
+    // against the card like an iOS switch in the off state.
+    val offTrack = if (palette.isDark) Color(0xFF636366) else Color(0xFFC7C7CC)
+    val offBorder = if (palette.isDark) Color(0xFF8E8E93) else Color(0xFFB0B0B5)
+    return SwitchDefaults.colors(
+        checkedTrackColor = palette.accent,
+        checkedThumbColor = palette.onAccent,
+        checkedBorderColor = palette.accent,
+        uncheckedTrackColor = offTrack,
+        uncheckedThumbColor = Color.White,
+        uncheckedBorderColor = offBorder,
+    )
+}
+
+/** SF Symbol `repeat` — used on the Each decade section header. */
+val SettingsRepeatIcon: ImageVector
+    get() = _settingsRepeatIcon ?: ImageVector.Builder(
+        name = "SettingsRepeat",
+        defaultWidth = 18.dp,
+        defaultHeight = 18.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f,
+    ).apply {
+        val s = SolidColor(Color.Black)
+        path(
+            fill = null,
+            stroke = s,
+            strokeLineWidth = 2.15f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+        ) {
+            moveTo(17f, 2f)
+            lineTo(21f, 6f)
+            lineTo(17f, 10f)
+            moveTo(3f, 12f)
+            verticalLineTo(10f)
+            curveTo(3f, 7.79f, 4.79f, 6f, 7f, 6f)
+            horizontalLineTo(21f)
+            moveTo(7f, 22f)
+            lineTo(3f, 18f)
+            lineTo(7f, 14f)
+            moveTo(21f, 12f)
+            verticalLineTo(14f)
+            curveTo(21f, 16.21f, 19.21f, 18f, 17f, 18f)
+            horizontalLineTo(3f)
+        }
+    }.build().also { _settingsRepeatIcon = it }
+
+private var _settingsRepeatIcon: ImageVector? = null
+
+/** SF Symbol `moon.stars` — used on the Closing prayers section header. */
+val SettingsMoonStarsIcon: ImageVector
+    get() = _settingsMoonStarsIcon ?: ImageVector.Builder(
+        name = "SettingsMoonStars",
+        defaultWidth = 18.dp,
+        defaultHeight = 18.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f,
+    ).apply {
+        val s = SolidColor(Color.Black)
+        path(fill = s) {
+            // Crescent (moon.stars)
+            moveTo(12.8f, 3.1f)
+            curveTo(9.6f, 3.8f, 7.2f, 6.7f, 7.2f, 10.2f)
+            curveTo(7.2f, 14.1f, 10.3f, 17.2f, 14.2f, 17.2f)
+            curveTo(16.0f, 17.2f, 17.6f, 16.5f, 18.8f, 15.4f)
+            curveTo(17.6f, 18.4f, 14.6f, 20.6f, 11.1f, 20.6f)
+            curveTo(6.2f, 20.6f, 2.2f, 16.6f, 2.2f, 11.7f)
+            curveTo(2.2f, 7.2f, 5.4f, 3.4f, 9.7f, 2.5f)
+            curveTo(10.8f, 2.8f, 11.8f, 3.0f, 12.8f, 3.1f)
+            close()
+        }
+        path(fill = s) {
+            // Large star
+            moveTo(19.3f, 3.4f)
+            lineTo(20.05f, 5.35f)
+            lineTo(22.15f, 5.7f)
+            lineTo(20.45f, 7.0f)
+            lineTo(20.85f, 9.1f)
+            lineTo(19.3f, 8.05f)
+            lineTo(17.75f, 9.1f)
+            lineTo(18.15f, 7.0f)
+            lineTo(16.45f, 5.7f)
+            lineTo(18.55f, 5.35f)
+            close()
+        }
+        path(fill = s) {
+            // Small star
+            moveTo(16.6f, 1.2f)
+            lineTo(17.05f, 2.3f)
+            lineTo(18.2f, 2.5f)
+            lineTo(17.3f, 3.2f)
+            lineTo(17.5f, 4.35f)
+            lineTo(16.6f, 3.75f)
+            lineTo(15.7f, 4.35f)
+            lineTo(15.9f, 3.2f)
+            lineTo(15.0f, 2.5f)
+            lineTo(16.15f, 2.3f)
+            close()
+        }
+    }.build().also { _settingsMoonStarsIcon = it }
+
+private var _settingsMoonStarsIcon: ImageVector? = null
 
 @Composable
 fun SettingsNavigationRow(
@@ -51,6 +200,7 @@ fun SettingsNavigationRow(
     destructive: Boolean = false,
     enabled: Boolean = true,
     external: Boolean = false,
+    showChevron: Boolean = true,
 ) {
     val palette = LocalThemePalette.current
     val color = when {
@@ -70,14 +220,14 @@ fun SettingsNavigationRow(
                 if (icon != null) {
                     Icon(icon, contentDescription = null, tint = color, modifier = Modifier.padding(end = RosarySpace.md))
                 }
-                Text(title, style = RosaryType.body, color = color, modifier = Modifier.weight(1f))
+                Text(title, style = RosaryType.body, color = color, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
                     tint = palette.dim,
                 )
             }
-            Text(value, style = RosaryType.body, color = palette.dim, modifier = Modifier.padding(top = RosarySpace.xs))
+            Text(value, style = RosaryType.body, color = palette.dim, modifier = Modifier.padding(top = RosarySpace.xs), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     } else {
         Row(
@@ -87,16 +237,28 @@ fun SettingsNavigationRow(
             if (icon != null) {
                 Icon(icon, contentDescription = null, tint = color, modifier = Modifier.padding(end = RosarySpace.md))
             }
-            Text(title, style = RosaryType.body, color = color, modifier = Modifier.weight(1f))
+            Text(title, style = RosaryType.body, color = color, maxLines = 1, overflow = TextOverflow.Clip)
             if (value != null) {
-                Text(value, style = RosaryType.body, color = palette.dim)
-                Spacer(Modifier.width(RosarySpace.xs))
+                Text(
+                    value,
+                    style = RosaryType.body,
+                    color = palette.dim,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = RosarySpace.sm),
+                )
+            } else {
+                Spacer(Modifier.weight(1f))
             }
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = palette.dim,
-            )
+            if (showChevron) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = palette.dim,
+                )
+            }
         }
     }
 }
@@ -133,10 +295,7 @@ fun SettingsToggleRow(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = enabled,
-                colors = SwitchDefaults.colors(
-                    checkedTrackColor = palette.accent,
-                    checkedThumbColor = palette.onAccent,
-                ),
+                colors = settingsSwitchColors(),
             )
         }
     } else
@@ -167,10 +326,7 @@ fun SettingsToggleRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             enabled = enabled,
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = palette.accent,
-                checkedThumbColor = palette.onAccent,
-            ),
+            colors = settingsSwitchColors(),
         )
     }
 }

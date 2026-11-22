@@ -44,7 +44,7 @@ fun CustomiseRosaryScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.bg),
+            .background(palette.groupedBackground),
     ) {
         if (showChrome) {
             GuideDetailTopBar(title = title, onBack = onBack)
@@ -95,21 +95,28 @@ fun RosarySettingsRows(
 ) {
     var translationMenu by remember { mutableStateOf(false) }
     Column(modifier = modifier.fillMaxWidth()) {
-        SettingsToggleRow("Choose intentions", config.intentionsStep) {
-            onConfigChange(config.copy(intentionsStep = it))
-        }
-        SettingsDivider()
-        SettingsToggleRow("Show rosary beads", config.showBeads) {
-            onConfigChange(config.copy(showBeads = it))
+        SettingsGroupCard {
+            SettingsToggleRow("Choose intentions", config.intentionsStep) {
+                onConfigChange(config.copy(intentionsStep = it))
+            }
+            SettingsDivider()
+            SettingsToggleRow("Show rosary beads", config.showBeads) {
+                onConfigChange(config.copy(showBeads = it))
+            }
         }
 
-        Spacer(Modifier.height(RosarySpace.xl))
-        SettingsSection(title = "Each decade") {
+        Spacer(Modifier.height(RosarySpace.lg))
+        SettingsSection(
+            title = "Each decade",
+            icon = SettingsRepeatIcon,
+            carded = true,
+        ) {
             Box {
                 SettingsNavigationRow(
                     title = "Bible translation",
                     value = config.translation.title,
                     onClick = { translationMenu = true },
+                    showChevron = false,
                 )
                 DropdownMenu(expanded = translationMenu, onDismissRequest = { translationMenu = false }) {
                     BibleTranslation.entries.forEach { option ->
@@ -133,8 +140,12 @@ fun RosarySettingsRows(
             }
         }
 
-        Spacer(Modifier.height(RosarySpace.xl))
-        SettingsSection(title = "Closing prayers") {
+        Spacer(Modifier.height(RosarySpace.lg))
+        SettingsSection(
+            title = "Closing prayers",
+            icon = SettingsMoonStarsIcon,
+            carded = true,
+        ) {
             SettingsToggleRow("Hail, holy Queen", config.closingPrayers) {
                 onConfigChange(config.copy(closingPrayers = it))
             }

@@ -1,5 +1,7 @@
 package app.rosaryguide.feature.pray
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -137,12 +139,20 @@ private fun IntentionRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (selected) {
-            Icon(
-                imageVector = Icons.Filled.Check,
-                contentDescription = "Selected",
-                tint = palette.accent,
-                modifier = Modifier.padding(end = RosarySpace.sm).size(18.dp),
-            )
+            Box(
+                modifier = Modifier
+                    .padding(end = RosarySpace.sm)
+                    .size(22.dp)
+                    .background(palette.accent, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = "Selected",
+                    tint = palette.onAccent,
+                    modifier = Modifier.size(14.dp),
+                )
+            }
         }
         Text(text = title, style = RosaryType.body, color = palette.ink, modifier = Modifier.weight(1f))
     }

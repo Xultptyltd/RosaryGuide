@@ -1,8 +1,8 @@
 package app.rosaryguide.feature.pray
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,16 +30,17 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.rosaryguide.core.data.art.ArtCatalog
 import app.rosaryguide.core.data.catalog.MysteryCatalog
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
+import app.rosaryguide.core.designsystem.component.CroppedArt
 import app.rosaryguide.core.designsystem.component.mysteryPlateDrawableId
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
@@ -90,12 +91,33 @@ fun CompletionScreen(
                 .weight(1f)
                 .clipToBounds(),
         ) {
-            if (resId != 0) {
-                Image(
-                    painter = painterResource(resId),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
+            if (resId != 0 && plateMystery != null) {
+                val painter = painterResource(resId)
+                // iOS completion art uses FocusedRasterImage with `ArtCatalog.focus`
+                // (Annunciation y = 0.30) and a Space.xl downward shift, clipped
+                // to the leftover frame, so the dove sits below the status bar.
+                // iOS leftover is nearly square (width / ~1.0). Filling the
+                // taller Android leftover over-zooms and clips the wing and
+                // lectern. Pin a slightly-wide band to the top; the fade
+                // still covers the full spare room down to the tick.
+                CroppedArt(
+                    painter = painter,
+                    coverForFrame = { frameW, frameH ->
+                        val src = painter.intrinsicSize
+                        ArtCatalog.coverForFocus(
+                            sourceWidth = if (src.width.isFinite() && src.width > 1f) src.width else 1280f,
+                            sourceHeight = if (src.height.isFinite() && src.height > 1f) src.height else 853f,
+                            frameWidth = frameW,
+                            frameHeight = frameH,
+                            focusX = 0.5f,
+                            focusY = ArtCatalog.focusY(mysterySet, plateMystery.number),
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter)
+                        .aspectRatio(1.15f)
+                        .offset(y = RosarySpace.xl),
                 )
             }
             Box(

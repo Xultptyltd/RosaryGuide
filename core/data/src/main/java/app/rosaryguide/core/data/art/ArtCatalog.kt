@@ -97,6 +97,17 @@ object ArtCatalog {
         return values[(number - 1).coerceIn(0, 4)]
     }
 
+    /** Wide plate crop, ported from iOS `ArtCatalog.bandFocus`. */
+    fun bandFocusY(set: MysterySetKind, number: Int): Float {
+        val values = when (set) {
+            MysterySetKind.Joyful -> floatArrayOf(0.51f, 0.51f, 0.56f, 0.58f, 0.58f)
+            MysterySetKind.Luminous -> floatArrayOf(0.58f, 0.58f, 0.56f, 0.00f, 0.58f)
+            MysterySetKind.Sorrowful -> floatArrayOf(0.51f, 0.56f, 0.45f, 0.45f, 0.22f)
+            MysterySetKind.Glorious -> floatArrayOf(0.28f, 0.28f, 0.45f, 0.51f, 0.51f)
+        }
+        return values[(number - 1).coerceIn(0, 4)]
+    }
+
     /**
      * Cover-scale an image into a frame and align a focus point, matching iOS
      * `FocusedRasterImage` (center-aligned aspect fill, then focus shift).

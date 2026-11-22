@@ -333,11 +333,16 @@ fun PrayScreen(
     }
     val nextTitle = current?.nextLabel ?: "Next"
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    // 0.62 matches the iOS plate's visible art bottom (~0.558 after the fade)
-    // on Pixel 7, so the scripture + Fruit overflow and the scroll circle appears.
-    val plateArtHeight = screenHeight * 0.62f
+    // iOS `plateHeroImage`: art starts at rosaryMysteryArtworkTopInset (104 pt)
+    // and ends at rosaryMysteryArtworkBottomFraction (0.58 of screen height).
+    // The nearly-square window, plus bandFocus fill, shows the whole
+    // Annunciation (angel, dove, Mary) with a small margin — unlike a 0.62H
+    // y=0 crop, which zooms until the figures are clipped.
+    val plateArtTopInset = RosarySpace.rosaryMysteryArtworkTopInset
+    val plateArtBottom = screenHeight * RosarySpace.rosaryMysteryArtworkBottomFraction
+    val plateArtHeight = (plateArtBottom - plateArtTopInset).coerceAtLeast(0.dp)
     // iOS textTop = imageBottom + Space.xl; reading already starts with Space.md.
-    val plateHeroSpacer = plateArtHeight + RosarySpace.xl - RosarySpace.md
+    val plateHeroSpacer = plateArtBottom + RosarySpace.xl - RosarySpace.md
     // iOS plateEndSpacer + text padding: last line (Fruit) sits
     // `prayerReadingContentToActionGap` (48) above the floating action
     // (pill 52 + Space.lg). Android also clears navigationBars because the
@@ -379,6 +384,8 @@ fun PrayScreen(
 
         if (confirmReplace) {
             AlertDialog(
+                containerColor = palette.bg,
+                tonalElevation = 0.dp,
                 onDismissRequest = {
                     confirmReplace = false
                     onClose()
@@ -493,6 +500,7 @@ fun PrayScreen(
                             step = current,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .padding(top = plateArtTopInset)
                                 .height(plateArtHeight),
                         )
                         Column(
@@ -635,6 +643,9 @@ fun PrayScreen(
                 onDismissRequest = { showCustomise = false },
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 modifier = Modifier.padding(top = sheetTopGap),
+                containerColor = palette.groupedBackground,
+                contentColor = palette.ink,
+                tonalElevation = 0.dp,
             ) {
                 // iOS uses presentationDetents([.large]) — just below the
                 // status bar — not a 75% peek.
@@ -658,6 +669,9 @@ fun PrayScreen(
                         TextButton(
                             onClick = { showCustomise = false },
                             modifier = Modifier.align(Alignment.CenterEnd),
+                            colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                                contentColor = palette.accentText,
+                            ),
                         ) {
                             Text("Done")
                         }

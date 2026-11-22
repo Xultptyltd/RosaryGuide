@@ -1,6 +1,7 @@
 package app.rosaryguide.android.parity
 
 import android.app.Application
+import android.content.res.Configuration
 import app.rosaryguide.feature.settings.CustomiseRosaryScreen
 import app.rosaryguide.feature.profile.IntentionDetailScreen
 import app.rosaryguide.feature.profile.ArchivedIntentionsScreen
@@ -357,6 +358,19 @@ class ParityScreenshotTest {
         showStatusBar: Boolean = !(stem.startsWith("onboarding") && !dark),
         content: @Composable () -> Unit,
     ) {
+        // Night drawables (`drawable-night-nodpi`) only resolve when the
+        // Robolectric configuration is actually night. Theme(darkTheme)
+        // alone still loads the light asset. Scope this to Pray stems so
+        // approved today/onboarding dark recordings stay comparable.
+        val useNightResources = dark && (stem.startsWith("pray-") || stem == "rosary-settings-sheet")
+        RuntimeEnvironment.setQualifiers(if (useNightResources) "+night" else "+notnight")
+        val app = RuntimeEnvironment.getApplication()
+        val config = Configuration(app.resources.configuration)
+        val nightBit = if (useNightResources) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+        config.uiMode = (config.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or nightBit
+        @Suppress("DEPRECATION")
+        app.resources.updateConfiguration(config, app.resources.displayMetrics)
+        configurePixel7Display()
         composeRule.setContent {
             Themed(dark = dark) {
                 Pixel7DeviceFrame(

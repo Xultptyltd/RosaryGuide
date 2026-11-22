@@ -1,6 +1,6 @@
 package app.rosaryguide.feature.pray
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,13 +17,14 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.PlatformTextStyle
+import app.rosaryguide.core.data.art.ArtCatalog
+import app.rosaryguide.core.designsystem.component.CroppedArt
 import app.rosaryguide.core.designsystem.component.mysteryPlateDrawableId
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
@@ -65,16 +66,31 @@ fun MysteryPlateArt(
     val resId = mysteryPlateDrawableId(context, mystery.artSlug)
     val fade = palette.bg
     if (resId == 0) return
+    val painter = painterResource(resId)
+    val backdrop = if (palette.isDark) Color.Black else palette.bg
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .background(backdrop)
             .clipToBounds(),
     ) {
-        Image(
-            painter = painterResource(resId),
-            contentDescription = mystery.title.english,
-            contentScale = ContentScale.Crop,
+        // iOS `PlateArtView` uses FocusedRasterImage with contentMode `.fill`
+        // and `ArtCatalog.bandFocus` (Annunciation y = 0.51).
+        CroppedArt(
+            painter = painter,
+            coverForFrame = { frameW, frameH ->
+                val src = painter.intrinsicSize
+                ArtCatalog.coverForFocus(
+                    sourceWidth = if (src.width.isFinite() && src.width > 1f) src.width else 1280f,
+                    sourceHeight = if (src.height.isFinite() && src.height > 1f) src.height else 853f,
+                    frameWidth = frameW,
+                    frameHeight = frameH,
+                    focusX = 0.5f,
+                    focusY = ArtCatalog.bandFocusY(mystery.set, mystery.number),
+                )
+            },
             modifier = Modifier.fillMaxSize(),
+            contentDescription = mystery.title.english,
         )
         // Top vignette + bottom dissolve (iOS plateScrim with bottomFade).
         Box(
