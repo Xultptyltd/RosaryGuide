@@ -318,7 +318,7 @@ private fun ProfileHome(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = RosarySpace.xl),
+                .padding(bottom = RosarySpace.tabBarContentClearance),
         ) {
         Box(modifier = gutter.clickable(onClick = onOpenRhythm)) {
             PrayerRhythmCard(rhythm)

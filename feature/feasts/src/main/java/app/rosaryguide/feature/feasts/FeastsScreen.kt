@@ -139,7 +139,7 @@ fun FeastsScreen(
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = RosarySpace.gutter)
-                .padding(bottom = RosarySpace.xxl),
+                .padding(bottom = RosarySpace.tabBarContentClearance),
         ) {
             if (query.trim().isNotEmpty()) {
                 if (results.isEmpty()) {

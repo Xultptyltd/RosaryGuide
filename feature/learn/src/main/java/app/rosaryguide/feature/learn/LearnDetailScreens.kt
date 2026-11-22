@@ -75,7 +75,7 @@ fun LearnArticleScreen(article: LearnArticle, modifier: Modifier = Modifier) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg)
-            .padding(bottom = 96.dp),
+            .padding(bottom = RosarySpace.tabBarContentClearance),
     ) {
         Text(text = article.eyebrow, style = RosaryType.captionPray, color = palette.dim)
         Spacer(Modifier.height(RosarySpace.xs))
@@ -100,7 +100,7 @@ fun PrayerReaderScreen(prayer: Prayer, modifier: Modifier = Modifier) {
             
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.lg)
-            .padding(bottom = 96.dp),
+            .padding(bottom = RosarySpace.tabBarContentClearance),
     ) {
         Text(text = prayer.title.english, style = RosaryType.headingPrimaryPray, color = palette.ink)
         if (prayer.title.latin.isNotBlank() && prayer.title.latin != prayer.title.english) {
@@ -151,7 +151,7 @@ fun MysterySetScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter)
-            .padding(top = RosarySpace.xl, bottom = 96.dp),
+            .padding(top = RosarySpace.xl, bottom = RosarySpace.tabBarContentClearance),
     ) {
         if (heroId != 0) {
             val painter = painterResource(heroId)
@@ -268,7 +268,7 @@ fun RosaryPrayersScreen(
             
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter)
-            .padding(top = RosarySpace.lg, bottom = 96.dp),
+            .padding(top = RosarySpace.lg, bottom = RosarySpace.tabBarContentClearance),
     ) {
         RosaryPrayerGroup(
             title = "Opening prayers",
@@ -379,7 +379,7 @@ fun AllPrayersScreen(
             .background(palette.bg)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter)
-            .padding(top = RosarySpace.lg, bottom = 96.dp),
+            .padding(top = RosarySpace.lg, bottom = RosarySpace.tabBarContentClearance),
     ) {
         val fieldPalette = palette
         val searchShape = RoundedCornerShape(percent = 50)

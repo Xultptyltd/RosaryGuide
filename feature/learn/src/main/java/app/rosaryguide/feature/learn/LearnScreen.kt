@@ -130,7 +130,7 @@ fun LearnScreen(
                     .weight(1f)
                     .verticalScroll(scroll)
                     .padding(horizontal = RosarySpace.gutter)
-                    .padding(bottom = 96.dp),
+                    .padding(bottom = RosarySpace.tabBarContentClearance),
             ) {
                 BoxSearch(value = query, onValueChange = { query = it }, placeholder = LearnCopy.SEARCH_PROMPT)
                 Spacer(Modifier.height(RosarySpace.xl))

@@ -216,7 +216,7 @@ fun TodayScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = RosarySpace.xxl),
+                .padding(bottom = RosarySpace.tabBarContentClearance),
         ) {
             Box(
                 modifier = Modifier
