@@ -294,10 +294,12 @@ fun PrayActionFooter(
     )
     val showSecondSlot = showCompleteDecade && (secondShown || secondProgress > 0.01f)
 
+    // iOS collapsed scroll circle floats over the reading; a solid foot would
+    // hide Fruit when it sits beside the circle (as it does on the plate ref).
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(palette.prayBg)
+            .then(if (showScroll) Modifier else Modifier.background(palette.prayBg))
             .padding(horizontal = RosarySpace.gutter)
             .padding(top = RosarySpace.md, bottom = RosarySpace.lg),
         verticalArrangement = Arrangement.spacedBy(RosarySpace.md),

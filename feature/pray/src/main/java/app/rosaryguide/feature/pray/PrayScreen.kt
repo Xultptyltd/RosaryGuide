@@ -33,7 +33,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -184,10 +183,14 @@ fun PrayScreen(
         onDispose { }
     }
 
-    LaunchedEffect(index, showingIntentionStep) {
+    LaunchedEffect(index, showingIntentionStep, launch.scrollPlateToEnd) {
         actionLocked = false
         arrowArmed = false
-        prayerScroll.scrollTo(0)
+        // Keep the debug plate shot at its leftover scroll; a reset to 0 here
+        // races the scroll-to-end effect and pins Fruit too high.
+        if (!launch.scrollPlateToEnd) {
+            prayerScroll.scrollTo(0)
+        }
     }
 
     LaunchedEffect(prayerScroll) {
@@ -345,18 +348,27 @@ fun PrayScreen(
     // so a Pixel 7's slightly taller frame still overflows like the iPhone ref.
     val plateTail = 52.dp + RosarySpace.lg + 48.dp + navBottom + ScrollMorph.minimumRange.dp
     val plateTailForShot = plateTail
-    val plateScrollLeftoverPx = with(androidx.compose.ui.platform.LocalDensity.current) { 57.dp.toPx() }
+    val plateDensity = androidx.compose.ui.platform.LocalDensity.current
+    // ~120 dp leftover places Fruit beside the collapsed circle, matching
+    // iOS Fruit last ink at 0.899–0.915.
+    val plateScrollLeftoverPx = with(plateDensity) { 120.dp.toPx() }
 
     // Reproduce the iOS plate ref: Fruit is visible above a collapsed scroll
     // circle. Scrolling all the way to max would trip ScrollMorph.expandGap and
     // morph the control into the Next pill, so stop just short of that threshold.
-    LaunchedEffect(isPlate, launch.scrollPlateToEnd, index, showingIntentionStep) {
+    // Re-apply whenever maxValue grows (fonts / first layout), otherwise the
+    // first emission can be a tiny overflow and leftover is lost.
+    LaunchedEffect(isPlate, launch.scrollPlateToEnd, index, showingIntentionStep, plateScrollLeftoverPx) {
         if (!launch.scrollPlateToEnd || !isPlate) return@LaunchedEffect
         snapshotFlow { prayerScroll.maxValue }
-            .first { it > ScrollMorph.minimumOffset.toInt() }
-        val target = (prayerScroll.maxValue - plateScrollLeftoverPx).toInt().coerceAtLeast(0)
-        actionLocked = false
-        prayerScroll.scrollTo(target)
+            .collect { max ->
+                if (max <= ScrollMorph.minimumOffset.toInt()) return@collect
+                actionLocked = false
+                val target = (max - plateScrollLeftoverPx).toInt().coerceAtLeast(0)
+                if (prayerScroll.value != target) {
+                    prayerScroll.scrollTo(target)
+                }
+            }
     }
 
     Box(

@@ -28,11 +28,11 @@ Status values: `spec-written` · `captured` · `matched` · `mismatch` · `defer
 | pray-* / rosary-settings-sheet | Pray flow | spec-written | captured | close | | Roborazzi with Pixel 7 system chrome (Mac still offline). See per-screen rows and the Pray measurement section. |
 | pray-opening | Pray flow | spec-written | captured | close | | Roborazzi + insets. Next CTA bottom Δ 0.54%. Typography and centering match. |
 | pray-intention-step | Pray flow | spec-written | captured | close | | Roborazzi + insets. Title Δ 0.41% (was 3.9%); Next CTA bottom Δ 0.85%. Selected chip, Add outline, Next fill match. |
-| pray-mystery-plate | Pray flow | spec-written | captured | close | | Roborazzi + insets. Art is a fixed hero (iOS `plateHeroImage`); reading scrolls. Footer is the collapsed scroll circle. Fruit last ink is 2.92% high (tighter Android block / Pixel 7 aspect); recapture on the Mac to confirm overflow and scroll position. |
+| pray-mystery-plate | Pray flow | spec-written | captured | close | | Roborazzi + insets. Art is a fixed hero (iOS `plateHeroImage`); reading scrolls. Footer is the collapsed scroll circle, floating so Fruit can sit beside it. Fruit last ink Δ 0.09%; title Δ 0.08%. All landmarks within 2%. Still Roborazzi — recapture on the Mac before `matched`. |
 | pray-hail-mary-bead | Pray flow | spec-written | captured | close | | Roborazzi + insets. Next + Complete decade, bead highlight, and “1 of 10” match; CTA bottom Δ 0.54%. |
 | pray-decade-end | Pray flow | spec-written | captured | close | | Roborazzi + insets. Fatima copy and bead locus match; CTA bottom Δ 0.54%. |
 | pray-final-prayers | Pray flow | spec-written | captured | close | | Roborazzi + insets. Still the short-prayer Next pill, as on the Pro Max ref; CTA bottom Δ 0.54%. |
-| pray-completion | Pray flow | spec-written | captured | close | | Roborazzi + insets. Tick is recolored to `textPrimary` (iOS `completionTick`). Done CTA bottom Δ 1.18%. Title “Joyful Mysteries” is still 2.98% high — needs a Mac check. Quote `jp2-contemplate`. |
+| pray-completion | Pray flow | spec-written | captured | close | | Roborazzi + insets. Tick is recolored to `textPrimary` (iOS `completionTick`). Title “Joyful Mysteries” Δ 0.39%; Done bottom Δ 1.45%. All landmarks within 2%. Quote `jp2-contemplate`. Still Roborazzi — recapture on the Mac before `matched`. |
 | pray-michael | Pray flow | spec-written | captured | close | | Roborazzi + insets. Labels are exactly “English”, “Latin”, “English + Latin”. Title Δ 1.26%; Done CTA bottom Δ 0.85%. Segmented-control style is M3, not the iOS capsule. |
 | rosary-settings-sheet | Pray flow | spec-written | captured | close | | Roborazzi + insets. Sheet sized to iOS `.large` detent (title Δ 1.97%, sheet edge Δ 1.82%). Done is an M3 text button (iOS `toolbar` `confirmationAction`, not a custom PillButton). Switches stay M3 accent, not iOS green. |
 | pray-replace-dialog | Pray flow | spec-written | captured | close | | Roborazzi + insets. Copy matches; title Δ 1.28%. Material 3 alert (side-by-side accent actions) vs iOS stacked red “Replace saved place” / black Cancel — kept as a native M3 swap. |
@@ -149,14 +149,21 @@ Android frames are 1078×2399 with emulated Pixel 7 insets and chrome. iOS refs 
 | pray-opening | Next bottom | 0.8846 | 0.8900 | 0.54% | typography / centering match |
 | pray-intention-step | title top | 0.1900 | 0.1859 | 0.41% | was 3.9%; 21 dp nudge + `includeFontPadding = false` |
 | pray-intention-step | Next bottom | 0.9474 | 0.9558 | 0.85% | |
-| pray-mystery-plate | art fade end | 0.5265 | 0.5411 | 1.46% | fixed hero, text scrolls |
-| pray-mystery-plate | Fruit last ink | 0.8358 | 0.8066 | 2.92% | tighter Android block; circle is present |
-| pray-mystery-plate | scroll control | circle 0.8933–0.9474 | circle 0.8991–0.9558 | 0.58 / 0.85% | collapsed circle, as on the iOS ref |
+| pray-mystery-plate | art fade / visible art end | 0.5579 | 0.5502 | 0.77% | fixed hero, text scrolls |
+| pray-mystery-plate | eyebrow “I JOYFUL” top | 0.6112 | 0.6098 | 0.14% | |
+| pray-mystery-plate | title “The Annunciation” top | 0.6457 | 0.6465 | 0.08% | `modalTitle` 22/28, `includeFontPadding = false` |
+| pray-mystery-plate | scripture first line top | 0.6893 | 0.6920 | 0.27% | reading pitch 31.07 pt vs 31.18 dp |
+| pray-mystery-plate | Fruit last ink | 0.9149 | 0.9158 | 0.09% | true Fruit line, beside the circle (the earlier 0.8358 figure was the Luke/scripture cluster) |
+| pray-mystery-plate | scroll control | circle 0.8933–0.9477 | circle 0.8991–0.9562 | 0.58 / 0.85% | collapsed circle, floating over the reading |
 | pray-hail-mary-bead | Next bottom | 0.8846 | 0.8900 | 0.54% | Next filled + Complete decade tertiary |
 | pray-decade-end | Next bottom | 0.8846 | 0.8900 | 0.54% | Fatima, bead locus correct |
 | pray-final-prayers | Next bottom | 0.8846 | 0.8900 | 0.54% | still the Next pill, not a scroll circle |
-| pray-completion | title “Joyful Mysteries” | 0.6346 | 0.6048 | 2.98% | still high; needs Mac check |
-| pray-completion | Done bottom | 0.8971 | 0.8854 | 1.18% | tick recolored to `textPrimary` |
+| pray-completion | tick top | 0.5474 | 0.5398 | 0.76% | `completionTick` = `textPrimary` |
+| pray-completion | ROSARY COMPLETE top | 0.6074 | 0.6028 | 0.46% | 6 pt under the tick slot, `includeFontPadding = false` |
+| pray-completion | title “Joyful Mysteries” top | 0.6342 | 0.6303 | 0.39% | iOS-faithful 6 dp bottom inset (not 24 dp nav padding) so the flex-art cluster sits on the iOS fraction |
+| pray-completion | Done top | 0.8431 | 0.8549 | 1.18% | |
+| pray-completion | Done bottom | 0.8975 | 0.9120 | 1.45% | |
+| pray-completion | Saint Michael bottom | 0.9644 | 0.9825 | 1.81% | 6 dp above the Pixel 7 gesture pill |
 | pray-michael | title top | 0.1402 | 0.1276 | 1.26% | labels match the iOS source exactly |
 | pray-michael | Done bottom | 0.9474 | 0.9558 | 0.85% | |
 | rosary-settings-sheet | sheet edge | 0.0753 | 0.0571 | 1.82% | sized to iOS `.large` detent |
@@ -165,7 +172,7 @@ Android frames are 1078×2399 with emulated Pixel 7 insets and chrome. iOS refs 
 
 In-flow Saint Michael (the optional closing *step*, toggle off by default) has no v2 iOS ref; `pray-michael` is the post-completion overlay. The scroll-to-continue morph’s collapsed (circle) state is now shown on `pray-mystery-plate` via `scrollPlateToEnd` and a plate end-spacer that includes `ScrollMorph.minimumRange`. There is no mid-lerp iOS ref to chase.
 
-Visual review (besides fractions): prayer typography is Instrument Sans 18/21; short prayers are vertically centered; bead highlights and Next vs Complete decade fills look right; the completion tick is now ink/`textPrimary` like iOS; the plate footer is the collapsed circle with Fruit above it; Michael language labels match the iOS source; the customise sheet sits just under the status bar.
+Visual review (besides fractions): prayer typography is Instrument Sans 18/21 (plate scripture uses a 31 pt/dp reading pitch); short prayers are vertically centered; bead highlights and Next vs Complete decade fills look right; the completion tick is now ink/`textPrimary` like iOS, and the Joyful Mysteries title sits on the iOS fraction; the plate footer is the collapsed circle floating over the reading, with Fruit beside it as on the iOS ref; Michael language labels match the iOS source; the customise sheet sits just under the status bar. Dark layouts for completion and the plate match light.
 
 ## Known allowed deviations
 
@@ -181,4 +188,4 @@ Visual review (besides fractions): prayer typography is Instrument Sans 18/21; s
 1. **launch-splash** cannot match the iOS reference PNGs within 2%, because those captures are mid-animation (light is a blank `#0054FF` field; dark is a beaded-halo mid-frame) while Android correctly holds the Lottie end-frame cream halo-R. The 144 dp player size already matches the source.
 2. **week-feast-sheet** detent is still the 460 dp minimum, so the sheet starts lower than the iOS estimated height on this copy. User-approved as is.
 3. **mystery-detail-sheet** sheet top is 3.3% higher on Pixel 7 because both sides cap the detent at 760 on frames of different height (914.3 dp vs 956 pt). Fruit and CTA are within 2%.
-4. **Pray flow frames** are still Roborazzi, not Mac-emulator captures. The harness now emulates Pixel 7 insets and chrome (validated to ~0.1% on today / onboarding-1), and most CTA/title landmarks are within 2%. Remaining over-2% items: completion title 2.98% high, mystery-plate Fruit last ink 2.92% high. Recapture every Pray screen on the Mac Pixel 7 emulator before marking any of them `matched`, especially the Lottie tick on a real device, plate overflow/scroll-circle, and sheet/dialog chrome.
+4. **Pray flow frames** are still Roborazzi, not Mac-emulator captures. The harness now emulates Pixel 7 insets and chrome (validated to ~0.1% on today / onboarding-1). The last two over-2% landmarks are now inside the target: completion title Δ 0.39%, mystery-plate Fruit last ink Δ 0.09% (light and dark agree). Recapture every Pray screen on the Mac Pixel 7 emulator before marking any of them `matched`, especially the Lottie tick on a real device, plate overflow/scroll-circle, and sheet/dialog chrome.

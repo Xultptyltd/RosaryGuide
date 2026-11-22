@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,7 +78,10 @@ fun CompletionScreen(
         modifier = modifier
             .fillMaxSize()
             .background(fade)
-            .navigationBarsPadding(),
+            // iOS actions use padding.bottom 0 (the home indicator overlays).
+            // 6 dp clears the Pixel 7 gesture pill without pulling the flex-art
+            // cluster up the way navigationBarsPadding (24 dp) did.
+            .padding(bottom = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
@@ -116,9 +120,11 @@ fun CompletionScreen(
             )
         }
         val playTick = android.os.Build.FINGERPRINT.lowercase() != "robolectric"
-        // iOS title sits ~3% lower; the art Box is weight(1f) so this spacer
-        // shrinks the painting and drops the tick / title without moving Done.
-        Spacer(Modifier.height(28.dp))
+        // iOS iconSlot is padding.top xs and padding.bottom -10, then the
+        // caption. The art Box is weight(1f) and takes leftover space; a
+        // 74 dp spacer shrinks the painting so the 32 pt title lands on the
+        // iOS frame fraction without pushing Done past 2%.
+        Spacer(Modifier.height(74.dp))
         RosaryTickPlayer(
             size = 88.dp,
             plays = playTick,
@@ -128,20 +134,25 @@ fun CompletionScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = RosarySpace.gutter)
-                .padding(top = RosarySpace.xs),
+                .offset(y = (-10).dp)
+                .padding(horizontal = RosarySpace.gutter),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "ROSARY COMPLETE",
-                style = RosaryType.caption.copy(letterSpacing = 1.4.sp),
+                style = RosaryType.caption.copy(
+                    letterSpacing = 1.4.sp,
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                ),
                 color = palette.completionMeta,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(6.dp))
             Text(
                 text = "${mysterySet.shortName} Mysteries",
-                style = RosaryType.headingPrimary,
+                style = RosaryType.headingPrimary.copy(
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                ),
                 color = palette.completionTitle,
                 textAlign = TextAlign.Center,
             )
@@ -197,8 +208,8 @@ fun CompletionScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = RosarySpace.gutter)
-                .padding(bottom = RosarySpace.lg),
+                .offset(y = (-10).dp)
+                .padding(horizontal = RosarySpace.gutter),
             verticalArrangement = Arrangement.spacedBy(RosarySpace.md),
         ) {
             GuidePrimaryButton(title = "Done", onClick = onDone)

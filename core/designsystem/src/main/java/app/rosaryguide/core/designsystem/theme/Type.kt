@@ -9,6 +9,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import app.rosaryguide.core.designsystem.R
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.LineHeightStyle
 
 /**
  * Type scale ported from iOS `AppTheme.TypeRole`.
@@ -67,13 +68,28 @@ object RosaryType {
         fontSize = 16.sp,
         lineHeight = 23.sp,
     )
-    /** iOS `TypeRole.prayerText(scale: 1)` = sans max(16, 18), line-height 21. */
+    /** iOS `TypeRole.prayerText(scale: 1)` = sans max(16, 18). */
     val prayerText = TextStyle(
         fontFamily = RosaryFonts.sans,
         fontWeight = FontWeight.Normal,
         fontSize = 18.sp,
         lineHeight = 21.sp,
         platformStyle = PlatformTextStyle(includeFontPadding = false),
+    )
+    /**
+     * iOS `BilingualStack` adds `lineSpacing` so 18 pt prayer text lands at a
+     * measured 31 pt line pitch on the mystery plate (`21 × 1.65` minus the
+     * 21 pt font's native line height, applied on top of the 18 pt face).
+     */
+    val prayerTextReading = prayerText.copy(
+        lineHeight = 31.sp,
+        // SwiftUI lineSpacing adds space between lines only. Compose lineHeight
+        // also pads the first and last line; trim that so the block isn't taller
+        // than the iOS plate.
+        lineHeightStyle = LineHeightStyle(
+            alignment = LineHeightStyle.Alignment.Proportional,
+            trim = LineHeightStyle.Trim.Both,
+        ),
     )
     /** Alias of `headingSecondary` / iOS `modalTitle` (22 / 28). */
     val modalTitle = headingSecondary

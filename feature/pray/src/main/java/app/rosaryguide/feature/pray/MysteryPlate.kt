@@ -20,8 +20,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.PlatformTextStyle
 import app.rosaryguide.core.designsystem.component.mysteryPlateDrawableId
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
@@ -92,34 +94,46 @@ fun MysteryPlateReading(
     val palette = LocalThemePalette.current
     val mystery = step.mystery ?: return
     val eyebrow = mystery.set.shortName.uppercase()
-    Column(modifier.padding(horizontal = RosarySpace.gutter)) {
-        Spacer(Modifier.height(RosarySpace.md))
+    // Ported from iOS `locus` + `announceBody` + `MysteryFruitLine` for a plate.
+    Column(modifier.padding(horizontal = RosarySpace.gutter).padding(top = 6.dp)) {
         Row(
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(RosarySpace.md),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
             Text(
                 text = OrdinalWord.roman(mystery.number),
-                style = RosaryType.body,
+                style = RosaryType.body.copy(
+                    fontWeight = FontWeight.Medium,
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                ),
                 color = palette.dim,
             )
             Text(
                 text = eyebrow,
-                style = RosaryType.caption.copy(letterSpacing = 1.2.sp),
+                style = RosaryType.caption.copy(
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 2.sp,
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                ),
                 color = palette.dim,
             )
         }
-        Spacer(Modifier.height(RosarySpace.xs))
+        // iOS locus stack is Space.sm (8) plus padding.bottom xs (4) under the eyebrow.
+        Spacer(Modifier.height(12.dp))
         Text(
             text = mystery.title.resolved(language),
-            style = RosaryType.headingPrimary,
+            style = RosaryType.modalTitle.copy(
+                letterSpacing = (-0.2).sp,
+                platformStyle = PlatformTextStyle(includeFontPadding = false),
+            ),
             color = palette.ink,
         )
-        Spacer(Modifier.height(RosarySpace.sm))
+        // iOS `locus` padding.bottom Space.lg before the scripture.
+        Spacer(Modifier.height(RosarySpace.lg))
         val excerpt = step.body
         Text(
             text = excerpt.primary(language),
-            style = RosaryType.prayerText,
+            style = RosaryType.prayerTextReading,
             color = palette.ink,
         )
         excerpt.secondary(language)?.let { latin ->
@@ -127,20 +141,48 @@ fun MysteryPlateReading(
             Text(text = latin, style = RosaryType.serifItalicBody, color = palette.dim)
         }
         step.scriptureReference?.let { ref ->
+            // iOS `scriptureReference(isMystery: true)` is 11 pt.
             Spacer(Modifier.height(RosarySpace.xs))
-            Text(text = ref, style = RosaryType.caption, color = palette.dim)
+            Text(
+                text = ref,
+                style = RosaryType.caption.copy(
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                ),
+                color = palette.dim,
+            )
         }
+        // iOS fruit: 16 pt above the hairline, then Space.sm to the row.
         Spacer(Modifier.height(RosarySpace.lg))
         HorizontalDivider(color = palette.strokeSubtle)
-        Spacer(Modifier.height(RosarySpace.md))
+        Spacer(Modifier.height(RosarySpace.sm))
         val fruit = mystery.fruit.resolved(language)
         if (fruit.isNotBlank()) {
-            Row {
-                Text(text = "Fruit  ", style = RosaryType.supportingLabel, color = palette.dim)
-                Text(text = fruit, style = RosaryType.body, color = palette.ink)
+            Row(
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(RosarySpace.sm),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Fruit",
+                    style = RosaryType.body.copy(
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.8.sp,
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    ),
+                    color = palette.dim,
+                )
+                Text(
+                    text = fruit,
+                    style = RosaryType.body.copy(
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    ),
+                    color = palette.ink,
+                )
             }
         }
     }
+
 }
 
 private fun Modifier.plateFade(fade: Color): Modifier =
