@@ -80,7 +80,9 @@ private fun Modifier.settingsGroupCard(): Modifier {
         .clip(shape)
         .background(palette.cardSurface(on = PageStyle.Grouped), shape)
         .border(0.5.dp, palette.cardSurfaceStroke, shape)
-        .padding(horizontal = RosarySpace.sm, vertical = RosarySpace.md)
+        // iOS guideRowGroup has no inner vertical inset; keep a hair of
+        // padding so the first/last row clears the 20 dp corner radius.
+        .padding(horizontal = RosarySpace.sm, vertical = 8.dp)
 }
 
 @Composable
@@ -211,9 +213,8 @@ fun SettingsNavigationRow(
     val ax = isAccessibilitySize()
     val rowMod = modifier
         .fillMaxWidth()
-        .sizeIn(minHeight = RosarySpace.minHitTarget)
+        .sizeIn(minHeight = 56.dp)
         .clickable(enabled = enabled, onClick = onClick)
-        .padding(vertical = 14.dp)
     if (ax && value != null) {
         Column(modifier = rowMod) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -278,8 +279,7 @@ fun SettingsToggleRow(
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .sizeIn(minHeight = RosarySpace.minHitTarget)
-                .padding(vertical = 8.dp),
+                .sizeIn(minHeight = 56.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (icon != null) {
@@ -302,8 +302,7 @@ fun SettingsToggleRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .sizeIn(minHeight = RosarySpace.minHitTarget)
-            .padding(vertical = 8.dp),
+            .sizeIn(minHeight = 56.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {

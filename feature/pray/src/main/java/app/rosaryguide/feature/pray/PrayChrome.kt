@@ -2,6 +2,7 @@ package app.rosaryguide.feature.pray
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -24,6 +26,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -45,6 +49,7 @@ import app.rosaryguide.core.designsystem.component.GuideOutlineButton
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideTertiaryButton
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.PageStyle
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.designsystem.theme.isAccessibilitySize
@@ -208,31 +213,75 @@ fun PrayerLanguageToggle(
     val palette = LocalThemePalette.current
     val options = PrayerLanguage.entries
     val ax = useFullTitles
-    SingleChoiceSegmentedButtonRow(
-        modifier = modifier
-            .then(if (ax) Modifier.fillMaxWidth() else Modifier.width(220.dp))
+    if (ax && isAccessibilitySize()) {
+        Column(
+            modifier = modifier.fillMaxWidth().semantics { contentDescription = "Prayer language" },
+            verticalArrangement = Arrangement.spacedBy(RosarySpace.sm),
+        ) {
+            options.forEach { option ->
+                val selected = language == option
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(if (selected) palette.accent else palette.surface)
+                        .clickable(role = Role.Button, onClick = { onChange(option) })
+                        .padding(horizontal = RosarySpace.lg, vertical = RosarySpace.md),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = option.title,
+                        style = RosaryType.segmentedControl,
+                        color = if (selected) palette.onAccent else palette.ink,
+                    )
+                }
+            }
+        }
+        return
+    }
+    // Custom capsule matching the iOS segmented treatment: grey track,
+    // raised white (light) or dark (dark) thumb, rounded ends, no dividers.
+    val track = if (palette.isDark) Color(0xFF2C2C2E) else palette.surface
+    val thumb = if (palette.isDark) Color(0xFF1C1C1E) else Color.White
+    val selectedIndex = options.indexOf(language).coerceAtLeast(0)
+    val width = if (ax) modifier else modifier.width(220.dp)
+    val cap = RoundedCornerShape(percent = 50)
+    BoxWithConstraints(
+        modifier = width
+            .height(36.dp)
+            .background(track, cap)
             .semantics { contentDescription = "Prayer language" },
     ) {
-        options.forEachIndexed { index, option ->
-            SegmentedButton(
-                selected = language == option,
-                onClick = { onChange(option) },
-                shape = SegmentedButtonDefaults.itemShape(index, options.size),
-                colors = SegmentedButtonDefaults.colors(
-                    activeContainerColor = palette.surface,
-                    activeContentColor = palette.ink,
-                    inactiveContainerColor = palette.strokeSubtle,
-                    inactiveContentColor = palette.dim,
-                ),
-                icon = {},
-                label = {
+        val count = options.size
+        val inset = 2.dp
+        val thumbWidth = (maxWidth - inset * 2) / count
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = inset + thumbWidth * selectedIndex, top = inset, bottom = inset)
+                .width(thumbWidth)
+                .height(32.dp)
+                .shadow(1.5.dp, cap, clip = false)
+                .background(thumb, cap),
+        )
+        Row(Modifier.fillMaxWidth().fillMaxHeight(), verticalAlignment = Alignment.CenterVertically) {
+            options.forEach { option ->
+                val selected = language == option
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(role = Role.Button, onClick = { onChange(option) }),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text(
                         text = if (ax) option.title else option.chip,
                         style = RosaryType.segmentedControl,
+                        color = if (selected) palette.ink else palette.dim,
                         maxLines = 1,
                     )
-                },
-            )
+                }
+            }
         }
     }
 }
@@ -379,7 +428,22 @@ fun IntentionActionFooter(
             .padding(top = RosarySpace.md, bottom = RosarySpace.lg),
         verticalArrangement = Arrangement.spacedBy(RosarySpace.md),
     ) {
-        GuideOutlineButton(title = "Add intention", onClick = onAdd)
+        val shape = RoundedCornerShape(percent = 50)
+        val fill = palette.cardSurface(on = PageStyle.Grouped)
+        Button(
+            onClick = onAdd,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(RosarySpace.pillHeight),
+            shape = shape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = fill,
+                contentColor = palette.ink,
+            ),
+            border = if (palette.isDark) null else BorderStroke(0.5.dp, palette.cardSurfaceStroke),
+        ) {
+            Text(text = "Add intention", style = RosaryType.body)
+        }
         GuidePrimaryButton(title = "Next", onClick = onNext)
     }
 }

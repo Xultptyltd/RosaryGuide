@@ -63,7 +63,11 @@ fun BeadRail(
         )
         animated.value
     }
-    val wave = if (reduceMotion) 0.45f else easeOutCubic(phase)
+    // Phase 0 is a tight, opaque burst. iOS refs are captured later in the
+    // cycle as a large faint halo — especially in dark, where a t=0 ring
+    // reads as a solid blue circle on the crucifix. Start 72% through.
+    val settled = if (reduceMotion) 0.45f else (phase + 0.72f) % 1f
+    val wave = easeOutCubic(settled)
     Canvas(
         modifier = modifier
             .fillMaxWidth()

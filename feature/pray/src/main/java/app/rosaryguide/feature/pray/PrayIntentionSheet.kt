@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -125,17 +126,23 @@ private fun IntentionRow(
     onClick: () -> Unit,
 ) {
     val palette = LocalThemePalette.current
+    // iOS radioCard / IntentionRadioRow: 14 pt padding, minHeight 64,
+    // continuous card radius, subtle surface fill, 1 pt accent hairline
+    // when selected (not a heavy 1.5 dp stadium outline).
+    val shape = RoundedCornerShape(12.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = RosarySpace.xs)
-            .background(palette.surface, RoundedCornerShape(RosarySpace.containerRadius))
-            .then(
-                if (selected) Modifier.border(1.5.dp, palette.accent, RoundedCornerShape(RosarySpace.containerRadius))
-                else Modifier
+            .heightIn(min = 64.dp)
+            .background(palette.surface, shape)
+            .border(
+                width = 1.dp,
+                color = if (selected) palette.accent.copy(alpha = 0.45f) else palette.cardSurfaceStroke,
+                shape = shape,
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = RosarySpace.md, vertical = RosarySpace.sm),
+            .padding(horizontal = 14.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (selected) {

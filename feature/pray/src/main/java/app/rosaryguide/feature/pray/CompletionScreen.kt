@@ -2,7 +2,6 @@ package app.rosaryguide.feature.pray
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -79,10 +78,10 @@ fun CompletionScreen(
         modifier = modifier
             .fillMaxSize()
             .background(fade)
-            // iOS actions use padding.bottom 0 (the home indicator overlays).
-            // 6 dp clears the Pixel 7 gesture pill without pulling the flex-art
-            // cluster up the way navigationBarsPadding (24 dp) did.
-            .padding(bottom = 6.dp),
+            // 16 dp keeps Saint Michael clear of the Pixel 7 gesture pill.
+            // Title / Done still have budget inside the 2% band (they were
+            // 0.35% high and 1.45% low at 6 dp).
+            .padding(bottom = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
@@ -93,13 +92,11 @@ fun CompletionScreen(
         ) {
             if (resId != 0 && plateMystery != null) {
                 val painter = painterResource(resId)
-                // iOS completion art uses FocusedRasterImage with `ArtCatalog.focus`
-                // (Annunciation y = 0.30) and a Space.xl downward shift, clipped
-                // to the leftover frame, so the dove sits below the status bar.
-                // iOS leftover is nearly square (width / ~1.0). Filling the
-                // taller Android leftover over-zooms and clips the wing and
-                // lectern. Pin a slightly-wide band to the top; the fade
-                // still covers the full spare room down to the tick.
+                // iOS fills the leftover above the tick edge-to-edge
+                // (FocusedRasterImage + ArtCatalog.focus, Annunciation y = 0.30),
+                // with a Space.xl downward shift clipped to the frame and a
+                // soft bottom fade. The tall window cover-crops the sides
+                // (no lectern) and enlarges the figures.
                 CroppedArt(
                     painter = painter,
                     coverForFrame = { frameW, frameH ->
@@ -114,9 +111,7 @@ fun CompletionScreen(
                         )
                     },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopCenter)
-                        .aspectRatio(1.15f)
+                        .fillMaxSize()
                         .offset(y = RosarySpace.xl),
                 )
             }
@@ -142,11 +137,10 @@ fun CompletionScreen(
             )
         }
         val playTick = android.os.Build.FINGERPRINT.lowercase() != "robolectric"
-        // iOS iconSlot is padding.top xs and padding.bottom -10, then the
-        // caption. The art Box is weight(1f) and takes leftover space; a
-        // 74 dp spacer shrinks the painting so the 32 pt title lands on the
-        // iOS frame fraction without pushing Done past 2%.
-        Spacer(Modifier.height(74.dp))
+        // iOS iconSlot: padding.top xs, padding.bottom -10. The art Box is
+        // weight(1f) and now fills the leftover down to the tick, so the
+        // fade meets the check the way iOS does.
+        Spacer(Modifier.height(RosarySpace.xs))
         RosaryTickPlayer(
             size = 88.dp,
             plays = playTick,

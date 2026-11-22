@@ -598,7 +598,14 @@ fun PrayScreen(
                             }
                         }
                         if (showBeads) {
-                            BeadRail(current = current?.bead, modifier = Modifier.fillMaxWidth())
+                            BeadRail(
+                                current = current?.bead,
+                                // iOS beadShelf pads Space.md so the loop and
+                                // crucifix sit inside the margins.
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = RosarySpace.md),
+                            )
                         }
                         footer()
                     }

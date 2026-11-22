@@ -20,7 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
 import app.rosaryguide.core.designsystem.component.GuideTertiaryButton
@@ -49,24 +49,25 @@ fun CustomiseRosaryScreen(
         if (showChrome) {
             GuideDetailTopBar(title = title, onBack = onBack)
         }
-        Box(Modifier.weight(1f)) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = RosarySpace.gutter)
-                    .padding(bottom = RosarySpace.xxl),
-            ) {
-                RosarySettingsRows(config = config, onConfigChange = onConfigChange)
-            }
-            GuideTertiaryButton(
-                title = "Reset to default",
-                onClick = { confirmReset = true },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.md),
-            )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(top = RosarySpace.lg),
+        ) {
+            RosarySettingsRows(config = config, onConfigChange = onConfigChange)
         }
+        // iOS pins Reset below the rows with Space.md; the leftover in this
+        // column is the large (~6% of frame) gap above the pill.
+        GuideTertiaryButton(
+            title = "Reset to default",
+            onClick = { confirmReset = true },
+            modifier = Modifier
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(top = RosarySpace.md, bottom = RosarySpace.md),
+        )
     }
     if (confirmReset) {
         AlertDialog(
@@ -105,7 +106,7 @@ fun RosarySettingsRows(
             }
         }
 
-        Spacer(Modifier.height(RosarySpace.lg))
+        Spacer(Modifier.height(8.dp))
         SettingsSection(
             title = "Each decade",
             icon = SettingsRepeatIcon,
@@ -140,7 +141,7 @@ fun RosarySettingsRows(
             }
         }
 
-        Spacer(Modifier.height(RosarySpace.lg))
+        Spacer(Modifier.height(8.dp))
         SettingsSection(
             title = "Closing prayers",
             icon = SettingsMoonStarsIcon,
