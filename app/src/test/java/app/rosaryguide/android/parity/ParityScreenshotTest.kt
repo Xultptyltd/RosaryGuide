@@ -133,6 +133,29 @@ class ParityScreenshotTest {
     @Test fun learnLight() = shot("learn", dark = false) { Learn() }
     @Test fun learnDark() = shot("learn", dark = true) { Learn() }
 
+    @Test fun learnFaqLight() = shot("learn-faq", dark = false) { FaqArticle() }
+    @Test fun learnFaqDark() = shot("learn-faq", dark = true) { FaqArticle() }
+
+    @Test fun learnSearchLight() = shot("learn-search", dark = false) { LearnSearch("Hail") }
+    @Test fun learnSearchDark() = shot("learn-search", dark = true) { LearnSearch("Hail") }
+
+    @Test fun learnSearchEmptyLight() = shot("learn-search-empty", dark = false) { LearnSearch("zzzznotfoundxyz") }
+    @Test fun learnSearchEmptyDark() = shot("learn-search-empty", dark = true) { LearnSearch("zzzznotfoundxyz") }
+
+    @Test fun learnMysteryDetailLight() = shot("learn-mystery-detail", dark = false) { MysterySet() }
+    @Test fun learnMysteryDetailDark() = shot("learn-mystery-detail", dark = true) { MysterySet() }
+
+    @Test fun walkthrough1Light() = shot("walkthrough-1", dark = false, showStatusBar = false) { Walkthrough(0) }
+    @Test fun walkthrough1Dark() = shot("walkthrough-1", dark = true, showStatusBar = false) { Walkthrough(0) }
+    @Test fun walkthrough2Light() = shot("walkthrough-2", dark = false, showStatusBar = false) { Walkthrough(1) }
+    @Test fun walkthrough2Dark() = shot("walkthrough-2", dark = true, showStatusBar = false) { Walkthrough(1) }
+    @Test fun walkthrough3Light() = shot("walkthrough-3", dark = false, showStatusBar = false) { Walkthrough(2) }
+    @Test fun walkthrough3Dark() = shot("walkthrough-3", dark = true, showStatusBar = false) { Walkthrough(2) }
+    @Test fun walkthrough4Light() = shot("walkthrough-4", dark = false, showStatusBar = false) { Walkthrough(3) }
+    @Test fun walkthrough4Dark() = shot("walkthrough-4", dark = true, showStatusBar = false) { Walkthrough(3) }
+    @Test fun walkthrough5Light() = shot("walkthrough-5", dark = false, showStatusBar = false) { Walkthrough(4) }
+    @Test fun walkthrough5Dark() = shot("walkthrough-5", dark = true, showStatusBar = false) { Walkthrough(4) }
+
     @Test fun learnWalkthroughLight() = shot("learn-walkthrough", dark = false) { Walkthrough() }
     @Test fun learnWalkthroughDark() = shot("learn-walkthrough", dark = true) { Walkthrough() }
 
@@ -355,14 +378,14 @@ class ParityScreenshotTest {
         stem: String,
         dark: Boolean,
         showTabBar: Boolean = stem in TAB_ROOTS,
-        showStatusBar: Boolean = !(stem.startsWith("onboarding") && !dark),
+        showStatusBar: Boolean = !(stem.startsWith("onboarding") && !dark) && !stem.startsWith("walkthrough"),
         content: @Composable () -> Unit,
     ) {
         // Night drawables (`drawable-night-nodpi`) only resolve when the
         // Robolectric configuration is actually night. Theme(darkTheme)
         // alone still loads the light asset. Scope this to Pray stems so
         // approved today/onboarding dark recordings stay comparable.
-        val useNightResources = dark && (stem.startsWith("pray-") || stem == "rosary-settings-sheet")
+        val useNightResources = dark && (stem.startsWith("pray-") || stem == "rosary-settings-sheet" || stem.startsWith("learn") || stem.startsWith("walkthrough") || stem in setOf("prayer-reader", "rosary-prayers", "all-prayers"))
         RuntimeEnvironment.setQualifiers(if (useNightResources) "+night" else "+notnight")
         val app = RuntimeEnvironment.getApplication()
         val config = Configuration(app.resources.configuration)
@@ -377,10 +400,11 @@ class ParityScreenshotTest {
                     dark = dark,
                     showStatusBar = showStatusBar,
                     showTabBar = showTabBar,
-                    selectedTab = when (stem) {
-                        "learn", "learn-walkthrough" -> AppTab.Learn
-                        "feasts" -> AppTab.Feasts
-                        "profile", "profile-empty" -> AppTab.Profile
+                    selectedTab = when {
+                        stem == "learn" || stem.startsWith("learn-") ||
+                            stem in setOf("rosary-prayers", "all-prayers", "prayer-reader") -> AppTab.Learn
+                        stem == "feasts" -> AppTab.Feasts
+                        stem == "profile" || stem == "profile-empty" -> AppTab.Profile
                         else -> AppTab.Today
                     },
                     content = content,
@@ -544,12 +568,25 @@ class ParityScreenshotTest {
             onMysterySet = {},
             todaySetTitle = "Joyful Mysteries",
             initialExpandedArticleId = LearnArticle.commonQuestions.first().id,
+            initialScrollToQuestions = true,
         )
     }
 
     @Composable
-    private fun Walkthrough() {
-        RosaryWalkthroughScreen(onClose = {}, onBegin = {}, initialPage = 0)
+    private fun Walkthrough(page: Int = 0) {
+        RosaryWalkthroughScreen(onClose = {}, onBegin = {}, initialPage = page)
+    }
+
+    @Composable
+    private fun LearnSearch(query: String) {
+        LearnScreen(
+            onHowToPray = {},
+            onArticle = {},
+            onPrayer = {},
+            onMysterySet = {},
+            todaySetTitle = "Joyful Mysteries",
+            initialQuery = query,
+        )
     }
 
     @Composable
@@ -725,8 +762,9 @@ class ParityScreenshotTest {
     companion object {
         private const val OUT = "/workspace/android/shots/parity"
         private val TAB_ROOTS = setOf(
-            "today", "learn", "learn-walkthrough", "feasts",
-            "profile", "profile-empty",
+            "today", "learn", "learn-faq", "learn-search", "learn-search-empty",
+            "learn-mystery-detail", "rosary-prayers", "all-prayers", "prayer-reader",
+            "feasts", "profile", "profile-empty",
         )
         private val PopeMonthIntentionFallback = app.rosaryguide.core.data.journey.PopeMonthIntention(
             yearMonth = "2026-11",

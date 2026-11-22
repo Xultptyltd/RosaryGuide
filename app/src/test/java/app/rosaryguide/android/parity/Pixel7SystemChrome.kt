@@ -124,7 +124,7 @@ fun Pixel7DeviceFrame(
     val palette = LocalThemePalette.current
     var tabClearance by remember { mutableStateOf(80.dp) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().background(palette.bg)) {
         if (showTabBar) {
             Box(
                 modifier = Modifier

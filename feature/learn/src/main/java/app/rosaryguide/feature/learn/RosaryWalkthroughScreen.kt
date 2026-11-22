@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -30,8 +32,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
@@ -58,6 +62,7 @@ private val walkthroughPages = listOf(
         title = "A moment to reflect",
         body = "Each “mystery” is a moment in the lives of Jesus and Mary. For example, imagine Mary hearing that she will become Jesus’ mother. As you pray, think about trusting God when life feels uncertain.",
         image = R.drawable.mystery_01_annunciation,
+        centerCrop = false,
     ),
     WalkthroughPage(
         title = "One decade at a time",
@@ -73,6 +78,7 @@ private val walkthroughPages = listOf(
         title = "We’ll guide you",
         body = "No rosary beads or memorised prayers needed. We’ll show you every prayer and mystery, one step at a time. Begin with the opening prayers, then follow along at your own pace.",
         image = R.drawable.walkthrough_mary,
+        centerCrop = false,
     ),
 )
 
@@ -89,36 +95,67 @@ fun RosaryWalkthroughScreen(
     val scope = rememberCoroutineScope()
     val reduceMotion = LocalReduceMotion.current
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(palette.bg),
     ) {
-        Column(Modifier.fillMaxSize().navigationBarsPadding()) {
+        val panelHeight = RosarySpace.signInPanelHeight(maxHeight)
+        Column(
+            Modifier
+                .fillMaxSize()
+                .navigationBarsPadding(),
+        ) {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.weight(1f).fillMaxWidth(),
             ) { index ->
                 val page = pages[index]
-                Column(Modifier.fillMaxSize()) {
-                    Image(
-                        painter = painterResource(page.image),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
+                Column(
+                    Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f),
-                    )
+                            .height(panelHeight)
+                            .clip(
+                                RoundedCornerShape(
+                                    bottomStart = RosarySpace.panelRadius,
+                                    bottomEnd = RosarySpace.panelRadius,
+                                ),
+                            )
+                            .background(Color.Black),
+                    ) {
+                        Image(
+                            painter = painterResource(page.image),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            alignment = if (page.centerCrop) Alignment.Center else Alignment.TopCenter,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState())
                             .padding(horizontal = RosarySpace.gutter)
                             .padding(top = RosarySpace.lg, bottom = RosarySpace.md),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text(page.title, style = RosaryType.headingSecondary, color = palette.ink)
-                        Spacer(Modifier.height(RosarySpace.sm))
-                        Text(page.body, style = RosaryType.body, color = palette.dim)
+                        Text(
+                            page.title,
+                            style = RosaryType.headingPrimaryWalkthrough,
+                            color = palette.ink,
+                            textAlign = TextAlign.Center,
+                        )
+                        Spacer(Modifier.height(RosarySpace.lg))
+                        Text(
+                            page.body,
+                            style = RosaryType.themeSummary,
+                            color = palette.dim,
+                            textAlign = TextAlign.Center,
+                        )
                     }
                 }
             }
@@ -153,7 +190,7 @@ fun RosaryWalkthroughScreen(
                 }
                 if (isLast) {
                     TextButton(onClick = onClose) {
-                        Text("Done", style = RosaryType.body, color = palette.accentText)
+                        Text("Done", style = RosaryType.bodyPray, color = palette.accentText)
                     }
                 }
             }
@@ -163,9 +200,12 @@ fun RosaryWalkthroughScreen(
             modifier = Modifier
                 .statusBarsPadding()
                 .align(Alignment.TopEnd)
-                .padding(RosarySpace.sm),
+                .padding(end = RosarySpace.gutter, top = RosarySpace.sm)
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.92f)),
         ) {
-            Icon(Icons.Filled.Close, contentDescription = "Close guide", tint = palette.ink)
+            Icon(Icons.Filled.Close, contentDescription = "Close guide", tint = Color(0xFF1C1C1E))
         }
     }
 }

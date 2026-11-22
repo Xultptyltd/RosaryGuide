@@ -13,6 +13,7 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
@@ -37,8 +38,10 @@ fun GuideLargeTopAppBar(
     onBack: (() -> Unit)? = null,
     closeInsteadOfBack: Boolean = false,
     actions: @Composable RowScope.() -> Unit = {},
+    containerColor: Color? = null,
 ) {
     val palette = LocalThemePalette.current
+    val barColor = containerColor ?: palette.bg
     LargeTopAppBar(
         title = {
             Text(
@@ -64,8 +67,8 @@ fun GuideLargeTopAppBar(
         },
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = palette.bg,
-            scrolledContainerColor = palette.bg,
+            containerColor = barColor,
+            scrolledContainerColor = barColor,
             titleContentColor = palette.ink,
             actionIconContentColor = palette.ink,
         ),

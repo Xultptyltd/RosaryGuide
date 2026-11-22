@@ -10,8 +10,9 @@ object LearnCopy {
     const val HOW_TO_PRAY_TITLE = "How to pray the Rosary"
     const val THE_MYSTERIES = "The mysteries"
     const val COMMON_QUESTIONS = "Common questions"
-    const val PRAY_TODAY_TITLE_FRESH = "Pray today’s Rosary"
-    const val PRAY_TODAY_SUBTITLE = "Pray today’s mysteries"
+    const val PRAY_TODAY_HEADING = "The Rosary"
+    const val PRAY_TODAY_TITLE_FRESH = "Pray the Rosary"
+    const val PRAY_TODAY_SUBTITLE = "Meditate on the life of Jesus with Mary"
 
     /** @deprecated Was mis-labelled; this is the intro subtitle, not the search prompt. */
     const val SEARCH_TITLE = INTRO_SUBTITLE

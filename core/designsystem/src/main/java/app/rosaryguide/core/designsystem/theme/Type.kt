@@ -118,6 +118,8 @@ object RosaryType {
     val modalTitlePray = sansRole(22f, letterSpacingSp = -0.2f)
     /** iOS `TypeRole.headingPrimary` / `screenTitle` / `title2`. */
     val headingPrimaryPray = sansRole(32f)
+    /** iOS `OnboardingPageView` title: `TypeRole.title` (32) + `.lineSpacing(2)`. */
+    val headingPrimaryWalkthrough = sansRole(32f, extraLineSpacingSp = 2f)
     /** iOS `TypeRole.navigationTitleUIFont`: 17 pt medium. */
     val navigationTitlePray = sansRole(17f, weight = FontWeight.Medium)
     /** iOS Pray header `progressNowLabel`: `TypeRole.label(weight: .medium)` = 12 pt medium. */
