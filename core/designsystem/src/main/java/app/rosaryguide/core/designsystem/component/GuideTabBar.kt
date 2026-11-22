@@ -51,7 +51,7 @@ fun GuideTabBar(
 ) {
     val palette = LocalThemePalette.current
     val shape = RoundedCornerShape(percent = 50)
-    val fill = if (palette.isDark) Color(0xF21C1C1E) else Color.White.copy(alpha = 0.96f)
+    val fill = if (palette.isDark) Color(0xFF1C1C1E) else Color.White.copy(alpha = 0.96f)
     val hairline = if (palette.isDark) Color.White.copy(alpha = 0.20f) else Color.Black.copy(alpha = 0.08f)
     Row(
         modifier = modifier
@@ -61,7 +61,9 @@ fun GuideTabBar(
                 bottom = RosarySpace.tabBarBottomMargin,
             )
             .fillMaxWidth()
-            .shadow(16.dp, shape, clip = false)
+            // Light gets a soft drop shadow. In dark, Compose's default
+            // shadow reads as a pale halo against black, so skip it.
+            .then(if (palette.isDark) Modifier else Modifier.shadow(16.dp, shape, clip = false))
             .clip(shape)
             .background(fill)
             .border(0.5.dp, hairline, shape)
