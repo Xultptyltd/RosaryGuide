@@ -223,14 +223,39 @@ fun RosaryGuideApp(
                 startStep = debugLaunch.prayStep ?: decadeStep,
                 showIntentions = fromDebug && debugLaunch.showIntentions,
                 showCompletion = fromDebug && debugLaunch.showCompletion,
-                forceFresh = startingDecade != null || (fromDebug && (debugLaunch.forceFreshPray || debugLaunch.showCompletion || debugLaunch.showIntentions)),
+                showSaintMichael = fromDebug && debugLaunch.showMichaelLayer,
+                showCustomise = fromDebug && debugLaunch.showCustomise,
+                forceFresh = startingDecade != null || (fromDebug && (
+                    debugLaunch.forceFreshPray ||
+                        debugLaunch.showCompletion ||
+                        debugLaunch.showIntentions ||
+                        debugLaunch.showMichaelLayer ||
+                        debugLaunch.showCustomise
+                    )),
                 isResume = isResume,
+                showReplaceDialog = fromDebug && debugLaunch.showReplaceDialog,
                 config = config,
+                completionQuoteId = debugLaunch.completionQuoteId,
             )
         }
 
-        LaunchedEffect(debugLaunch.openPray, debugLaunch.showIntentions, debugLaunch.showCompletion) {
-            if (debugLaunch.openPray || debugLaunch.showIntentions || debugLaunch.showCompletion) {
+        LaunchedEffect(
+            debugLaunch.openPray,
+            debugLaunch.showIntentions,
+            debugLaunch.showCompletion,
+            debugLaunch.showMichaelLayer,
+            debugLaunch.showCustomise,
+            debugLaunch.showReplaceDialog,
+            debugLaunch.prayStep,
+            debugLaunch.nonce,
+        ) {
+            if (debugLaunch.openPray ||
+                debugLaunch.showIntentions ||
+                debugLaunch.showCompletion ||
+                debugLaunch.showMichaelLayer ||
+                debugLaunch.showCustomise ||
+                debugLaunch.showReplaceDialog
+            ) {
                 val set = debugLaunch.mysterySet?.let { raw ->
                     MysterySetKind.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) || it.shortName.equals(raw, ignoreCase = true) }
                 } ?: MysteryCalendar.assignment(today).set

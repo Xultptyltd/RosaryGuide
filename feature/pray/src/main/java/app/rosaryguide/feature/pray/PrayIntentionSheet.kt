@@ -56,7 +56,7 @@ fun PrayIntentionSheet(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter),
     ) {
-        Text(text = "Offer this Rosary for", style = RosaryType.headingPrimary, color = palette.ink)
+        Text(text = "Offer this Rosary for", style = RosaryType.headingSecondary, color = palette.ink)
         Spacer(Modifier.height(RosarySpace.sm))
         OfferedIntentions.summary(selectedTitles)?.let {
             Text(text = it, style = RosaryType.body, color = palette.dim)

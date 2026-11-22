@@ -99,7 +99,7 @@ fun MysteryPlate(
             val excerpt = step.body
             Text(
                 text = excerpt.primary(language),
-                style = RosaryType.serifBody,
+                style = RosaryType.prayerText,
                 color = palette.ink,
             )
             excerpt.secondary(language)?.let { latin ->

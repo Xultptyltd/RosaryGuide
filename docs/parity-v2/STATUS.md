@@ -1,10 +1,11 @@
 # Visual parity status (22 Nov 2026, 2:23 PM close-the-gaps pass)
 
 Reference: `/workspace/ios-parity-refs-v2/` (iPhone 17 Pro Max, 3×, 1320×2868 px = 440×956 pt, Dynamic Type Large, status bar 9:41, captured 17 Nov 2026 Australia/Perth).
-Android captures: Pixel 7 AVD `RosaryGuide_Pixel7` (1080×2400, 2.625×, ≈411.4×914.3 dp), `en-AU`, `clock_date=2026-11-17`, demo-mode clock 9:41. Light onboarding is captured with **demo mode off** so a hidden status bar stays hidden.
+Android captures for onboarding/Today: Pixel 7 AVD `RosaryGuide_Pixel7` on the Mac (1080×2400, 2.625×, ≈411.4×914.3 dp), `en-AU`, `clock_date=2026-11-17`, demo-mode clock 9:41. Light onboarding is captured with **demo mode off** so a hidden status bar stays hidden.
+Pray-flow frames in this pass were recorded with **Roborazzi** at Pixel 7 size (1078×2399) because the Mac emulator was unreachable. Those frames have no system status bar or gesture inset, so full-frame footer fractions vs the iOS refs (which include chrome) are systematically a few points off. Recapture on the Mac emulator before calling any Pray screen `matched`.
 pt and dp are 1:1 at mdpi. iOS PNG measurements are pixels ÷ 3. A screen is marked `matched` only when the measured frame fractions agree within about 2%.
 
-This group is still **onboarding/launch** and **Today** only. Pray, Learn, and Profile/Settings are deferred.
+Onboarding/launch and Today are **user-approved**. This pass adds the **Pray flow** group. Learn and Profile/Settings are still deferred.
 
 `intention-icon-picker` is **not** in the live iOS editor. It stays removed.
 
@@ -13,17 +14,28 @@ Status values: `spec-written` · `captured` · `matched` · `mismatch` · `defer
 | screen-id | group | spec | captured | matched | user-approved | notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | week-feast-sheet | Today | spec-written | captured | close | user-approved | Grabber-to-eyebrow gap matched (see table). User approved the sheet as is, including the 460 dp minimum detent (sheet starts lower than the iOS estimated ~572 pt sheet). |
-| launch-splash | onboarding/launch | spec-written | captured | close | | 144 dp Lottie matches iOS 144 pt, Marian blue `#0054FF` both modes, end-frame cream halo-R. Cannot hit 2% against the iOS PNGs: those refs are mid-animation, not the held end frame (see table). |
-| onboarding-1 | onboarding/launch | spec-written | captured | matched | | Panel, title, dots, and CTA all within 1%. Title/CTA pinned to measured iOS frame fractions. |
-| onboarding-2 | onboarding/launch | spec-written | captured | matched | | Center crop of the hands/beads, same fractions as onboarding-1 (p2 title first ink also within 1%). |
-| onboarding-3 | onboarding/launch | spec-written | captured | matched | | Same panel/title/CTA match; Begin is the filled capsule. |
-| sign-in | onboarding/launch | spec-written | captured | matched | | Quote and Google pinned to measured iOS frame fractions (Apple omitted; its Y is reserved by the gap, not a spacer). Quote, Google, guest, and legal all within 2%. Loop fully visible. |
-| sign-in-transition | onboarding/launch | spec-written | captured | matched | | Plain `#FFFFFF` / `#000000` hold. Android-before labelled **new screen**. |
+| launch-splash | onboarding/launch | spec-written | captured | close | user-approved | 144 dp Lottie matches iOS 144 pt, Marian blue `#0054FF` both modes, end-frame cream halo-R. Cannot hit 2% against the iOS PNGs: those refs are mid-animation, not the held end frame (see table). |
+| onboarding-1 | onboarding/launch | spec-written | captured | matched | user-approved | Panel, title, dots, and CTA all within 1%. Title/CTA pinned to measured iOS frame fractions. |
+| onboarding-2 | onboarding/launch | spec-written | captured | matched | user-approved | Center crop of the hands/beads, same fractions as onboarding-1 (p2 title first ink also within 1%). |
+| onboarding-3 | onboarding/launch | spec-written | captured | matched | user-approved | Same panel/title/CTA match; Begin is the filled capsule. |
+| sign-in | onboarding/launch | spec-written | captured | matched | user-approved | Quote and Google pinned to measured iOS frame fractions (Apple omitted; its Y is reserved by the gap, not a spacer). Quote, Google, guest, and legal all within 2%. Loop fully visible. |
+| sign-in-transition | onboarding/launch | spec-written | captured | matched | user-approved | Plain `#FFFFFF` / `#000000` hold. Android-before labelled **new screen**. |
 | replay-welcome | Profile/Settings | deferred | | | | Same pager as onboarding, `includesSignIn: false`. |
 | profile-sign-in | Profile/Settings | deferred | | | | Same as `sign-in`, presented from Profile. |
 | today | Today | spec-written | captured | matched | user-approved | Date/title/CTA/“Today's mysteries” all within 1%. Appearance chip and tab bar use a translucent fill and hairline (glass approximation; no true backdrop blur). |
-| mystery-detail-sheet | Today | spec-written | captured | matched | | Fruit and CTA within 2%. Fruit is above the fold (760 dp cap). Sheet top is 3.3% higher because both sides cap at 760 on different frame heights (see table). |
-| pray / Learn / Profile / Settings screens | later groups | deferred | | | | Not in this run. |
+| mystery-detail-sheet | Today | spec-written | captured | matched | user-approved | Fruit and CTA within 2%. Fruit is above the fold (760 dp cap). Sheet top is 3.3% higher because both sides cap at 760 on different frame heights (see table). |
+| pray-* / rosary-settings-sheet | Pray flow | spec-written | captured | close | | Roborazzi Pixel 7 (Mac emulator was unreachable this pass). See per-screen rows and the Pray measurement section. |
+| pray-opening | Pray flow | spec-written | captured | close | | Roborazzi (Mac offline). Title/body typography and centering match the iOS stack; Next is ~3% lower because these frames have no system nav inset. |
+| pray-intention-step | Pray flow | spec-written | captured | close | | Roborazzi. Composition matches (selected chip, Add outline, Next fill); footer Y is shifted by the missing nav inset. |
+| pray-mystery-plate | Pray flow | spec-written | captured | close | | Roborazzi. Art, eyebrow, scripture, and Fruit are on screen, but the footer is a full Next pill, not the scroll circle — without system insets the plate text still fits. Recapture on the Mac emulator to confirm overflow. |
+| pray-hail-mary-bead | Pray flow | spec-written | captured | close | | Roborazzi. Next + Complete decade, bead highlight, and “1 of 10” match; footer Y shifted by missing nav inset. |
+| pray-decade-end | Pray flow | spec-written | captured | close | | Roborazzi. Fatima copy and bead locus match; same footer inset caveat. |
+| pray-final-prayers | Pray flow | spec-written | captured | close | | Roborazzi. Still uses the short-prayer Next pill, as on the Pro Max ref (did not flip to the scroll template). |
+| pray-completion | Pray flow | spec-written | captured | close | | Roborazzi. Quote pinned to `jp2-contemplate`. Done (accent) + Saint Michael (black) correct; check glyph is lighter than iOS. |
+| pray-michael | Pray flow | spec-written | captured | close | | Roborazzi. Title, Latin subtitle, English/Latin/English+Latin, Done. Footer Y shifted by missing nav inset. |
+| rosary-settings-sheet | Pray flow | spec-written | captured | close | | Roborazzi. Copy and toggle defaults match. Switches use brand accent, not iOS system green. Sheet starts lower than the nearly full-screen iOS sheet; Done is a text button, not a capsule. |
+| pray-replace-dialog | Pray flow | spec-written | captured | close | | Roborazzi. Copy matches, opening is visible underneath. Material 3 alert (side-by-side accent actions) vs iOS stacked Cancel / red “Replace saved place”. Platform chrome, not a copy miss. |
+| Learn / Profile / Settings screens | later groups | deferred | | | | Not in this run. |
 
 Pairs: `/workspace/android/shots/v2/pairs/<screen-id>-<light|dark>.png` (iOS left, Android right).
 Sign-off sheets: `/workspace/android/shots/v2/signoff/<screen-id>.png` (iOS \| Android-before \| Android-after; light on top, dark below). Before frames for splash/onboarding/sign-in/today come from the earlier parity pass. Sheets and sign-in-transition are labelled “new screen”.
@@ -115,6 +127,36 @@ The true iOS “Fruit” line is the “Fruit Obedience to God’s Will” row a
 
 **Sheet top** is the one landmark that cannot reach 2% on Pixel 7 without breaking the iOS 760 cap. Both sides cap the detent at 760 (pt/dp). On the Pro Max that is 760/956 ≈ 0.795 of the frame (measured top 0.191). On Pixel 7 it is 760/914.3 ≈ 0.831 of the frame (measured top 0.158). Raising the sheet to match the iOS frame fraction would exceed the 760 cap; lowering it to 0.191 would shrink the body and risk pushing Fruit toward the fold. Fruit and CTA already sit within 2%, so the cap is left as specified.
 
+
+
+### Pray flow (Roborazzi, light; Mac emulator was unreachable)
+
+Android frames are 1078×2399 with no system bars. iOS refs are 1320×2868 including the status bar and home indicator. Δ below is raw full-frame. A 3% footer shift is expected from the missing gesture inset (~48 dp / 914 dp ≈ 5% on a real Pixel 7, in the opposite direction). These are not yet signed off as `matched`.
+
+| screen | landmark | iOS | Android (Roborazzi) | Δ | notes |
+| --- | --- | --- | --- | --- | --- |
+| pray-opening | title top | 0.371 | 0.393 | 2.2% | modalTitle 22, vertically centered |
+| pray-opening | Next top/mid/bot | 0.831/0.858/0.885 | 0.860/0.888/0.916 | 2.9–3.1% | missing nav inset |
+| pray-intention-step | title top | 0.190 | 0.151 | 3.9% | no status bar on Android |
+| pray-intention-step | Next top | 0.893 | 0.925 | 3.2% | missing nav inset |
+| pray-mystery-plate | Fruit | tight above scroll circle | 0.847–0.858, above a full Next pill | — | no overflow in Roborazzi (no insets); recapture on device |
+| pray-hail-mary-bead | “1 of 10” / title | 0.321 / 0.371 | 0.344 / 0.396 | 2.3% / 2.5% | |
+| pray-hail-mary-bead | Next top | 0.831 | 0.860 | 2.9% | Next filled + Complete decade tertiary, correct |
+| pray-decade-end | title top | 0.356 | 0.371 | 1.5% | Fatima, bead locus correct |
+| pray-decade-end | Next top | 0.831 | 0.860 | 2.9% | |
+| pray-final-prayers | title top | 0.230 | 0.262 | 3.2% | still the Next pill, not the scroll circle |
+| pray-final-prayers | Next top | 0.831 | 0.860 | 2.9% | |
+| pray-completion | title | 0.635–0.665 | 0.631–0.663 | 0.4% | quote `jp2-contemplate` |
+| pray-completion | Done top | 0.843 | 0.855 | 1.2% | accent fill; Saint Michael is black |
+| pray-michael | title top | 0.140 | 0.119 | 2.1% | no status bar |
+| pray-michael | Done top | 0.893 | 0.925 | 3.2% | |
+| rosary-settings-sheet | “Customise rosary” | 0.113 | 0.155 | 4.2% | sheet starts lower; accent switches vs iOS green |
+| pray-replace-dialog | title | 0.412 | 0.421 | 0.9% | copy matches; Material vs UIKit chrome |
+
+In-flow Saint Michael (the optional closing *step*, toggle off by default) has no v2 iOS ref; `pray-michael` is the post-completion overlay. The scroll-to-continue morph’s collapsed (circle) state is specified on `pray-mystery-plate`; it did not appear in Roborazzi because the plate still fitted. There is no mid-lerp iOS ref to chase.
+
+Visual review (besides fractions): prayer typography is now Instrument Sans 18/21 (was Newsreader 20/29); short prayers are vertically centered; bead highlights and Next vs Complete decade fills look right. Remaining visual gaps to fix on a Mac recapture: Material replace-dialog actions (side-by-side accent vs stacked red/black), customise sheet height / Done capsule / section grouping, completion check weight, language-chip corner rounding, and the plate scroll circle once insets are real.
+
 ## Known allowed deviations
 
 - Device chrome (status bar cutout, gesture bar, aspect) differs between iPhone 17 Pro Max and Pixel 7. Pairs are scaled to the same height.
@@ -128,3 +170,4 @@ The true iOS “Fruit” line is the “Fruit Obedience to God’s Will” row a
 1. **launch-splash** cannot match the iOS reference PNGs within 2%, because those captures are mid-animation (light is a blank `#0054FF` field; dark is a beaded-halo mid-frame) while Android correctly holds the Lottie end-frame cream halo-R. The 144 dp player size already matches the source.
 2. **week-feast-sheet** detent is still the 460 dp minimum, so the sheet starts lower than the iOS estimated height on this copy. User-approved as is.
 3. **mystery-detail-sheet** sheet top is 3.3% higher on Pixel 7 because both sides cap the detent at 760 on frames of different height (914.3 dp vs 956 pt). Fruit and CTA are within 2%.
+6. **Pray flow frames** in this pass are Roborazzi, not Mac-emulator captures, because the Mac was unreachable. Footer fractions are a few points off from missing system insets, the mystery-plate scroll circle did not appear, and the Material replace dialog / accent switches differ from iOS chrome. Recapture on the Mac Pixel 7 emulator before marking any of these `matched`.

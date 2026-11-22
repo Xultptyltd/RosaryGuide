@@ -19,6 +19,8 @@ object RosarySpace {
     val lg: Dp = 16.dp
     val xl: Dp = 24.dp
     val xxl: Dp = 32.dp
+    /** iOS `RosaryFlow.prayerTitleBodyGap`. Sign of the Cross and plates use `lg` instead. */
+    val prayerTitleBodyGap: Dp = 22.dp
     val section: Dp = 44.dp
     val sectionTitleGap: Dp = 20.dp
     const val ScaleLimit = 1.5f

@@ -70,6 +70,7 @@ data class PrayLaunch(
     val showReplaceDialog: Boolean = false,
     val config: RosaryConfig = RosaryConfig.default,
     val seedIntentions: List<Pair<String, String>> = emptyList(),
+    val completionQuoteId: String? = null,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -131,6 +132,10 @@ fun PrayScreen(
             !launch.showCustomise &&
             launch.startStep == null
         if (shouldAsk || launch.showReplaceDialog) {
+            // Keep the opening step visible under the dimmed alert, like iOS.
+            config = launch.config
+            steps = RosarySequenceBuilder.build(launch.mysterySet, launch.config)
+            index = 0
             confirmReplace = true
             return@LaunchedEffect
         }
@@ -157,7 +162,9 @@ fun PrayScreen(
         }
         showingIntentionStep = launch.showIntentions
         if (launch.showCompletion || launch.showSaintMichael) {
-            completionQuote = QuoteCatalog.freshCompletionQuote(quotePreferences)
+            completionQuote = launch.completionQuoteId?.let { id ->
+                QuoteCatalog.all.firstOrNull { it.id == id }
+            } ?: QuoteCatalog.freshCompletionQuote(quotePreferences)
             showingCompletion = true
         }
         showingMichael = launch.showSaintMichael
@@ -464,9 +471,16 @@ fun PrayScreen(
                                 modifier = Modifier.weight(1f),
                             )
                         } else {
-                            Column(
+                            val pinTop = current?.kind == RosaryStepKind.Creed
+                            Box(
                                 modifier = Modifier
                                     .weight(1f)
+                                    .fillMaxWidth(),
+                                contentAlignment = if (pinTop) Alignment.TopStart else Alignment.CenterStart,
+                            ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
                                     .verticalScroll(prayerScroll)
                                     .padding(horizontal = RosarySpace.gutter),
                             ) {
@@ -477,14 +491,19 @@ fun PrayScreen(
                                     ) {
                                         Text(
                                             text = "${step.hailMaryNumber} of 10",
-                                            style = RosaryType.navigationTitle,
+                                            style = RosaryType.caption.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium),
                                             color = palette.dim,
                                         )
                                         Spacer(Modifier.height(RosarySpace.sm))
                                     }
                                     step.title.resolved(language).takeIf { it.isNotBlank() }?.let { title ->
-                                        Text(text = title, style = RosaryType.headingPrimary, color = palette.ink)
-                                        Spacer(Modifier.height(RosarySpace.sm))
+                                        Text(text = title, style = RosaryType.modalTitle, color = palette.ink)
+                                        val titleGap = if (step.kind == RosaryStepKind.SignOfTheCross) {
+                                            RosarySpace.lg
+                                        } else {
+                                            RosarySpace.prayerTitleBodyGap
+                                        }
+                                        Spacer(Modifier.height(titleGap))
                                     }
                                     if (language == PrayerLanguage.Bilingual) {
                                         step.title.latin.takeIf { it.isNotBlank() && it != step.title.english }?.let { latin ->
@@ -493,7 +512,11 @@ fun PrayScreen(
                                         }
                                     }
                                     step.body.let { body ->
-                                        Text(text = body.primary(language), style = RosaryType.serifBody, color = palette.ink)
+                                        Text(
+                                            text = body.primary(language),
+                                            style = RosaryType.prayerText,
+                                            color = palette.ink,
+                                        )
                                         body.secondary(language)?.let { latin ->
                                             Spacer(Modifier.height(RosarySpace.md))
                                             Text(text = latin, style = RosaryType.serifItalicBody, color = palette.dim)
@@ -501,6 +524,7 @@ fun PrayScreen(
                                     }
                                 }
                                 Spacer(Modifier.height(RosarySpace.lg))
+                            }
                             }
                         }
                         if (showBeads) {

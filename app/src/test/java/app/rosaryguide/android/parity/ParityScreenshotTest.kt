@@ -182,8 +182,8 @@ class ParityScreenshotTest {
     }
 
 
-    @Test fun prayOpeningLight() = shot("pray-opening", dark = false) { Pray(openingLaunch()) }
-    @Test fun prayOpeningDark() = shot("pray-opening", dark = true) { Pray(openingLaunch()) }
+    @Test fun prayOpeningLight() = shot("pray-opening", dark = false) { Pray(openingLaunch(), emptyKeepList = true) }
+    @Test fun prayOpeningDark() = shot("pray-opening", dark = true) { Pray(openingLaunch(), emptyKeepList = true) }
 
     @Test fun scrollCircleStartLight() = shot("scroll-circle-start", dark = false) { ScrollCircle(showScroll = true) }
     @Test fun scrollCircleStartDark() = shot("scroll-circle-start", dark = true) { ScrollCircle(showScroll = true) }
@@ -196,26 +196,26 @@ class ParityScreenshotTest {
     @Test fun scrollCirclePairEndLight() = shot("scroll-circle-pair-end", dark = false) { ScrollCircleFooter(showScroll = false, showCompleteDecade = true) }
     @Test fun scrollCirclePairEndDark() = shot("scroll-circle-pair-end", dark = true) { ScrollCircleFooter(showScroll = false, showCompleteDecade = true) }
 
-    @Test fun prayIntentionsLight() = shot("pray-intentions", dark = false) { Pray(intentionLaunch(), emptyKeepList = true) }
-    @Test fun prayIntentionsDark() = shot("pray-intentions", dark = true) { Pray(intentionLaunch(), emptyKeepList = true) }
+    @Test fun prayIntentionsLight() = shot("pray-intention-step", dark = false) { Pray(intentionLaunch(), emptyKeepList = true) }
+    @Test fun prayIntentionsDark() = shot("pray-intention-step", dark = true) { Pray(intentionLaunch(), emptyKeepList = true) }
 
-    @Test fun prayPlateLight() = shot("pray-plate", dark = false) { Pray(stepLaunch(plateIndex)) }
-    @Test fun prayPlateDark() = shot("pray-plate", dark = true) { Pray(stepLaunch(plateIndex)) }
+    @Test fun prayPlateLight() = shot("pray-mystery-plate", dark = false) { Pray(stepLaunch(plateIndex)) }
+    @Test fun prayPlateDark() = shot("pray-mystery-plate", dark = true) { Pray(stepLaunch(plateIndex)) }
 
-    @Test fun prayDecadeLight() = shot("pray-decade", dark = false) { Pray(stepLaunch(hailIndex)) }
-    @Test fun prayDecadeDark() = shot("pray-decade", dark = true) { Pray(stepLaunch(hailIndex)) }
+    @Test fun prayDecadeLight() = shot("pray-hail-mary-bead", dark = false) { Pray(stepLaunch(hailIndex)) }
+    @Test fun prayDecadeDark() = shot("pray-hail-mary-bead", dark = true) { Pray(stepLaunch(hailIndex)) }
 
     @Test fun prayDecadeEndLight() = shot("pray-decade-end", dark = false) { Pray(stepLaunch(decadeEndIndex)) }
     @Test fun prayDecadeEndDark() = shot("pray-decade-end", dark = true) { Pray(stepLaunch(decadeEndIndex)) }
 
-    @Test fun prayClosingLight() = shot("pray-closing", dark = false) { Pray(stepLaunch(closingIndex)) }
-    @Test fun prayClosingDark() = shot("pray-closing", dark = true) { Pray(stepLaunch(closingIndex)) }
+    @Test fun prayClosingLight() = shot("pray-final-prayers", dark = false) { Pray(stepLaunch(closingIndex)) }
+    @Test fun prayClosingDark() = shot("pray-final-prayers", dark = true) { Pray(stepLaunch(closingIndex)) }
 
     @Test fun prayCompletionLight() = shot("pray-completion", dark = false) { Pray(completionLaunch(), emptyKeepList = true) }
     @Test fun prayCompletionDark() = shot("pray-completion", dark = true) { Pray(completionLaunch(), emptyKeepList = true) }
 
-    @Test fun prayCustomiseLight() = shot("pray-customise", dark = false) { Pray(customiseLaunch()) }
-    @Test fun prayCustomiseDark() = shot("pray-customise", dark = true) { Pray(customiseLaunch()) }
+    @Test fun prayCustomiseLight() = shot("rosary-settings-sheet", dark = false) { Pray(customiseLaunch()) }
+    @Test fun prayCustomiseDark() = shot("rosary-settings-sheet", dark = true) { Pray(customiseLaunch()) }
 
     @Test fun prayMichaelLight() = shot("pray-michael", dark = false) { Pray(michaelLaunch()) }
     @Test fun prayMichaelDark() = shot("pray-michael", dark = true) { Pray(michaelLaunch()) }
@@ -589,12 +589,12 @@ class ParityScreenshotTest {
         it.kind == RosaryStepKind.HailMary && it.decadeNumber == 1 && it.hailMaryNumber == 1
     }
     private val decadeEndIndex = joyfulSteps.indexOfFirst { it.closesDecade && it.decadeNumber == 1 }
-    private val closingIndex = joyfulSteps.indexOfFirst { it.isLastPrayer }
+    private val closingIndex = joyfulSteps.indexOfFirst { it.kind == RosaryStepKind.HailHolyQueen }
 
     private fun openingLaunch() = baseLaunch()
     private fun intentionLaunch() = baseLaunch().copy(showIntentions = true, seedIntentions = emptyList())
     private fun stepLaunch(start: Int) = baseLaunch().copy(startStep = start.coerceAtLeast(0))
-    private fun completionLaunch() = baseLaunch().copy(showCompletion = true, seedIntentions = emptyList())
+    private fun completionLaunch() = baseLaunch().copy(showCompletion = true, seedIntentions = emptyList(), completionQuoteId = "jp2-contemplate")
     private fun customiseLaunch() = baseLaunch().copy(showCustomise = true)
     private fun michaelLaunch() = baseLaunch().copy(showSaintMichael = true)
 

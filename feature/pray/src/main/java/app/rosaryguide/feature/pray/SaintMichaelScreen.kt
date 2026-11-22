@@ -88,7 +88,7 @@ fun SaintMichaelScreen(
             )
             Spacer(Modifier.height(RosarySpace.xl))
             body?.let { text ->
-                Text(text = text.primary(language), style = RosaryType.serifBody, color = palette.ink)
+                Text(text = text.primary(language), style = RosaryType.prayerText, color = palette.ink)
                 text.secondary(language)?.let { latin ->
                     Spacer(Modifier.height(RosarySpace.md))
                     Text(text = latin, style = RosaryType.serifItalicBody, color = palette.dim)

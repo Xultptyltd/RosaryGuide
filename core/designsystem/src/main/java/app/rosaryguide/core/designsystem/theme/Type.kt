@@ -1,6 +1,7 @@
 package app.rosaryguide.core.designsystem.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -66,6 +67,16 @@ object RosaryType {
         fontSize = 16.sp,
         lineHeight = 23.sp,
     )
+    /** iOS `TypeRole.prayerText(scale: 1)` = sans max(16, 18), line-height 21. */
+    val prayerText = TextStyle(
+        fontFamily = RosaryFonts.sans,
+        fontWeight = FontWeight.Normal,
+        fontSize = 18.sp,
+        lineHeight = 21.sp,
+        platformStyle = PlatformTextStyle(includeFontPadding = false),
+    )
+    /** Alias of `headingSecondary` / iOS `modalTitle` (22 / 28). */
+    val modalTitle = headingSecondary
     val supportingLabel = TextStyle(
         fontFamily = RosaryFonts.sans,
         fontWeight = FontWeight.Normal,

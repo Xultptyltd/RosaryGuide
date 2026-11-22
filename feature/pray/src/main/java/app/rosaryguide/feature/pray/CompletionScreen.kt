@@ -152,7 +152,7 @@ fun CompletionScreen(
                 ) {
                     Text(
                         text = quote.text,
-                        style = RosaryType.serifBody,
+                        style = RosaryType.body,
                         color = palette.completionTitle.copy(alpha = 0.88f),
                         textAlign = TextAlign.Center,
                     )
