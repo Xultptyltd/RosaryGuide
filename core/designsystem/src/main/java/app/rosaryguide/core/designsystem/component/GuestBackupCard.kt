@@ -39,6 +39,7 @@ fun GuestBackupCard(
     today: LocalDate = LocalDate.now(),
     zone: ZoneId = ZoneId.systemDefault(),
     earliestActivityEpochMs: Long? = null,
+    pageStyle: PageStyle = PageStyle.Grouped,
 ) {
     val palette = LocalThemePalette.current
     val headline = backupHeadline(today, zone, earliestActivityEpochMs)
@@ -47,7 +48,7 @@ fun GuestBackupCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(palette.cardSurface(PageStyle.Grouped))
+            .background(palette.cardSurface(pageStyle))
             .padding(horizontal = RosarySpace.lg, vertical = RosarySpace.xl),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

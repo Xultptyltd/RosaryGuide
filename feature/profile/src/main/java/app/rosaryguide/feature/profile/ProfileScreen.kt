@@ -1,4 +1,5 @@
 package app.rosaryguide.feature.profile
+import androidx.compose.foundation.ScrollState
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -39,6 +40,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -324,37 +327,29 @@ private fun ProfileHome(
     Column(
         modifier = Modifier.fillMaxSize(),
     ) {
-        Box {
-            GuideLargeTopAppBar(
-                title = "Profile",
-                containerColor = androidx.compose.ui.graphics.Color.Transparent,
-            )
-            // iOS places the gear on the large-title row, centred on the H1.
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = RosarySpace.gutter, bottom = 6.dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (palette.isDark) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.16f)
-                        else androidx.compose.ui.graphics.Color.White.copy(alpha = 0.92f),
-                    )
-                    .clickable(onClick = onOpenSettings),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Filled.Settings,
-                    contentDescription = "Settings",
-                    tint = palette.ink,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
-        val scroll = rememberScrollState()
+        val scroll = remember(scrollToEnd) { ScrollState(if (scrollToEnd) Int.MAX_VALUE else 0) }
+        val collapsePx = with(LocalDensity.current) { 28.dp.roundToPx() }
+        val collapsed = scrollToEnd || scroll.value > collapsePx
         androidx.compose.runtime.LaunchedEffect(scrollToEnd, scroll.maxValue) {
             if (scrollToEnd && scroll.maxValue > 0) {
                 scroll.scrollTo(scroll.maxValue)
+            }
+        }
+        if (collapsed) {
+            ProfileCompactTitleBar(onOpenSettings = onOpenSettings)
+        } else {
+            Box {
+                GuideLargeTopAppBar(
+                    title = "Profile",
+                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                )
+                // iOS places the gear on the large-title row, centred on the H1.
+                ProfileGearChip(
+                    onOpenSettings = onOpenSettings,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = RosarySpace.gutter, bottom = 6.dp),
+                )
             }
         }
         Column(
@@ -559,5 +554,52 @@ private fun seedSampleHistory(store: SessionStore, today: LocalDate, zone: ZoneI
         val start = day.atTime(20, 0).atZone(zone).toInstant().toEpochMilli()
         store.start(sets[offset % sets.size], nowEpochMs = start)
         store.complete(nowEpochMs = start + 20 * 60 * 1000)
+    }
+}
+
+
+@Composable
+private fun ProfileCompactTitleBar(onOpenSettings: () -> Unit) {
+    val palette = LocalThemePalette.current
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(64.dp),
+    ) {
+        Text(
+            text = "Profile",
+            style = RosaryType.navigationTitlePray,
+            color = palette.ink,
+            modifier = Modifier.align(Alignment.Center),
+        )
+        ProfileGearChip(
+            onOpenSettings = onOpenSettings,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = RosarySpace.gutter),
+        )
+    }
+}
+
+@Composable
+private fun ProfileGearChip(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = LocalThemePalette.current
+    Box(
+        modifier = modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(
+                if (palette.isDark) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.16f)
+                else androidx.compose.ui.graphics.Color.White.copy(alpha = 0.92f),
+            )
+            .clickable(onClick = onOpenSettings),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            Icons.Filled.Settings,
+            contentDescription = "Settings",
+            tint = palette.ink,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }

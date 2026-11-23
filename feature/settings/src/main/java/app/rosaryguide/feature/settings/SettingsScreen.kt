@@ -220,6 +220,7 @@ private fun SettingsRoot(
             title = "Settings",
             onBack = onBack,
             containerColor = palette.bg,
+            milkyOnPlain = true,
         )
         Column(
             modifier = Modifier
@@ -228,7 +229,7 @@ private fun SettingsRoot(
                 .padding(horizontal = RosarySpace.gutter)
                 .padding(bottom = RosarySpace.xxl),
         ) {
-            SettingsSection(title = "General", carded = true) {
+            SettingsSection(title = "General", carded = false) {
                 SettingsNavigationRow("Customise rosary", onClick = { onOpen(SettingsPage.CustomiseRosary) }, icon = SettingsSymbols.sliderHorizontal3)
                 SettingsDivider()
                 androidx.compose.foundation.layout.Box {
@@ -252,14 +253,14 @@ private fun SettingsRoot(
                     }
                 }
                 SettingsDivider()
-                SettingsNavigationRow("Notifications", onClick = { onOpen(SettingsPage.Notifications) }, icon = Icons.Filled.Notifications)
+                SettingsNavigationRow("Notifications", onClick = { onOpen(SettingsPage.Notifications) }, icon = SettingsSymbols.bell)
                 SettingsDivider()
                 SettingsNavigationRow("App icon", onClick = { onOpen(SettingsPage.AppIcon) }, icon = SettingsSymbols.app)
             }
 
-            Spacer(Modifier.height(RosarySpace.xl))
+            SettingsSectionBoundary()
             if (isSignedIn) {
-                SettingsSection(title = "Account", carded = true) {
+                SettingsSection(title = "Account", carded = false) {
                     SettingsNavigationRow(
                         title = "Signed in with",
                         value = signedInWith ?: "Google",
@@ -273,11 +274,12 @@ private fun SettingsRoot(
                     today = today,
                     zone = zone,
                     earliestActivityEpochMs = earliestActivityEpochMs,
+                    pageStyle = app.rosaryguide.core.designsystem.theme.PageStyle.Plain,
                 )
             }
 
-            Spacer(Modifier.height(RosarySpace.xl))
-            SettingsSection(title = "Help & support", carded = true) {
+            SettingsSectionBoundary()
+            SettingsSection(title = "Help & support", carded = false) {
                 SettingsNavigationRow("Report a problem", external = true, onClick = { reportProblem = true }, icon = SettingsSymbols.exclamationBubble)
                 SettingsDivider()
                 SettingsNavigationRow("Suggest a feature", external = true, onClick = { openUrl("https://xult.ltd/contact/") }, icon = SettingsSymbols.lightbulb)
@@ -294,8 +296,8 @@ private fun SettingsRoot(
                 }
             }
 
-            Spacer(Modifier.height(RosarySpace.xl))
-            SettingsSection(title = "About", carded = true) {
+            SettingsSectionBoundary()
+            SettingsSection(title = "About", carded = false) {
                 SettingsNavigationRow("Replay welcome", onClick = onReplayWelcome, icon = SettingsSymbols.sparkles)
                 SettingsDivider()
                 SettingsNavigationRow("Terms of service", onClick = { onOpen(SettingsPage.Terms) }, icon = SettingsSymbols.docText)
@@ -305,7 +307,7 @@ private fun SettingsRoot(
                 SettingsNavigationRow("Acknowledgements", onClick = { onOpen(SettingsPage.Acknowledgements) }, icon = Icons.Outlined.FavoriteBorder)
             }
 
-            Spacer(Modifier.height(RosarySpace.xl))
+            SettingsSectionBoundary()
             if (isSignedIn) {
                 SettingsNavigationRow("Sign out", destructive = true, onClick = { confirmSignOut = true })
                 SettingsDivider()

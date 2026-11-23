@@ -2,6 +2,7 @@ package app.rosaryguide.feature.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -63,30 +65,29 @@ fun LegalDocumentBody(
             .fillMaxSize()
             .background(palette.bg),
     ) {
-        GuideDetailTopBar(title = title, onBack = onBack)
+        GuideDetailTopBar(title = title, onBack = onBack, milkyOnPlain = true)
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = RosarySpace.gutter)
-                .padding(bottom = RosarySpace.xxl),
+                .padding(top = RosarySpace.lg, bottom = RosarySpace.xxl),
+            verticalArrangement = Arrangement.spacedBy(RosarySpace.lg),
         ) {
             blocks.forEach { block ->
                 val style = when (block.kind) {
-                    "h1" -> RosaryType.headingPrimaryPray
-                    "h2" -> RosaryType.headingSecondaryPray
-                    "h3" -> RosaryType.bodyPray
-                    else -> RosaryType.bodyPray
+                    "h1" -> RosaryType.sansRole(32f, extraLineSpacingSp = 4f)
+                    "h2", "h3" -> RosaryType.sansRole(22f, extraLineSpacingSp = 4f)
+                    else -> RosaryType.sansRole(16f, extraLineSpacingSp = 4f)
                 }
-                val color = if (block.kind == "h1" || block.kind == "h2" || block.kind == "h3") palette.ink else palette.ink
                 val prefix = if (block.kind == "li") "• " else ""
                 Text(
                     text = annotatedLegal(prefix + block.text, palette.accentText),
                     style = style,
-                    color = color,
+                    color = palette.ink,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = RosarySpace.md),
+                        .padding(top = if (block.kind == "h2") RosarySpace.lg else 0.dp),
                 )
             }
         }
@@ -106,18 +107,17 @@ fun AcknowledgementsScreen(
             .fillMaxSize()
             .background(palette.bg),
     ) {
-        GuideDetailTopBar(title = "Acknowledgements", onBack = onBack)
+        GuideDetailTopBar(title = "Acknowledgements", onBack = onBack, milkyOnPlain = true)
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = RosarySpace.gutter)
-                .padding(bottom = RosarySpace.xxl),
+                .padding(top = RosarySpace.lg, bottom = RosarySpace.xxl),
         ) {
             items.forEach { item ->
                 SettingsNavigationRow(
                     title = item.name,
-                    value = item.version,
                     onClick = { onOpenLicense(item) },
                 )
                 SettingsDivider()
@@ -130,7 +130,7 @@ fun AcknowledgementsScreen(
             SettingsSection(title = "Photos") {
                 Text(
                     text = POPE_PHOTO_CREDIT,
-                    style = RosaryType.captionPray,
+                    style = RosaryType.captionReading,
                     color = palette.dim,
                     modifier = Modifier.padding(vertical = RosarySpace.md),
                 )
@@ -169,24 +169,19 @@ fun LicenseDetailScreen(
             .fillMaxSize()
             .background(palette.bg),
     ) {
-        GuideDetailTopBar(title = entry.name, onBack = onBack)
+        GuideDetailTopBar(title = entry.name, onBack = onBack, milkyOnPlain = true)
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = RosarySpace.gutter)
-                .padding(bottom = RosarySpace.xxl),
+                .padding(top = RosarySpace.lg, bottom = RosarySpace.xxl),
         ) {
-            Text(entry.version, style = RosaryType.captionPray, color = palette.dim)
-            Spacer(Modifier.height(RosarySpace.sm))
             Text(
-                text = entry.url,
-                style = RosaryType.captionPray,
-                color = palette.accentText,
-                modifier = Modifier.clickable { uriHandler.openUri(entry.url) },
+                text = reflowLicense(entry.license),
+                style = RosaryType.captionReading,
+                color = palette.dim,
             )
-            Spacer(Modifier.height(RosarySpace.lg))
-            Text(entry.license, style = RosaryType.captionPray, color = palette.ink)
         }
     }
 }
@@ -222,5 +217,49 @@ private fun annotatedLegal(raw: String, linkColor: Color): AnnotatedString {
             cursor = range.last + 1
         }
         if (cursor < raw.length) append(raw.substring(cursor))
+    }
+}
+
+
+private fun reflowLicense(raw: String): String {
+    val lines = raw.replace("\r\n", "\n").replace("\r", "\n").split("\n").map { it.trim() }
+    val lengths = lines.filter { it.isNotEmpty() }.map { it.length }.sorted()
+    if (lengths.isEmpty()) return ""
+    val wrapWidth = lengths[maxOf(0, (lengths.size * 0.9).toInt() - 1)]
+    val joinThreshold = wrapWidth * 0.65
+    val paragraphs = mutableListOf<List<String>>()
+    var current = mutableListOf<String>()
+    for (line in lines) {
+        if (line.isEmpty()) {
+            if (current.isNotEmpty()) {
+                paragraphs += current
+                current = mutableListOf()
+            }
+        } else {
+            current += line
+        }
+    }
+    if (current.isNotEmpty()) paragraphs += current
+    val listMarker = Regex("""^(\(?\d+[.)]|\([A-Za-z0-9]{1,4}\)|[A-Za-z][.)](?=\s)|[-*•])\s""")
+    val separator = Regex("""^[=*_#~-]{3,}$""")
+    fun standalone(line: String) = line.startsWith("#") || separator.matches(line)
+    return paragraphs.joinToString("\n\n") { paragraph ->
+        val result = mutableListOf<String>()
+        var previous = ""
+        for (line in paragraph) {
+            val joins = result.isNotEmpty()
+                && previous.length >= joinThreshold
+                && !previous.startsWith("Copyright")
+                && !standalone(line)
+                && !standalone(result.last())
+                && listMarker.find(line) == null
+            if (joins) {
+                result[result.lastIndex] = result.last() + " " + line
+            } else {
+                result += line
+            }
+            previous = line
+        }
+        result.joinToString("\n")
     }
 }

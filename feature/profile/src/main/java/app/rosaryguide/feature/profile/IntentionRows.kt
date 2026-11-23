@@ -1,4 +1,5 @@
 package app.rosaryguide.feature.profile
+import androidx.compose.ui.graphics.ColorFilter
 
 import androidx.compose.foundation.background
 import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
@@ -97,7 +98,12 @@ fun IntentionRow(
         }
         Box {
             IconButton(onClick = { menu = true }) {
-                Icon(Icons.Filled.MoreVert, contentDescription = "More", tint = palette.textSecondary)
+                Icon(
+                    painter = painterResource(R.drawable.ic_ellipsis_horizontal),
+                    contentDescription = "More",
+                    tint = palette.textSecondary,
+                    modifier = Modifier.size(20.dp),
+                )
             }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(text = { Text(if (intention.isPinned) "Unpin" else "Pin") }, onClick = { menu = false; onPin() })
@@ -147,6 +153,7 @@ fun IntentionIcon(intention: OfferIntention, size: androidx.compose.ui.unit.Dp, 
             modifier = modifier.size(size).clip(CircleShape),
         )
     } else {
+        val glyph = intentionCategoryGlyph(intention)
         Box(
             modifier = modifier
                 .size(size)
@@ -154,7 +161,12 @@ fun IntentionIcon(intention: OfferIntention, size: androidx.compose.ui.unit.Dp, 
                 .background(intention.accent.fill()),
             contentAlignment = Alignment.Center,
         ) {
-            Text(intention.displayEmoji, style = RosaryType.bodyPray)
+            Image(
+                painter = painterResource(glyph),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(androidx.compose.ui.graphics.Color.White),
+                modifier = Modifier.size(size * 0.8f),
+            )
         }
     }
 }
@@ -196,7 +208,12 @@ fun IntentionHero(
             )
             Box {
                 IconButton(onClick = { menu = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "More", tint = palette.textSecondary)
+                    Icon(
+                    painter = painterResource(R.drawable.ic_ellipsis_horizontal),
+                    contentDescription = "More",
+                    tint = palette.textSecondary,
+                    modifier = Modifier.size(20.dp),
+                )
                 }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(text = { Text(if (intention.isPinned) "Unpin" else "Pin") }, onClick = { menu = false; onPin() })

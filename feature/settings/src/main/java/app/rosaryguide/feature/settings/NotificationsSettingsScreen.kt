@@ -103,7 +103,7 @@ fun NotificationsSettingsScreen(
             .fillMaxSize()
             .background(palette.bg),
     ) {
-        GuideDetailTopBar(title = "Notifications", onBack = onBack)
+        GuideDetailTopBar(title = "Notifications", onBack = onBack, milkyOnPlain = true)
         Column(
             modifier = Modifier
                 .fillMaxSize()

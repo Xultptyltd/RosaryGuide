@@ -121,6 +121,33 @@ object SettingsSymbols {
         }.also { _arrow = it }
 
 
+
+    val bell: ImageVector
+        get() = _bell ?: image(20f, "Bell") {
+            val s = SolidColor(Color.Black)
+            path(
+                fill = null,
+                stroke = s,
+                strokeLineWidth = 1.5f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            ) {
+                // SF Symbol-like bell outline
+                moveTo(10f, 2.8f)
+                curveTo(7.85f, 2.8f, 6.15f, 4.55f, 6.15f, 6.9f)
+                lineTo(6.15f, 11.15f)
+                lineTo(4.05f, 13.85f)
+                lineTo(15.95f, 13.85f)
+                lineTo(13.85f, 11.15f)
+                lineTo(13.85f, 6.9f)
+                curveTo(13.85f, 4.55f, 12.15f, 2.8f, 10f, 2.8f)
+                close()
+                moveTo(7.85f, 15.35f)
+                curveTo(8.25f, 16.45f, 9.05f, 17.2f, 10f, 17.2f)
+                curveTo(10.95f, 17.2f, 11.75f, 16.45f, 12.15f, 15.35f)
+            }
+        }.also { _bell = it }
+
     val lightbulb: ImageVector
         get() = _bulb ?: image(20f, "Lightbulb") {
             val s = SolidColor(Color.Black)
@@ -237,6 +264,7 @@ object SettingsSymbols {
     private var _app: ImageVector? = null
     private var _bubble: ImageVector? = null
     private var _arrow: ImageVector? = null
+    private var _bell: ImageVector? = null
     private var _bulb: ImageVector? = null
     private var _spark: ImageVector? = null
     private var _doc: ImageVector? = null

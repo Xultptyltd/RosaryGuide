@@ -26,3 +26,20 @@ fun IntentionCategory.glyph(): String = when (this) {
     IntentionCategory.Someone -> "👥"
     IntentionCategory.World -> "⛪"
 }
+
+fun intentionCategoryGlyph(intention: app.rosaryguide.core.data.session.OfferIntention): Int =
+    intentionCategoryGlyph(intention.category, intention.emoji)
+
+fun intentionCategoryGlyph(category: IntentionCategory, emoji: String? = null): Int {
+    val fromEmoji = when (emoji) {
+        "🙏", "❤️", "❤", "♥️", "♥" -> app.rosaryguide.core.designsystem.R.drawable.intention_icon_personal
+        "👥" -> app.rosaryguide.core.designsystem.R.drawable.intention_icon_someone
+        "🌍", "🌎", "🌏", "⛪" -> app.rosaryguide.core.designsystem.R.drawable.intention_icon_world
+        else -> null
+    }
+    return fromEmoji ?: when (category) {
+        IntentionCategory.Personal -> app.rosaryguide.core.designsystem.R.drawable.intention_icon_personal
+        IntentionCategory.Someone -> app.rosaryguide.core.designsystem.R.drawable.intention_icon_someone
+        IntentionCategory.World -> app.rosaryguide.core.designsystem.R.drawable.intention_icon_world
+    }
+}

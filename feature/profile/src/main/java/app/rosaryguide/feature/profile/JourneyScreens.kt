@@ -2,6 +2,11 @@ package app.rosaryguide.feature.profile
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import app.rosaryguide.core.designsystem.theme.PageStyle
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -89,6 +94,7 @@ fun JourneyScreen(
     startOnHistory: Boolean,
     initialDay: LocalDate?,
     onBack: () -> Unit,
+    openPrayerSheet: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalThemePalette.current
@@ -99,36 +105,54 @@ fun JourneyScreen(
     var historyTab by remember { mutableStateOf(startOnHistory) }
     var selectedDay by remember { mutableStateOf(initialDay) }
     var selectedHistoryRow by remember { mutableStateOf<JourneyHistoryRow?>(null) }
+    var didOpenPrayerSheet by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(openPrayerSheet, completed) {
+        if (openPrayerSheet && !didOpenPrayerSheet && completed.isNotEmpty()) {
+            val session = completed.firstOrNull { it.mysterySet == MysterySetKind.Joyful } ?: completed.first()
+            val date = java.time.Instant.ofEpochMilli(session.completedAtEpochMs).atZone(zone).toLocalDate()
+            val durationText = JourneyDuration.reliable(session.duration)?.let { JourneyDuration.text(it) }
+            selectedHistoryRow = JourneyHistoryRow(
+                date = date,
+                label = session.mysterySet.shortName + " Mysteries",
+                status = durationText?.let { "Rosary completed · $it" } ?: "Rosary completed",
+                intentionCount = null,
+                durationText = durationText,
+                mysterySet = session.mysterySet,
+                decade = null,
+                completedAtEpochMs = session.completedAtEpochMs,
+                startedAtEpochMs = session.startedAtEpochMs,
+                durationSeconds = session.duration,
+                intentionTitles = emptyList(),
+            )
+            didOpenPrayerSheet = true
+        }
+    }
     var historyMonthsShown by remember { mutableIntStateOf(HistoryMonthsPerPage) }
     var visibleMonth by remember { mutableStateOf(YearMonth.from(today)) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.bg)
-            .padding(horizontal = RosarySpace.gutter)
-            .padding(top = RosarySpace.md),
+            .background(palette.bg),
     ) {
-        GuideDetailTopBar(title = if (historyTab) "History" else "Milestones", onBack = onBack)
+        GuideDetailTopBar(
+            title = if (historyTab) "History" else "Milestones",
+            onBack = onBack,
+            milkyOnPlain = true,
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = RosarySpace.gutter)
+                .padding(top = RosarySpace.lg),
+        ) {
         val tabs = listOf("Milestones", "History")
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            tabs.forEachIndexed { index, title ->
-                val selected = (index == 1) == historyTab
-                SegmentedButton(
-                    selected = selected,
-                    onClick = { historyTab = index == 1 },
-                    shape = SegmentedButtonDefaults.itemShape(index, tabs.size),
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = palette.accent,
-                        activeContentColor = palette.onAccent,
-                        inactiveContainerColor = palette.surface,
-                        inactiveContentColor = palette.ink,
-                    ),
-                    label = { Text(title, style = RosaryType.segmentedControlPray, maxLines = 1) },
-                )
-            }
-        }
-        Spacer(Modifier.height(RosarySpace.lg))
+        ProfileCapsuleControl(
+            options = tabs,
+            selectedIndex = if (historyTab) 1 else 0,
+            onSelect = { historyTab = it == 1 },
+        )
+        Spacer(Modifier.height(RosarySpace.xl))
         if (historyTab) {
             HistoryTab(
                 sessionStore = sessionStore,
@@ -149,6 +173,7 @@ fun JourneyScreen(
                 hasPrayer = dayKeys.isNotEmpty() || completed.isNotEmpty(),
             )
         }
+        }
     }
 
     val day = selectedDay
@@ -162,7 +187,7 @@ fun JourneyScreen(
         )
         ModalBottomSheet(
             onDismissRequest = { selectedDay = null },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = palette.bg,
         ) {
             HistoryDaySheet(date = day, entries = entries, locale = locale)
@@ -173,7 +198,7 @@ fun JourneyScreen(
     if (historyRow != null) {
         ModalBottomSheet(
             onDismissRequest = { selectedHistoryRow = null },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = palette.bg,
         ) {
             JourneyPrayerDetailSheet(row = historyRow, zone = zone, locale = locale)
@@ -738,11 +763,11 @@ fun HistoryDaySheet(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = RosarySpace.gutter)
-            .padding(bottom = RosarySpace.xl),
+            .padding(top = RosarySpace.xxl, bottom = RosarySpace.xl),
     ) {
-        Text(JourneyDayDetail.heading(date, locale), style = RosaryType.headingSecondaryPray, color = palette.ink)
+        Text(JourneyDayDetail.heading(date, locale), style = RosaryType.headingPrimaryPray, color = palette.ink)
         Spacer(Modifier.height(RosarySpace.xs))
-        Text(summary, style = RosaryType.supportingLabelPray, color = palette.textSecondary)
+        Text(summary, style = RosaryType.captionPray, color = palette.textSecondary)
         Spacer(Modifier.height(RosarySpace.lg))
         if (entries.isEmpty()) {
             Text(
@@ -862,13 +887,19 @@ fun JourneyPrayerDetailSheet(
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = RosarySpace.gutter)
-            .padding(bottom = RosarySpace.xl)
+            .padding(top = RosarySpace.xxl, bottom = RosarySpace.xl)
             .navigationBarsPadding(),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
+        horizontalAlignment = Alignment.Start,
     ) {
-        Text(facts.title, style = RosaryType.headingSecondaryPray, color = palette.ink)
+        row.mysterySet?.let { set ->
+            JourneyMysteryThumb(set = set)
+            Spacer(Modifier.height(RosarySpace.md))
+        }
+        Text(facts.title, style = RosaryType.headingPrimaryPray, color = palette.ink)
         Spacer(Modifier.height(RosarySpace.xs))
-        Text(facts.subtitle, style = RosaryType.supportingLabelPray, color = palette.textSecondary)
-        Spacer(Modifier.height(RosarySpace.lg))
+        Text(facts.subtitle, style = RosaryType.captionPray, color = palette.textSecondary)
+        Spacer(Modifier.height(RosarySpace.xl))
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -882,12 +913,13 @@ fun JourneyPrayerDetailSheet(
                         .fillMaxWidth()
                         .padding(vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top,
                 ) {
-                    Text(fact.label, style = RosaryType.captionPray, color = palette.textSecondary)
+                    Text(fact.label, style = RosaryType.bodyPray, color = palette.textSecondary)
                     Spacer(Modifier.width(RosarySpace.md))
                     Text(
                         fact.value,
-                        style = RosaryType.captionPray,
+                        style = RosaryType.bodyPray,
                         color = if (fact.value == "Not recorded") palette.dim else palette.ink,
                         textAlign = TextAlign.End,
                     )
@@ -899,10 +931,10 @@ fun JourneyPrayerDetailSheet(
             }
         }
         Spacer(Modifier.height(RosarySpace.xl))
-        GuideSectionLabel(text = "Offered for")
+        GuideSectionLabel(text = "Offered for", strong = true, style = RosaryType.bodyPray)
         Spacer(Modifier.height(RosarySpace.md))
         if (facts.intentionTitles.isEmpty()) {
-            Text(facts.emptyIntentionsLabel, style = RosaryType.captionPray, color = palette.dim)
+            Text(facts.emptyIntentionsLabel, style = RosaryType.bodyPray, color = palette.dim)
         } else {
             facts.intentionTitles.forEach { title ->
                 Text(
@@ -918,5 +950,31 @@ fun JourneyPrayerDetailSheet(
                 Spacer(Modifier.height(RosarySpace.sm))
             }
         }
+    }
+}
+
+
+@Composable
+private fun JourneyMysteryThumb(set: MysterySetKind, size: androidx.compose.ui.unit.Dp = 56.dp) {
+    val palette = LocalThemePalette.current
+    val res = when (set) {
+        MysterySetKind.Joyful -> R.drawable.ic_mystery_joyful
+        MysterySetKind.Luminous -> R.drawable.ic_mystery_luminous
+        MysterySetKind.Sorrowful -> R.drawable.ic_mystery_sorrowful
+        MysterySetKind.Glorious -> R.drawable.ic_mystery_glorious
+    }
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(palette.mysteryIconFill),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(res),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(palette.mysteryIconGlyph),
+            modifier = Modifier.size(size * 0.8f),
+        )
     }
 }

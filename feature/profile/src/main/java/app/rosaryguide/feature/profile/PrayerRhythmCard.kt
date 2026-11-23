@@ -74,7 +74,7 @@ fun PrayerRhythmCard(
             color = palette.ink,
             modifier = Modifier.padding(top = RosarySpace.sm),
         )
-        Spacer(Modifier.height(RosarySpace.md))
+        Spacer(Modifier.height(RosarySpace.lg))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             rhythm.currentWeek.forEachIndexed { index, day ->
                 Column(
@@ -87,7 +87,7 @@ fun PrayerRhythmCard(
                         color = palette.textSecondary,
                         maxLines = 1,
                     )
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(RosarySpace.sm))
                     RhythmDayMarker(day)
                 }
             }
@@ -99,19 +99,20 @@ fun PrayerRhythmCard(
 private fun RhythmDayMarker(day: PrayerRhythm.Day) {
     val palette = LocalThemePalette.current
     Box(
-        modifier = Modifier.size(22.dp),
+        modifier = Modifier.size(24.dp),
         contentAlignment = Alignment.Center,
     ) {
         when {
             day.prayed -> Text("✓", style = RosaryType.captionPray, color = palette.accent)
             day.isToday -> Box(
                 modifier = Modifier
-                    .size(16.dp)
-                    .border(1.5.dp, palette.strokeSelected, CircleShape),
+                    .padding(1.dp)
+                    .size(22.dp)
+                    .border(2.dp, palette.strokeSelected, CircleShape),
             )
             else -> Box(
                 modifier = Modifier
-                    .size(6.dp)
+                    .size(12.dp)
                     .clip(CircleShape)
                     .background(if (day.isFuture) palette.strokeRegular else palette.strokeStrong),
             )

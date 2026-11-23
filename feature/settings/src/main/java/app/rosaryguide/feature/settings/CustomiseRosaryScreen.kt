@@ -47,7 +47,7 @@ fun CustomiseRosaryScreen(
             .background(palette.groupedBackground),
     ) {
         if (showChrome) {
-            GuideDetailTopBar(title = title, onBack = onBack)
+            GuideDetailTopBar(title = title, onBack = onBack, milkyOnPlain = true)
         }
         Column(
             modifier = Modifier

@@ -1,6 +1,7 @@
 package app.rosaryguide.core.designsystem.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -92,6 +93,7 @@ fun GuideTopAppBar(
     actions: @Composable RowScope.() -> Unit = {},
     containerColor: Color? = null,
     milkyBack: Boolean = true,
+    milkyOnPlain: Boolean = false,
 ) {
     val palette = LocalThemePalette.current
     val ax = isAccessibilitySize()
@@ -117,12 +119,26 @@ fun GuideTopAppBar(
                     val icon = if (closeInsteadOfBack) Icons.Filled.Close else Icons.AutoMirrored.Filled.ArrowBack
                     val label = if (closeInsteadOfBack) "Close" else "Back"
                     if (milkyBack && !closeInsteadOfBack) {
-                        val chip = if (palette.isDark) Color.White.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.92f)
+                        val chip = when {
+                            palette.isDark -> Color.White.copy(alpha = 0.16f)
+                            milkyOnPlain -> Color(0xFFF4F4F5)
+                            else -> Color.White.copy(alpha = 0.92f)
+                        }
+                        val chipMod = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(chip)
+                            .then(
+                                if (milkyOnPlain && !palette.isDark) {
+                                    Modifier.border(
+                                        app.rosaryguide.core.designsystem.theme.Hairline.thickness,
+                                        palette.cardSurfaceStroke,
+                                        CircleShape,
+                                    )
+                                } else Modifier,
+                            )
                         Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(chip),
+                            modifier = chipMod,
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(

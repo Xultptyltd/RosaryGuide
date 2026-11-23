@@ -16,6 +16,7 @@ fun GuideDetailTopBar(
     modifier: Modifier = Modifier,
     containerColor: Color? = null,
     actions: @Composable RowScope.() -> Unit = {},
+    milkyOnPlain: Boolean = false,
 ) {
     GuideTopAppBar(
         title = title,
@@ -23,5 +24,6 @@ fun GuideDetailTopBar(
         modifier = modifier,
         containerColor = containerColor,
         actions = actions,
+        milkyOnPlain = milkyOnPlain,
     )
 }
