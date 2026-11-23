@@ -66,6 +66,7 @@ import app.rosaryguide.core.designsystem.component.GuideOutlineButton
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
+import app.rosaryguide.core.designsystem.component.SectionBand
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
@@ -391,7 +392,7 @@ private fun ProfileHome(
         }
         if (pope != null && active.none { it.sourceId == "pope-${pope.yearMonth}" }) {
             Column(modifier = gutter.fillMaxWidth()) {
-            Spacer(Modifier.height(RosarySpace.lg))
+            SectionBand(verticalSpacing = 0.dp)
             GuideSectionLabel(text = "Holy Father’s intention")
             Box(Modifier.clickable(onClick = onOpenPapal)) { HolyFatherCard(pope) }
             }
@@ -399,7 +400,7 @@ private fun ProfileHome(
         // Milestones live on the Journey screen, not the Profile hub, matching iOS OfferView.
         if (!isSignedIn) {
             Column(modifier = gutter.fillMaxWidth()) {
-            Spacer(Modifier.height(RosarySpace.lg))
+            SectionBand(verticalSpacing = 0.dp)
             GuestBackupCard(onCreateAccount = onSignIn, today = today, zone = zone, earliestActivityEpochMs = earliestActivityEpochMs)
             }
         }

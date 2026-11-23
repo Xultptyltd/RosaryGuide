@@ -22,7 +22,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
 import app.rosaryguide.core.designsystem.component.AppPageBackground
 import app.rosaryguide.core.designsystem.component.GuestBackupCard
+import app.rosaryguide.core.designsystem.component.GuideDialogButton
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
@@ -350,18 +350,26 @@ private fun SettingsRoot(
             title = { Text("What would you like to report?") },
             text = {
                 androidx.compose.foundation.layout.Column {
-                    TextButton(onClick = {
-                        reportProblem = false
-                        SettingsMail.send(context, SupportMailKind.Bug, appVersion)
-                    }) { Text("Bug") }
-                    TextButton(onClick = {
-                        reportProblem = false
-                        SettingsMail.send(context, SupportMailKind.Translation, appVersion)
-                    }) { Text("Translation") }
+                    GuideDialogButton(
+                        text = "Bug",
+                        onClick = {
+                            reportProblem = false
+                            SettingsMail.send(context, SupportMailKind.Bug, appVersion)
+                        },
+                    )
+                    GuideDialogButton(
+                        text = "Translation",
+                        onClick = {
+                            reportProblem = false
+                            SettingsMail.send(context, SupportMailKind.Translation, appVersion)
+                        },
+                    )
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { reportProblem = false }) { Text("Cancel") } },
+            dismissButton = {
+                GuideDialogButton(text = "Cancel", onClick = { reportProblem = false })
+            },
         )
     }
 
@@ -379,15 +387,19 @@ private fun SettingsRoot(
                 )
             },
             confirmButton = {
-                TextButton(
+                GuideDialogButton(
+                    text = "Clear",
                     onClick = {
                         onClearHistory()
                         confirmClear = false
                         didClear = true
                     },
-                ) { Text("Clear") }
+                    destructive = true,
+                )
             },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel") } },
+            dismissButton = {
+                GuideDialogButton(text = "Cancel", onClick = { confirmClear = false })
+            },
         )
     }
     if (didClear) {
@@ -395,7 +407,7 @@ private fun SettingsRoot(
             onDismissRequest = { didClear = false },
             title = { Text("App history cleared") },
             text = { Text("Your prayer progress, intentions and settings have been cleared from this device.") },
-            confirmButton = { TextButton(onClick = { didClear = false }) { Text("OK") } },
+            confirmButton = { GuideDialogButton(text = "OK", onClick = { didClear = false }) },
         )
     }
     if (confirmSignOut) {
@@ -404,12 +416,18 @@ private fun SettingsRoot(
             title = { Text("Sign out?") },
             text = { Text("You’ll stay a guest on this device. Your prayer data stays here.") },
             confirmButton = {
-                TextButton(onClick = {
-                    onSignOut()
-                    confirmSignOut = false
-                }) { Text("Sign out") }
+                GuideDialogButton(
+                    text = "Sign out",
+                    onClick = {
+                        onSignOut()
+                        confirmSignOut = false
+                    },
+                    destructive = true,
+                )
             },
-            dismissButton = { TextButton(onClick = { confirmSignOut = false }) { Text("Cancel") } },
+            dismissButton = {
+                GuideDialogButton(text = "Cancel", onClick = { confirmSignOut = false })
+            },
         )
     }
     if (confirmDelete) {
@@ -422,12 +440,18 @@ private fun SettingsRoot(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    confirmDelete = false
-                    deleteStub = true
-                }) { Text("Delete account") }
+                GuideDialogButton(
+                    text = "Delete account",
+                    onClick = {
+                        confirmDelete = false
+                        deleteStub = true
+                    },
+                    destructive = true,
+                )
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            dismissButton = {
+                GuideDialogButton(text = "Cancel", onClick = { confirmDelete = false })
+            },
         )
     }
     if (deleteStub) {
@@ -435,15 +459,7 @@ private fun SettingsRoot(
             onDismissRequest = { deleteStub = false },
             title = { Text("Account not deleted") },
             text = { Text("Account deletion will be available when sign-in sync arrives (M5).") },
-            confirmButton = { TextButton(onClick = { deleteStub = false }) { Text("OK") } },
-        )
-    }
-    if (deleteStub) {
-        AlertDialog(
-            onDismissRequest = { deleteStub = false },
-            title = { Text("Account not deleted") },
-            text = { Text("Account deletion will be available when sign-in sync arrives (M5).") },
-            confirmButton = { TextButton(onClick = { deleteStub = false }) { Text("OK") } },
+            confirmButton = { GuideDialogButton(text = "OK", onClick = { deleteStub = false }) },
         )
     }
     if (mailUnavailable) {
@@ -451,7 +467,7 @@ private fun SettingsRoot(
             onDismissRequest = { mailUnavailable = false },
             title = { Text("Mail not available") },
             text = { Text("Set up Mail on this device, or use the contact form at xult.ltd/contact/.") },
-            confirmButton = { TextButton(onClick = { mailUnavailable = false }) { Text("OK") } },
+            confirmButton = { GuideDialogButton(text = "OK", onClick = { mailUnavailable = false }) },
         )
     }
 }

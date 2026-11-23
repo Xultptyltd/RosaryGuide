@@ -12,7 +12,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.TextButton
+import app.rosaryguide.core.designsystem.component.GuideDialogButton
+import app.rosaryguide.core.designsystem.component.SectionBand
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -523,7 +524,12 @@ fun IntentionDetailScreen(
                     }
                 }
             }
-            Spacer(Modifier.height(RosarySpace.lg))
+            if (!intention.isPapal || note.isNotBlank()) {
+                SectionBand(verticalSpacing = 0.dp)
+                Spacer(Modifier.height(RosarySpace.lg))
+            } else {
+                Spacer(Modifier.height(RosarySpace.lg))
+            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -549,10 +555,14 @@ fun IntentionDetailScreen(
             title = { Text("Delete intention?") },
             text = { Text("This will delete “$title” from your intentions.") },
             confirmButton = {
-                TextButton(onClick = { confirmDelete = false; onDelete() }) { Text("Delete", color = palette.destructive) }
+                GuideDialogButton(
+                    text = "Delete",
+                    onClick = { confirmDelete = false; onDelete() },
+                    destructive = true,
+                )
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text("Cancel") }
+                GuideDialogButton(text = "Cancel", onClick = { confirmDelete = false })
             },
         )
     }
@@ -655,10 +665,14 @@ fun ArchivedIntentionsScreen(
             title = { Text("Delete intention?") },
             text = { Text("This will delete “$title” from your intentions.") },
             confirmButton = {
-                TextButton(onClick = { onDelete(item); pendingDelete = null }) { Text("Delete") }
+                GuideDialogButton(
+                    text = "Delete",
+                    onClick = { onDelete(item); pendingDelete = null },
+                    destructive = true,
+                )
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text("Cancel") }
+                GuideDialogButton(text = "Cancel", onClick = { pendingDelete = null })
             },
         )
     }

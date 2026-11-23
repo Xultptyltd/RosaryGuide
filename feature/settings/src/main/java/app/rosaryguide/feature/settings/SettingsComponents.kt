@@ -1,10 +1,5 @@
 package app.rosaryguide.feature.settings
-import app.rosaryguide.core.designsystem.R
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.foundation.Image
+import app.rosaryguide.core.designsystem.component.SectionBand
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -392,43 +387,5 @@ fun SettingsDivider() {
 
 @Composable
 fun SettingsSectionBoundary(modifier: Modifier = Modifier) {
-    val palette = LocalThemePalette.current
-    val gutterPx = with(LocalDensity.current) { RosarySpace.gutter.roundToPx() }
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = RosarySpace.lg)
-            // Expand past the page gutter so the band is full-bleed, matching
-            // iOS GuideSectionBoundary (padding(.horizontal, -gutter)).
-            .layout { measurable, constraints ->
-                val width = constraints.maxWidth + gutterPx * 2
-                val placeable = measurable.measure(
-                    constraints.copy(minWidth = width, maxWidth = width),
-                )
-                layout(constraints.maxWidth, placeable.height) {
-                    placeable.place(-gutterPx, 0)
-                }
-            }
-            .height(40.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Image(
-            painter = painterResource(R.drawable.section_divider_left),
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(palette.sectionDivider),
-            modifier = Modifier.size(width = 16.dp, height = 40.dp),
-        )
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(8.dp)
-                .background(palette.sectionDivider),
-        )
-        Image(
-            painter = painterResource(R.drawable.section_divider_right),
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(palette.sectionDivider),
-            modifier = Modifier.size(width = 16.dp, height = 40.dp),
-        )
-    }
+    SectionBand(modifier = modifier)
 }

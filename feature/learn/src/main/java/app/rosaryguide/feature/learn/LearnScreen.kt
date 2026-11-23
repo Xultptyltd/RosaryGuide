@@ -63,6 +63,7 @@ import app.rosaryguide.core.designsystem.component.GuideLargeTopAppBar
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
+import app.rosaryguide.core.designsystem.component.SectionBand
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.PageStyle
 import app.rosaryguide.core.designsystem.theme.Hairline
@@ -155,18 +156,18 @@ fun LearnScreen(
                     }
                 } else {
                     IntroCard(onWalkthrough = { showWalkthrough = true })
-                    Spacer(Modifier.height(RosarySpace.xl))
+                    SectionBand()
                     GuideSectionLabel(text = LearnCopy.THE_MYSTERIES, strong = true, style = RosaryType.bodyPray)
                     sets.forEach { MysteryTile(it, onClick = { onMysterySet(it) }) }
-                    Spacer(Modifier.height(RosarySpace.xl))
+                    SectionBand()
                     GuideSectionLabel(text = "Prayers", strong = true, style = RosaryType.bodyPray)
                     PrayersTiles(onRosaryPrayers = onRosaryPrayers, onAllPrayers = onAllPrayers)
-                    Spacer(Modifier.height(RosarySpace.xl))
+                    SectionBand()
                     Column(Modifier.onGloballyPositioned { questionsY = it.positionInParent().y.toInt() }) {
                     GuideSectionLabel(text = LearnCopy.COMMON_QUESTIONS, strong = true, style = RosaryType.bodyPray)
                     QuestionsAccordion(articles, initialExpandedArticleId)
                     }
-                    Spacer(Modifier.height(RosarySpace.xl))
+                    SectionBand()
                     PrayTodayCard(title = todaySetTitle, resumeCta = resumeCta, onPray = if (resumeCta != null) onResumeRosary else onBeginRosary)
                     if (initialScrollToQuestions) {
                         Spacer(Modifier.height(640.dp))

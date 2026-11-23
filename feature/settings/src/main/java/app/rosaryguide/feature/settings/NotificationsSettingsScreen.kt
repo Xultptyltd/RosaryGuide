@@ -16,7 +16,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.rememberTimePickerState
@@ -36,6 +35,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.rosaryguide.core.data.notify.TimeOfDay
 import app.rosaryguide.core.data.prefs.UserSettings
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
+import app.rosaryguide.core.designsystem.component.GuideDialogButton
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
@@ -228,14 +228,13 @@ private fun MaterialTimePickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = { onConfirm(TimeOfDay.minutes(state.hour, state.minute)) }) {
-                Text("OK", style = RosaryType.bodyPray, color = palette.accentText)
-            }
+            GuideDialogButton(
+                text = "OK",
+                onClick = { onConfirm(TimeOfDay.minutes(state.hour, state.minute)) },
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", style = RosaryType.bodyPray, color = palette.accentText)
-            }
+            GuideDialogButton(text = "Cancel", onClick = onDismiss)
         },
         text = {
             TimePicker(

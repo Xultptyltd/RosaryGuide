@@ -2,6 +2,7 @@ package app.rosaryguide.feature.profile
 import androidx.compose.ui.graphics.ColorFilter
 
 import androidx.compose.foundation.background
+import app.rosaryguide.core.designsystem.component.GuideDialogButton
 import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
 import app.rosaryguide.core.designsystem.R
 import androidx.compose.ui.res.painterResource
@@ -28,7 +29,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -124,14 +124,14 @@ fun IntentionRow(
             title = { Text("Delete intention?", style = RosaryType.headingSecondaryPray, color = palette.ink) },
             text = { Text("This will delete “$title” from your intentions.", style = RosaryType.bodyPray, color = palette.dim) },
             confirmButton = {
-                TextButton(onClick = { confirmDelete = false; onDelete() }) {
-                    Text("Delete", color = palette.destructive)
-                }
+                GuideDialogButton(
+                    text = "Delete",
+                    onClick = { confirmDelete = false; onDelete() },
+                    destructive = true,
+                )
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) {
-                    Text("Cancel", color = palette.accentText)
-                }
+                GuideDialogButton(text = "Cancel", onClick = { confirmDelete = false })
             },
             containerColor = palette.bg,
         )
@@ -237,14 +237,14 @@ fun IntentionHero(
             title = { Text("Delete intention?", style = RosaryType.headingSecondaryPray, color = palette.ink) },
             text = { Text("This will delete “$title” from your intentions.", style = RosaryType.bodyPray, color = palette.dim) },
             confirmButton = {
-                TextButton(onClick = { confirmDelete = false; onDelete() }) {
-                    Text("Delete", color = palette.destructive)
-                }
+                GuideDialogButton(
+                    text = "Delete",
+                    onClick = { confirmDelete = false; onDelete() },
+                    destructive = true,
+                )
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) {
-                    Text("Cancel", color = palette.accentText)
-                }
+                GuideDialogButton(text = "Cancel", onClick = { confirmDelete = false })
             },
             containerColor = palette.bg,
         )

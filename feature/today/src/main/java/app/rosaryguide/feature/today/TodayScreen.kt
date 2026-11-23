@@ -99,7 +99,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.Canvas
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideScreenHeader
-import app.rosaryguide.core.designsystem.component.GuideSectionDivider
+import app.rosaryguide.core.designsystem.component.SectionBand
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
 import app.rosaryguide.core.designsystem.component.drawableIdByName
 import app.rosaryguide.core.designsystem.component.feastHeroDrawableId
@@ -381,8 +381,7 @@ fun TodayScreen(
                     .offset(y = -RosarySpace.homeSheetOverlap)
                     .padding(bottom = RosarySpace.xxl),
             ) {
-                GuideSectionDivider(Modifier.padding(horizontal = RosarySpace.gutter))
-                Spacer(Modifier.height(RosarySpace.xl))
+                SectionBand(fullBleed = false)
                 GuideSectionLabel(
                     text = HomeCopy.UPCOMING_FEAST_DAYS,
                     strong = true,
@@ -410,9 +409,7 @@ fun TodayScreen(
                     modifier = Modifier.padding(horizontal = RosarySpace.gutter, vertical = RosarySpace.md),
                 )
 
-                Spacer(Modifier.height(RosarySpace.xl))
-                GuideSectionDivider(Modifier.padding(horizontal = RosarySpace.gutter))
-                Spacer(Modifier.height(RosarySpace.xl))
+                SectionBand(fullBleed = false)
                 GuideSectionLabel(
                     text = HomeCopy.THIS_WEEK,
                     strong = true,

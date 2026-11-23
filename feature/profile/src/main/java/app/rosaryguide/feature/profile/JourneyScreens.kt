@@ -67,6 +67,7 @@ import app.rosaryguide.core.data.session.SessionStore
 import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
+import app.rosaryguide.core.designsystem.component.SectionBand
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
@@ -250,8 +251,8 @@ private fun MilestonesTab(milestones: JourneyMilestones, hasPrayer: Boolean) {
                 )
             }
         }
-        Spacer(Modifier.height(RosarySpace.lg))
         milestones.orderedCategories.forEach { category ->
+            SectionBand()
             GuideSectionLabel(text = category.title)
             milestones.items.filter { it.category == category }.forEach { item ->
                 MilestoneRow(item)

@@ -82,7 +82,7 @@ fun LegalDocumentBody(
                 }
                 val prefix = if (block.kind == "li") "• " else ""
                 Text(
-                    text = annotatedLegal(prefix + block.text, palette.accentText),
+                    text = annotatedLegal(prefix + block.text, palette.actionForeground),
                     style = style,
                     color = palette.ink,
                     modifier = Modifier
