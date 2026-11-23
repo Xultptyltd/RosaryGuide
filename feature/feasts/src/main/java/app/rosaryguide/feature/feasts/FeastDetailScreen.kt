@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -92,10 +93,11 @@ fun FeastDetailScreen(
     val dateValue = item.date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", locale))
     var expandedPrayerId by remember { mutableStateOf<String?>(null) }
     val density = LocalDensity.current
-    val chromeDp = with(density) { WindowInsets.statusBars.getTop(this).toDp() } + 44.dp
-    val chromeOverlapPx = with(density) { chromeDp.toPx() }
+    val chrome = rememberFeastChromeMetrics()
+    val underlapPx = with(density) { chrome.underlap.toPx() }
 
-    Box(modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        val heroHeight = feastHeroHeight(maxWidth, RosarySpace.feastHeroHeight)
         AppPageBackground()
         Box(
             Modifier
@@ -108,10 +110,11 @@ fun FeastDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = RosarySpace.tabBarContentClearance),
         ) {
+            FeastHeroTopSpacer(chrome)
             FeastHeroBanner(
                 feast = feast,
-                height = RosarySpace.feastHeroHeight + chromeDp,
-                chromeOverlapPx = chromeOverlapPx,
+                height = heroHeight,
+                chromeOverlapPx = underlapPx,
             )
             Column(Modifier.padding(horizontal = RosarySpace.gutter)) {
                 Spacer(Modifier.height(18.dp))
@@ -287,7 +290,7 @@ fun FeastDetailScreen(
             }
         }
         if (includeChrome) {
-            FeastOverlayChrome(title = feast.shortTitle, onBack = onBack)
+            FeastOverlayChrome(title = feast.shortTitle, onBack = onBack, metrics = chrome)
         }
     }
 }

@@ -2,6 +2,7 @@ package app.rosaryguide.feature.feasts
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -162,9 +163,10 @@ private fun FeastSecondaryPage(
 ) {
     val palette = LocalThemePalette.current
     val density = LocalDensity.current
-    val chromeDp = with(density) { WindowInsets.statusBars.getTop(this).toDp() } + 44.dp
-    val chromeOverlapPx = with(density) { chromeDp.toPx() }
-    Box(modifier.fillMaxSize()) {
+    val chrome = rememberFeastChromeMetrics()
+    val underlapPx = with(density) { chrome.underlap.toPx() }
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        val heroHeight = feastHeroHeight(maxWidth, RosarySpace.feastSecondaryHeroHeight)
         AppPageBackground()
         Box(
             Modifier
@@ -177,10 +179,11 @@ private fun FeastSecondaryPage(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = RosarySpace.tabBarContentClearance),
         ) {
+            FeastHeroTopSpacer(chrome)
             FeastHeroBanner(
                 feast = feast,
-                height = RosarySpace.feastSecondaryHeroHeight + chromeDp,
-                chromeOverlapPx = chromeOverlapPx,
+                height = heroHeight,
+                chromeOverlapPx = underlapPx,
             )
             Column(Modifier.padding(horizontal = RosarySpace.gutter)) {
                 Spacer(Modifier.height(22.dp))
@@ -197,7 +200,7 @@ private fun FeastSecondaryPage(
                 Spacer(Modifier.height(34.dp))
             }
         }
-        FeastOverlayChrome(title = title, onBack = onBack)
+        FeastOverlayChrome(title = title, onBack = onBack, metrics = chrome)
     }
 }
 

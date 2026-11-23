@@ -13,7 +13,7 @@ Typography and spacing: `docs/parity-v2/feasts-typography.md`.
 - Row tap pushes feast detail on the Feasts stack (tab bar stays). The Learn + “Pray this Rosary” row appears only when the first item of the first section is the selected day. The 17 Nov ref has no feast on the selected day, so that row is correctly absent.
 - Empty copy: “No upcoming feasts for this selection.”
 - There is no search field on the iOS hub; Android no longer has one.
-- Feast detail is a push with a milky chevron-in-chip back, inline title, 330 pt hero under the chrome, plain `palette.bg` (not the wash) over the ambient layer. Meaning, at-a-glance, then bands before Keep the day, Prayers for this day, and Scripture and Rosary.
+- Feast detail is a push with a local milky chevron-in-chip back (solid white + soft shadow in light, visible 0.16 white disc in dark), inline title, and a width-scaled 330 pt hero (`height = 330 × width/440`) that starts just below the nav with an 8 dp underlap. The nav is a solid `palette.bg` bar plus a 1 px hairline; `navTop` is `max(statusBars, 62.dp)` so the chevron and title are centred at 84 dp, matching the iOS refs. Plain `palette.bg` (not the wash) over the ambient layer. Meaning, at-a-glance, then bands before Keep the day, Prayers for this day, and Scripture and Rosary.
 - Related prayers / Patronages / In Scripture exist as iOS views and refs. The current `FeastDetailView` body does not wire `NavigationLink`s to them. Android still ships the three pages (IA + refs) and adds the source `infoRow`s below the fold on detail so they can be opened.
 - Debug hooks `-RGDebugOpenFeast` / `RGDebugFeastID` stay iOS-only; Roborazzi opens Presentation of Mary (`presentation-mary`, 21 November, Memorial) directly.
 
@@ -25,11 +25,11 @@ All feasts, week of 16–22 November 2026, today 17 selected with accent-blue fi
 
 ### feast-detail
 
-Presentation of Mary. Hero art with a 0.18 bottom fade into `palette.bg`, frosted scrim over status + 44 dp nav so the chevron and title stay readable, typo-accurate title and meaning, no Remind me / Pray cards in the first viewport (those `detailActions` exist in source but are unused in the live body and are below the first ref).
+Presentation of Mary. Hero art with a 0.18 bottom fade into `palette.bg`. The nav is a solid `palette.bg` bar (not a frost scrim) with the local milky back chip; typo-accurate title and meaning, no Remind me / Pray cards in the first viewport (those `detailActions` exist in source but are unused in the live body and are below the first ref).
 
 ### feast-related-prayers
 
-238 pt under-nav hero, “Memorial” + serif “Related prayers” + feast short title. Accordion, first prayer expanded on appear (Hail, holy Queen; Memorare; Sub Tuum Præsidium). Flush, no card chrome. English only unless bilingual is on.
+Width-scaled 238 pt hero (`height = 238 × width/440`) starting just below the nav with the same 8 dp underlap and chrome as detail. “Memorial” + serif “Related prayers” + feast short title. Accordion, first prayer expanded on appear (Hail, holy Queen; Memorare; Sub Tuum Præsidium). Flush, no card chrome. English only unless bilingual is on.
 
 ### feast-patronages
 

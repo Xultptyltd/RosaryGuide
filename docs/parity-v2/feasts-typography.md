@@ -57,8 +57,8 @@ SwiftUI typo line height = size × 1.22. Compose `includeFontPadding = false`. H
 | Timeline date column / row gap | 56 / 20 | 56 / 20 |
 | In-group hairline | 1 px, leading inset 76 | `Hairline` 1 px, start 76 |
 | Between agenda sections | `GuideSectionBoundary` (8 / 16 × 40 caps) | `SectionBand` |
-| Detail hero | 330, bottom fade 0.18, under status + inline nav | 330 plus status + 44 chrome, same fade |
-| Secondary hero | 238, same fade and under-nav treatment | 238 plus status + 44 |
+| Detail hero | 330, bottom fade 0.18, 8 pt underlap under the nav, art starts just below the bar | `330 × (width/440)` (308 dp on Pixel 7), same fade and 8 dp underlap; cover is not given the status+nav height |
+| Secondary hero | 238, same fade and 8 pt underlap | `238 × (width/440)` (222 dp on Pixel 7), same fade and underlap |
 | Metadata → title | `Space.sm` 8 | 8 |
 | Title → summary | `Space.md` 12 | 12 |
 | Summary → meaning | 26 | 26 |
