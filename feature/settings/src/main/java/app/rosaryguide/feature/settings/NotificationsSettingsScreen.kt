@@ -229,12 +229,12 @@ private fun MaterialTimePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = { onConfirm(TimeOfDay.minutes(state.hour, state.minute)) }) {
-                Text("OK", style = RosaryType.body, color = palette.accentText)
+                Text("OK", style = RosaryType.bodyPray, color = palette.accentText)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", style = RosaryType.body, color = palette.accentText)
+                Text("Cancel", style = RosaryType.bodyPray, color = palette.accentText)
             }
         },
         text = {

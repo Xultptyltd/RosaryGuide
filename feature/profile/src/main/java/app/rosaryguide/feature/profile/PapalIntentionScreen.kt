@@ -60,14 +60,14 @@ fun PapalIntentionScreen(
             Spacer(Modifier.height(RosarySpace.lg))
             Text(
                 text = pope.monthLabel().uppercase(),
-                style = RosaryType.caption,
+                style = RosaryType.captionPray,
                 color = palette.dim,
             )
             Spacer(Modifier.height(RosarySpace.xs))
-            Text(text = pope.title, style = RosaryType.headingSecondary, color = palette.ink)
+            Text(text = pope.title, style = RosaryType.headingSecondaryPray, color = palette.ink)
             pope.note?.let {
                 Spacer(Modifier.height(RosarySpace.lg))
-                Text(text = it, style = RosaryType.body, color = palette.ink)
+                Text(text = it, style = RosaryType.bodyPray, color = palette.ink)
             }
             Spacer(Modifier.height(RosarySpace.xl))
             if (added) {

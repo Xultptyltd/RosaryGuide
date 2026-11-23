@@ -124,7 +124,7 @@ fun JourneyScreen(
                         inactiveContainerColor = palette.surface,
                         inactiveContentColor = palette.ink,
                     ),
-                    label = { Text(title, style = RosaryType.segmentedControl, maxLines = 1) },
+                    label = { Text(title, style = RosaryType.segmentedControlPray, maxLines = 1) },
                 )
             }
         }
@@ -215,11 +215,11 @@ private fun MilestonesTab(milestones: JourneyMilestones, hasPrayer: Boolean) {
             }
             Spacer(Modifier.width(RosarySpace.md))
             Column(modifier = Modifier.weight(1f)) {
-                Text(stage.first, style = RosaryType.headingSecondary, color = palette.ink)
+                Text(stage.first, style = RosaryType.headingSecondaryPray, color = palette.ink)
                 Spacer(Modifier.height(RosarySpace.sm))
                 Text(
                     "${milestones.earnedCount} of ${milestones.items.size} milestones completed",
-                    style = RosaryType.caption,
+                    style = RosaryType.captionPray,
                     color = palette.dim,
                 )
             }
@@ -255,10 +255,10 @@ fun MilestoneRow(item: JourneyMilestones.Item, modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.width(RosarySpace.md))
             Column(modifier = Modifier.weight(1f)) {
-                Text(item.title, style = RosaryType.body, color = palette.ink)
-                Text(item.description, style = RosaryType.caption, color = palette.textSecondary)
+                Text(item.title, style = RosaryType.bodyPray, color = palette.ink)
+                Text(item.description, style = RosaryType.captionPray, color = palette.textSecondary)
             }
-            Text(item.progressText, style = RosaryType.caption, color = palette.textSecondary)
+            Text(item.progressText, style = RosaryType.captionPray, color = palette.textSecondary)
         }
         Spacer(Modifier.height(RosarySpace.sm))
         Box(
@@ -283,7 +283,7 @@ fun MilestoneRow(item: JourneyMilestones.Item, modifier: Modifier = Modifier) {
                 Spacer(Modifier.height(RosarySpace.xs))
                 Text(
                     "Completed $done",
-                    style = RosaryType.caption,
+                    style = RosaryType.captionPray,
                     color = palette.dim,
                 )
             }
@@ -434,7 +434,7 @@ private fun HistoryTab(
         if (sessions.isEmpty() && decades.isEmpty() && dayKeys.isEmpty()) {
             Text(
                 "Your completed Rosaries and decades will appear here.",
-                style = RosaryType.body,
+                style = RosaryType.bodyPray,
                 color = palette.dim,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -446,7 +446,7 @@ private fun HistoryTab(
             if (rows.isEmpty()) {
                 Text(
                     "No prayers in the last $monthsShown months.",
-                    style = RosaryType.body,
+                    style = RosaryType.bodyPray,
                     color = palette.dim,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -472,10 +472,10 @@ private fun HistoryTab(
                             .semantics { contentDescription = "Journey history row" }
                             .padding(RosarySpace.lg),
                     ) {
-                        Text(row.label, style = RosaryType.body, color = palette.ink)
-                        Text(row.status, style = RosaryType.caption, color = palette.textSecondary)
+                        Text(row.label, style = RosaryType.bodyPray, color = palette.ink)
+                        Text(row.status, style = RosaryType.captionPray, color = palette.textSecondary)
                         row.intentionCount?.let {
-                            Text(it, style = RosaryType.caption, color = palette.textSecondary)
+                            Text(it, style = RosaryType.captionPray, color = palette.textSecondary)
                         }
                     }
                     Spacer(Modifier.height(RosarySpace.sm))
@@ -488,17 +488,17 @@ private fun HistoryTab(
                     border = BorderStroke(1.dp, palette.strokeRegular),
                     modifier = Modifier.heightIn(min = 40.dp),
                 ) {
-                    Text("Show more", style = RosaryType.body, color = palette.ink)
+                    Text("Show more", style = RosaryType.bodyPray, color = palette.ink)
                 }
             } else if (oldest != null) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(top = RosarySpace.sm),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text("Your prayer history starts here", style = RosaryType.caption, color = palette.dim)
+                    Text("Your prayer history starts here", style = RosaryType.captionPray, color = palette.dim)
                     Text(
                         oldest.format(DateTimeFormatter.ofPattern("d MMMM yyyy", locale)),
-                        style = RosaryType.caption,
+                        style = RosaryType.captionPray,
                         color = palette.dim,
                     )
                 }
@@ -561,7 +561,7 @@ private fun JourneyMonthCalendar(
             }
             Text(
                 title,
-                style = RosaryType.body,
+                style = RosaryType.bodyPray,
                 color = palette.ink,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f),
@@ -582,7 +582,7 @@ private fun JourneyMonthCalendar(
             labels.forEach { label ->
                 Text(
                     label,
-                    style = RosaryType.caption,
+                    style = RosaryType.captionPray,
                     color = palette.dim,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f),
@@ -630,7 +630,7 @@ private fun JourneyMonthCalendar(
                             ) {
                                 Text(
                                     date.dayOfMonth.toString(),
-                                    style = RosaryType.caption,
+                                    style = RosaryType.captionPray,
                                     color = when {
                                         prayed -> palette.onAccent
                                         isFuture -> palette.futureDayText
@@ -704,7 +704,7 @@ private fun JourneyLegendDot(title: String, filled: Boolean) {
                     else Modifier.border(BorderStroke(2.dp, palette.accent), CircleShape)
                 ),
         )
-        Text(title, style = RosaryType.caption, color = palette.dim)
+        Text(title, style = RosaryType.captionPray, color = palette.dim)
     }
 }
 
@@ -712,8 +712,8 @@ private fun JourneyLegendDot(title: String, filled: Boolean) {
 private fun JourneyInlineStat(value: String, label: String, modifier: Modifier = Modifier) {
     val palette = LocalThemePalette.current
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(RosarySpace.xs)) {
-        Text(value, style = RosaryType.body, color = palette.ink)
-        Text(label, style = RosaryType.caption, color = palette.textSecondary)
+        Text(value, style = RosaryType.bodyPray, color = palette.ink)
+        Text(label, style = RosaryType.captionPray, color = palette.textSecondary)
     }
 }
 
@@ -740,14 +740,14 @@ fun HistoryDaySheet(
             .padding(horizontal = RosarySpace.gutter)
             .padding(bottom = RosarySpace.xl),
     ) {
-        Text(JourneyDayDetail.heading(date, locale), style = RosaryType.headingSecondary, color = palette.ink)
+        Text(JourneyDayDetail.heading(date, locale), style = RosaryType.headingSecondaryPray, color = palette.ink)
         Spacer(Modifier.height(RosarySpace.xs))
-        Text(summary, style = RosaryType.supportingLabel, color = palette.textSecondary)
+        Text(summary, style = RosaryType.supportingLabelPray, color = palette.textSecondary)
         Spacer(Modifier.height(RosarySpace.lg))
         if (entries.isEmpty()) {
             Text(
                 "No prayer recorded on this day.",
-                style = RosaryType.supportingLabel,
+                style = RosaryType.supportingLabelPray,
                 color = palette.dim,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -792,18 +792,18 @@ private fun HistoryDayEntryRow(entry: JourneyDayEntry) {
                 .background(palette.accentTint),
             contentAlignment = Alignment.Center,
         ) {
-            Text(entry.mysterySet?.letter ?: "✦", style = RosaryType.body, color = palette.ink)
+            Text(entry.mysterySet?.letter ?: "✦", style = RosaryType.bodyPray, color = palette.ink)
         }
         Spacer(Modifier.width(RosarySpace.md))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = RosaryType.body, color = palette.ink)
-            Text(status, style = RosaryType.caption, color = palette.textSecondary)
+            Text(title, style = RosaryType.bodyPray, color = palette.ink)
+            Text(status, style = RosaryType.captionPray, color = palette.textSecondary)
             OfferedIntentions.countText(entry.intentionTitles)?.let {
-                Text(it, style = RosaryType.caption, color = palette.textSecondary)
+                Text(it, style = RosaryType.captionPray, color = palette.textSecondary)
             }
         }
         entry.duration?.let {
-            Text(JourneyDuration.text(it), style = RosaryType.caption, color = palette.ink)
+            Text(JourneyDuration.text(it), style = RosaryType.captionPray, color = palette.ink)
         }
     }
 }
@@ -865,9 +865,9 @@ fun JourneyPrayerDetailSheet(
             .padding(bottom = RosarySpace.xl)
             .navigationBarsPadding(),
     ) {
-        Text(facts.title, style = RosaryType.headingSecondary, color = palette.ink)
+        Text(facts.title, style = RosaryType.headingSecondaryPray, color = palette.ink)
         Spacer(Modifier.height(RosarySpace.xs))
-        Text(facts.subtitle, style = RosaryType.supportingLabel, color = palette.textSecondary)
+        Text(facts.subtitle, style = RosaryType.supportingLabelPray, color = palette.textSecondary)
         Spacer(Modifier.height(RosarySpace.lg))
         Column(
             modifier = Modifier
@@ -883,11 +883,11 @@ fun JourneyPrayerDetailSheet(
                         .padding(vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(fact.label, style = RosaryType.caption, color = palette.textSecondary)
+                    Text(fact.label, style = RosaryType.captionPray, color = palette.textSecondary)
                     Spacer(Modifier.width(RosarySpace.md))
                     Text(
                         fact.value,
-                        style = RosaryType.caption,
+                        style = RosaryType.captionPray,
                         color = if (fact.value == "Not recorded") palette.dim else palette.ink,
                         textAlign = TextAlign.End,
                     )
@@ -902,12 +902,12 @@ fun JourneyPrayerDetailSheet(
         GuideSectionLabel(text = "Offered for")
         Spacer(Modifier.height(RosarySpace.md))
         if (facts.intentionTitles.isEmpty()) {
-            Text(facts.emptyIntentionsLabel, style = RosaryType.caption, color = palette.dim)
+            Text(facts.emptyIntentionsLabel, style = RosaryType.captionPray, color = palette.dim)
         } else {
             facts.intentionTitles.forEach { title ->
                 Text(
                     title,
-                    style = RosaryType.body,
+                    style = RosaryType.bodyPray,
                     color = palette.ink,
                     modifier = Modifier
                         .fillMaxWidth()

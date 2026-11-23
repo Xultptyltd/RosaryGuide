@@ -118,6 +118,10 @@ object RosaryType {
     val captionMediumPray = sansRole(12f, weight = FontWeight.Medium)
     /** iOS `TypeRole.modalTitle` / `headingSecondary` with `.tracking(-0.2)`. */
     val modalTitlePray = sansRole(22f, letterSpacingSp = -0.2f)
+    /** iOS `TypeRole.headingSecondary` / `headline` / `cardTitle` / `title3` at 22 pt, typo 26.84. */
+    val headingSecondaryPray = sansRole(22f)
+    /** iOS `TypeRole.caption` / `settingsMeta` + `lineSpacing(4)`. */
+    val captionReading = sansRole(12f, extraLineSpacingSp = 4f)
     /** iOS `TypeRole.headingPrimary` / `screenTitle` / `title2`. */
     val headingPrimaryPray = sansRole(32f)
     /** iOS `OnboardingPageView` title: `TypeRole.title` (32) + `.lineSpacing(2)`. */

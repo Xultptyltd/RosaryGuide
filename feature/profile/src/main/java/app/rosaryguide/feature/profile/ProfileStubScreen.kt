@@ -20,19 +20,19 @@ fun ProfileStubScreen(modifier: Modifier = Modifier) {
     ) {
         Text(
             text = "Sign in",
-            style = RosaryType.headingSecondary,
+            style = RosaryType.headingSecondaryPray,
             color = colors.textPrimary,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "You can continue as a guest, or sign in with Google to restore a Rosary Guide account. Sign in with Apple is not offered on Android.",
-            style = RosaryType.body,
+            style = RosaryType.bodyPray,
             color = colors.textSecondary,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Continue with Google  ·  Continue as guest",
-            style = RosaryType.caption,
+            style = RosaryType.captionPray,
             color = colors.accentText,
         )
     }

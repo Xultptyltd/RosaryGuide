@@ -65,7 +65,7 @@ fun AppIconScreen(
             Spacer(Modifier.height(RosarySpace.xl))
             Text(
                 text = "Available",
-                style = RosaryType.supportingLabel,
+                style = RosaryType.supportingLabelPray,
                 color = palette.dim,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -94,7 +94,7 @@ fun AppIconScreen(
                     )
                     Text(
                         text = option.title,
-                        style = RosaryType.body,
+                        style = RosaryType.bodyPray,
                         color = palette.ink,
                         modifier = Modifier
                             .weight(1f)

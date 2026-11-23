@@ -77,7 +77,7 @@ fun IntentionRow(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     title,
-                    style = RosaryType.body,
+                    style = RosaryType.bodyPray,
                     color = if (hiddenTitle) palette.dim else palette.ink,
                     maxLines = 2,
                     modifier = Modifier.weight(1f, fill = false),
@@ -86,13 +86,13 @@ fun IntentionRow(
                     Spacer(Modifier.width(RosarySpace.sm))
                     Text(
                         "Pinned",
-                        style = RosaryType.caption,
+                        style = RosaryType.captionPray,
                         color = palette.accentText,
                     )
                 }
             }
             if (month != null) {
-                Text(month, style = RosaryType.caption, color = palette.dim, maxLines = 1)
+                Text(month, style = RosaryType.captionPray, color = palette.dim, maxLines = 1)
             }
         }
         Box {
@@ -109,8 +109,8 @@ fun IntentionRow(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete intention?", style = RosaryType.headingSecondary, color = palette.ink) },
-            text = { Text("This will delete “$title” from your intentions.", style = RosaryType.body, color = palette.dim) },
+            title = { Text("Delete intention?", style = RosaryType.headingSecondaryPray, color = palette.ink) },
+            text = { Text("This will delete “$title” from your intentions.", style = RosaryType.bodyPray, color = palette.dim) },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = false; onDelete() }) {
                     Text("Delete", color = palette.destructive)
@@ -154,7 +154,7 @@ fun IntentionIcon(intention: OfferIntention, size: androidx.compose.ui.unit.Dp, 
                 .background(intention.accent.fill()),
             contentAlignment = Alignment.Center,
         ) {
-            Text(intention.displayEmoji, style = RosaryType.body)
+            Text(intention.displayEmoji, style = RosaryType.bodyPray)
         }
     }
 }
@@ -189,7 +189,7 @@ fun IntentionHero(
             Spacer(Modifier.width(RosarySpace.lg))
             Text(
                 title,
-                style = RosaryType.body,
+                style = RosaryType.bodyPray,
                 color = if (hiddenTitle) palette.dim else palette.ink,
                 maxLines = 2,
                 modifier = Modifier.weight(1f),
@@ -211,8 +211,8 @@ fun IntentionHero(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete intention?", style = RosaryType.headingSecondary, color = palette.ink) },
-            text = { Text("This will delete “$title” from your intentions.", style = RosaryType.body, color = palette.dim) },
+            title = { Text("Delete intention?", style = RosaryType.headingSecondaryPray, color = palette.ink) },
+            text = { Text("This will delete “$title” from your intentions.", style = RosaryType.bodyPray, color = palette.dim) },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = false; onDelete() }) {
                     Text("Delete", color = palette.destructive)

@@ -73,10 +73,10 @@ fun LegalDocumentBody(
         ) {
             blocks.forEach { block ->
                 val style = when (block.kind) {
-                    "h1" -> RosaryType.headingPrimary
-                    "h2" -> RosaryType.headingSecondary
-                    "h3" -> RosaryType.body
-                    else -> RosaryType.body
+                    "h1" -> RosaryType.headingPrimaryPray
+                    "h2" -> RosaryType.headingSecondaryPray
+                    "h3" -> RosaryType.bodyPray
+                    else -> RosaryType.bodyPray
                 }
                 val color = if (block.kind == "h1" || block.kind == "h2" || block.kind == "h3") palette.ink else palette.ink
                 val prefix = if (block.kind == "li") "• " else ""
@@ -130,7 +130,7 @@ fun AcknowledgementsScreen(
             SettingsSection(title = "Photos") {
                 Text(
                     text = POPE_PHOTO_CREDIT,
-                    style = RosaryType.caption,
+                    style = RosaryType.captionPray,
                     color = palette.dim,
                     modifier = Modifier.padding(vertical = RosarySpace.md),
                 )
@@ -151,8 +151,8 @@ private fun ScriptureRow(title: String) {
             .padding(vertical = RosarySpace.md),
         horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
     ) {
-        Text(text = title, style = RosaryType.body, color = palette.ink, modifier = Modifier.weight(1f))
-        Text(text = "Public domain", style = RosaryType.caption, color = palette.dim)
+        Text(text = title, style = RosaryType.bodyPray, color = palette.ink, modifier = Modifier.weight(1f))
+        Text(text = "Public domain", style = RosaryType.captionPray, color = palette.dim)
     }
 }
 
@@ -177,16 +177,16 @@ fun LicenseDetailScreen(
                 .padding(horizontal = RosarySpace.gutter)
                 .padding(bottom = RosarySpace.xxl),
         ) {
-            Text(entry.version, style = RosaryType.caption, color = palette.dim)
+            Text(entry.version, style = RosaryType.captionPray, color = palette.dim)
             Spacer(Modifier.height(RosarySpace.sm))
             Text(
                 text = entry.url,
-                style = RosaryType.caption,
+                style = RosaryType.captionPray,
                 color = palette.accentText,
                 modifier = Modifier.clickable { uriHandler.openUri(entry.url) },
             )
             Spacer(Modifier.height(RosarySpace.lg))
-            Text(entry.license, style = RosaryType.caption, color = palette.ink)
+            Text(entry.license, style = RosaryType.captionPray, color = palette.ink)
         }
     }
 }
