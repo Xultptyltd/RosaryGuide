@@ -85,6 +85,15 @@ Pairs: `/workspace/android/shots/v2/pairs/<screen-id>-<light|dark>.png` (iOS lef
 Sign-off sheets: `/workspace/android/shots/v2/signoff/<screen-id>.png` (iOS \| Android-before \| Android-after; light on top, dark below). Before frames for splash/onboarding/sign-in/today come from the earlier parity pass. Sheets and sign-in-transition are labelled “new screen”.
 Zoomed 2× baseline-guide crops (Pray typography pass): `/workspace/android/shots/v2/signoff/zoom/<screen-id>.png`.
 
+## M5 Firebase (23 Nov 2026)
+
+Google sign-in (Credential Manager + Firebase Auth), local-only guest, Firestore sync of
+`/users/{uid}/meta/preferences`, `/users/{uid}/meta/progress` and `/users/{uid}/intentions/{UUID}`
+with the iOS field names and merge rules, and Delete account are live. No visual change except the
+Delete account row reading "Deleting..." while it runs and the iOS "Account deleted" /
+"Account not deleted" alerts. Firestore rules unchanged. Details and open console steps:
+`docs/m5-firebase.md`.
+
 ## Measurement tables (light, unless noted)
 
 Fractions are y / frame height (top of frame = 0). Δ is `|android − ios|` in percentage points of the frame.

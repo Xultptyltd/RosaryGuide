@@ -136,6 +136,12 @@ fun RosaryGuideApp(
         val intentions by viewModel.sessionStore.intentions.collectAsStateWithLifecycle()
         val completed by viewModel.sessionStore.completedSessions.collectAsStateWithLifecycle()
         val context = LocalContext.current
+        // Sign-in failures (offline, no Google account on the device); a cancel shows nothing.
+        androidx.compose.runtime.LaunchedEffect(auth.errorMessage) {
+            val message = auth.errorMessage ?: return@LaunchedEffect
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
+            viewModel.auth.clearError()
+        }
         val versionName = remember {
             runCatching {
                 context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -309,10 +315,14 @@ fun RosaryGuideApp(
             } else if (firstRunSignIn) {
                 SignInScreen(
                     onGoogle = {
-                        viewModel.signInWithGoogle()
-                        showSignIn = false
-                        signInOrigin = null
-                        consumeForceOnboarding = true
+                        // The Google sheet opens over this screen; it closes only once signed in.
+                        viewModel.signInWithGoogle { signedIn ->
+                            if (signedIn) {
+                                showSignIn = false
+                                signInOrigin = null
+                                consumeForceOnboarding = true
+                            }
+                        }
                     },
                     onGuest = {
                         viewModel.continueAsGuest()
@@ -396,6 +406,14 @@ fun RosaryGuideApp(
                         showSignIn = true
                     },
                     onBack = { showSettings = false },
+                    onDeleteAccount = { onFinished -> viewModel.deleteAccount(onFinished) },
+                    onAccountDeleted = {
+                        viewModel.finishAccountDeletion()
+                        showSettings = false
+                        showWelcomeReplay = false
+                        showSignIn = false
+                        prayLaunch = null
+                    },
                     today = today,
                     earliestActivityEpochMs = listOfNotNull(
                         completed.minOfOrNull { it.startedAtEpochMs },
@@ -414,7 +432,9 @@ fun RosaryGuideApp(
 
             if (inAppSignIn) {
                 SignInScreen(
-                    onGoogle = { finishInAppSignIn { viewModel.signInWithGoogle() } },
+                    onGoogle = {
+                        viewModel.signInWithGoogle { signedIn -> if (signedIn) finishInAppSignIn {} }
+                    },
                     onGuest = { finishInAppSignIn { viewModel.continueAsGuest() } },
                     isSigningInWithGoogle = auth.isSigningInWithGoogle,
                     modifier = Modifier.fillMaxSize(),

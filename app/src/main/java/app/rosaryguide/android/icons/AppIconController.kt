@@ -7,6 +7,15 @@ import app.rosaryguide.core.model.AppIconOption
 
 /** Switches the launcher icon via activity aliases. Marian blue is the default alias. */
 class AppIconController(private val context: Context) {
+    /** An icon chosen on another device; swapped when the app leaves the screen. */
+    @Volatile var pending: AppIconOption? = null
+
+    fun applyPending() {
+        val option = pending ?: return
+        pending = null
+        apply(option)
+    }
+
     fun apply(option: AppIconOption) {
         val pm = context.packageManager
         val pkg = context.packageName

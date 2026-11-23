@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.roborazzi)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -76,6 +77,9 @@ dependencies {
     implementation(project(":feature:pray"))
     implementation(project(":feature:settings"))
     implementation(project(":sync"))
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
     implementation(project(":notifications"))
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.play.review.ktx)

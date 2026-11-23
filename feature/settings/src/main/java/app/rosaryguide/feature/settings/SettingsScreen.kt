@@ -61,6 +61,14 @@ enum class SettingsPage {
     License,
 }
 
+/** Outcome of Delete account (iOS `SettingsView.deleteAccount`). */
+sealed interface DeleteAccountResult {
+    data object Deleted : DeleteAccountResult
+    /** The Google sheet was closed; nothing is shown. */
+    data object Cancelled : DeleteAccountResult
+    data class Failed(val message: String) : DeleteAccountResult
+}
+
 enum class SettingsConfirmDialog { None, ClearHistory, DeleteAccount, SignOut, ReportProblem, MailUnavailable }
 
 @Composable
@@ -85,6 +93,8 @@ fun SettingsScreen(
     onReplayWelcome: () -> Unit,
     onSignIn: () -> Unit,
     onBack: () -> Unit,
+    onDeleteAccount: (onFinished: (DeleteAccountResult) -> Unit) -> Unit = { it(DeleteAccountResult.Cancelled) },
+    onAccountDeleted: () -> Unit = {},
     today: LocalDate = LocalDate.now(),
     zone: ZoneId = ZoneId.systemDefault(),
     earliestActivityEpochMs: Long? = null,
@@ -166,6 +176,8 @@ fun SettingsScreen(
             onSignOut = onSignOut,
             onReplayWelcome = onReplayWelcome,
             onSignIn = onSignIn,
+            onDeleteAccount = onDeleteAccount,
+            onAccountDeleted = onAccountDeleted,
             initialConfirm = initialConfirm,
             onBack = onBack,
             today = today,
@@ -191,6 +203,8 @@ private fun SettingsRoot(
     onReplayWelcome: () -> Unit,
     onSignIn: () -> Unit,
     onBack: () -> Unit,
+    onDeleteAccount: (onFinished: (DeleteAccountResult) -> Unit) -> Unit,
+    onAccountDeleted: () -> Unit,
     initialConfirm: SettingsConfirmDialog = SettingsConfirmDialog.None,
     today: LocalDate,
     zone: ZoneId,
@@ -204,7 +218,9 @@ private fun SettingsRoot(
     var didClear by remember { mutableStateOf(false) }
     var confirmSignOut by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.SignOut) }
     var confirmDelete by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.DeleteAccount) }
-    var deleteStub by remember { mutableStateOf(false) }
+    var isDeletingAccount by remember { mutableStateOf(false) }
+    var didDeleteAccount by remember { mutableStateOf(false) }
+    var accountDeletionError by remember { mutableStateOf<String?>(null) }
     var reportProblem by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.ReportProblem) }
     var mailUnavailable by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.MailUnavailable) }
 
@@ -326,8 +342,9 @@ private fun SettingsRoot(
             if (isSignedIn) {
                 SettingsDivider()
                 SettingsNavigationRow(
-                    title = "Delete account",
+                    title = if (isDeletingAccount) "Deleting..." else "Delete account",
                     destructive = true,
+                    enabled = !isDeletingAccount,
                     onClick = { confirmDelete = true },
                 )
             }
@@ -444,7 +461,15 @@ private fun SettingsRoot(
                     text = "Delete account",
                     onClick = {
                         confirmDelete = false
-                        deleteStub = true
+                        isDeletingAccount = true
+                        onDeleteAccount { result ->
+                            isDeletingAccount = false
+                            when (result) {
+                                DeleteAccountResult.Deleted -> didDeleteAccount = true
+                                DeleteAccountResult.Cancelled -> Unit
+                                is DeleteAccountResult.Failed -> accountDeletionError = result.message
+                            }
+                        }
                     },
                     destructive = true,
                 )
@@ -454,12 +479,28 @@ private fun SettingsRoot(
             },
         )
     }
-    if (deleteStub) {
+    if (didDeleteAccount) {
+        val close = {
+            didDeleteAccount = false
+            onAccountDeleted()
+        }
         AlertDialog(
-            onDismissRequest = { deleteStub = false },
+            onDismissRequest = close,
+            title = { Text("Account deleted") },
+            text = {
+                Text(
+                    "Your account and everything synced to it (intentions, prayer history and settings) were deleted, and your prayer data was cleared from this device.",
+                )
+            },
+            confirmButton = { GuideDialogButton(text = "OK", onClick = close) },
+        )
+    }
+    accountDeletionError?.let { message ->
+        AlertDialog(
+            onDismissRequest = { accountDeletionError = null },
             title = { Text("Account not deleted") },
-            text = { Text("Account deletion will be available when sign-in sync arrives (M5).") },
-            confirmButton = { GuideDialogButton(text = "OK", onClick = { deleteStub = false }) },
+            text = { Text(message) },
+            confirmButton = { GuideDialogButton(text = "OK", onClick = { accountDeletionError = null }) },
         )
     }
     if (mailUnavailable) {

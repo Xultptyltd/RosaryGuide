@@ -21,6 +21,7 @@ object SettingsKeys {
     val SessionCompletedDayKeys = stringSetPreferencesKey("session.completedDayKeys")
     val SessionIntentions = stringPreferencesKey("session.offerIntentions")
     val SessionJourney = stringPreferencesKey("session.journeyState")
+    val SessionSyncStamps = stringPreferencesKey("session.syncStamps")
     val NextCompletionQuoteIndex = intPreferencesKey("rosary.completion.nextQuoteIndex")
     val LastCompletionQuoteId = stringPreferencesKey("rosary.completion.lastQuoteId")
     val DailyReminder = booleanPreferencesKey("settings.notifications.dailyReminder")

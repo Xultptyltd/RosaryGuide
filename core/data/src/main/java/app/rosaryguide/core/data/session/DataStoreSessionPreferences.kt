@@ -86,4 +86,18 @@ class DataStoreSessionPreferences(
             }
         }
     }
+
+    override fun loadSyncStamps(): SessionSyncStamps = runBlocking {
+        val raw = dataStore.data.first()[SettingsKeys.SessionSyncStamps] ?: return@runBlocking SessionSyncStamps()
+        runCatching { RosaryJson.decodeFromString(SessionSyncStamps.serializer(), raw) }
+            .getOrDefault(SessionSyncStamps())
+    }
+
+    override fun saveSyncStamps(stamps: SessionSyncStamps) {
+        runBlocking {
+            dataStore.edit { prefs ->
+                prefs[SettingsKeys.SessionSyncStamps] = RosaryJson.encodeToString(SessionSyncStamps.serializer(), stamps)
+            }
+        }
+    }
 }

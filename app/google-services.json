@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "365777448061",
+    "project_id": "rosary-guide-f5c02",
+    "storage_bucket": "rosary-guide-f5c02.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:365777448061:android:0c7baf321c53b419c5d514",
+        "android_client_info": {
+          "package_name": "app.rosaryguide.android"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "365777448061-g1jc7c44llutu7kiivt46p359g6tih40.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.rosaryguide.android",
+            "certificate_hash": "6a3c87f6c2977e38961238cfd347b0f0006ea750"
+          }
+        },
+        {
+          "client_id": "365777448061-ghjcun55jp1b38ossvrgneedqcs22tr6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmeE807zrGJZSEC0pvTZgCCFXcDBqMgpU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "365777448061-ghjcun55jp1b38ossvrgneedqcs22tr6.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "365777448061-0a6r9tlckoi71hmi8g2cs5agscd66m8a.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.shasasmith.RosaryGuide"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -80,6 +80,10 @@ data class OfferIntention(
     val expiresAtEpochMs: Long? = null,
     val suggestOn: List<String> = emptyList(),
     val timesCarried: Int = 0,
+    /** Last time a Rosary was offered for it (synced as `lastCarriedAt`). */
+    val lastCarriedAtEpochMs: Long? = null,
+    /** Last edit on any device (synced as `updatedAt`); newest edit wins a sync conflict. */
+    val updatedAtEpochMs: Long? = null,
 ) {
     val isPapal: Boolean get() = sourceId?.startsWith("pope-") == true
     val isArchived: Boolean get() = archivedAtEpochMs != null

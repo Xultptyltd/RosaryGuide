@@ -13,7 +13,10 @@ import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import app.rosaryguide.android.ui.DebugLaunch
 import app.rosaryguide.android.ui.RosaryGuideApp
+import app.rosaryguide.android.icons.AppIconController
 import app.rosaryguide.core.data.prefs.SettingsStore
+import app.rosaryguide.core.data.sync.AccountSync
+import app.rosaryguide.sync.CurrentActivity
 import app.rosaryguide.core.designsystem.theme.ColorSchemeContrast
 import app.rosaryguide.core.designsystem.theme.RosaryGuideTheme
 import app.rosaryguide.core.designsystem.theme.isIncreasedContrast
@@ -23,6 +26,8 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject lateinit var settingsStore: SettingsStore
+    @Inject lateinit var accountSync: AccountSync
+    @Inject lateinit var appIconController: AppIconController
 
     private var debugLaunch by mutableStateOf(DebugLaunch())
 
@@ -53,6 +58,20 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        CurrentActivity.set(this)
+        accountSync.onForeground()
+    }
+
+    override fun onStop() {
+        // Hand waiting preference/progress changes to Firestore's offline queue.
+        accountSync.onBackground()
+        appIconController.applyPending()
+        CurrentActivity.clear(this)
+        super.onStop()
     }
 
     override fun onNewIntent(intent: Intent) {

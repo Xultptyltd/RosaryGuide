@@ -54,8 +54,21 @@ class SettingsStore(
     val value: StateFlow<UserSettings> = _value.asStateFlow()
     val current: UserSettings get() = _value.value
 
+    /** Account sync; told about user changes only (never about [applySynced]). */
+    var onUserChange: ((previous: UserSettings, current: UserSettings) -> Unit)? = null
+
     fun update(transform: (UserSettings) -> UserSettings) {
+        val previous = _value.value
+        val next = transform(previous)
+        _value.value = next
+        prefs.save(next)
+        if (next != previous) onUserChange?.invoke(previous, next)
+    }
+
+    /** Applies values from the account without counting them as a user change. */
+    fun applySynced(transform: (UserSettings) -> UserSettings) {
         val next = transform(_value.value)
+        if (next == _value.value) return
         _value.value = next
         prefs.save(next)
     }

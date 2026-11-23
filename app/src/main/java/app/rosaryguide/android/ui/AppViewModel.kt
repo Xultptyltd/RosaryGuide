@@ -2,7 +2,9 @@ package app.rosaryguide.android.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.rosaryguide.core.data.auth.StubAuthStore
+import app.rosaryguide.core.data.auth.AuthStore
+import app.rosaryguide.core.data.sync.AccountDeletion
+import app.rosaryguide.feature.settings.DeleteAccountResult
 import app.rosaryguide.android.icons.AppIconController
 import app.rosaryguide.android.review.AppReviewPrompter
 import app.rosaryguide.core.data.prefs.AppPreferences
@@ -25,7 +27,8 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class AppViewModel @Inject constructor(
     private val preferences: AppPreferences,
-    val auth: StubAuthStore,
+    val auth: AuthStore,
+    private val accountDeletion: AccountDeletion,
     val sessionStore: SessionStore,
     val quotePreferences: QuotePreferences,
     val settingsStore: SettingsStore,
@@ -47,12 +50,37 @@ class AppViewModel @Inject constructor(
         viewModelScope.launch { preferences.setAskedForNotifications(true) }
     }
 
-    fun signInWithGoogle() {
-        auth.signInWithGoogle()
-        viewModelScope.launch {
-            preferences.setAuth("google", auth.state.value.userId)
-            preferences.setOnboardingCompleted(true)
+    /** [onResult] runs with true once Firebase has the Google account (false on cancel or failure). */
+    fun signInWithGoogle(onResult: (Boolean) -> Unit = {}) {
+        auth.signInWithGoogle { signedIn ->
+            if (signedIn) {
+                viewModelScope.launch {
+                    preferences.setAuth("google", auth.state.value.userId)
+                    preferences.setOnboardingCompleted(true)
+                }
+            }
+            onResult(signedIn)
         }
+    }
+
+    fun deleteAccount(onResult: (DeleteAccountResult) -> Unit) {
+        viewModelScope.launch {
+            val result = when (val outcome = accountDeletion.run()) {
+                AccountDeletion.Outcome.Deleted -> DeleteAccountResult.Deleted
+                AccountDeletion.Outcome.Cancelled -> DeleteAccountResult.Cancelled
+                is AccountDeletion.Outcome.Failed -> DeleteAccountResult.Failed(outcome.message)
+            }
+            if (result == DeleteAccountResult.Deleted) {
+                preferences.setAuth("none", null)
+                reminderScheduler.reschedule(settingsStore.current)
+            }
+            onResult(result)
+        }
+    }
+
+    /** After "Account deleted": back to onboarding, like sign-out. */
+    fun finishAccountDeletion() {
+        viewModelScope.launch { preferences.setOnboardingCompleted(false) }
     }
 
     fun continueAsGuest() {
@@ -68,6 +96,7 @@ class AppViewModel @Inject constructor(
     }
 
     fun setAppIcon(option: AppIconOption) {
+        appIconController.pending = null
         settingsStore.setAppIcon(option)
         appIconController.apply(option)
     }

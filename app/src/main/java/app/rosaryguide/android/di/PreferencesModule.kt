@@ -5,7 +5,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
-import app.rosaryguide.core.data.auth.StubAuthStore
 import app.rosaryguide.core.data.prefs.AppPreferences
 import app.rosaryguide.core.data.catalog.DataStoreQuotePreferences
 import app.rosaryguide.core.data.catalog.QuotePreferences
@@ -38,10 +37,6 @@ object PreferencesModule {
     @Singleton
     fun provideAppPreferences(dataStore: DataStore<Preferences>): AppPreferences =
         DataStoreAppPreferences(dataStore)
-
-    @Provides
-    @Singleton
-    fun provideAuthStore(): StubAuthStore = StubAuthStore()
 
     @Provides
     @Singleton

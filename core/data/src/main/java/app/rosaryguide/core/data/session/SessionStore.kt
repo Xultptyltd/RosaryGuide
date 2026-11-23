@@ -19,6 +19,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.builtins.ListSerializer
+import app.rosaryguide.core.data.sync.IntentionMerge
+import app.rosaryguide.core.data.sync.SyncIds
+import app.rosaryguide.core.data.sync.SyncedProgress
 
 interface SessionPreferences {
     fun loadSession(): PrayerSession?
@@ -31,6 +34,33 @@ interface SessionPreferences {
     fun saveIntentions(intentions: List<OfferIntention>)
     fun loadJourneyState(): JourneyState
     fun saveJourneyState(state: JourneyState)
+    fun loadSyncStamps(): SessionSyncStamps = SessionSyncStamps()
+    fun saveSyncStamps(stamps: SessionSyncStamps) {}
+}
+
+/** Sync times kept with local progress (iOS `session.changedAt` / `session.historyResetAt`). */
+@kotlinx.serialization.Serializable
+data class SessionSyncStamps(
+    /** When the in-progress Rosary was last started, advanced, finished or discarded. */
+    val sessionChangedAt: Long = 0L,
+    /** Set by "Clear app history"; older days from another device are not merged back. */
+    val historyResetAt: Long? = null,
+)
+
+/** Device-only Journey record kept per account when accounts switch (iOS `LocalJourneyArchive`). */
+@kotlinx.serialization.Serializable
+data class LocalJourneyArchive(
+    val sessions: List<CompletedPrayerSession> = emptyList(),
+    val journey: JourneyState = JourneyState(),
+    val historyResetAt: Long? = null,
+)
+
+/** Told about user changes, never about data applied from sync. */
+interface SessionSyncListener {
+    /** [significant] is false for bead-by-bead progress, which need not upload at once. */
+    fun progressChanged(significant: Boolean)
+    fun intentionsChanged(previous: List<OfferIntention>, current: List<OfferIntention>)
+    fun hideIntentionTextChanged(hidden: Boolean)
 }
 
 class InMemorySessionPreferences(
@@ -51,6 +81,7 @@ class InMemorySessionPreferences(
         intentions,
     )
     private var journeyState: JourneyState = journey
+    private var stamps: SessionSyncStamps = SessionSyncStamps()
 
     override fun loadSession(): PrayerSession? = sessionJson?.let { decodePrayerSession(it) }
     override fun saveSession(session: PrayerSession?) {
@@ -72,6 +103,8 @@ class InMemorySessionPreferences(
     }
     override fun loadJourneyState(): JourneyState = journeyState
     override fun saveJourneyState(state: JourneyState) { journeyState = state }
+    override fun loadSyncStamps(): SessionSyncStamps = stamps
+    override fun saveSyncStamps(stamps: SessionSyncStamps) { this.stamps = stamps }
 }
 
 /**
@@ -100,6 +133,12 @@ class SessionStore(
     val journey: StateFlow<JourneyState> = _journey.asStateFlow()
 
     private var clockState: ActivePrayerClock = ActivePrayerClock()
+
+    private var stamps: SessionSyncStamps = prefs.loadSyncStamps()
+    val syncStamps: SessionSyncStamps get() = stamps
+
+    /** Account sync; told about user changes only. */
+    var syncListener: SessionSyncListener? = null
 
     val current: PrayerSession? get() = _session.value
     val completed: List<CompletedPrayerSession> get() = _completedSessions.value
@@ -230,8 +269,9 @@ class SessionStore(
         prefs.saveCompletedSessions(emptyList())
         prefs.saveCompletedDayKeys(emptySet())
         publishJourney(app.rosaryguide.core.data.journey.JourneyState(hideIntentionText = _journey.value.hideIntentionText))
-        _intentions.value = emptyList()
-        prefs.saveIntentions(emptyList())
+        saveStamps(stamps.copy(historyResetAt = clock()))
+        syncListener?.progressChanged(true)
+        publishIntentions(emptyList())
     }
 
     fun complete(nowEpochMs: Long = clock()): CompletedPrayerSession? {
@@ -245,7 +285,7 @@ class SessionStore(
             ((nowEpochMs - current.startedAtEpochMs).coerceAtLeast(0) / 1000.0)
         }
         val record = CompletedPrayerSession(
-            id = UUID.randomUUID().toString(),
+            id = SyncIds.newId(),
             sessionId = current.id,
             mysterySet = current.mysterySet,
             startedAtEpochMs = current.startedAtEpochMs,
@@ -290,7 +330,7 @@ class SessionStore(
         val cleanNote = note?.trim()?.takeIf { it.isNotEmpty() }
         val cleanEmoji = emoji?.trim()?.takeIf { it.isNotEmpty() } ?: "🙏"
         val intention = OfferIntention(
-            id = UUID.randomUUID().toString(),
+            id = SyncIds.newId(),
             title = trimmed.ifEmpty { "Untitled intention" },
             note = cleanNote,
             category = category,
@@ -302,42 +342,42 @@ class SessionStore(
             expiresAtEpochMs = expiresAtEpochMs,
             suggestOn = suggestOn,
         )
-        _intentions.value = listOf(intention) + _intentions.value
-        prefs.saveIntentions(_intentions.value)
-        return intention
+        publishIntentions(listOf(intention) + _intentions.value)
+        return _intentions.value.firstOrNull { it.id == intention.id } ?: intention
     }
 
     fun updateIntention(updated: OfferIntention) {
-        _intentions.value = _intentions.value.map { if (it.id == updated.id) updated else it }
-        prefs.saveIntentions(_intentions.value)
+        publishIntentions(_intentions.value.map { if (it.id == updated.id) updated else it })
     }
 
     fun setPinned(id: String, pinned: Boolean) {
-        _intentions.value = _intentions.value.map { if (it.id == id) it.copy(isPinned = pinned) else it }
-        prefs.saveIntentions(_intentions.value)
+        publishIntentions(_intentions.value.map { if (it.id == id) it.copy(isPinned = pinned) else it })
     }
 
     fun archiveIntention(id: String, nowEpochMs: Long = clock()) {
-        _intentions.value = _intentions.value.map {
-            if (it.id == id) it.copy(archivedAtEpochMs = nowEpochMs, isPinned = false) else it
-        }
-        prefs.saveIntentions(_intentions.value)
+        publishIntentions(
+            _intentions.value.map {
+                if (it.id == id) it.copy(archivedAtEpochMs = nowEpochMs, isPinned = false) else it
+            },
+        )
     }
 
     fun unarchiveIntention(id: String) {
-        _intentions.value = _intentions.value.map {
-            if (it.id == id) it.copy(archivedAtEpochMs = null) else it
-        }
-        prefs.saveIntentions(_intentions.value)
+        publishIntentions(
+            _intentions.value.map {
+                if (it.id == id) it.copy(archivedAtEpochMs = null) else it
+            },
+        )
     }
 
     fun removeIntention(id: String) {
-        _intentions.value = _intentions.value.filterNot { it.id == id }
-        prefs.saveIntentions(_intentions.value)
+        publishIntentions(_intentions.value.filterNot { it.id == id })
     }
 
     fun setHideIntentionText(hidden: Boolean) {
+        val changed = _journey.value.hideIntentionText != hidden
         publishJourney(_journey.value.copy(hideIntentionText = hidden))
+        if (changed) syncListener?.hideIntentionTextChanged(hidden)
     }
 
     fun recordStandaloneDecade(
@@ -356,6 +396,7 @@ class SessionStore(
         prefs.saveCompletedDayKeys(_completedDayKeys.value)
         decade.duration?.let { creditDayTime(day, it) }
         publishAwards()
+        syncListener?.progressChanged(true)
     }
 
     fun prayedDayStarts(): Set<Long> =
@@ -452,9 +493,172 @@ class SessionStore(
         prefs.saveJourneyState(state)
     }
 
-    private fun publishSession(session: PrayerSession?) {
+    private fun publishSession(session: PrayerSession?, fromSync: Boolean = false) {
+        val previous = _session.value
         _session.value = session
         prefs.saveSession(session)
+        if (fromSync) return
+        saveStamps(stamps.copy(sessionChangedAt = clock()))
+        // Advancing a bead is frequent; starting, finishing, discarding or changing the
+        // intention is what other devices need to hear about promptly.
+        val significant = previous?.startedAtEpochMs != session?.startedAtEpochMs ||
+            previous?.intentionIds != session?.intentionIds ||
+            previous?.intentionTitles != session?.intentionTitles
+        syncListener?.progressChanged(significant)
+    }
+
+    private fun publishIntentions(next: List<OfferIntention>) {
+        val previous = _intentions.value
+        val stamped = IntentionMerge.stampingEdits(next, previous, clock())
+        _intentions.value = stamped
+        prefs.saveIntentions(stamped)
+        syncListener?.intentionsChanged(previous, stamped)
+    }
+
+    private fun saveStamps(next: SessionSyncStamps) {
+        stamps = next
+        prefs.saveSyncStamps(next)
+    }
+
+    // MARK: - Account sync (iOS SessionStore "Sync")
+
+    /** Progress as it is stored in the account. */
+    fun syncedProgress(): SyncedProgress = SyncedProgress(
+        completedDays = _completedDayKeys.value,
+        session = _session.value,
+        sessionChangedAt = stamps.sessionChangedAt,
+        historyResetAt = stamps.historyResetAt,
+        rosaries = _completedSessions.value,
+    )
+
+    /** Replaces local progress with synced progress without reporting a user change. */
+    fun applySynced(progress: SyncedProgress, nowEpochMs: Long = clock()) {
+        val reset = progress.historyResetAt
+        var sessions = _completedSessions.value
+        var journey = _journey.value
+        if (reset != null && reset > (stamps.historyResetAt ?: Long.MIN_VALUE)) {
+            sessions = sessions.filter { it.completedAtEpochMs > reset }
+            journey = journey.copy(
+                completedDecades = journey.completedDecades.filter { it.completedAtEpochMs > reset },
+                awards = emptyMap(),
+            )
+        }
+        val cutoff = SyncedProgress.cutoffDayKey(nowEpochMs, zone)
+        val days = progress.completedDays.filter { it >= cutoff }.toSet()
+        progress.rosaries?.let { rosaries ->
+            // Union by id; this device's record wins a duplicate. Null adds nothing.
+            val known = sessions.map { SyncIds.canonical(it.id) }.toSet()
+            sessions = sessions + rosaries.filter { SyncIds.canonical(it.id) !in known }
+            if (reset != null) sessions = sessions.filter { it.completedAtEpochMs > reset }
+            sessions = sessions.sortedByDescending { it.completedAtEpochMs }
+        }
+        sessions = sessions.filter {
+            SyncedProgress.dayKey(it.completedAtEpochMs, zone) in days ||
+                SyncedProgress.dayKey(it.startedAtEpochMs, zone) in days
+        }
+        _completedDayKeys.value = days
+        prefs.saveCompletedDayKeys(days)
+        _completedSessions.value = sessions
+        prefs.saveCompletedSessions(sessions)
+        publishJourney(journey)
+        saveStamps(SessionSyncStamps(sessionChangedAt = progress.sessionChangedAt, historyResetAt = progress.historyResetAt))
+
+        val incoming = progress.session?.takeIf { it.isResumable(nowEpochMs, zone) }
+        if (incoming == null) {
+            publishSession(null, fromSync = true)
+            return
+        }
+        val local = _session.value
+        var next = incoming
+        if (local != null &&
+            incoming.startedAtEpochMs == local.startedAtEpochMs &&
+            incoming.mysterySet == local.mysterySet &&
+            incoming.intentionId?.let(SyncIds::canonical) == local.intentionId?.let(SyncIds::canonical)
+        ) {
+            // The account never stores active time, finished decades, category or source,
+            // so an echo of this Rosary keeps them.
+            next = next.copy(
+                id = local.id,
+                activeDuration = maxOf(incoming.activeDuration, local.activeDuration),
+                completedDecades = incoming.completedDecades + local.completedDecades,
+                lastCompletedDecadeActiveDuration = maxOf(
+                    incoming.lastCompletedDecadeActiveDuration,
+                    local.lastCompletedDecadeActiveDuration,
+                ),
+                timingRunningSinceEpochMs = incoming.timingRunningSinceEpochMs ?: local.timingRunningSinceEpochMs,
+                timingLastInteractionEpochMs = incoming.timingLastInteractionEpochMs ?: local.timingLastInteractionEpochMs,
+                intentionCategory = incoming.intentionCategory ?: local.intentionCategory,
+                intentionSourceId = incoming.intentionSourceId ?: local.intentionSourceId,
+            )
+            val localIds = local.intentionIds.map(SyncIds::canonical)
+            if (localIds.size > next.intentionIds.size && localIds.take(next.intentionIds.size) == next.intentionIds) {
+                next = next.copy(intentionIds = local.intentionIds, intentionTitles = local.intentionTitles)
+            }
+        }
+        if (next != local) publishSession(next, fromSync = true)
+    }
+
+    /** Replaces the intention list from sync or an account switch, without reporting a change. */
+    fun replaceIntentionsFromSync(values: List<OfferIntention>) {
+        _intentions.value = values
+        prefs.saveIntentions(values)
+    }
+
+    /** Upper-cases ids so they address the same account documents as iOS (`UUID.uuidString`). */
+    fun canonicalizeIds() {
+        val intentions = _intentions.value
+        val fixed = intentions.map { it.copy(id = SyncIds.canonical(it.id)) }
+        if (fixed != intentions) replaceIntentionsFromSync(fixed)
+        val sessions = _completedSessions.value
+        val fixedSessions = sessions.map { r ->
+            r.copy(
+                id = SyncIds.canonical(r.id),
+                intentionId = r.intentionId?.let(SyncIds::canonical),
+                intentionIds = r.intentionIds?.map(SyncIds::canonical),
+            )
+        }
+        if (fixedSessions != sessions) {
+            _completedSessions.value = fixedSessions
+            prefs.saveCompletedSessions(fixedSessions)
+        }
+        _session.value?.let { s ->
+            val fixedSession = s.copy(
+                intentionIds = s.intentionIds.map(SyncIds::canonical),
+                intentionId = s.intentionId?.let(SyncIds::canonical),
+            )
+            if (fixedSession != s) publishSession(fixedSession, fromSync = true)
+        }
+    }
+
+    /** This device's Journey record, kept for the account that owned it when accounts switch. */
+    fun localJourneyArchive(): LocalJourneyArchive =
+        LocalJourneyArchive(sessions = _completedSessions.value, journey = _journey.value, historyResetAt = stamps.historyResetAt)
+
+    /** Swaps in another account's Journey record (or a fresh one), keeping the eye toggle. */
+    fun restoreLocalJourney(archive: LocalJourneyArchive?) {
+        val value = archive ?: LocalJourneyArchive(journey = JourneyState(hideIntentionText = _journey.value.hideIntentionText))
+        _completedSessions.value = value.sessions
+        prefs.saveCompletedSessions(value.sessions)
+        publishJourney(value.journey.copy(hideIntentionText = _journey.value.hideIntentionText))
+        saveStamps(stamps.copy(historyResetAt = value.historyResetAt))
+    }
+
+    /** Applies the synced eye toggle without reporting a change. */
+    fun applySyncedHideIntentionText(hidden: Boolean) {
+        if (_journey.value.hideIntentionText != hidden) publishJourney(_journey.value.copy(hideIntentionText = hidden))
+    }
+
+    /** Delete account: wipe progress, history, intentions and sync times on this device. */
+    fun clearForAccountDeletion() {
+        clockState = ActivePrayerClock()
+        _completedSessions.value = emptyList()
+        _completedDayKeys.value = emptySet()
+        prefs.saveCompletedSessions(emptyList())
+        prefs.saveCompletedDayKeys(emptySet())
+        publishJourney(JourneyState())
+        replaceIntentionsFromSync(emptyList())
+        publishSession(null, fromSync = true)
+        saveStamps(SessionSyncStamps())
     }
 }
 
