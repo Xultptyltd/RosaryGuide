@@ -55,7 +55,7 @@ fun AppIconScreen(
             .fillMaxSize()
             .background(palette.bg),
     ) {
-        GuideDetailTopBar(title = "App icon", onBack = onBack, milkyOnPlain = true)
+        GuideDetailTopBar(title = "App icon", onBack = onBack, milkyOnPlain = true, chevronBack = true)
         Column(
             modifier = Modifier
                 .fillMaxSize()

@@ -63,7 +63,14 @@ fun SettingsSection(
             icon = icon,
             style = RosaryType.bodyPray,
         )
-        Spacer(Modifier.height(if (carded) RosarySpace.sectionTitleGap else RosarySpace.sm))
+        // GuideSectionLabel already pads bottom xs (4). Add the rest so the
+        // heading-to-rows gap is iOS sectionTitleGap (20) on plain Settings.
+        Spacer(
+            Modifier.height(
+                if (carded) RosarySpace.sectionTitleGap
+                else RosarySpace.sectionTitleGap - RosarySpace.xs,
+            ),
+        )
         if (carded) {
             Column(Modifier.settingsGroupCard()) { content() }
         } else {

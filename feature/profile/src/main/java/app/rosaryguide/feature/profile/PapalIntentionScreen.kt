@@ -46,7 +46,7 @@ fun PapalIntentionScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        GuideDetailTopBar(title = "Holy Father’s intention", onBack = onBack)
+        GuideDetailTopBar(title = "Holy Father’s intention", onBack = onBack, milkyOnPlain = true, chevronBack = true)
         Column(Modifier.padding(horizontal = RosarySpace.gutter).padding(bottom = RosarySpace.xl)) {
             Image(
                 painter = painterResource(R.drawable.pope_leo_wide),

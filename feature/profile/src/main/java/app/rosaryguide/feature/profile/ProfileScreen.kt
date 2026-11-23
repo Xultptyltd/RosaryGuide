@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -43,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -53,11 +55,12 @@ import app.rosaryguide.core.data.journey.PopeMonthIntention
 import app.rosaryguide.core.data.session.IntentionPrivacy
 import app.rosaryguide.core.data.session.OfferIntention
 import app.rosaryguide.core.data.session.SessionStore
-import app.rosaryguide.core.designsystem.component.GuideLargeTopAppBar
 import app.rosaryguide.core.designsystem.theme.PageStyle
 import app.rosaryguide.core.designsystem.component.GuestBackupCard
 import app.rosaryguide.core.designsystem.component.AppPageBackground
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import app.rosaryguide.core.designsystem.component.GuideOutlineButton
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
@@ -324,9 +327,6 @@ private fun ProfileHome(
     val gutter = Modifier.padding(horizontal = RosarySpace.gutter)
     Box(modifier = modifier.fillMaxSize()) {
         AppPageBackground()
-    Column(
-        modifier = Modifier.fillMaxSize(),
-    ) {
         val scroll = remember(scrollToEnd) { ScrollState(if (scrollToEnd) Int.MAX_VALUE else 0) }
         val collapsePx = with(LocalDensity.current) { 28.dp.roundToPx() }
         val collapsed = scrollToEnd || scroll.value > collapsePx
@@ -335,22 +335,11 @@ private fun ProfileHome(
                 scroll.scrollTo(scroll.maxValue)
             }
         }
-        if (collapsed) {
-            ProfileCompactTitleBar(onOpenSettings = onOpenSettings)
-        } else {
-            Box {
-                GuideLargeTopAppBar(
-                    title = "Profile",
-                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                )
-                // iOS places the gear on the large-title row, centred on the H1.
-                ProfileGearChip(
-                    onOpenSettings = onOpenSettings,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = RosarySpace.gutter, bottom = 6.dp),
-                )
-            }
+    Column(
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        if (!collapsed) {
+            ProfileLargeTitle(onOpenSettings = onOpenSettings)
         }
         Column(
             modifier = Modifier
@@ -426,6 +415,9 @@ private fun ProfileHome(
         }
         }
     }
+        if (collapsed) {
+            ProfileCompactTitleBar(onOpenSettings = onOpenSettings)
+        }
     }
 }
 
@@ -558,25 +550,87 @@ private fun seedSampleHistory(store: SessionStore, today: LocalDate, zone: ZoneI
 }
 
 
+/**
+ * Profile-only large title. iOS places the "Profile" H1 ~60 pt below the
+ * safe area; Material [GuideLargeTopAppBar] added ~25–32 dp extra padding,
+ * well beyond the status-inset difference, so this layout is local to Profile
+ * and leaves the shared bar (Learn, Feasts) unchanged.
+ */
 @Composable
-private fun ProfileCompactTitleBar(onOpenSettings: () -> Unit) {
+private fun ProfileLargeTitle(onOpenSettings: () -> Unit) {
     val palette = LocalThemePalette.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp),
+            .statusBarsPadding()
+            .padding(
+                start = RosarySpace.gutter,
+                end = RosarySpace.gutter,
+                // 60 dp below the status strip (iOS title top ≈ 119 pt with a 59 pt inset).
+                top = 60.dp,
+                // Title-to-card gap: 8 dp under the text box lands the rhythm card
+                // near iOS 194.7 pt (32 dp overshot to 222).
+                bottom = 8.dp,
+            ),
     ) {
         Text(
             text = "Profile",
-            style = RosaryType.navigationTitlePray,
+            style = RosaryType.h1Navigation,
             color = palette.ink,
-            modifier = Modifier.align(Alignment.Center),
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .guideHeading(),
         )
         ProfileGearChip(
             onOpenSettings = onOpenSettings,
+            modifier = Modifier.align(Alignment.CenterEnd),
+        )
+    }
+}
+
+/**
+ * Compact Profile chrome, overlaid on the scroll so content can fade
+ * underneath. The 44 dp bar sits below [statusBarsPadding] (the gear must
+ * not share the 3G strip). The downward scrim matches
+ * [app.rosaryguide.core.designsystem.component.GuideTabBarScrollEdgeScrim]
+ * but inverted, using the page grouped background.
+ */
+@Composable
+private fun ProfileCompactTitleBar(onOpenSettings: () -> Unit) {
+    val palette = LocalThemePalette.current
+    val barColor = palette.groupedBackground
+    val scrim = Brush.verticalGradient(listOf(barColor, Color.Transparent))
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
             modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = RosarySpace.gutter),
+                .fillMaxWidth()
+                .background(barColor)
+                .statusBarsPadding(),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp),
+            ) {
+                Text(
+                    text = "Profile",
+                    style = RosaryType.navigationTitlePray,
+                    color = palette.ink,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+                ProfileGearChip(
+                    onOpenSettings = onOpenSettings,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = RosarySpace.gutter),
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(RosarySpace.tabBarScrollEdgeScrimHeight)
+                .drawBehind { drawRect(scrim) },
         )
     }
 }

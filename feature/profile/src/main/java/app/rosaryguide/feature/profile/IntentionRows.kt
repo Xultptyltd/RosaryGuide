@@ -69,11 +69,12 @@ fun IntentionRow(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onOpen)
-            .padding(vertical = RosarySpace.md),
+            // iOS IntentionListRow: vertical 10, icon gap Space.lg, 44 pt menu target.
+            .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IntentionIcon(intention = intention, size = 40.dp)
-        Spacer(Modifier.width(RosarySpace.md))
+        Spacer(Modifier.width(RosarySpace.lg))
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -97,7 +98,12 @@ fun IntentionRow(
             }
         }
         Box {
-            IconButton(onClick = { menu = true }) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clickable { menu = true },
+                contentAlignment = Alignment.Center,
+            ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_ellipsis_horizontal),
                     contentDescription = "More",

@@ -45,7 +45,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.data.session.IntentionAccent
 import app.rosaryguide.core.data.session.IntentionCategory
 import app.rosaryguide.core.data.session.IntentionPrivacy
@@ -86,19 +88,35 @@ fun AllIntentionsScreen(
                 onBack = onBack,
                 containerColor = androidx.compose.ui.graphics.Color.Transparent,
                 milkyOnPlain = false,
+                chevronBack = true,
                 actions = {
                     Box {
-                        val chip = if (palette.isDark) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.16f)
-                        else androidx.compose.ui.graphics.Color.White.copy(alpha = 0.92f)
+                        // Match the back chip: 40 dp circle in a 48 dp hit target,
+                        // with a bold horizontal ellipsis (not caption "•••").
                         Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(chip)
-                                .clickable { moreOpen = true },
+                            modifier = Modifier.size(RosarySpace.minHitTarget),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text("•••", style = RosaryType.captionPray, color = palette.ink)
+                            val moreFill = if (palette.isDark) {
+                                androidx.compose.ui.graphics.Color(0xFF3A3A3C)
+                            } else {
+                                androidx.compose.ui.graphics.Color.White
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(RosarySpace.controlSize)
+                                    .clip(CircleShape)
+                                    .background(moreFill)
+                                    .clickable { moreOpen = true },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_ellipsis_horizontal),
+                                    contentDescription = "More",
+                                    tint = palette.ink,
+                                    modifier = Modifier.size(22.dp),
+                                )
+                            }
                         }
                         DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
                             DropdownMenuItem(
@@ -118,7 +136,8 @@ fun AllIntentionsScreen(
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = RosarySpace.gutter)
-                    .padding(bottom = RosarySpace.tabBarContentClearance),
+                    // iOS first icon top is 144 pt; without this the Android list sat at 128.
+                    .padding(top = 16.dp, bottom = RosarySpace.tabBarContentClearance),
             ) {
                 if (intentions.isEmpty()) {
                     IntentionsEmptyCard(onAdd = onAdd)
@@ -423,6 +442,7 @@ fun IntentionDetailScreen(
             title = chromeTitle,
             onBack = onBack,
             milkyOnPlain = true,
+            chevronBack = true,
             actions = {
                 if (intention.isPapal) {
                     androidx.compose.material3.TextButton(onClick = onPin) {
@@ -569,7 +589,7 @@ fun ArchivedIntentionsScreen(
             .fillMaxSize()
             .background(palette.bg),
     ) {
-        GuideDetailTopBar(title = "Archived intentions", onBack = onBack, milkyOnPlain = true)
+        GuideDetailTopBar(title = "Archived intentions", onBack = onBack, milkyOnPlain = true, chevronBack = true)
         if (intentions.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxSize().padding(horizontal = RosarySpace.gutter),
@@ -586,7 +606,7 @@ fun ArchivedIntentionsScreen(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = RosarySpace.gutter)
-                    .padding(top = RosarySpace.md, bottom = RosarySpace.xl),
+                    .padding(top = 16.dp, bottom = RosarySpace.xl),
             ) {
                 intentions.forEachIndexed { index, item ->
                     val title = IntentionPrivacy.displayTitle(item, hidden)
@@ -594,15 +614,25 @@ fun ArchivedIntentionsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = RosarySpace.md),
+                            .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         IntentionIcon(intention = item, size = 40.dp)
-                        Spacer(Modifier.width(RosarySpace.md))
+                        Spacer(Modifier.width(RosarySpace.lg))
                         Text(title, style = RosaryType.bodyPray, color = palette.ink, modifier = Modifier.weight(1f))
                         Box {
-                            androidx.compose.material3.IconButton(onClick = { menu = true }) {
-                                Icon(Icons.Filled.MoreVert, contentDescription = "More options", tint = palette.textSecondary)
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clickable { menu = true },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_ellipsis_horizontal),
+                                    contentDescription = "More options",
+                                    tint = palette.textSecondary,
+                                    modifier = Modifier.size(20.dp),
+                                )
                             }
                             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                                 DropdownMenuItem(text = { Text("Unarchive") }, onClick = { menu = false; onRestore(item) })

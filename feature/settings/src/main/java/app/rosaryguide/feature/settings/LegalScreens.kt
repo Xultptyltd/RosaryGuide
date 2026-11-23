@@ -65,7 +65,7 @@ fun LegalDocumentBody(
             .fillMaxSize()
             .background(palette.bg),
     ) {
-        GuideDetailTopBar(title = title, onBack = onBack, milkyOnPlain = true)
+        GuideDetailTopBar(title = title, onBack = onBack, milkyOnPlain = true, chevronBack = true)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -107,7 +107,7 @@ fun AcknowledgementsScreen(
             .fillMaxSize()
             .background(palette.bg),
     ) {
-        GuideDetailTopBar(title = "Acknowledgements", onBack = onBack, milkyOnPlain = true)
+        GuideDetailTopBar(title = "Acknowledgements", onBack = onBack, milkyOnPlain = true, chevronBack = true)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -169,7 +169,7 @@ fun LicenseDetailScreen(
             .fillMaxSize()
             .background(palette.bg),
     ) {
-        GuideDetailTopBar(title = entry.name, onBack = onBack, milkyOnPlain = true)
+        GuideDetailTopBar(title = entry.name, onBack = onBack, milkyOnPlain = true, chevronBack = true)
         Column(
             modifier = Modifier
                 .fillMaxSize()

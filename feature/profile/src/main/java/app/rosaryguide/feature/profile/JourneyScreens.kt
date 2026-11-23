@@ -139,6 +139,7 @@ fun JourneyScreen(
             title = if (historyTab) "History" else "Milestones",
             onBack = onBack,
             milkyOnPlain = true,
+            chevronBack = true,
         )
         Column(
             modifier = Modifier

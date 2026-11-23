@@ -221,13 +221,18 @@ private fun SettingsRoot(
             onBack = onBack,
             containerColor = palette.bg,
             milkyOnPlain = true,
+            chevronBack = true,
         )
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = RosarySpace.gutter)
-                .padding(bottom = RosarySpace.xxl),
+                // iOS guideDetailChrome contentTop (16) + (sectionGap − xl) = 36.
+                .padding(
+                    top = RosarySpace.lg + (RosarySpace.section - RosarySpace.xl),
+                    bottom = RosarySpace.xxl,
+                ),
         ) {
             SettingsSection(title = "General", carded = false) {
                 SettingsNavigationRow("Customise rosary", onClick = { onOpen(SettingsPage.CustomiseRosary) }, icon = SettingsSymbols.sliderHorizontal3)
