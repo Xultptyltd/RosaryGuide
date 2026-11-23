@@ -30,6 +30,12 @@ object RosarySpace {
     val controlSize: Dp = 40.dp
     val pillHeight: Dp = 52.dp
     val profileRowHeight: Dp = 56.dp
+    /** iOS `AppTheme.Component.sectionDividerHeight`. */
+    val sectionDividerHeight: Dp = 8.dp
+    /** iOS `AppTheme.Component.sectionDividerEndpointWidth`. */
+    val sectionDividerEndpointWidth: Dp = 16.dp
+    /** iOS `AppTheme.Component.sectionDividerEndpointHeight`. */
+    val sectionDividerEndpointHeight: Dp = 40.dp
     val containerRadius: Dp = 20.dp
     val featureRadius: Dp = 24.dp
     val panelRadius: Dp = 32.dp

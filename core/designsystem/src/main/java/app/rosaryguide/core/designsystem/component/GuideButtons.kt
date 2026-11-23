@@ -165,30 +165,3 @@ fun GuideOutlineButton(
     }
 }
 
-@Composable
-fun GuideSectionDivider(modifier: Modifier = Modifier) {
-    val palette = LocalThemePalette.current
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        androidx.compose.foundation.Image(
-            painter = painterResource(R.drawable.section_divider_left),
-            contentDescription = null,
-            modifier = Modifier.height(20.dp),
-        )
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(1.dp)
-                .clip(RoundedCornerShape(1.dp))
-                .background(palette.sectionDivider),
-        )
-        androidx.compose.foundation.Image(
-            painter = painterResource(R.drawable.section_divider_right),
-            contentDescription = null,
-            modifier = Modifier.height(20.dp),
-        )
-    }
-}

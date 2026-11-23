@@ -58,6 +58,18 @@ data class ThemePalette(
             else -> Color(RosaryHex.MarianBlue)
         }
 
+    /**
+     * Dialog actions and tappable links that must stay readable on dark
+     * surfaces. Light is [accentText] (`#0054FF`). Dark uses the lighter
+     * accent `#7DA8FF` (`MarianBlueDarkTextHighContrast`), which is 6.1:1
+     * on the M3 dark dialog fill `#2B2930` (WCAG AA) and 8.9:1 on black.
+     * Default [accentText] `#3D7DFF` is only 3.81:1 on that dialog.
+     * iOS confirmation-dialog actions are ink on a light sheet; we keep
+     * the M3 dialog chrome and use this lighter accent for contrast.
+     */
+    val actionForeground: Color
+        get() = if (isDark) Color(RosaryHex.MarianBlueDarkTextHighContrast) else accentText
+
     val stepNumberText: Color
         get() = when {
             contrast == ColorSchemeContrast.Increased -> accentText

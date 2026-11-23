@@ -163,4 +163,35 @@ class ContrastTokenTest {
             assertTrue(Contrast.contrastRatio(palette.completionMetaValue, palette.surface) >= 4.5)
         }
     }
+
+    @Test
+    fun testActionForegroundMeetsAaOnDarkDialogAndPage() {
+        val light = ThemePalette(isDark = false)
+        val dark = ThemePalette(isDark = true)
+        assertEquals(0xFF0054FFL, light.actionForeground.toArgb().toLong() and 0xFFFFFFFFL)
+        assertEquals(0xFF7DA8FFL, dark.actionForeground.toArgb().toLong() and 0xFFFFFFFFL)
+        // Material 3 dark Dialog container (measured on settings-report-problem).
+        val darkDialog = Color(0xFF2B2930)
+        assertTrue(
+            "dark dialog action ${Contrast.contrastRatio(dark.actionForeground, darkDialog)}",
+            Contrast.contrastRatio(dark.actionForeground, darkDialog) >= 4.5,
+        )
+        assertTrue(
+            "dark page action",
+            Contrast.contrastRatio(dark.actionForeground, dark.bg) >= 4.5,
+        )
+        assertTrue(
+            "light page action",
+            Contrast.contrastRatio(light.actionForeground, light.bg) >= 4.5,
+        )
+        assertTrue(
+            "dark legal on page",
+            Contrast.contrastRatio(dark.actionForeground, dark.bg) >= 4.5,
+        )
+        // Default accent is unreadable on the dark dialog; this token must stay lighter.
+        assertTrue(
+            "legacy accent fails on dark dialog",
+            Contrast.contrastRatio(dark.accent, darkDialog) < 4.5,
+        )
+    }
 }
