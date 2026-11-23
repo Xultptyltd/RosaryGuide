@@ -10,7 +10,7 @@ SwiftUI typo line height = size × 1.22. Compose `includeFontPadding = false`. H
 
 | Role (iOS) | Size / weight / pitch | Android |
 | --- | --- | --- |
-| Large “Profile” title | `h1` / large nav | `GuideLargeTopAppBar` / `h1Navigation` (unchanged chrome) |
+| Large “Profile” title | `h1` / large nav | Profile-only title row, `h1Navigation` (shared `GuideLargeTopAppBar` unchanged) |
 | Compact “Settings”, “All intentions”, pushed titles | `navigationTitle` 17 medium | `navigationTitlePray` 17 medium |
 | “Find room for prayer”; “What’s on your heart?” | `cardTitle` / `headingSecondary` 22, typo 26.84 | `headingSecondaryPray` 22/26.84 |
 | “Your prayer”, quiet section labels | `supportingLabel` 15 typo | `supportingLabelPray` |
@@ -82,3 +82,19 @@ Cleaner text screens stay inside budget: `settings-legal-terms` and `settings-le
 
 
 2× zoom crops (equal pt/dp scale, baseline guides) for every screen in the group live at `/workspace/android/shots/v2/signoff/zoom/{stem}.png`.
+
+## Review-pass landmarks (23 Nov 2026)
+
+Equal-scale ink (iOS px / 3, Android px / 2.625), after the compact-bar, title-offset, Settings padding and list-pitch fixes.
+
+| Landmark | iOS (pt) | Android (dp) | Δ |
+| --- | ---: | ---: | ---: |
+| Profile title top | 118.3 | 122.7 | +4.4 (status-inset) |
+| Profile title mid | 134.7 | 139.0 | +4.3 |
+| Rhythm card top | 194.7 | 198.1 | +3.4 |
+| Settings title mid | 85.3 | 85.7 | +0.4 |
+| Settings first-section ink mid (“General”) | 161.7 | 162.1 | +0.4 |
+| All-intentions first icon top | 144.0 | 144.4 | +0.4 |
+| All-intentions title-to-title pitch | 66.33 / 65.17 | 65.71 / 64.57 | ≤ 1.0 |
+| Compact “Profile” / gear mid on `profile-backup` | — | 74.1 / 74.3 | centred in the 44 dp bar below the 52.57 dp status strip |
+

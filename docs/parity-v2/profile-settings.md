@@ -16,6 +16,15 @@ No iOS refs (captured where a test exists, not sent as pairs): `settings-delete-
 
 Sign-off sheets: `/workspace/android/shots/v2/signoff/{stem}.png`. Pairs: `/workspace/android/shots/v2/pairs/`. 2× zoom crops: `/workspace/android/shots/v2/signoff/zoom/{stem}.png`.
 
+## What was aligned (review pass, 23 Nov 2026)
+
+- On `profile-backup`, the compact bar is overlaid below the status strip (44 dp, title and gear vertically centred at mid 74 dp). The 3G glyph no longer collides with the gear. A downward 90 dp scrim, the same treatment as the tab-bar edge fade and filled with `groupedBackground`, lets scrolled content (“Your intentions”, week dots) fade under the bar instead of peeking through.
+- The Profile large “Profile” title is a Profile-only row (`statusBarsPadding` + 60 dp), not `GuideLargeTopAppBar`, so Learn and Feasts stay put. Title top is 122.7 dp vs iOS 118.3 pt (the ~4 dp status-inset difference); the rhythm card top is 198.1 dp vs iOS 194.7 pt.
+- Back controls in this group use a chevron-in-chip (`chevronBack`), matching the approved Learn milky 40 dp chip shape but with an iOS-style chevron. The `GuideTopAppBar` default stays the Material arrow so approved Learn frames are unchanged.
+- The All-intentions more control is a 40 dp white circle (dark: grey `#3A3A3C`), the same size as the back chip, with a bold horizontal ellipsis.
+- Settings root content starts 36 dp below the bar (iOS `contentTop` 16 + `sectionGap − xl` 20). The “General” heading-to-rows gap is `sectionTitleGap` 20. First-section ink mid is 162.1 dp vs iOS 161.7 pt; Settings title mid 85.7 vs 85.3.
+- Intention list rows use 10 dp vertical padding, a 16 dp icon gap and a 44 dp trailing control. All-intentions row pitch is 65.71 / 64.57 dp vs iOS 66.33 / 65.17 pt; the first icon top is 144.4 dp vs iOS 144.0 pt. Archived lists use the same horizontal ellipsis, not a vertical more.
+
 ## What was aligned (tightening pass)
 
 - Profile large title collapses to a compact, centred 17 medium “Profile” with the trailing milky gear once you scroll (or immediately on the `profile-backup` capture).
@@ -37,8 +46,8 @@ Typography and measured landmark table: `docs/parity-v2/profile-settings-typogra
 - “11 days” in the Settings guest headline wraps on the Pixel 7 logical width (~411 dp vs iOS 440 pt). Left as a device-width difference, not a type-token bug.
 - `settings-license` lists AndroidX Core (and the rest of the Android catalog), not the iOS Abseil-first Swift package list.
 - Allowed M3 swaps still apply: accent switches (not iOS green) on Settings toggles; the primary switch on the editor uses the iOS success green; side-by-side dialog actions (Delete stays destructive red, but the confirm chrome is M3, not the iOS filled grey/red pills); no Apple button; no blur.
-- Roborazzi 9:41 / 3G status bar and the tab-bar selected-pill treatment are the same already-approved Today / Learn harness differences. On `profile-backup` the compact title can sit under the 3G glyph.
-- At end-of-scroll on `profile-backup`, the week-dot row of the rhythm card still peeks under the compact bar on 411 dp; iOS has scrolled that row away. The backup card itself, including Create account, is fully above the tab bar.
+- Roborazzi 9:41 / 3G status bar and the tab-bar selected-pill treatment are the same already-approved Today / Learn harness differences. The compact Profile bar now sits below the 3G glyph.
+- At end-of-scroll on `profile-backup`, faded week-dot remnants can still appear in the compact-bar scrim (iOS has usually scrolled that row away and uses a blur material). The backup card itself, including Create account, is fully above the tab bar.
 - Settings icons are close stand-ins, not traced SF Symbols. The backup cloud is a simpler upload glyph than `icloud.and.arrow.up`.
 - The App icon preview is a rounded grey card with outlined placeholder glyphs, not a bezeled iOS home-screen device frame with the official iOS placeholder artwork. Reminders is a checkbox rather than the three-dot list icon.
 - Intention editor fields are a little shorter than the iOS 100 / 92 pt cards, and the capture uses a flat dimmed peek rather than a live Profile backdrop.

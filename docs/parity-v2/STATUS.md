@@ -6,7 +6,7 @@ Pray-flow frames in this pass were recorded with **Roborazzi** because the Mac e
 The harness was validated against the approved Mac captures: today-light title 0.5429 vs 0.5440 (Δ 0.11%); onboarding-1 title/CTA within ~0.02%.
 pt and dp are 1:1 at mdpi. iOS PNG measurements are pixels ÷ 3. A screen is marked `matched` only when the measured frame fractions agree within about 2%.
 
-Onboarding/launch, Today (re-approved 23 Nov 2026, 9:03 Australia/Perth, with the production tab bar and 1 px dividers), the **Pray flow** group, and the **Learn** group (including walkthrough 1–5) are **user-approved**. Status stays `close` until a Mac Pixel 7 emulator recapture; do not treat approval as `matched`. The **Profile/Settings** group has a tightening pass (collapsing Profile title, Settings section bands and `#F2F3F7` backup card, SF-style icons, intention category marks, App icon home preview, rhythm-dot tokens, delete-intention and journey-prayer-sheet captures, editor / journey / legal iteration, and a full landmark table plus zooms). Specs: `docs/parity-v2/profile-settings.md`. Status stays `close` until a Mac recapture; these screens are not user-approved yet. Feasts (as a group) are still deferred.
+Onboarding/launch, Today (re-approved 23 Nov 2026, 9:03 Australia/Perth, with the production tab bar and 1 px dividers), the **Pray flow** group, and the **Learn** group (including walkthrough 1–5) are **user-approved**. Status stays `close` until a Mac Pixel 7 emulator recapture; do not treat approval as `matched`. The **Profile/Settings** group has a tightening pass plus a 23 Nov review pass (compact Profile bar below the status strip with a tab-bar-style scrim, Profile-only large-title offset, chevron-in-chip backs in this group only, 40 dp All-intentions more chip, Settings 36/20 spacing, intention-row pitch). Specs: `docs/parity-v2/profile-settings.md`. Status stays `close` until a Mac recapture; these screens are not user-approved yet. Feasts (as a group) are still deferred.
 
 `intention-icon-picker` is **not** in the live iOS editor. It stays removed.
 
@@ -50,9 +50,9 @@ Status values: `spec-written` · `captured` · `matched` · `mismatch` · `defer
 | walkthrough-5 | Learn | spec-written | captured | close | user-approved | Last page; Continue becomes Begin Rosary + Done. Footer clearance adds `minHitTarget + Space.sm` as in iOS `lastPageControlsHeight`. Same chrome as walkthrough-1. User approved 23 Nov 2026, 9:03 Australia/Perth. Still `close` until a Mac recapture; do not treat approval as `matched`. |
 | replay-welcome | Profile/Settings | spec-written | captured | close | | Same pager as approved onboarding-1 (`includesSignIn: false`). Light hides the status bar. Still `close` until a Mac recapture; do not treat as `matched`. |
 | profile-sign-in | Profile/Settings | spec-written | captured | close | | Same Sign-in screen as approved `sign-in` (Google + guest, no Apple). Still `close` until a Mac recapture. |
-| profile | Profile/Settings | spec-written | captured | close | | Signed-in empty hub, 17 Nov 2026. Compact rhythm card, empty-intentions heart card, 96 dp papal photo (official Pope Leo asset), milky gear on the large-title row, Marian wash, floating `GuideTabBar` + 90 dp scrim. See `docs/parity-v2/profile-settings.md`. Still `close` until a Mac recapture. |
-| profile-backup | Profile/Settings | spec-written | captured | close | | Guest hub scrolled so the backup card is on screen. Headline is “not backed up yet”. Large title does not collapse to a compact centred title. Still `close` until a Mac recapture. |
-| all-intentions | Profile/Settings | spec-written | captured | close | | Title “All intentions”, wash, milky more chip, tab bar, iOS sample titles. Category marks are emoji in a teal circle, not the iOS coloured SF-style glyphs; trailing control is a vertical more, not a horizontal ellipsis. Still `close` until a Mac recapture. |
+| profile | Profile/Settings | spec-written | captured | close | | Signed-in empty hub, 17 Nov 2026. Profile-only large title (top 122.7 dp vs iOS 118.3 pt), milky gear, compact rhythm card, empty-intentions heart card, 96 dp papal photo, Marian wash, floating `GuideTabBar` + 90 dp scrim. See `docs/parity-v2/profile-settings.md`. Still `close` until a Mac recapture. |
+| profile-backup | Profile/Settings | spec-written | captured | close | | Guest hub scrolled so the backup card is on screen. Compact centred “Profile” + gear sit below the 3G strip, with a downward scrim so week dots fade underneath. Headline is “not backed up yet”. Still `close` until a Mac recapture. |
+| all-intentions | Profile/Settings | spec-written | captured | close | | Title “All intentions”, wash, chevron-in-chip back, 40 dp white (dark: grey) more chip with a bold horizontal ellipsis, official category marks, row pitch within 1 dp of iOS. Still `close` until a Mac recapture. |
 | archived-intentions | Profile/Settings | spec-written | captured | close | | Archived list. Still `close` until a Mac recapture. |
 | intention-detail | Profile/Settings | spec-written | captured | close | | Detail for a single intention. Still `close` until a Mac recapture. |
 | intention-editor | Profile/Settings | spec-written | captured | close | | Add/edit intention. No icon picker (not in the live iOS editor). Still `close` until a Mac recapture. |
@@ -64,7 +64,7 @@ Status values: `spec-written` · `captured` · `matched` · `mismatch` · `defer
 | settings-rosary | Profile/Settings | spec-written | captured | close | | Customise rosary. Marian accent switches (allowed). “Bible translation” value is now trailing. Still `close` until a Mac recapture. |
 | settings-reset-rosary | Profile/Settings | spec-written | captured | close | | Reset confirm. Dialog actions sit side by side (allowed M3). Still `close` until a Mac recapture. |
 | settings-notifications | Profile/Settings | spec-written | captured | close | | Notifications. Still `close` until a Mac recapture. |
-| settings-app-icon | Profile/Settings | spec-written | captured | close | | Available icons + check. Home-screen phone preview is not on Android yet. Still `close` until a Mac recapture. |
+| settings-app-icon | Profile/Settings | spec-written | captured | close | | Available icons + check, plus a rounded home-screen preview card (not a bezeled iOS device frame). Still `close` until a Mac recapture. |
 | settings-legal-terms | Profile/Settings | spec-written | captured | close | | Terms of service. Still `close` until a Mac recapture. |
 | settings-legal-privacy | Profile/Settings | spec-written | captured | close | | Privacy. Still `close` until a Mac recapture. |
 | settings-acknowledgements | Profile/Settings | spec-written | captured | close | | Acknowledgements. Still `close` until a Mac recapture. |
@@ -72,8 +72,8 @@ Status values: `spec-written` · `captured` · `matched` · `mismatch` · `defer
 | settings-report-problem | Profile/Settings | spec-written | captured | close | | Report-a-problem chooser. Still `close` until a Mac recapture. |
 | settings-mail-unavailable | Profile/Settings | spec-written | captured | close | | Mail-unavailable alert; M3 actions side by side (allowed). Still `close` until a Mac recapture. |
 | settings-clear-history | Profile/Settings | spec-written | captured | close | | Clear-history confirm; M3 actions side by side (allowed). Still `close` until a Mac recapture. |
-| delete-intention | Profile/Settings | deferred | | | | iOS ref exists; Android capture not in this pass. |
-| journey-prayer-sheet | Profile/Settings | deferred | | | | iOS ref exists; Android capture not in this pass. |
+| delete-intention | Profile/Settings | spec-written | captured | close | | Confirm-delete dialog on intention detail. M3 side-by-side actions (allowed). Still `close` until a Mac recapture. |
+| journey-prayer-sheet | Profile/Settings | spec-written | captured | close | | Journey prayer half-sheet. Still `close` until a Mac recapture. |
 
 Pairs: `/workspace/android/shots/v2/pairs/<screen-id>-<light|dark>.png` (iOS left, Android right).
 Sign-off sheets: `/workspace/android/shots/v2/signoff/<screen-id>.png` (iOS \| Android-before \| Android-after; light on top, dark below). Before frames for splash/onboarding/sign-in/today come from the earlier parity pass. Sheets and sign-in-transition are labelled “new screen”.
