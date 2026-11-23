@@ -8,21 +8,41 @@ iOS refs: `/workspace/ios-parity-refs-v2`. Android frames: Roborazzi Pixel 7, li
 
 Hub and auth: `profile`, `profile-backup`, `profile-sign-in`, `replay-welcome`.
 
-Intentions and journey: `all-intentions`, `archived-intentions`, `intention-detail`, `intention-editor`, `papal-intention-detail`, `prayer-journey-milestones`, `prayer-journey-history`, `journey-day-sheet`.
+Intentions and journey: `all-intentions`, `archived-intentions`, `intention-detail`, `intention-editor`, `delete-intention`, `papal-intention-detail`, `prayer-journey-milestones`, `prayer-journey-history`, `journey-day-sheet`, `journey-prayer-sheet`.
 
 Settings: `settings`, `settings-rosary`, `settings-reset-rosary`, `settings-notifications`, `settings-app-icon`, `settings-legal-terms`, `settings-legal-privacy`, `settings-acknowledgements`, `settings-license`, `settings-report-problem`, `settings-mail-unavailable`, `settings-clear-history`.
 
-Not captured this pass (iOS refs exist): `delete-intention`, `journey-prayer-sheet`. No iOS refs: `settings-delete-account`, `settings-sign-out`, `settings-notifications-picker`, `archived-intentions-empty`, `profile-empty` (now a duplicate of the empty signed-in `profile`).
+No iOS refs (captured where a test exists, not sent as pairs): `settings-delete-account`, `settings-sign-out`, `settings-notifications-picker`, `archived-intentions-empty`, `profile-empty` (a duplicate of the empty signed-in `profile`).
 
-## What was aligned
+Sign-off sheets: `/workspace/android/shots/v2/signoff/{stem}.png`. Pairs: `/workspace/android/shots/v2/pairs/`. 2× zoom crops: `/workspace/android/shots/v2/signoff/zoom/{stem}.png`.
 
-- Profile hub uses the Marian wash, large title, milky 40 dp gear on the title row, compact rhythm card (“Your prayer” + 22 pt weekly summary + week dots, no “0 days” / calendar icon), iOS empty-intentions card (44 dp Marian circle + heart asset), papal card with a 96 dp square Pope Leo photo flush left, section labels outside the card, and the shared `GuestBackupCard`. Milestones were removed from the hub (they live on Journey).
-- `profile-backup` scrolls the guest backup card on screen. The large title does not collapse to a compact centred title (see remaining differences).
-- Settings uses compact milky-back chrome on a flat `palette.bg` (no ambient orbs), section labels outside grouped cards, trailing values, 56 dp rows, hairline dividers in `palette.hair`, leading SF-style stand-in icons, and an external-link arrow on Help rows. Color theme reads “System”. Guest backup sits between General and Help with no Account heading. Switches stay Marian accent (allowed M3 swap).
-- All intentions is titled “All intentions”, uses the wash, a milky more chip, the tab bar, and the iOS sample titles. No extra “Add intention” button on the list.
-- Replay welcome and profile sign-in reuse the approved onboarding-1 and sign-in screens.
-- `settings-license` seeds the first Android `LicenseEntry` (AndroidX Core), not iOS Abseil.
+## What was aligned (tightening pass)
 
-Typography table: `docs/parity-v2/profile-settings-typography.md`.
+- Profile large title collapses to a compact, centred 17 medium “Profile” with the trailing milky gear once you scroll (or immediately on the `profile-backup` capture).
+- Settings is a plain white / black page. General, Help and About sit on the page with full-bleed `GuideSectionBoundary` bands (`sectionDivider` `#E3E4E8` in light, `surface` in dark, 8 dp bar with official endpoint art). Only the guest backup card is a filled rounded surface: `#F2F3F7` on Settings (`PageStyle.Plain`) and `surface` in dark.
+- The back control on Settings and other plain pages is the milky circular chevron chip, filled `#F4F4F5` with a hairline rim in light so it reads on white. Learn / wash pages keep the approved white-92 chip.
+- Settings row icons are outlined vectors standing in for the iOS SF Symbols (slider, half-circle, bell, app, exclamation bubble, lightbulb, sparkles, doc, hand, arrow-up-right).
+- All intentions (and similar lists) use the official iOS category marks — purple church, sky-blue two people, mint hands-and-heart — at 0.8 of the accent circle, with a horizontal ellipsis trailing control.
+- The App icon screen has a home-screen phone preview (selected Rosary Guide icon plus Calendar / Photos / Camera / Mail / Notes / Reminders / Clock placeholders).
+- Rhythm past-day dots use the iOS `PrayerPreview` tokens: 24 dp marker frame, 12 dp inactive dots, 2 dp today ring with 1 dp inset, `strokeRegular` / `strokeStrong` opacities.
+- `delete-intention` and `journey-prayer-sheet` are now captured. The prayer sheet uses `GuideHalfSheetHeader` typography (32 heading, 12 caption), the 56 dp mystery lily thumb, body fact rows, and “No specific intention”.
+- The intention editor is a sheet with grabber, milky Cancel / Save chips, 96 dp category icon, field cards, a 44 dp capsule for Personal / Someone else / Church & world, a “Set as primary intention” switch, and a disabled Done pill until the title is filled.
+- Legal pages use typo-accurate roles (`headingPrimary` / `headingSecondary` / body 16) plus the iOS `lineSpacing(4)`, 16 dp block rhythm, and extra 16 dp above `h2`. Acknowledgements rows are name-only; the license body is reflowed `captionReading` in `dim`.
+- Journey uses the same 44 dp emphasis capsule as iOS `GuideChoiceControl`, and a milky back on the plain page.
 
-Status stays `close` until a Mac Pixel 7 recapture. Do not mark `matched`.
+Typography and measured landmark table: `docs/parity-v2/profile-settings-typography.md`.
+
+## Remaining differences
+
+- “11 days” in the Settings guest headline wraps on the Pixel 7 logical width (~411 dp vs iOS 440 pt). Left as a device-width difference, not a type-token bug.
+- `settings-license` lists AndroidX Core (and the rest of the Android catalog), not the iOS Abseil-first Swift package list.
+- Allowed M3 swaps still apply: accent switches (not iOS green) on Settings toggles; the primary switch on the editor uses the iOS success green; side-by-side dialog actions (Delete stays destructive red, but the confirm chrome is M3, not the iOS filled grey/red pills); no Apple button; no blur.
+- Roborazzi 9:41 / 3G status bar and the tab-bar selected-pill treatment are the same already-approved Today / Learn harness differences. On `profile-backup` the compact title can sit under the 3G glyph.
+- At end-of-scroll on `profile-backup`, the week-dot row of the rhythm card still peeks under the compact bar on 411 dp; iOS has scrolled that row away. The backup card itself, including Create account, is fully above the tab bar.
+- Settings icons are close stand-ins, not traced SF Symbols. The backup cloud is a simpler upload glyph than `icloud.and.arrow.up`.
+- The App icon preview is a rounded grey card with outlined placeholder glyphs, not a bezeled iOS home-screen device frame with the official iOS placeholder artwork. Reminders is a checkbox rather than the three-dot list icon.
+- Intention editor fields are a little shorter than the iOS 100 / 92 pt cards, and the capture uses a flat dimmed peek rather than a live Profile backdrop.
+- Journey milestones still show “1 of 13” with the current four-session fixture; the iOS ref is “3 of 13” with First Rosary and 10 Rosaries already ticked. Hero leaf art and completed-row check treatment still differ. iOS Journey has no visible back chevron in the ref; Android keeps the milky back.
+- Legal link colour is accent + underline rather than the iOS ink tint. Body wrapping differs slightly at 411 dp.
+
+Status stays `close` until a Mac Pixel 7 recapture. Do not mark `matched`. These screens are not user-approved yet.
