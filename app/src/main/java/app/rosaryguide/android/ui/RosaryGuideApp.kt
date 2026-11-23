@@ -60,6 +60,9 @@ import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.model.DatedFeast
 import app.rosaryguide.core.model.MysterySetKind
 import app.rosaryguide.feature.feasts.FeastDetailScreen
+import app.rosaryguide.feature.feasts.FeastPatronagesScreen
+import app.rosaryguide.feature.feasts.FeastRelatedPrayersScreen
+import app.rosaryguide.feature.feasts.FeastScriptureScreen
 import app.rosaryguide.feature.feasts.FeastsScreen
 import app.rosaryguide.feature.learn.HowToPrayScreen
 import app.rosaryguide.feature.learn.LearnArticleScreen
@@ -93,6 +96,9 @@ import kotlinx.serialization.Serializable
 @Serializable data object FeastsRoute
 @Serializable data object ProfileRoute
 @Serializable data class FeastDetailRoute(val feastId: String, val date: String)
+@Serializable data class FeastRelatedPrayersRoute(val feastId: String, val date: String)
+@Serializable data class FeastPatronagesRoute(val feastId: String, val date: String)
+@Serializable data class FeastScriptureRoute(val feastId: String, val date: String)
 @Serializable data object HowToPrayRoute
 @Serializable data object RosaryPrayersRoute
 @Serializable data object AllPrayersRoute
@@ -561,6 +567,7 @@ private fun AppTabs(
                     onFeastClick = { item ->
                         navController.navigate(FeastDetailRoute(item.feast.id, item.date.toString()))
                     },
+                    onPray = onPray,
                 )
             }
             composable<ProfileRoute> {
@@ -588,13 +595,49 @@ private fun AppTabs(
                 val route = entry.toRoute<FeastDetailRoute>()
                 val feast = FeastCatalog.all.find { it.id == route.feastId } ?: return@composable
                 val date = runCatching { LocalDate.parse(route.date) }.getOrDefault(today)
-                DetailScaffold(title = feast.shortTitle, onBack = { navController.popBackStack() }) {
-                    FeastDetailScreen(
-                        item = DatedFeast(feast, date),
-                        onPray = onPray,
-                        onRemindMe = { onRemindMe(DatedFeast(feast, date)) },
-                    )
-                }
+                val item = DatedFeast(feast, date)
+                FeastDetailScreen(
+                    item = item,
+                    onPray = onPray,
+                    onBack = { navController.popBackStack() },
+                    onRemindMe = { onRemindMe(item) },
+                    onOpenRelatedPrayers = {
+                        navController.navigate(FeastRelatedPrayersRoute(feast.id, date.toString()))
+                    },
+                    onOpenPatronages = {
+                        navController.navigate(FeastPatronagesRoute(feast.id, date.toString()))
+                    },
+                    onOpenScripture = {
+                        navController.navigate(FeastScriptureRoute(feast.id, date.toString()))
+                    },
+                )
+            }
+            composable<FeastRelatedPrayersRoute> { entry ->
+                val route = entry.toRoute<FeastRelatedPrayersRoute>()
+                val feast = FeastCatalog.all.find { it.id == route.feastId } ?: return@composable
+                val date = runCatching { LocalDate.parse(route.date) }.getOrDefault(today)
+                FeastRelatedPrayersScreen(
+                    item = DatedFeast(feast, date),
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable<FeastPatronagesRoute> { entry ->
+                val route = entry.toRoute<FeastPatronagesRoute>()
+                val feast = FeastCatalog.all.find { it.id == route.feastId } ?: return@composable
+                val date = runCatching { LocalDate.parse(route.date) }.getOrDefault(today)
+                FeastPatronagesScreen(
+                    item = DatedFeast(feast, date),
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable<FeastScriptureRoute> { entry ->
+                val route = entry.toRoute<FeastScriptureRoute>()
+                val feast = FeastCatalog.all.find { it.id == route.feastId } ?: return@composable
+                val date = runCatching { LocalDate.parse(route.date) }.getOrDefault(today)
+                FeastScriptureScreen(
+                    item = DatedFeast(feast, date),
+                    onBack = { navController.popBackStack() },
+                )
             }
             composable<HowToPrayRoute> {
                 DetailScaffold(title = "How to pray", onBack = { navController.popBackStack() }) {

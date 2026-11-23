@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -37,24 +38,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import app.rosaryguide.core.data.art.FeastCoverMath
-import app.rosaryguide.core.data.art.FeastSubjects
-import app.rosaryguide.core.data.art.SizeF
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import app.rosaryguide.core.data.calendar.MysteryCalendar
 import app.rosaryguide.core.data.catalog.FeastNarratives
 import app.rosaryguide.core.data.catalog.FeastRelatedPrayer
 import app.rosaryguide.core.data.catalog.FeastScriptures
 import app.rosaryguide.core.data.catalog.PrayerCatalog
-import app.rosaryguide.core.designsystem.component.CroppedArt
+import app.rosaryguide.core.designsystem.component.AppPageBackground
 import app.rosaryguide.core.designsystem.component.GuideSectionLabel
 import app.rosaryguide.core.designsystem.component.LocalReduceMotion
-import app.rosaryguide.core.designsystem.component.feastHeroDrawableId
-import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.component.SectionBand
 import app.rosaryguide.core.designsystem.theme.Hairline
+import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.RosaryHex
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 import app.rosaryguide.core.model.DatedFeast
@@ -68,13 +69,16 @@ fun FeastDetailScreen(
     item: DatedFeast,
     onPray: (MysterySetKind) -> Unit,
     modifier: Modifier = Modifier,
-    chromeOverlapPx: Float = 0f,
+    onBack: () -> Unit = {},
     onRemindMe: () -> Unit = {},
+    onOpenRelatedPrayers: () -> Unit = {},
+    onOpenPatronages: () -> Unit = {},
+    onOpenScripture: () -> Unit = {},
+    includeChrome: Boolean = true,
+    locale: Locale = Locale.getDefault(),
 ) {
     val palette = LocalThemePalette.current
-    val context = LocalContext.current
     val feast = item.feast
-    val resId = feastHeroDrawableId(context, feast.id)
     val narrative = FeastNarratives.narrative(feast.id)
     val about = narrative?.about ?: feast.summary
     val history = narrative?.history
@@ -83,184 +87,239 @@ fun FeastDetailScreen(
     val prayers = prayersForDay(item, narrative?.relatedPrayers.orEmpty())
     val assignment = MysteryCalendar.assignment(item.date)
     val rosarySet = feast.suggestedMysterySet ?: assignment.set
-    val metadata = "${item.date.format(DateTimeFormatter.ofPattern("d MMMM", Locale.getDefault()))}. ${feast.rank.title}".uppercase(Locale.getDefault())
-    val dateValue = item.date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.getDefault()))
+    val metadata = "${item.date.format(DateTimeFormatter.ofPattern("d MMMM", locale))}. ${feast.rank.title}"
+        .uppercase(locale)
+    val dateValue = item.date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", locale))
     var expandedPrayerId by remember { mutableStateOf<String?>(null) }
-    var reminderSet by remember { mutableStateOf(false) }
+    val density = LocalDensity.current
+    val chromeDp = with(density) { WindowInsets.statusBars.getTop(this).toDp() } + 44.dp
+    val chromeOverlapPx = with(density) { chromeDp.toPx() }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(palette.bg)
-            .verticalScroll(rememberScrollState())
-            .padding(bottom = RosarySpace.xxl),
-    ) {
-        if (resId != 0) {
-            val subject = FeastSubjects.ofFeastId(feast.id)
-            if (subject != null) {
-                CroppedArt(
-                    painter = painterResource(resId),
-                    coverForFrame = { frameW, frameH ->
-                        val cover = FeastCoverMath.feastCover(
-                            SizeF(1280f, 720f),
-                            SizeF(frameW, frameH),
-                            subject,
-                            subject.focusX,
-                        )
-                        val shift = FeastCoverMath.feastChromeShift(chromeOverlapPx, frameH)
-                        Triple(cover.scale, cover.offsetX, cover.offsetY + shift)
-                    },
-                    contentDescription = feast.shortTitle,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(330.dp),
+    Box(modifier.fillMaxSize()) {
+        AppPageBackground()
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(palette.bg),
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = RosarySpace.tabBarContentClearance),
+        ) {
+            FeastHeroBanner(
+                feast = feast,
+                height = RosarySpace.feastHeroHeight + chromeDp,
+                chromeOverlapPx = chromeOverlapPx,
+            )
+            Column(Modifier.padding(horizontal = RosarySpace.gutter)) {
+                Spacer(Modifier.height(18.dp))
+                Text(
+                    text = metadata,
+                    style = RosaryType.captionPray,
+                    color = palette.dim,
                 )
-            }
-        }
-        Column(Modifier.padding(horizontal = RosarySpace.gutter)) {
-            Spacer(Modifier.height(18.dp))
-            GuideSectionLabel(text = metadata)
-            Spacer(Modifier.height(RosarySpace.sm))
-            Text(text = feast.shortTitle, style = RosaryType.headingPrimary, color = palette.ink)
-            if (feast.summary.isNotBlank()) {
-                Spacer(Modifier.height(RosarySpace.md))
-                Text(text = feast.summary, style = RosaryType.body, color = palette.dim)
-            }
+                Spacer(Modifier.height(RosarySpace.sm))
+                Text(
+                    text = feast.shortTitle,
+                    style = RosaryType.headingPrimaryPray,
+                    color = palette.ink,
+                    maxLines = 3,
+                )
+                if (feast.summary.isNotBlank()) {
+                    Spacer(Modifier.height(RosarySpace.md))
+                    Text(
+                        text = feast.summary,
+                        style = RosaryType.bodyFeastSummary,
+                        color = palette.dim,
+                    )
+                }
 
-            Spacer(Modifier.height(RosarySpace.lg))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(RosarySpace.md),
-            ) {
-                FeastActionCard(
-                    title = if (reminderSet) "Reminder set" else "Remind me",
-                    onClick = {
-                        onRemindMe()
-                        reminderSet = true
-                    },
-                    modifier = Modifier.weight(1f),
-                )
-                FeastActionCard(
-                    title = "Pray",
-                    onClick = { onPray(rosarySet) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            Spacer(Modifier.height(26.dp))
-            meaningParagraphs(about).forEach { paragraph ->
-                Text(text = paragraph, style = RosaryType.body, color = palette.ink)
-                Spacer(Modifier.height(RosarySpace.xl))
-            }
-            if (!history.isNullOrBlank()) {
-                meaningParagraphs(history).forEach { paragraph ->
-                    Text(text = paragraph, style = RosaryType.body, color = palette.ink)
+                Spacer(Modifier.height(26.dp))
+                meaningParagraphs(about).forEach { paragraph ->
+                    Text(
+                        text = paragraph,
+                        style = RosaryType.bodySmallFeast,
+                        color = palette.ink,
+                    )
                     Spacer(Modifier.height(RosarySpace.xl))
                 }
-            }
-
-            FeastCard {
-                QuickFactRow("Observed as", feast.rank.title)
-                HorizontalDivider(
-                    thickness = Hairline.thickness, color = palette.hair)
-                QuickFactRow("Date", dateValue)
-                HorizontalDivider(
-                    thickness = Hairline.thickness, color = palette.hair)
-                QuickFactRow("Rosary", "${rosarySet.shortName} Mysteries")
-                if (isLikelyHolyDayOfObligation(feast.id)) {
-                    HorizontalDivider(
-                    thickness = Hairline.thickness, color = palette.hair)
-                    QuickFactRow("Note", "May be a holy day of obligation depending on country and year")
-                }
-            }
-
-            Spacer(Modifier.height(RosarySpace.xl))
-            GuideSectionLabel(text = "Keep the day")
-            Spacer(Modifier.height(RosarySpace.sm))
-            FeastCard {
-                val practices = FeastDayPractices.forFeast(feast.id, feast.isMarian, feast.rank)
-                practices.forEachIndexed { index, practice ->
-                    Column(Modifier.fillMaxWidth().padding(vertical = 15.dp)) {
-                        Text(practice.first, style = RosaryType.headingSecondary, color = palette.ink)
-                        Spacer(Modifier.height(RosarySpace.sm))
-                        Text(practice.second, style = RosaryType.supportingLabel, color = palette.dim)
-                    }
-                    if (index < practices.lastIndex) HorizontalDivider(
-                    thickness = Hairline.thickness, color = palette.hair)
-                }
-            }
-
-            Spacer(Modifier.height(RosarySpace.xl))
-            GuideSectionLabel(text = "Prayers for this day")
-            Spacer(Modifier.height(RosarySpace.sm))
-            prayers.forEach { prayer ->
-                FeastPrayerCard(
-                    prayer = prayer,
-                    expanded = expandedPrayerId == prayer.id,
-                    onToggle = { expandedPrayerId = if (expandedPrayerId == prayer.id) null else prayer.id },
-                )
-                Spacer(Modifier.height(RosarySpace.md))
-            }
-
-            Spacer(Modifier.height(RosarySpace.sm))
-            GuideSectionLabel(text = "Scripture and Rosary")
-            Spacer(Modifier.height(RosarySpace.sm))
-            FeastCard {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onPray(rosarySet) }
-                        .padding(vertical = RosarySpace.md),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(androidx.compose.ui.graphics.Color(app.rosaryguide.core.designsystem.theme.RosaryHex.MysteryJoyful)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(rosarySet.letter, style = RosaryType.headingSecondary, color = androidx.compose.ui.graphics.Color(app.rosaryguide.core.designsystem.theme.RosaryHex.MysteryOn))
-                    }
-                    Spacer(Modifier.width(RosarySpace.md))
-                    Column {
-                        GuideSectionLabel(text = "Mystery set")
-                        Text(rosarySet.titleText.english, style = RosaryType.body, color = palette.ink)
+                if (!history.isNullOrBlank()) {
+                    meaningParagraphs(history).forEach { paragraph ->
+                        Text(
+                            text = paragraph,
+                            style = RosaryType.bodySmallFeast,
+                            color = palette.ink,
+                        )
+                        Spacer(Modifier.height(RosarySpace.xl))
                     }
                 }
-            }
-            Spacer(Modifier.height(RosarySpace.md))
-            if (passages.isEmpty()) {
-                FeastTextCard(
-                    eyebrow = "Scripture",
-                    title = "Held in the Church’s memory",
-                    body = "${feast.shortTitle} is kept through Scripture, prayer, worship, and the Church’s living tradition.",
-                )
-            } else {
+
                 FeastCard {
-                    passages.take(3).forEachIndexed { index, passage ->
-                        Column(Modifier.fillMaxWidth().padding(vertical = 15.dp)) {
-                            GuideSectionLabel(text = passage.citation)
-                            Spacer(Modifier.height(RosarySpace.xs))
-                            Text(passage.heading, style = RosaryType.headingSecondary, color = palette.ink)
-                            Spacer(Modifier.height(RosarySpace.sm))
-                            Text(passage.text, style = RosaryType.supportingLabel, color = palette.dim)
-                        }
-                        if (index < passages.take(3).lastIndex) HorizontalDivider(
-                    thickness = Hairline.thickness, color = palette.hair)
+                    QuickFactRow("Observed as", feast.rank.title)
+                    HorizontalDivider(thickness = Hairline.thickness, color = palette.hair)
+                    QuickFactRow("Date", dateValue)
+                    HorizontalDivider(thickness = Hairline.thickness, color = palette.hair)
+                    QuickFactRow("Rosary", "${rosarySet.shortName} Mysteries")
+                    if (isLikelyHolyDayOfObligation(feast.id)) {
+                        HorizontalDivider(thickness = Hairline.thickness, color = palette.hair)
+                        QuickFactRow(
+                            "Note",
+                            "May be a holy day of obligation depending on country and year",
+                        )
                     }
                 }
-            }
 
-            if (!indulgence.isNullOrBlank()) {
-                Spacer(Modifier.height(RosarySpace.xl))
-                FeastTextCard(
-                    eyebrow = "Indulgence",
-                    title = "A grace attached to this day",
-                    body = indulgence,
+                SectionBand(fullBleed = true)
+                GuideSectionLabel(
+                    text = "Keep the day",
+                    strong = true,
+                    style = RosaryType.bodyPray,
                 )
+                Spacer(Modifier.height(RosarySpace.sectionTitleGap - RosarySpace.xs))
+                FeastCard {
+                    val practices = FeastDayPractices.forFeast(feast.id, feast.isMarian, feast.rank)
+                    practices.forEachIndexed { index, practice ->
+                        Column(Modifier.fillMaxWidth().padding(vertical = 15.dp)) {
+                            Text(practice.first, style = RosaryType.bodyPray, color = palette.ink)
+                            Spacer(Modifier.height(RosarySpace.sm))
+                            Text(practice.second, style = RosaryType.themeSummary, color = palette.dim)
+                        }
+                        if (index < practices.lastIndex) {
+                            HorizontalDivider(thickness = Hairline.thickness, color = palette.hair)
+                        }
+                    }
+                }
+
+                SectionBand(fullBleed = true)
+                GuideSectionLabel(
+                    text = "Prayers for this day",
+                    strong = true,
+                    style = RosaryType.bodyPray,
+                )
+                Spacer(Modifier.height(RosarySpace.sectionTitleGap - 12.dp - RosarySpace.xs))
+                prayers.forEach { prayer ->
+                    FeastPrayerCard(
+                        prayer = prayer,
+                        expanded = expandedPrayerId == prayer.id,
+                        onToggle = {
+                            expandedPrayerId = if (expandedPrayerId == prayer.id) null else prayer.id
+                        },
+                    )
+                    Spacer(Modifier.height(RosarySpace.md))
+                }
+
+                SectionBand(fullBleed = true)
+                GuideSectionLabel(
+                    text = "Scripture and Rosary",
+                    strong = true,
+                    style = RosaryType.bodyPray,
+                )
+                Spacer(Modifier.height(RosarySpace.sectionTitleGap - 12.dp - RosarySpace.xs))
+                FeastCard {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onPray(rosarySet) }
+                            .padding(vertical = RosarySpace.md),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        MysterySetMark(rosarySet)
+                        Spacer(Modifier.width(RosarySpace.md))
+                        Column {
+                            GuideSectionLabel(
+                                text = "Mystery set",
+                                strong = true,
+                                style = RosaryType.bodyPray,
+                            )
+                            Text(
+                                rosarySet.titleText.english,
+                                style = RosaryType.bodyPray,
+                                color = palette.ink,
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(RosarySpace.md))
+                if (passages.isEmpty()) {
+                    FeastTextCard(
+                        eyebrow = "Scripture",
+                        title = "Held in the Church’s memory",
+                        body = "${feast.shortTitle} is kept through Scripture, prayer, worship, and the Church’s living tradition.",
+                    )
+                } else {
+                    FeastCard {
+                        passages.take(3).forEachIndexed { index, passage ->
+                            Column(Modifier.fillMaxWidth().padding(vertical = 15.dp)) {
+                                GuideSectionLabel(
+                                    text = passage.citation,
+                                    style = RosaryType.captionPray,
+                                )
+                                Spacer(Modifier.height(RosarySpace.sm))
+                                Text(passage.heading, style = RosaryType.bodyPray, color = palette.ink)
+                                Spacer(Modifier.height(RosarySpace.sm))
+                                Text(passage.text, style = RosaryType.themeSummary, color = palette.dim)
+                            }
+                            if (index < passages.take(3).lastIndex) {
+                                HorizontalDivider(thickness = Hairline.thickness, color = palette.hair)
+                            }
+                        }
+                    }
+                }
+
+                if (!indulgence.isNullOrBlank()) {
+                    Spacer(Modifier.height(RosarySpace.xl))
+                    FeastTextCard(
+                        eyebrow = "Indulgence",
+                        title = "A grace attached to this day",
+                        body = indulgence,
+                    )
+                }
+
+                Spacer(Modifier.height(RosarySpace.xl))
+                FeastInfoRow("Related prayers", onOpenRelatedPrayers)
+                HorizontalDivider(thickness = Hairline.thickness, color = palette.hair)
+                FeastInfoRow("Patronages", onOpenPatronages)
+                HorizontalDivider(thickness = Hairline.thickness, color = palette.hair)
+                FeastInfoRow("In Scripture", onOpenScripture)
+                Spacer(Modifier.height(40.dp))
             }
         }
+        if (includeChrome) {
+            FeastOverlayChrome(title = feast.shortTitle, onBack = onBack)
+        }
+    }
+}
+
+@Composable
+private fun FeastInfoRow(title: String, onClick: () -> Unit) {
+    val palette = LocalThemePalette.current
+    Text(
+        text = title,
+        style = RosaryType.serifBody,
+        color = palette.ink,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(vertical = 17.dp),
+    )
+}
+
+@Composable
+private fun MysterySetMark(set: MysterySetKind) {
+    Box(
+        modifier = Modifier
+            .size(56.dp)
+            .clip(CircleShape)
+            .background(Color(RosaryHex.MysteryJoyful)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            set.letter,
+            style = RosaryType.headingSecondaryPray,
+            color = Color(RosaryHex.MysteryOn),
+        )
     }
 }
 
@@ -275,11 +334,16 @@ private fun QuickFactRow(label: String, value: String) {
     ) {
         Text(
             text = label,
-            style = RosaryType.caption,
+            style = RosaryType.captionPray,
             color = palette.dim,
             modifier = Modifier.width(88.dp),
         )
-        Text(text = value, style = RosaryType.body, color = palette.ink, modifier = Modifier.weight(1f))
+        Text(
+            text = value,
+            style = RosaryType.bodyPray,
+            color = palette.ink,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -298,7 +362,7 @@ private fun FeastCard(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun FeastTextCard(eyebrow: String, title: String, body: String) {
+internal fun FeastTextCard(eyebrow: String, title: String, body: String) {
     val palette = LocalThemePalette.current
     val shape = RoundedCornerShape(RosarySpace.containerRadius)
     Column(
@@ -309,44 +373,58 @@ private fun FeastTextCard(eyebrow: String, title: String, body: String) {
             .border(1.dp, palette.strokeRegular, shape)
             .padding(RosarySpace.lg),
     ) {
-        GuideSectionLabel(text = eyebrow)
+        GuideSectionLabel(text = eyebrow, style = RosaryType.captionPray)
         Spacer(Modifier.height(RosarySpace.md))
-        Text(title, style = RosaryType.headingSecondary, color = palette.ink)
+        Text(title, style = RosaryType.headingSecondaryPray, color = palette.ink)
         Spacer(Modifier.height(RosarySpace.md))
-        Text(body, style = RosaryType.body, color = palette.dim)
+        Text(body, style = RosaryType.bodySmallFeastPrayer, color = palette.dim)
     }
 }
 
 @Composable
-private fun FeastPrayerCard(
+internal fun FeastPrayerCard(
     prayer: FeastRelatedPrayer,
     expanded: Boolean,
     onToggle: () -> Unit,
+    flush: Boolean = false,
+    showLatin: Boolean = false,
 ) {
     val palette = LocalThemePalette.current
     val reduceMotion = LocalReduceMotion.current
     val shape = RoundedCornerShape(RosarySpace.containerRadius)
-    Column(
-        modifier = Modifier
+    val frame = if (flush) {
+        Modifier.fillMaxWidth()
+    } else {
+        Modifier
             .fillMaxWidth()
             .clip(shape)
             .background(palette.surface)
-            .border(1.dp, palette.strokeRegular, shape),
+            .border(1.dp, palette.strokeRegular, shape)
+    }
+    Column(
+        modifier = frame,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .sizeIn(minHeight = RosarySpace.minHitTarget)
                 .clickable(role = Role.Button, onClick = onToggle)
-                .padding(horizontal = 18.dp, vertical = RosarySpace.lg),
+                .padding(horizontal = if (flush) 0.dp else 18.dp, vertical = RosarySpace.lg),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(prayer.title, style = RosaryType.headingSecondary, color = palette.ink, modifier = Modifier.weight(1f))
+            Text(
+                prayer.title,
+                style = RosaryType.bodyPray,
+                color = palette.ink,
+                modifier = Modifier.weight(1f),
+            )
             Icon(
                 imageVector = Icons.Filled.KeyboardArrowDown,
                 contentDescription = null,
                 tint = palette.dim,
-                modifier = Modifier.rotate(if (expanded) 180f else 0f),
+                modifier = Modifier
+                    .size(12.dp)
+                    .rotate(if (expanded) 180f else 0f),
             )
         }
         AnimatedVisibility(
@@ -354,15 +432,21 @@ private fun FeastPrayerCard(
             enter = if (reduceMotion) fadeIn() else expandVertically() + fadeIn(),
             exit = if (reduceMotion) fadeOut() else shrinkVertically() + fadeOut(),
         ) {
-            Column(Modifier.padding(start = 18.dp, end = 18.dp, bottom = 18.dp)) {
-                Text(prayer.english, style = RosaryType.body, color = palette.dim)
-                prayer.latin?.takeIf { it.isNotBlank() }?.let { latin ->
-                    Spacer(Modifier.height(RosarySpace.md))
-                    Text(latin, style = RosaryType.serifItalicBody, color = palette.dim)
+            Column(Modifier.padding(start = if (flush) 0.dp else 18.dp, end = if (flush) 0.dp else 18.dp, bottom = 18.dp)) {
+                Text(prayer.english, style = RosaryType.bodySmallFeastPrayer, color = palette.dim)
+                if (showLatin) {
+                    prayer.latin?.takeIf { it.isNotBlank() }?.let { latin ->
+                        Spacer(Modifier.height(RosarySpace.md))
+                        Text(
+                            latin,
+                            style = RosaryType.themeSummary,
+                            color = palette.dim,
+                        )
+                    }
                 }
                 prayer.note?.let { note ->
                     Spacer(Modifier.height(RosarySpace.md))
-                    Text(note, style = RosaryType.caption, color = palette.dim)
+                    Text(note, style = RosaryType.captionPray, color = palette.dim)
                 }
             }
         }
@@ -386,7 +470,7 @@ private fun meaningParagraphs(body: String): List<String> {
 private fun isLikelyHolyDayOfObligation(id: String): Boolean =
     id in setOf("mary-mother-of-god", "assumption", "all-saints", "immaculate-conception", "christmas")
 
-private fun prayersForDay(item: DatedFeast, related: List<FeastRelatedPrayer>): List<FeastRelatedPrayer> {
+internal fun prayersForDay(item: DatedFeast, related: List<FeastRelatedPrayer>): List<FeastRelatedPrayer> {
     if (related.isNotEmpty()) return related
     val feast = item.feast
     fun of(id: String): FeastRelatedPrayer? {
@@ -460,25 +544,5 @@ internal object FeastDayPractices {
                 "Carry one line" to "Take one phrase from the feast into the rest of the day.",
             )
         }
-    }
-}
-
-@Composable
-private fun FeastActionCard(
-    title: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val palette = LocalThemePalette.current
-    Box(
-        modifier = modifier
-            .height(76.dp)
-            .clip(RoundedCornerShape(RosarySpace.containerRadius))
-            .background(palette.surface)
-            .border(1.dp, palette.strokeRegular, RoundedCornerShape(RosarySpace.containerRadius))
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(title, style = RosaryType.caption, color = palette.ink)
     }
 }

@@ -123,6 +123,36 @@ object RosarySpace {
         }
         return (screenHeight * fraction)
     }
+
+    /** iOS `AppTheme.Component.calendarHandleWidth`. */
+    val calendarHandleWidth: Dp = 36.dp
+    /** iOS `AppTheme.Component.calendarHandleHeight`. */
+    val calendarHandleHeight: Dp = 4.dp
+    /** iOS `AppTheme.Component.calendarHandleDividerGap`. */
+    val calendarHandleDividerGap: Dp = 2.dp
+    /** iOS `AppTheme.Component.calendarHandleDotGap`. */
+    val calendarHandleDotGap: Dp = 12.dp
+    /** iOS `AppTheme.Component.calendarSnapThreshold`. */
+    val calendarSnapThreshold: Dp = 24.dp
+    /** iOS `AppTheme.Component.calendarWeekdayHeaderHeight`. */
+    val calendarWeekdayHeaderHeight: Dp = 20.dp
+    /** iOS `AppTheme.Component.feastCalendarDayHeight`. */
+    val feastCalendarDayHeight: Dp = 52.dp
+    /** iOS `AppTheme.Component.feastCalendarWeekCount`. */
+    const val feastCalendarWeekCount = 5
+    /** iOS feast timeline date column. */
+    val feastDateColumnWidth: Dp = 56.dp
+    /** iOS `FeastHeroBanner` height on feast detail. */
+    val feastHeroHeight: Dp = 330.dp
+    /** iOS `FeastHeroBanner` height on secondary feast pages. */
+    val feastSecondaryHeroHeight: Dp = 238.dp
+    /** iOS `AppTheme.FeastHero.bottomFade`. */
+    const val feastHeroBottomFade = 0.18f
+    /**
+     * iOS `Accessibility.minHitTarget` (44). Not the shared Android
+     * [minHitTarget] of 48, which is used on already-approved screens.
+     */
+    val calendarHitTarget: Dp = 44.dp
 }
 
 @Composable

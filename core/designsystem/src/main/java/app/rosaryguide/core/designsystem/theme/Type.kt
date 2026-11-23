@@ -138,7 +138,28 @@ object RosaryType {
     val scriptureReferenceMystery = sansRole(11f)
     /** iOS `guideThemeSummaryStyle`: body/callout 16 + `lineSpacing(5)`. */
     val themeSummary = sansRole(16f, extraLineSpacingSp = 5f)
-    /** iOS `TypeRole.completionQuote` (`body`) + `.lineSpacing(2)`. */
+    /** iOS `TypeRole.body` + `lineSpacing(7)` (feast-detail summary). */
+    val bodyFeastSummary = sansRole(16f, extraLineSpacingSp = 7f)
+    /** iOS `TypeRole.bodySmall` / `callout` + `lineSpacing(7)` (feast meaning). */
+    val bodySmallFeast = sansRole(16f, extraLineSpacingSp = 7f)
+    /** iOS `TypeRole.bodySmall` + `lineSpacing(8)` (related-prayer body). */
+    val bodySmallFeastPrayer = sansRole(16f, extraLineSpacingSp = 8f)
+    /** iOS `TypeRole.calendarDay` (16, regularized). */
+    val calendarDay = sansRole(16f)
+    /** iOS `TypeRole.calendarCaption`. */
+    val calendarCaption = sansRole(12f)
+    /** iOS `TypeRole.calendarCaptionMedium`. */
+    val calendarCaptionMedium = sansRole(12f, weight = FontWeight.Medium)
+    /** iOS `TypeRole.calendarDateNumber` (22, typo 26.84). */
+    val calendarDateNumber = sansRole(22f)
+    /** iOS month-row `callout(weight: .medium)`. */
+    val calendarMonthTitle = sansRole(16f, weight = FontWeight.Medium)
+    /** iOS timeline title `calloutUIFont(weight: .semibold)` after regularize = 16 regular. */
+    val feastTimelineTitle = sansRole(16f)
+    /** iOS `Component.eyebrowTracking` (2) on the timeline month abbrev. */
+    val calendarMonthAbbrev = sansRole(12f, weight = FontWeight.Medium, letterSpacingSp = 2f)
+
+        /** iOS `TypeRole.completionQuote` (`body`) + `.lineSpacing(2)`. */
     val completionQuote = sansRole(16f, extraLineSpacingSp = 2f)
     /** iOS `TypeRole.quoteAttribution` (`caption`) + `.tracking(0.8)`. */
     val quoteAttribution = sansRole(12f, letterSpacingSp = 0.8f)
