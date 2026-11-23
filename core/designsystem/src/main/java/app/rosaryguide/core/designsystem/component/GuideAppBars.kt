@@ -23,6 +23,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import app.rosaryguide.core.designsystem.R
 import androidx.compose.ui.text.style.TextOverflow
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
@@ -94,6 +96,7 @@ fun GuideTopAppBar(
     containerColor: Color? = null,
     milkyBack: Boolean = true,
     milkyOnPlain: Boolean = false,
+    chevronBack: Boolean = false,
 ) {
     val palette = LocalThemePalette.current
     val ax = isAccessibilitySize()
@@ -116,41 +119,35 @@ fun GuideTopAppBar(
                     onClick = onBack,
                     modifier = Modifier.heightIn(min = RosarySpace.minHitTarget),
                 ) {
-                    val icon = if (closeInsteadOfBack) Icons.Filled.Close else Icons.AutoMirrored.Filled.ArrowBack
                     val label = if (closeInsteadOfBack) "Close" else "Back"
                     if (milkyBack && !closeInsteadOfBack) {
-                        val chip = when {
-                            palette.isDark -> Color.White.copy(alpha = 0.16f)
-                            milkyOnPlain -> Color(0xFFF4F4F5)
-                            else -> Color.White.copy(alpha = 0.92f)
+                        GuideMilkyCircleChip(milkyOnPlain = milkyOnPlain) {
+                            if (chevronBack) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_chevron_backward),
+                                    contentDescription = label,
+                                    tint = palette.ink,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = label,
+                                    tint = palette.ink,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
                         }
-                        val chipMod = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(chip)
-                            .then(
-                                if (milkyOnPlain && !palette.isDark) {
-                                    Modifier.border(
-                                        app.rosaryguide.core.designsystem.theme.Hairline.thickness,
-                                        palette.cardSurfaceStroke,
-                                        CircleShape,
-                                    )
-                                } else Modifier,
-                            )
-                        Box(
-                            modifier = chipMod,
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = label,
-                                tint = palette.ink,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
+                    } else if (chevronBack && !closeInsteadOfBack) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_chevron_backward),
+                            contentDescription = label,
+                            tint = palette.ink,
+                            modifier = Modifier.size(20.dp),
+                        )
                     } else {
                         Icon(
-                            imageVector = icon,
+                            imageVector = if (closeInsteadOfBack) Icons.Filled.Close else Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = label,
                             tint = palette.ink,
                         )
@@ -165,5 +162,41 @@ fun GuideTopAppBar(
             navigationIconContentColor = palette.ink,
             actionIconContentColor = palette.ink,
         ),
+    )
+}
+
+/**
+ * 40 dp milky circle used by the Learn/Profile back chip and the
+ * All-intentions more control. [milkyOnPlain] adds the hairline fill
+ * used on plain Settings pages; the default is the wash-page disc.
+ */
+@Composable
+fun GuideMilkyCircleChip(
+    modifier: Modifier = Modifier,
+    milkyOnPlain: Boolean = false,
+    content: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit,
+) {
+    val palette = LocalThemePalette.current
+    val chip = when {
+        palette.isDark -> Color.White.copy(alpha = 0.16f)
+        milkyOnPlain -> Color(0xFFF4F4F5)
+        else -> Color.White.copy(alpha = 0.92f)
+    }
+    Box(
+        modifier = modifier
+            .size(RosarySpace.controlSize)
+            .clip(CircleShape)
+            .background(chip)
+            .then(
+                if (milkyOnPlain && !palette.isDark) {
+                    Modifier.border(
+                        app.rosaryguide.core.designsystem.theme.Hairline.thickness,
+                        palette.cardSurfaceStroke,
+                        CircleShape,
+                    )
+                } else Modifier,
+            ),
+        contentAlignment = Alignment.Center,
+        content = content,
     )
 }

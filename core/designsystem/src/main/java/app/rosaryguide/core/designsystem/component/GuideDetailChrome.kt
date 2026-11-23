@@ -6,8 +6,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 
 /**
- * Pushed-page chrome. Implementation is the native Material 3
- * [GuideTopAppBar] (system back affordance), not an iOS chevron imitation.
+ * Pushed-page chrome. Uses [GuideTopAppBar]. The default back glyph is
+ * the Material arrow in the milky chip so approved Learn frames stay put.
+ * Pass [chevronBack] for the iOS-style chevron used in the Profile/Settings group.
  */
 @Composable
 fun GuideDetailTopBar(
@@ -17,6 +18,7 @@ fun GuideDetailTopBar(
     containerColor: Color? = null,
     actions: @Composable RowScope.() -> Unit = {},
     milkyOnPlain: Boolean = false,
+    chevronBack: Boolean = false,
 ) {
     GuideTopAppBar(
         title = title,
@@ -25,5 +27,6 @@ fun GuideDetailTopBar(
         containerColor = containerColor,
         actions = actions,
         milkyOnPlain = milkyOnPlain,
+        chevronBack = chevronBack,
     )
 }
