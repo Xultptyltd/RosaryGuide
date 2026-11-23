@@ -1,4 +1,4 @@
-# Visual parity status (23 Nov 2026, Profile/Settings approved)
+# Visual parity status (23 Nov 2026, Feasts approved)
 
 Reference: `/workspace/ios-parity-refs-v2/` (iPhone 17 Pro Max, 3×, 1320×2868 px = 440×956 pt, Dynamic Type Large, status bar 9:41, captured 17 Nov 2026 Australia/Perth).
 Android captures for onboarding/Today: Pixel 7 AVD `RosaryGuide_Pixel7` on the Mac (1080×2400, 2.625×, ≈411.4×914.3 dp), `en-AU`, `clock_date=2026-11-17`, demo-mode clock 9:41. Light onboarding is captured with **demo mode off** so a hidden status bar stays hidden.
@@ -6,7 +6,7 @@ Pray-flow frames in this pass were recorded with **Roborazzi** because the Mac e
 The harness was validated against the approved Mac captures: today-light title 0.5429 vs 0.5440 (Δ 0.11%); onboarding-1 title/CTA within ~0.02%.
 pt and dp are 1:1 at mdpi. iOS PNG measurements are pixels ÷ 3. A screen is marked `matched` only when the measured frame fractions agree within about 2%.
 
-Onboarding/launch, Today, the **Pray flow** group, the **Learn** group (including walkthrough 1–5), and the **Profile/Settings** group are **user-approved**. Today, Learn, and `rosary-settings-sheet` were re-approved 23 Nov 2026, 11:29 Australia/Perth with the official `SectionBand` separators; the Profile/Settings screens were approved at the same time. Status stays `close` until a Mac Pixel 7 emulator recapture; do not treat approval as `matched`. Specs: `docs/parity-v2/profile-settings.md`, `docs/parity-v2/feasts.md`. The **Feasts** group (hub, feast detail, related prayers, patronages, scripture) is captured and `close` as of 23 Nov 2026, afternoon Australia/Perth, with no user approval yet. The already-approved Today `week-feast-sheet` was not recaptured.
+Onboarding/launch, Today, the **Pray flow** group, the **Learn** group (including walkthrough 1–5), the **Profile/Settings** group, and the **Feasts** group are **user-approved**. Today, Learn, and `rosary-settings-sheet` were re-approved 23 Nov 2026, 11:29 Australia/Perth with the official `SectionBand` separators; the Profile/Settings screens were approved at the same time. The Feasts group (hub, feast detail, related prayers, patronages, scripture, and `feasts-empty`) was approved 23 Nov 2026, 12:07 Australia/Perth. Status stays `close` until a Mac Pixel 7 emulator recapture; do not treat approval as `matched`. Specs: `docs/parity-v2/profile-settings.md`, `docs/parity-v2/feasts.md`. The already-approved Today `week-feast-sheet` was not recaptured with the Feasts rewrite.
 
 `intention-icon-picker` is **not** in the live iOS editor. It stays removed.
 
@@ -74,12 +74,12 @@ Status values: `spec-written` · `captured` · `matched` · `mismatch` · `defer
 | settings-clear-history | Profile/Settings | spec-written | captured | close | user-approved | Clear-history confirm; M3 actions side by side (allowed). Still `close` until a Mac recapture. User approved 23 Nov 2026, 11:29 Australia/Perth. |
 | delete-intention | Profile/Settings | spec-written | captured | close | user-approved | Confirm-delete dialog on intention detail. M3 side-by-side actions (allowed). Still `close` until a Mac recapture. User approved 23 Nov 2026, 11:29 Australia/Perth. |
 | journey-prayer-sheet | Profile/Settings | spec-written | captured | close | user-approved | Journey prayer half-sheet. Still `close` until a Mac recapture. User approved 23 Nov 2026, 11:29 Australia/Perth. |
-| feasts | Feasts | spec-written | captured | close | | Hub rewrite: scope capsules, week strip + handle, accent selected day, SectionBand agenda, no search. Roborazzi +night, 17 Nov 2026. Still `close` until a Mac recapture. Not user-approved. |
-| feast-detail | Feasts | spec-written | captured | close | | Presentation of Mary. Width-scaled 330 pt hero (308 dp on Pixel 7) just below the nav, local milky back chip + 84 dp title centre. Still `close` until a Mac recapture. Not user-approved. |
-| feast-related-prayers | Feasts | spec-written | captured | close | | Secondary page off feast detail, width-scaled 238 pt hero (222 dp on Pixel 7), first prayer expanded. Still `close` until a Mac recapture. Not user-approved. |
-| feast-patronages | Feasts | spec-written | captured | close | | Secondary page, Marian default patronages. Still `close` until a Mac recapture. Not user-approved. |
-| feast-scripture | Feasts | spec-written | captured | close | | Secondary page, Zechariah / Matthew passages. Still `close` until a Mac recapture. Not user-approved. |
-| feasts-empty | Feasts | spec-written | captured | close | | Empty copy only; no iOS ref, not a sign-off pair. Still `close`. Not user-approved. |
+| feasts | Feasts | spec-written | captured | close | user-approved | Hub rewrite: scope capsules, week strip + handle, accent selected day, SectionBand agenda, no search. Roborazzi +night, 17 Nov 2026. Still `close` until a Mac recapture. User approved 23 Nov 2026, 12:07 Australia/Perth. |
+| feast-detail | Feasts | spec-written | captured | close | user-approved | Presentation of Mary. Width-scaled 330 pt hero (308 dp on Pixel 7) just below the nav, local milky back chip + 84 dp title centre. Still `close` until a Mac recapture. User approved 23 Nov 2026, 12:07 Australia/Perth. |
+| feast-related-prayers | Feasts | spec-written | captured | close | user-approved | Secondary page off feast detail, width-scaled 238 pt hero (222 dp on Pixel 7), first prayer expanded. Still `close` until a Mac recapture. User approved 23 Nov 2026, 12:07 Australia/Perth. |
+| feast-patronages | Feasts | spec-written | captured | close | user-approved | Secondary page, Marian default patronages. Still `close` until a Mac recapture. User approved 23 Nov 2026, 12:07 Australia/Perth. |
+| feast-scripture | Feasts | spec-written | captured | close | user-approved | Secondary page, Zechariah / Matthew passages. Still `close` until a Mac recapture. User approved 23 Nov 2026, 12:07 Australia/Perth. |
+| feasts-empty | Feasts | spec-written | captured | close | user-approved | Empty copy only; no iOS ref, not a sign-off pair. Still `close` until a Mac recapture. User approved 23 Nov 2026, 12:07 Australia/Perth. |
 
 Pairs: `/workspace/android/shots/v2/pairs/<screen-id>-<light|dark>.png` (iOS left, Android right).
 Sign-off sheets: `/workspace/android/shots/v2/signoff/<screen-id>.png` (iOS \| Android-before \| Android-after; light on top, dark below). Before frames for splash/onboarding/sign-in/today come from the earlier parity pass. Sheets and sign-in-transition are labelled “new screen”.
