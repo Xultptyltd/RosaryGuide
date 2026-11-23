@@ -24,6 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performClick
 import org.junit.Before
 import org.robolectric.RuntimeEnvironment
@@ -36,6 +38,7 @@ import app.rosaryguide.core.data.journey.PopeIntentionCatalog
 import app.rosaryguide.core.data.prefs.UserSettings
 import app.rosaryguide.core.data.session.CompletedPrayerSession
 import app.rosaryguide.core.data.session.InMemorySessionPreferences
+import app.rosaryguide.core.data.session.IntentionAccent
 import app.rosaryguide.core.data.session.IntentionCategory
 import app.rosaryguide.core.data.session.OfferIntention
 import app.rosaryguide.core.data.session.SessionStore
@@ -83,6 +86,9 @@ import app.rosaryguide.feature.pray.GuideScrollActionButton
 import app.rosaryguide.feature.pray.PrayActionFooter
 import app.rosaryguide.core.model.PrayerLanguage
 import androidx.compose.foundation.background
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
@@ -191,10 +197,10 @@ class ParityScreenshotTest {
     }
 
     @Test fun intentionEditorLight() = shot("intention-editor", dark = false) {
-        IntentionEditorScreen(existing = null, onBack = {}, onSave = {})
+        IntentionEditorPreview()
     }
     @Test fun intentionEditorDark() = shot("intention-editor", dark = true) {
-        IntentionEditorScreen(existing = null, onBack = {}, onSave = {})
+        IntentionEditorPreview()
     }
 
     @Test fun papalLight() = shot("papal-intention-detail", dark = false) { Papal() }
@@ -206,8 +212,11 @@ class ParityScreenshotTest {
     @Test fun journeyHistoryLight() = shot("prayer-journey-history", dark = false) { Journey(history = true) }
     @Test fun journeyHistoryDark() = shot("prayer-journey-history", dark = true) { Journey(history = true) }
 
-    @Test fun historyDayLight() = shot("journey-day-sheet", dark = false) { Journey(history = true, day = today) }
-    @Test fun historyDayDark() = shot("journey-day-sheet", dark = true) { Journey(history = true, day = today) }
+    @Test fun historyDayLight() = shot("journey-day-sheet", dark = false) { Journey(history = true, day = java.time.LocalDate.of(2026, 11, 17)) }
+    @Test fun historyDayDark() = shot("journey-day-sheet", dark = true) { Journey(history = true, day = java.time.LocalDate.of(2026, 11, 17)) }
+
+    @Test fun journeyPrayerSheetLight() = shot("journey-prayer-sheet", dark = false) { Journey(history = false, openPrayerSheet = true) }
+    @Test fun journeyPrayerSheetDark() = shot("journey-prayer-sheet", dark = true) { Journey(history = false, openPrayerSheet = true) }
 
     @Test fun settingsLight() = shot("settings", dark = false) { Settings(SettingsPage.Root) }
     @Test fun settingsDark() = shot("settings", dark = true) { Settings(SettingsPage.Root) }
@@ -367,6 +376,9 @@ class ParityScreenshotTest {
     @Test fun intentionDetailLight() = shot("intention-detail", dark = false) { IntentionDetail() }
     @Test fun intentionDetailDark() = shot("intention-detail", dark = true) { IntentionDetail() }
 
+    @Test fun deleteIntentionLight() = shot("delete-intention", dark = false) { IntentionDetail(confirmDelete = true) }
+    @Test fun deleteIntentionDark() = shot("delete-intention", dark = true) { IntentionDetail(confirmDelete = true) }
+
     @Test fun intentionsArchivedLight() = shot("archived-intentions", dark = false) { Archived(empty = false) }
     @Test fun intentionsArchivedDark() = shot("archived-intentions", dark = true) { Archived(empty = false) }
 
@@ -438,7 +450,9 @@ class ParityScreenshotTest {
                         stem == "feasts" -> AppTab.Feasts
                         stem == "profile" || stem == "profile-empty" || stem == "profile-backup" ||
                             stem == "all-intentions" || stem.startsWith("archived-intentions") ||
-                            stem.startsWith("prayer-journey") || stem == "papal-intention-detail" -> AppTab.Profile
+                            stem.startsWith("prayer-journey") || stem == "papal-intention-detail" ||
+                            stem == "intention-detail" || stem == "delete-intention" ||
+                            stem == "journey-prayer-sheet" || stem == "journey-day-sheet" -> AppTab.Profile
                         else -> AppTab.Today
                     },
                     content = content,
@@ -450,6 +464,12 @@ class ParityScreenshotTest {
         // so statusBars / navigationBars padding is applied before capture.
         composeRule.mainClock.advanceTimeBy(16L)
         composeRule.waitForIdle()
+        if (stem == "profile-backup") {
+            repeat(4) {
+                composeRule.onRoot().performTouchInput { swipeUp() }
+                composeRule.waitForIdle()
+            }
+        }
         val suffix = if (dark) "dark" else "light"
         composeRule.onRoot().captureRoboImage("$OUT/$stem-$suffix.png")
     }
@@ -537,17 +557,35 @@ class ParityScreenshotTest {
     }
 
     @Composable
-    private fun IntentionDetail() {
+    private fun IntentionEditorPreview() {
+        val palette = LocalThemePalette.current
+        Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.35f)))
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 56.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                    .background(palette.bg),
+            ) {
+                IntentionEditorScreen(existing = null, onBack = {}, onSave = {})
+            }
+        }
+    }
+
+    @Composable
+    private fun IntentionDetail(confirmDelete: Boolean = false) {
         IntentionDetailScreen(
             intention = OfferIntention(
-                id = "int-mum",
-                title = "For Mum",
-                note = "For her health and peace.",
-                category = IntentionCategory.Someone,
-                emoji = "💙",
-                isPinned = true,
-                createdAtEpochMs = java.time.LocalDate.of(2026, 3, 1).atStartOfDay(zone).toInstant().toEpochMilli(),
-                timesCarried = 2,
+                id = "int-peace",
+                title = "Peace in the world",
+                note = null,
+                category = IntentionCategory.World,
+                accent = IntentionAccent.Purple,
+                emoji = "⛪",
+                isPinned = false,
+                createdAtEpochMs = java.time.LocalDate.of(2026, 11, 17).atStartOfDay(zone).toInstant().toEpochMilli(),
+                timesCarried = 0,
             ),
             hidden = false,
             onBack = {},
@@ -556,6 +594,7 @@ class ParityScreenshotTest {
             onPin = {},
             onArchive = {},
             onDelete = {},
+            startConfirmDelete = confirmDelete,
         )
     }
 
@@ -670,15 +709,17 @@ class ParityScreenshotTest {
     }
 
     @Composable
-    private fun Journey(history: Boolean, day: LocalDate? = null) {
+    private fun Journey(history: Boolean, day: LocalDate? = null, openPrayerSheet: Boolean = false) {
+        val captureToday = java.time.LocalDate.of(2026, 11, 17)
         JourneyScreen(
-            sessionStore = filledStore(),
-            today = today,
+            sessionStore = filledStore(captureToday = captureToday),
+            today = captureToday,
             zone = zone,
             locale = locale,
             firstWeekday = firstWeekday,
             startOnHistory = history,
             initialDay = day,
+            openPrayerSheet = openPrayerSheet,
             onBack = {},
         )
     }
@@ -785,16 +826,16 @@ class ParityScreenshotTest {
         return prefs
     }
 
-    private fun filledStore(): SessionStore {
-        val start = today.atTime(20, 0).atZone(zone).toInstant().toEpochMilli()
+    private fun filledStore(captureToday: java.time.LocalDate = today): SessionStore {
+        val start = captureToday.atTime(12, 44).atZone(zone).toInstant().toEpochMilli()
         val sessions = listOf(0, 1, 3, 8).map { offset ->
-            val day = today.minusDays(offset.toLong())
-            val at = day.atTime(20, 0).atZone(zone).toInstant().toEpochMilli()
+            val day = captureToday.minusDays(offset.toLong())
+            val at = day.atTime(12, 44).atZone(zone).toInstant().toEpochMilli()
             CompletedPrayerSession(
                 mysterySet = MysterySetKind.entries[offset % MysterySetKind.entries.size],
                 startedAtEpochMs = at,
-                completedAtEpochMs = at + 20 * 60 * 1000,
-                duration = 20 * 60.0,
+                completedAtEpochMs = at + 21 * 60 * 1000,
+                duration = 21 * 60.0,
                 intentionTitle = "For Mum",
             )
         }
@@ -802,9 +843,9 @@ class ParityScreenshotTest {
             java.time.Instant.ofEpochMilli(it.completedAtEpochMs).atZone(zone).toLocalDate().toString()
         }.toSet()
         val intentions = listOf(
-            OfferIntention(id = "int-peace", title = "Peace in the world", category = IntentionCategory.World, emoji = "⛪"),
-            OfferIntention(id = "int-grandma", title = "For Grandma's recovery", category = IntentionCategory.Someone, emoji = "👨‍👩‍👧"),
-            OfferIntention(id = "int-patience", title = "Patience with my family", category = IntentionCategory.Personal, emoji = "💚"),
+            OfferIntention(id = "int-peace", title = "Peace in the world", category = IntentionCategory.World, accent = IntentionAccent.Purple, emoji = "⛪"),
+            OfferIntention(id = "int-grandma", title = "For Grandma's recovery", category = IntentionCategory.Someone, accent = IntentionAccent.SkyBlue, emoji = "👥"),
+            OfferIntention(id = "int-patience", title = "Patience with my family", category = IntentionCategory.Personal, accent = IntentionAccent.MintGreen, emoji = "❤️"),
         )
         return SessionStore(
             prefs = InMemorySessionPreferences(
@@ -824,7 +865,8 @@ class ParityScreenshotTest {
             "feasts", "profile", "profile-empty", "profile-backup",
             "all-intentions", "archived-intentions", "archived-intentions-empty",
             "prayer-journey-milestones", "prayer-journey-history",
-            "papal-intention-detail",
+            "papal-intention-detail", "intention-detail", "delete-intention",
+            "journey-prayer-sheet", "journey-day-sheet",
         )
         private val PopeMonthIntentionFallback = app.rosaryguide.core.data.journey.PopeMonthIntention(
             yearMonth = "2026-11",
