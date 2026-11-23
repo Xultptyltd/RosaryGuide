@@ -16,6 +16,14 @@ No iOS refs (captured where a test exists, not sent as pairs): `settings-delete-
 
 Sign-off sheets: `/workspace/android/shots/v2/signoff/{stem}.png`. Pairs: `/workspace/android/shots/v2/pairs/`. 2× zoom crops: `/workspace/android/shots/v2/signoff/zoom/{stem}.png`.
 
+## What was aligned (contrast + SectionBand, 23 Nov 2026)
+
+- Dark dialog and sheet actions no longer use the M3 default `primary` `#0054FF` (2.54:1 on the dark dialog fill `#2B2930`). A new `ThemePalette.actionForeground` token is `#0054FF` in light and `#7DA8FF` (`MarianBlueDarkTextHighContrast`) in dark — 6.1:1 on that dialog and 8.9:1 on black (WCAG AA). `GuideDialogButton` applies it, or `destructive` `#FF453A` for Clear / Reset / Delete / Sign out / Delete account. Global `accentText` (`#3D7DFF` in dark) is unchanged so approved Learn / Today accent uses stay put.
+- The same token colours legal links on Terms and Privacy (still underlined links, not the iOS ink tint) and the notification time-picker OK / Cancel actions. Checked in dark: `settings-report-problem`, `settings-mail-unavailable`, `settings-clear-history`, `settings-reset-rosary`, `delete-intention`, `settings-sign-out`, `settings-delete-account`, `settings-notifications-picker`.
+- Shared `SectionBand` in `core:designsystem` ports iOS `GuideSectionBoundary`: an 8 dp bar between 16×40 endpoint caps, tinted `palette.sectionDivider` (`#E3E4E8` light, `surface` `#1C1C1E` dark), default 16 dp vertical spacing, full-bleed past the page gutter. In-group row dividers stay 1 px `Hairline`.
+- Bands were placed at every iOS `GuideSectionBoundary` site in this group: Settings root (4), Customise rosary / `rosary-settings-sheet` (2), Profile hub before Holy Father and before the backup card (`verticalSpacing` 0), intention detail between notes and the details table, Journey milestone categories.
+- Approved-screen audit: Today was missing the official full-bleed band before “Upcoming feast days” and “This week” (it had a 1 dp inset divider); Learn hub was missing the four iOS `PrayHubView` bands (after intro, mysteries, prayers, questions). Those were added and recaptured; they need re-approval. `prayer-reader` has no about / Sign-of-the-Cross trailing sections on Android yet, so no orphan band was added. Learn search / walkthrough / mystery-detail / all-prayers / in-rosary bead screens have no iOS bands. Feasts does have iOS bands, but that group stays deferred and was not changed.
+
 ## What was aligned (review pass, 23 Nov 2026)
 
 - On `profile-backup`, the compact bar is overlaid below the status strip (44 dp, title and gear vertically centred at mid 74 dp). The 3G glyph no longer collides with the gear. A downward 90 dp scrim, the same treatment as the tab-bar edge fade and filled with `groupedBackground`, lets scrolled content (“Your intentions”, week dots) fade under the bar instead of peeking through.
@@ -52,6 +60,6 @@ Typography and measured landmark table: `docs/parity-v2/profile-settings-typogra
 - The App icon preview is a rounded grey card with outlined placeholder glyphs, not a bezeled iOS home-screen device frame with the official iOS placeholder artwork. Reminders is a checkbox rather than the three-dot list icon.
 - Intention editor fields are a little shorter than the iOS 100 / 92 pt cards, and the capture uses a flat dimmed peek rather than a live Profile backdrop.
 - Journey milestones still show “1 of 13” with the current four-session fixture; the iOS ref is “3 of 13” with First Rosary and 10 Rosaries already ticked. Hero leaf art and completed-row check treatment still differ. iOS Journey has no visible back chevron in the ref; Android keeps the milky back.
-- Legal link colour is accent + underline rather than the iOS ink tint. Body wrapping differs slightly at 411 dp.
+- Legal link colour is `actionForeground` (`#0054FF` light, `#7DA8FF` dark) plus underline, rather than the iOS ink tint. Body wrapping differs slightly at 411 dp.
 
 Status stays `close` until a Mac Pixel 7 recapture. Do not mark `matched`. These screens are not user-approved yet.
