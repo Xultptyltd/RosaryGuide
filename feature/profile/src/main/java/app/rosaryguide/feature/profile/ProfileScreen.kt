@@ -51,6 +51,11 @@ import app.rosaryguide.core.data.session.IntentionPrivacy
 import app.rosaryguide.core.data.session.OfferIntention
 import app.rosaryguide.core.data.session.SessionStore
 import app.rosaryguide.core.designsystem.component.GuideLargeTopAppBar
+import app.rosaryguide.core.designsystem.theme.PageStyle
+import app.rosaryguide.core.designsystem.component.GuestBackupCard
+import app.rosaryguide.core.designsystem.component.AppPageBackground
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.ColorFilter
 import app.rosaryguide.core.designsystem.component.GuideOutlineButton
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.component.GuideSecondaryButton
@@ -79,6 +84,7 @@ data class ProfileLaunch(
     val sampleIntentions: Boolean = false,
     val sampleHistory: Boolean = false,
     val openPapal: Boolean = false,
+    val scrollToEnd: Boolean = false,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,9 +110,9 @@ fun ProfileScreen(
 
     LaunchedEffect(launch.sampleIntentions, launch.sampleHistory) {
         if (launch.sampleIntentions && sessionStore.activeIntentions.isEmpty()) {
-            sessionStore.addIntention("For Mum", category = app.rosaryguide.core.data.session.IntentionCategory.Someone, emoji = "💙", pin = true)
-            sessionStore.addIntention("Peace in the world", category = app.rosaryguide.core.data.session.IntentionCategory.World, emoji = "🌍")
-            sessionStore.addIntention("My family", category = app.rosaryguide.core.data.session.IntentionCategory.Personal, emoji = "🙏")
+            sessionStore.addIntention("Peace in the world", category = app.rosaryguide.core.data.session.IntentionCategory.World, emoji = "⛪")
+            sessionStore.addIntention("For Grandma's recovery", category = app.rosaryguide.core.data.session.IntentionCategory.Someone, emoji = "👨‍👩‍👧")
+            sessionStore.addIntention("Patience with my family", category = app.rosaryguide.core.data.session.IntentionCategory.Personal, emoji = "💚")
         }
         if (launch.sampleHistory && sessionStore.completed.isEmpty()) {
             seedSampleHistory(sessionStore, today, zone)
@@ -167,6 +173,13 @@ fun ProfileScreen(
             onPray = onPrayWith,
             onSignIn = onSignIn,
             onToggleHide = { sessionStore.setHideIntentionText(!hidden) },
+            today = today,
+            zone = zone,
+            earliestActivityEpochMs = listOfNotNull(
+                completed.minOfOrNull { it.startedAtEpochMs },
+                intentions.minOfOrNull { it.createdAtEpochMs },
+            ).minOrNull(),
+            scrollToEnd = launch.scrollToEnd,
             modifier = modifier,
         )
         ProfileDestination.AllIntentions -> AllIntentionsScreen(
@@ -297,28 +310,57 @@ private fun ProfileHome(
     onPray: (OfferIntention) -> Unit,
     onSignIn: () -> Unit,
     onToggleHide: () -> Unit,
+    today: java.time.LocalDate,
+    zone: java.time.ZoneId,
+    earliestActivityEpochMs: Long? = null,
+    scrollToEnd: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalThemePalette.current
     val preview = active.take(3)
     val gutter = Modifier.padding(horizontal = RosarySpace.gutter)
+    Box(modifier = modifier.fillMaxSize()) {
+        AppPageBackground()
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(palette.bg),
+        modifier = Modifier.fillMaxSize(),
     ) {
-        GuideLargeTopAppBar(
-            title = "Profile",
-            actions = {
-                IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = palette.ink)
-                }
-            },
-        )
+        Box {
+            GuideLargeTopAppBar(
+                title = "Profile",
+                containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            )
+            // iOS places the gear on the large-title row, centred on the H1.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = RosarySpace.gutter, bottom = 6.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (palette.isDark) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.16f)
+                        else androidx.compose.ui.graphics.Color.White.copy(alpha = 0.92f),
+                    )
+                    .clickable(onClick = onOpenSettings),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.Settings,
+                    contentDescription = "Settings",
+                    tint = palette.ink,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+        val scroll = rememberScrollState()
+        androidx.compose.runtime.LaunchedEffect(scrollToEnd, scroll.maxValue) {
+            if (scrollToEnd && scroll.maxValue > 0) {
+                scroll.scrollTo(scroll.maxValue)
+            }
+        }
         Column(
             modifier = Modifier
                 .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scroll)
                 .padding(bottom = RosarySpace.tabBarContentClearance),
         ) {
         Box(modifier = gutter.clickable(onClick = onOpenRhythm)) {
@@ -361,8 +403,6 @@ private fun ProfileHome(
             }
             Spacer(Modifier.height(RosarySpace.md))
             GuideOutlineButton(title = "View all intentions", onClick = onOpenAll)
-            Spacer(Modifier.height(RosarySpace.sm))
-            GuidePrimaryButton(title = "Add intention", onClick = onAdd)
             }
         }
         if (pope != null && active.none { it.sourceId == "pope-${pope.yearMonth}" }) {
@@ -372,38 +412,17 @@ private fun ProfileHome(
             Box(Modifier.clickable(onClick = onOpenPapal)) { HolyFatherCard(pope) }
             }
         }
-        if (milestones.preview.isNotEmpty() || milestones.earnedCount > 0 || rhythm.hasEverPrayed) {
-            Column(modifier = gutter.fillMaxWidth()) {
-            Spacer(Modifier.height(RosarySpace.lg))
-            GuideSectionLabel(text = "Milestones")
-            val stage = milestoneStage(milestones, rhythm.hasEverPrayed)
-            Text(text = stage.first, style = RosaryType.headingSecondary, color = palette.ink)
-            Text(text = stage.second, style = RosaryType.caption, color = palette.textSecondary)
-            Spacer(Modifier.height(RosarySpace.sm))
-            milestones.preview.forEach { item ->
-                MilestoneRow(item)
-                Spacer(Modifier.height(RosarySpace.sm))
-            }
-            Text(
-                text = "View all milestones",
-                style = RosaryType.body,
-                color = palette.accent,
-                modifier = Modifier
-                    .clickable(onClick = onOpenJourney)
-                    .padding(vertical = RosarySpace.sm),
-            )
-            }
-        }
+        // Milestones live on the Journey screen, not the Profile hub, matching iOS OfferView.
         if (!isSignedIn) {
             Column(modifier = gutter.fillMaxWidth()) {
             Spacer(Modifier.height(RosarySpace.lg))
-            GuestBackupCard(onSignIn = onSignIn)
+            GuestBackupCard(onCreateAccount = onSignIn, today = today, zone = zone, earliestActivityEpochMs = earliestActivityEpochMs)
             }
         }
         if (archivedCount > 0) {
             Text(
                 text = "Archived intentions",
-                style = RosaryType.caption,
+                style = RosaryType.captionPray,
                 color = palette.accent,
                 modifier = gutter
                     .clickable(onClick = onOpenArchived)
@@ -411,6 +430,7 @@ private fun ProfileHome(
             )
         }
         }
+    }
     }
 }
 
@@ -423,11 +443,11 @@ private fun IntentionsHeader(onToggleHide: () -> Unit, hidden: Boolean, showTogg
             .padding(bottom = RosarySpace.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        GuideSectionLabel(text = "Intentions", modifier = Modifier.weight(1f))
+        GuideSectionLabel(text = "Your intentions", modifier = Modifier.weight(1f))
         if (showToggle) {
             Text(
                 text = if (hidden) "Show titles" else "Hide titles",
-                style = RosaryType.caption,
+                style = RosaryType.captionPray,
                 color = palette.accent,
                 modifier = Modifier.clickable(onClick = onToggleHide),
             )
@@ -438,98 +458,77 @@ private fun IntentionsHeader(onToggleHide: () -> Unit, hidden: Boolean, showTogg
 @Composable
 fun IntentionsEmptyCard(onAdd: () -> Unit, modifier: Modifier = Modifier) {
     val palette = LocalThemePalette.current
+    val shape = RoundedCornerShape(RosarySpace.containerRadius)
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(palette.cardSurface(PageStyle.Grouped))
+            .padding(RosarySpace.lg + RosarySpace.xs),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Image(
-            painter = painterResource(app.rosaryguide.core.designsystem.R.drawable.praying_hands_empty),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp)
-
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = RosarySpace.gutter)
-                .padding(top = RosarySpace.md),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(palette.mysteryIconFill),
+            contentAlignment = Alignment.Center,
         ) {
-            Text(
-                "Keep the people, needs and hopes you carry close as you pray.",
-                style = RosaryType.body,
-                color = palette.dim,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            Image(
+                painter = painterResource(app.rosaryguide.core.designsystem.R.drawable.intention_icon_personal),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(palette.mysteryIconGlyph),
+                modifier = Modifier.size((44 * 0.8f).dp),
             )
-            Spacer(Modifier.height(RosarySpace.lg))
-            GuidePrimaryButton(title = "Add your first intention", onClick = onAdd)
         }
+        Text(
+            text = "What’s on your heart?",
+            style = RosaryType.headingSecondaryPray,
+            color = palette.ink,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = RosarySpace.md),
+        )
+        Text(
+            text = "Keep your intentions close as you pray.",
+            style = RosaryType.bodyPray,
+            color = palette.textSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = RosarySpace.xs),
+        )
+        GuidePrimaryButton(
+            title = "Add intention",
+            onClick = onAdd,
+            modifier = Modifier.padding(top = RosarySpace.lg),
+        )
     }
 }
 
 @Composable
 fun HolyFatherCard(pope: PopeMonthIntention, modifier: Modifier = Modifier) {
     val palette = LocalThemePalette.current
-    Column(
+    val shape = RoundedCornerShape(RosarySpace.containerRadius)
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(RosarySpace.containerRadius))
-            .background(palette.surface)
-            .padding(RosarySpace.lg),
+            .clip(shape)
+            .background(palette.cardSurface(PageStyle.Grouped)),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.Top) {
-            Image(
-                painter = painterResource(R.drawable.pope_leo),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(width = 96.dp, height = 124.dp)
-                    .clip(RoundedCornerShape(RosarySpace.nestedRadius)),
-            )
-            Spacer(Modifier.width(RosarySpace.lg))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    "Holy Father’s intention",
-                    style = RosaryType.caption,
-                    color = palette.accentText,
-                )
-                Spacer(Modifier.height(RosarySpace.sm))
-                Text(pope.title, style = RosaryType.body, color = palette.ink)
-                Spacer(Modifier.height(RosarySpace.xs))
-                Text(pope.monthLabel(), style = RosaryType.caption, color = palette.textSecondary)
-            }
-        }
-        pope.note?.let {
-            Spacer(Modifier.height(RosarySpace.md))
-            Text(it, style = RosaryType.supportingLabel, color = palette.dim)
-        }
-        Spacer(Modifier.height(RosarySpace.sm))
-        Text("Tap to add", style = RosaryType.caption, color = palette.accentText)
-    }
-}
-
-@Composable
-fun GuestBackupCard(onSignIn: () -> Unit, modifier: Modifier = Modifier) {
-    val palette = LocalThemePalette.current
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(RosarySpace.containerRadius))
-            .background(palette.surface)
-            .padding(RosarySpace.lg),
-    ) {
-        Text("Your prayers are not backed up yet", style = RosaryType.headingSecondary, color = palette.ink)
-        Spacer(Modifier.height(RosarySpace.xs))
-        Text(
-            "Your prayer is saved on this device. Sign in with Google to back it up when account sync arrives.",
-            style = RosaryType.supportingLabel,
-            color = palette.textSecondary,
+        Image(
+            painter = painterResource(R.drawable.pope_leo),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.size(96.dp),
         )
-        Spacer(Modifier.height(RosarySpace.md))
-        GuideSecondaryButton(title = "Create an account", onClick = onSignIn)
+        Column(
+            Modifier
+                .weight(1f)
+                .padding(start = RosarySpace.lg, end = RosarySpace.lg, top = RosarySpace.md, bottom = RosarySpace.md),
+        ) {
+            Text(pope.title, style = RosaryType.bodyPray, color = palette.ink)
+            Spacer(Modifier.height(RosarySpace.xs))
+            Text(pope.monthLabel(), style = RosaryType.captionPray, color = palette.textSecondary)
+        }
     }
 }
 

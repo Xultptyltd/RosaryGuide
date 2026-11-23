@@ -390,6 +390,11 @@ fun RosaryGuideApp(
                         showSignIn = true
                     },
                     onBack = { showSettings = false },
+                    today = today,
+                    earliestActivityEpochMs = listOfNotNull(
+                        completed.minOfOrNull { it.startedAtEpochMs },
+                        intentions.minOfOrNull { it.createdAtEpochMs },
+                    ).minOrNull(),
                     modifier = Modifier.fillMaxSize(),
                 )
             }

@@ -57,6 +57,7 @@ import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.Hairline
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
+import app.rosaryguide.core.designsystem.component.AppPageBackground
 
 @Composable
 fun AllIntentionsScreen(
@@ -75,56 +76,71 @@ fun AllIntentionsScreen(
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalThemePalette.current
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(palette.bg)
-            .padding(horizontal = RosarySpace.gutter)
-            .padding(top = RosarySpace.md, bottom = RosarySpace.xl),
-    ) {
-        GuideDetailTopBar(title = "Intentions", onBack = onBack)
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Spacer(Modifier.weight(1f))
-            if (intentions.isNotEmpty()) {
-                Text(
-                    text = if (hidden) "Show titles" else "Hide titles",
-                    style = RosaryType.caption,
-                    color = palette.accent,
-                    modifier = Modifier.clickable(onClick = onToggleHide),
-                )
-            }
-        }
-        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            if (intentions.isEmpty()) {
-                IntentionsEmptyCard(onAdd = onAdd)
-            } else {
-                intentions.forEachIndexed { index, item ->
-                    IntentionRow(
-                        intention = item,
-                        hidden = hidden,
-                        onOpen = { onOpenDetail(item) },
-                        onPray = { onPray(item) },
-                        onPin = { onPin(item) },
-                        onEdit = { onEdit(item) },
-                        onDelete = { onDelete(item) },
-                    )
-                    if (index != intentions.lastIndex) {
-                        HorizontalDivider(
-                    thickness = Hairline.thickness, modifier = Modifier.padding(start = 56.dp), color = palette.hair)
+    var moreOpen by remember { mutableStateOf(false) }
+    Box(modifier = modifier.fillMaxSize()) {
+        AppPageBackground()
+        Column(modifier = Modifier.fillMaxSize()) {
+            GuideDetailTopBar(
+                title = "All intentions",
+                onBack = onBack,
+                containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                actions = {
+                    Box {
+                        val chip = if (palette.isDark) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.16f)
+                        else androidx.compose.ui.graphics.Color.White.copy(alpha = 0.92f)
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(chip)
+                                .clickable { moreOpen = true },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("•••", style = RosaryType.captionPray, color = palette.ink)
+                        }
+                        DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                            DropdownMenuItem(
+                                text = { Text(if (hidden) "Show intentions" else "Hide intentions") },
+                                onClick = { moreOpen = false; onToggleHide() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("View archived") },
+                                onClick = { moreOpen = false; onOpenArchived() },
+                            )
+                        }
+                    }
+                },
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = RosarySpace.gutter)
+                    .padding(bottom = RosarySpace.tabBarContentClearance),
+            ) {
+                if (intentions.isEmpty()) {
+                    IntentionsEmptyCard(onAdd = onAdd)
+                } else {
+                    intentions.forEachIndexed { index, item ->
+                        IntentionRow(
+                            intention = item,
+                            hidden = hidden,
+                            onOpen = { onOpenDetail(item) },
+                            onPray = { onPray(item) },
+                            onPin = { onPin(item) },
+                            onEdit = { onEdit(item) },
+                            onDelete = { onDelete(item) },
+                        )
+                        if (index != intentions.lastIndex) {
+                            HorizontalDivider(
+                                thickness = Hairline.thickness,
+                                modifier = Modifier.padding(start = 56.dp),
+                                color = palette.hair,
+                            )
+                        }
                     }
                 }
             }
-            if (archivedCount > 0) {
-                Spacer(Modifier.height(RosarySpace.lg))
-                Text(
-                    text = "Archived ($archivedCount)",
-                    style = RosaryType.body,
-                    color = palette.accent,
-                    modifier = Modifier.clickable(onClick = onOpenArchived),
-                )
-            }
-            Spacer(Modifier.height(RosarySpace.lg))
-            GuidePrimaryButton(title = "Add intention", onClick = onAdd)
         }
     }
 }
@@ -189,7 +205,7 @@ fun IntentionEditorScreen(
                 val selected = category == item
                 Text(
                     text = item.title,
-                    style = RosaryType.caption,
+                    style = RosaryType.captionPray,
                     color = if (selected) palette.onAccent else palette.ink,
                     modifier = Modifier
                         .clip(RoundedCornerShape(RosarySpace.containerRadius))
@@ -216,14 +232,14 @@ fun IntentionEditorScreen(
                         .clickable { accent = item },
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (selected) Text("✓", color = androidx.compose.ui.graphics.Color.White, style = RosaryType.caption)
+                    if (selected) Text("✓", color = androidx.compose.ui.graphics.Color.White, style = RosaryType.captionPray)
                 }
             }
         }
         Spacer(Modifier.height(RosarySpace.lg))
         Text(
             text = if (pinned) "Pinned for your next Rosary" else "Pin for your next Rosary",
-            style = RosaryType.body,
+            style = RosaryType.bodyPray,
             color = palette.accent,
             modifier = Modifier.clickable { pinned = !pinned },
         )
@@ -322,7 +338,7 @@ fun IntentionDetailScreen(
             Spacer(Modifier.height(RosarySpace.md))
             Text(
                 text = title,
-                style = RosaryType.headingSecondary,
+                style = RosaryType.headingSecondaryPray,
                 color = if (hides) palette.dim else palette.ink,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
@@ -337,12 +353,12 @@ fun IntentionDetailScreen(
                     .padding(vertical = RosarySpace.md),
             ) {
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("${intention.timesCarried}", style = RosaryType.body, color = palette.ink)
-                    Text(prayedLabel, style = RosaryType.caption, color = palette.dim)
+                    Text("${intention.timesCarried}", style = RosaryType.bodyPray, color = palette.ink)
+                    Text(prayedLabel, style = RosaryType.captionPray, color = palette.dim)
                 }
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(lastPrayed, style = RosaryType.body, color = palette.ink)
-                    Text("Last prayed", style = RosaryType.caption, color = palette.dim)
+                    Text(lastPrayed, style = RosaryType.bodyPray, color = palette.ink)
+                    Text("Last prayed", style = RosaryType.captionPray, color = palette.dim)
                 }
             }
             if (!intention.isPapal || note.isNotBlank()) {
@@ -350,7 +366,7 @@ fun IntentionDetailScreen(
                 if (note.isNotBlank()) {
                     Text(
                         text = if (hides) IntentionPrivacy.MASKED_TEXT else note,
-                        style = RosaryType.supportingLabel,
+                        style = RosaryType.supportingLabelPray,
                         color = if (hides) palette.dim else palette.ink,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -368,7 +384,7 @@ fun IntentionDetailScreen(
                             .padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Add Notes", style = RosaryType.supportingLabel, color = palette.dim, modifier = Modifier.weight(1f))
+                        Text("Add Notes", style = RosaryType.supportingLabelPray, color = palette.dim, modifier = Modifier.weight(1f))
                     }
                 }
             }
@@ -416,8 +432,8 @@ private fun DetailFactRow(label: String, value: String) {
             .padding(vertical = RosarySpace.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = RosaryType.caption, color = palette.dim, modifier = Modifier.width(120.dp))
-        Text(value, style = RosaryType.body, color = palette.ink, modifier = Modifier.weight(1f))
+        Text(label, style = RosaryType.captionPray, color = palette.dim, modifier = Modifier.width(120.dp))
+        Text(value, style = RosaryType.bodyPray, color = palette.ink, modifier = Modifier.weight(1f))
     }
 }
 
@@ -444,9 +460,9 @@ fun ArchivedIntentionsScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("No archived intentions", style = RosaryType.body, color = palette.ink)
+                Text("No archived intentions", style = RosaryType.bodyPray, color = palette.ink)
                 Spacer(Modifier.height(RosarySpace.sm))
-                Text("Intentions you archive will rest here", style = RosaryType.caption, color = palette.textSecondary)
+                Text("Intentions you archive will rest here", style = RosaryType.captionPray, color = palette.textSecondary)
             }
         } else {
             Column(
@@ -467,7 +483,7 @@ fun ArchivedIntentionsScreen(
                     ) {
                         IntentionIcon(intention = item, size = 40.dp)
                         Spacer(Modifier.width(RosarySpace.md))
-                        Text(title, style = RosaryType.body, color = palette.ink, modifier = Modifier.weight(1f))
+                        Text(title, style = RosaryType.bodyPray, color = palette.ink, modifier = Modifier.weight(1f))
                         Box {
                             androidx.compose.material3.IconButton(onClick = { menu = true }) {
                                 Icon(Icons.Filled.MoreVert, contentDescription = "More options", tint = palette.textSecondary)
@@ -513,10 +529,10 @@ fun ProfileBackRow(title: String, onBack: () -> Unit, modifier: Modifier = Modif
     ) {
         Text(
             text = "Back",
-            style = RosaryType.body,
+            style = RosaryType.bodyPray,
             color = palette.accent,
             modifier = Modifier.clickable(onClick = onBack).padding(end = RosarySpace.md, top = RosarySpace.xs, bottom = RosarySpace.xs),
         )
-        Text(text = title, style = RosaryType.navigationTitle, color = palette.ink)
+        Text(text = title, style = RosaryType.navigationTitlePray, color = palette.ink)
     }
 }

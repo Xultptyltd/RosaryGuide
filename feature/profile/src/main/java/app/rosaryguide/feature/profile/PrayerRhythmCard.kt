@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,13 +21,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.rosaryguide.core.data.journey.PrayerRhythm
-import app.rosaryguide.core.designsystem.R
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
+import app.rosaryguide.core.designsystem.theme.PageStyle
 import app.rosaryguide.core.designsystem.theme.RosarySpace
 import app.rosaryguide.core.designsystem.theme.RosaryType
 
@@ -39,57 +37,44 @@ fun PrayerRhythmCard(
 ) {
     val palette = LocalThemePalette.current
     val shape = RoundedCornerShape(RosarySpace.containerRadius)
+    val weeklySummary = if (rhythm.prayedDaysThisWeek > 0) {
+        val days = rhythm.prayedDaysThisWeek
+        if (days == 1) "1 day this week" else "$days days this week"
+    } else {
+        "Find room for prayer"
+    }
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(palette.surface)
-            .padding(RosarySpace.lg)
+            .background(palette.cardSurface(PageStyle.Grouped))
+            .padding(RosarySpace.lg + RosarySpace.xs)
             .semantics { contentDescription = rhythm.accessibilityLabel },
     ) {
-        Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Your prayer",
-                    style = RosaryType.supportingLabel,
-                    color = palette.textSecondary,
-                )
-                Spacer(Modifier.height(RosarySpace.xs))
-                Text(
-                    text = rhythm.card.big,
-                    style = RosaryType.rhythmSummary,
-                    color = palette.ink,
-                )
-                Text(
-                    text = rhythm.card.caption,
-                    style = RosaryType.supportingLabel,
-                    color = palette.textSecondary,
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(
-                        if (rhythm.isMilestone) R.drawable.ic_rhythm_flame else R.drawable.ic_rhythm_calendar,
-                    ),
-                    contentDescription = null,
-                    tint = if (rhythm.isMilestone) palette.accent else palette.ink,
-                    modifier = Modifier.size(22.dp),
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = palette.textSecondary.copy(alpha = 0.55f),
-                    modifier = Modifier.size(18.dp),
-                )
-            }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = "Your prayer",
+                style = RosaryType.supportingLabelPray,
+                color = palette.textSecondary,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = palette.dim.copy(alpha = 0.55f),
+                modifier = Modifier.size(12.dp),
+            )
         }
-        Spacer(Modifier.height(RosarySpace.md))
         Text(
-            text = rhythm.weeklySummary,
-            style = RosaryType.caption,
-            color = palette.textSecondary,
+            text = weeklySummary,
+            style = RosaryType.headingSecondaryPray,
+            color = palette.ink,
+            modifier = Modifier.padding(top = RosarySpace.sm),
         )
-        Spacer(Modifier.height(RosarySpace.sm))
+        Spacer(Modifier.height(RosarySpace.md))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             rhythm.currentWeek.forEachIndexed { index, day ->
                 Column(
@@ -98,7 +83,7 @@ fun PrayerRhythmCard(
                 ) {
                     Text(
                         text = rhythm.weekdayLabels.getOrElse(index) { "" },
-                        style = RosaryType.caption,
+                        style = RosaryType.captionPray,
                         color = palette.textSecondary,
                         maxLines = 1,
                     )
@@ -118,7 +103,7 @@ private fun RhythmDayMarker(day: PrayerRhythm.Day) {
         contentAlignment = Alignment.Center,
     ) {
         when {
-            day.prayed -> Text("✓", style = RosaryType.caption, color = palette.accent)
+            day.prayed -> Text("✓", style = RosaryType.captionPray, color = palette.accent)
             day.isToday -> Box(
                 modifier = Modifier
                     .size(16.dp)

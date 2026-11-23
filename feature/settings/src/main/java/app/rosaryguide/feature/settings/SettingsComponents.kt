@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -48,14 +49,19 @@ fun SettingsSection(
     carded: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .then(if (carded) Modifier.settingsGroupCard() else Modifier),
-    ) {
-        GuideSectionLabel(text = title, strong = carded, icon = icon, style = if (carded) RosaryType.bodyPray else RosaryType.captionPray)
+    Column(modifier = modifier.fillMaxWidth()) {
+        GuideSectionLabel(
+            text = title,
+            strong = true,
+            icon = icon,
+            style = RosaryType.bodyPray,
+        )
         Spacer(Modifier.height(if (carded) RosarySpace.sectionTitleGap else RosarySpace.sm))
-        content()
+        if (carded) {
+            Column(Modifier.settingsGroupCard()) { content() }
+        } else {
+            content()
+        }
     }
 }
 
@@ -81,9 +87,7 @@ private fun Modifier.settingsGroupCard(): Modifier {
         .clip(shape)
         .background(palette.cardSurface(on = PageStyle.Grouped), shape)
         .border(Hairline.thickness, palette.cardSurfaceStroke, shape)
-        // iOS guideRowGroup has no inner vertical inset; keep a hair of
-        // padding so the first/last row clears the 20 dp corner radius.
-        .padding(horizontal = RosarySpace.sm, vertical = 8.dp)
+        .padding(horizontal = RosarySpace.md, vertical = 4.dp)
 }
 
 @Composable
@@ -237,9 +241,25 @@ fun SettingsNavigationRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
-                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.padding(end = RosarySpace.md))
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier
+                        .width(24.dp)
+                        .size(20.dp)
+                        .padding(end = 0.dp),
+                )
+                Spacer(Modifier.width(RosarySpace.lg))
             }
-            Text(title, style = RosaryType.bodyPray, color = color, maxLines = 1, overflow = TextOverflow.Clip)
+            Text(
+                title,
+                style = RosaryType.bodyPray,
+                color = color,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
+            )
+            Spacer(Modifier.weight(1f).width(RosarySpace.md))
             if (value != null) {
                 Text(
                     value,
@@ -247,18 +267,23 @@ fun SettingsNavigationRow(
                     color = palette.dim,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = RosarySpace.sm),
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.padding(start = RosarySpace.sm, end = if (showChevron || external) RosarySpace.sm else 0.dp),
                 )
-            } else {
-                Spacer(Modifier.weight(1f))
             }
-            if (showChevron) {
+            if (external) {
+                Icon(
+                    imageVector = SettingsSymbols.arrowUpRight,
+                    contentDescription = null,
+                    tint = palette.textSecondary,
+                    modifier = Modifier.size(12.dp),
+                )
+            } else if (showChevron) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = palette.dim,
+                    tint = palette.textSecondary,
+                    modifier = Modifier.size(12.dp),
                 )
             }
         }

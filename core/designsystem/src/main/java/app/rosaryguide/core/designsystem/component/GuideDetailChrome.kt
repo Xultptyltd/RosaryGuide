@@ -1,5 +1,6 @@
 package app.rosaryguide.core.designsystem.component
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
@@ -14,6 +15,13 @@ fun GuideDetailTopBar(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color? = null,
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
-    GuideTopAppBar(title = title, onBack = onBack, modifier = modifier, containerColor = containerColor)
+    GuideTopAppBar(
+        title = title,
+        onBack = onBack,
+        modifier = modifier,
+        containerColor = containerColor,
+        actions = actions,
+    )
 }

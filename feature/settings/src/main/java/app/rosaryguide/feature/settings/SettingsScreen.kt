@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -35,6 +36,12 @@ import app.rosaryguide.core.data.legal.LicenseEntry
 import app.rosaryguide.core.data.prefs.UserSettings
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
 import app.rosaryguide.core.designsystem.component.GuideLargeTopAppBar
+import java.time.ZoneId
+import java.time.LocalDate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.Box
+import app.rosaryguide.core.designsystem.component.AppPageBackground
+import app.rosaryguide.core.designsystem.component.GuestBackupCard
 import app.rosaryguide.core.designsystem.component.GuidePrimaryButton
 import app.rosaryguide.core.designsystem.theme.LocalThemePalette
 import app.rosaryguide.core.designsystem.theme.RosarySpace
@@ -54,7 +61,7 @@ enum class SettingsPage {
     License,
 }
 
-enum class SettingsConfirmDialog { None, ClearHistory, DeleteAccount, SignOut, ReportProblem }
+enum class SettingsConfirmDialog { None, ClearHistory, DeleteAccount, SignOut, ReportProblem, MailUnavailable }
 
 @Composable
 fun SettingsScreen(
@@ -78,10 +85,14 @@ fun SettingsScreen(
     onReplayWelcome: () -> Unit,
     onSignIn: () -> Unit,
     onBack: () -> Unit,
+    today: LocalDate = LocalDate.now(),
+    zone: ZoneId = ZoneId.systemDefault(),
+    earliestActivityEpochMs: Long? = null,
+    initialLicense: LicenseEntry? = null,
     modifier: Modifier = Modifier,
 ) {
     var page by remember(initialPage) { mutableStateOf(initialPage) }
-    var license by remember { mutableStateOf<LicenseEntry?>(null) }
+    var license by remember { mutableStateOf(initialLicense) }
     BackHandler {
         when (page) {
             SettingsPage.Root -> onBack()
@@ -157,6 +168,9 @@ fun SettingsScreen(
             onSignIn = onSignIn,
             initialConfirm = initialConfirm,
             onBack = onBack,
+            today = today,
+            zone = zone,
+            earliestActivityEpochMs = earliestActivityEpochMs,
             modifier = modifier,
         )
     }
@@ -178,6 +192,9 @@ private fun SettingsRoot(
     onSignIn: () -> Unit,
     onBack: () -> Unit,
     initialConfirm: SettingsConfirmDialog = SettingsConfirmDialog.None,
+    today: LocalDate,
+    zone: ZoneId,
+    earliestActivityEpochMs: Long? = null,
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalThemePalette.current
@@ -189,17 +206,21 @@ private fun SettingsRoot(
     var confirmDelete by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.DeleteAccount) }
     var deleteStub by remember { mutableStateOf(false) }
     var reportProblem by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.ReportProblem) }
+    var mailUnavailable by remember { mutableStateOf(initialConfirm == SettingsConfirmDialog.MailUnavailable) }
 
     fun openUrl(url: String) {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
+    Box(modifier = modifier.fillMaxSize().background(palette.bg)) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(palette.bg),
+        modifier = Modifier.fillMaxSize(),
     ) {
-        GuideLargeTopAppBar(title = "Settings", onBack = onBack, closeInsteadOfBack = false)
+        GuideDetailTopBar(
+            title = "Settings",
+            onBack = onBack,
+            containerColor = palette.bg,
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -207,13 +228,15 @@ private fun SettingsRoot(
                 .padding(horizontal = RosarySpace.gutter)
                 .padding(bottom = RosarySpace.xxl),
         ) {
-            SettingsSection(title = "General") {
-                SettingsNavigationRow("Customise rosary", onClick = { onOpen(SettingsPage.CustomiseRosary) }, icon = Icons.Filled.Settings)
+            SettingsSection(title = "General", carded = true) {
+                SettingsNavigationRow("Customise rosary", onClick = { onOpen(SettingsPage.CustomiseRosary) }, icon = SettingsSymbols.sliderHorizontal3)
                 SettingsDivider()
                 androidx.compose.foundation.layout.Box {
                     SettingsNavigationRow(
                         title = "Color theme",
                         value = settings.appearance.title,
+                        icon = SettingsSymbols.circleLeftHalfFilled,
+                        showChevron = false,
                         onClick = { themeMenu = true },
                     )
                     DropdownMenu(expanded = themeMenu, onDismissRequest = { themeMenu = false }) {
@@ -231,12 +254,12 @@ private fun SettingsRoot(
                 SettingsDivider()
                 SettingsNavigationRow("Notifications", onClick = { onOpen(SettingsPage.Notifications) }, icon = Icons.Filled.Notifications)
                 SettingsDivider()
-                SettingsNavigationRow("App icon", onClick = { onOpen(SettingsPage.AppIcon) })
+                SettingsNavigationRow("App icon", onClick = { onOpen(SettingsPage.AppIcon) }, icon = SettingsSymbols.app)
             }
 
             Spacer(Modifier.height(RosarySpace.xl))
             if (isSignedIn) {
-                SettingsSection(title = "Account") {
+                SettingsSection(title = "Account", carded = true) {
                     SettingsNavigationRow(
                         title = "Signed in with",
                         value = signedInWith ?: "Google",
@@ -245,22 +268,19 @@ private fun SettingsRoot(
                     )
                 }
             } else {
-                SettingsSection(title = "Account") {
-                    Text(
-                        "Your prayer stays on this device. Create an account when sign-in sync arrives to keep a backup.",
-                        style = RosaryType.caption,
-                        color = palette.dim,
-                    )
-                    Spacer(Modifier.height(RosarySpace.md))
-                    GuidePrimaryButton(title = "Create account", onClick = onSignIn)
-                }
+                GuestBackupCard(
+                    onCreateAccount = onSignIn,
+                    today = today,
+                    zone = zone,
+                    earliestActivityEpochMs = earliestActivityEpochMs,
+                )
             }
 
             Spacer(Modifier.height(RosarySpace.xl))
-            SettingsSection(title = "Help & support") {
-                SettingsNavigationRow("Report a problem", external = true, onClick = { reportProblem = true })
+            SettingsSection(title = "Help & support", carded = true) {
+                SettingsNavigationRow("Report a problem", external = true, onClick = { reportProblem = true }, icon = SettingsSymbols.exclamationBubble)
                 SettingsDivider()
-                SettingsNavigationRow("Suggest a feature", external = true, onClick = { openUrl("https://xult.ltd/contact/") })
+                SettingsNavigationRow("Suggest a feature", external = true, onClick = { openUrl("https://xult.ltd/contact/") }, icon = SettingsSymbols.lightbulb)
                 if (playStorePackage != null) {
                     SettingsDivider()
                     SettingsNavigationRow(
@@ -275,14 +295,14 @@ private fun SettingsRoot(
             }
 
             Spacer(Modifier.height(RosarySpace.xl))
-            SettingsSection(title = "About") {
-                SettingsNavigationRow("Replay welcome", onClick = onReplayWelcome)
+            SettingsSection(title = "About", carded = true) {
+                SettingsNavigationRow("Replay welcome", onClick = onReplayWelcome, icon = SettingsSymbols.sparkles)
                 SettingsDivider()
-                SettingsNavigationRow("Terms of service", onClick = { onOpen(SettingsPage.Terms) })
+                SettingsNavigationRow("Terms of service", onClick = { onOpen(SettingsPage.Terms) }, icon = SettingsSymbols.docText)
                 SettingsDivider()
-                SettingsNavigationRow("Privacy", onClick = { onOpen(SettingsPage.Privacy) })
+                SettingsNavigationRow("Privacy", onClick = { onOpen(SettingsPage.Privacy) }, icon = SettingsSymbols.handRaised)
                 SettingsDivider()
-                SettingsNavigationRow("Acknowledgements", onClick = { onOpen(SettingsPage.Acknowledgements) }, icon = Icons.Outlined.Info)
+                SettingsNavigationRow("Acknowledgements", onClick = { onOpen(SettingsPage.Acknowledgements) }, icon = Icons.Outlined.FavoriteBorder)
             }
 
             Spacer(Modifier.height(RosarySpace.xl))
@@ -308,14 +328,14 @@ private fun SettingsRoot(
             Spacer(Modifier.height(RosarySpace.xl))
             Text(
                 text = "Version $appVersion",
-                style = RosaryType.caption,
+                style = RosaryType.captionPray,
                 color = palette.dim,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
     }
-
+    }
 
     if (reportProblem) {
         AlertDialog(
@@ -409,6 +429,22 @@ private fun SettingsRoot(
             title = { Text("Account not deleted") },
             text = { Text("Account deletion will be available when sign-in sync arrives (M5).") },
             confirmButton = { TextButton(onClick = { deleteStub = false }) { Text("OK") } },
+        )
+    }
+    if (deleteStub) {
+        AlertDialog(
+            onDismissRequest = { deleteStub = false },
+            title = { Text("Account not deleted") },
+            text = { Text("Account deletion will be available when sign-in sync arrives (M5).") },
+            confirmButton = { TextButton(onClick = { deleteStub = false }) { Text("OK") } },
+        )
+    }
+    if (mailUnavailable) {
+        AlertDialog(
+            onDismissRequest = { mailUnavailable = false },
+            title = { Text("Mail not available") },
+            text = { Text("Set up Mail on this device, or use the contact form at xult.ltd/contact/.") },
+            confirmButton = { TextButton(onClick = { mailUnavailable = false }) { Text("OK") } },
         )
     }
 }
