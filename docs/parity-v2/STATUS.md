@@ -1,4 +1,4 @@
-# Visual parity status (23 Nov 2026, Today and Learn user-approved)
+# Visual parity status (23 Nov 2026, Profile/Settings pass started)
 
 Reference: `/workspace/ios-parity-refs-v2/` (iPhone 17 Pro Max, 3×, 1320×2868 px = 440×956 pt, Dynamic Type Large, status bar 9:41, captured 17 Nov 2026 Australia/Perth).
 Android captures for onboarding/Today: Pixel 7 AVD `RosaryGuide_Pixel7` on the Mac (1080×2400, 2.625×, ≈411.4×914.3 dp), `en-AU`, `clock_date=2026-11-17`, demo-mode clock 9:41. Light onboarding is captured with **demo mode off** so a hidden status bar stays hidden.
@@ -6,7 +6,7 @@ Pray-flow frames in this pass were recorded with **Roborazzi** because the Mac e
 The harness was validated against the approved Mac captures: today-light title 0.5429 vs 0.5440 (Δ 0.11%); onboarding-1 title/CTA within ~0.02%.
 pt and dp are 1:1 at mdpi. iOS PNG measurements are pixels ÷ 3. A screen is marked `matched` only when the measured frame fractions agree within about 2%.
 
-Onboarding/launch, Today (re-approved 23 Nov 2026, 9:03 Australia/Perth, with the production tab bar and 1 px dividers), the **Pray flow** group, and the **Learn** group (including walkthrough 1–5) are **user-approved**. Status stays `close` until a Mac Pixel 7 emulator recapture; do not treat approval as `matched`. This pass starts the **Profile/Settings** group. Feasts (as a group) are still deferred.
+Onboarding/launch, Today (re-approved 23 Nov 2026, 9:03 Australia/Perth, with the production tab bar and 1 px dividers), the **Pray flow** group, and the **Learn** group (including walkthrough 1–5) are **user-approved**. Status stays `close` until a Mac Pixel 7 emulator recapture; do not treat approval as `matched`. The **Profile/Settings** group has first Roborazzi frames and specs in this pass (`docs/parity-v2/profile-settings.md`). Status stays `close` until a Mac recapture; these screens are not user-approved yet. Feasts (as a group) are still deferred.
 
 `intention-icon-picker` is **not** in the live iOS editor. It stays removed.
 
@@ -21,8 +21,7 @@ Status values: `spec-written` · `captured` · `matched` · `mismatch` · `defer
 | onboarding-3 | onboarding/launch | spec-written | captured | matched | user-approved | Same panel/title/CTA match; Begin is the filled capsule. |
 | sign-in | onboarding/launch | spec-written | captured | matched | user-approved | Quote and Google pinned to measured iOS frame fractions (Apple omitted; its Y is reserved by the gap, not a spacer). Quote, Google, guest, and legal all within 2%. Loop fully visible. |
 | sign-in-transition | onboarding/launch | spec-written | captured | matched | user-approved | Plain `#FFFFFF` / `#000000` hold. Android-before labelled **new screen**. |
-| replay-welcome | Profile/Settings | deferred | | | | Same pager as onboarding, `includesSignIn: false`. |
-| profile-sign-in | Profile/Settings | deferred | | | | Same as `sign-in`, presented from Profile. |
+
 | today | Today | spec-written | captured | close | user-approved | Re-rendered so dark mode uses night hero art. The harness had scoped `+night` to Pray/Learn stems, so the previous Roborazzi Today dark loaded the light drawable (washed grey-white band, no fade to black). Night hero now matches the approved Mac frame and iOS (hero-band average ~103 vs Mac 103 and iOS 102). Everything above the tab bar matches the approved Mac composition aside from the drawn Roborazzi 9:41 / 3G strip (Mac has real system icons; dark frame is 1076×2396). A 90 dp full-width scroll-edge scrim (transparent → page background) sits behind the floating tab, approximating the iOS 26 bottom `scrollEdgeEffect` that iOS leaves visible on tab roots. That removes the bright marble slivers in the 20 dp side margins. Light Today content above the tab is unchanged (rms 0.0 vs the previous Roborazzi). Recaptured 22 Nov 21:12 Australia/Perth for a 1-physical-pixel `Hairline` token: only the week-row dividers and the tab-capsule stroke width changed (light rms 0.017, ~0.09% of pixels). Layout, type, and night hero are unchanged. Re-approved 23 Nov 2026, 9:03 Australia/Perth with the production `GuideTabBar` and 1 px `Hairline` dividers. Still `close` until a Mac recapture; do not treat approval as `matched`. |
 | mystery-detail-sheet | Today | spec-written | captured | matched | user-approved | Fruit and CTA within 2%. Fruit is above the fold (760 dp cap). Sheet top is 3.3% higher because both sides cap at 760 on different frame heights (see table). |
 | pray-* / rosary-settings-sheet | Pray flow | spec-written | captured | close | user-approved | Roborazzi with Pixel 7 system chrome (Mac still offline). Typography and spacing retuned to iOS TypeRole / Space this pass; see `docs/parity-v2/pray-typography.md` and the typography table below. Still `close` until a Mac recapture. |
@@ -49,7 +48,32 @@ Status values: `spec-written` · `captured` · `matched` · `mismatch` · `defer
 | walkthrough-3 | Learn | spec-written | captured | close | user-approved | Same chrome as walkthrough-1 (dots, fade, title gap, close, status-bar rule). User approved 23 Nov 2026, 9:03 Australia/Perth. Still `close` until a Mac recapture; do not treat approval as `matched`. |
 | walkthrough-4 | Learn | spec-written | captured | close | user-approved | Same chrome as walkthrough-1 (dots, fade, title gap, close, status-bar rule). User approved 23 Nov 2026, 9:03 Australia/Perth. Still `close` until a Mac recapture; do not treat approval as `matched`. |
 | walkthrough-5 | Learn | spec-written | captured | close | user-approved | Last page; Continue becomes Begin Rosary + Done. Footer clearance adds `minHitTarget + Space.sm` as in iOS `lastPageControlsHeight`. Same chrome as walkthrough-1. User approved 23 Nov 2026, 9:03 Australia/Perth. Still `close` until a Mac recapture; do not treat approval as `matched`. |
-| Profile / Settings screens | later groups | deferred | | | | Not in this run. |
+| replay-welcome | Profile/Settings | spec-written | captured | close | | Same pager as approved onboarding-1 (`includesSignIn: false`). Light hides the status bar. Still `close` until a Mac recapture; do not treat as `matched`. |
+| profile-sign-in | Profile/Settings | spec-written | captured | close | | Same Sign-in screen as approved `sign-in` (Google + guest, no Apple). Still `close` until a Mac recapture. |
+| profile | Profile/Settings | spec-written | captured | close | | Signed-in empty hub, 17 Nov 2026. Compact rhythm card, empty-intentions heart card, 96 dp papal photo (official Pope Leo asset), milky gear on the large-title row, Marian wash, floating `GuideTabBar` + 90 dp scrim. See `docs/parity-v2/profile-settings.md`. Still `close` until a Mac recapture. |
+| profile-backup | Profile/Settings | spec-written | captured | close | | Guest hub scrolled so the backup card is on screen. Headline is “not backed up yet”. Large title does not collapse to a compact centred title. Still `close` until a Mac recapture. |
+| all-intentions | Profile/Settings | spec-written | captured | close | | Title “All intentions”, wash, milky more chip, tab bar, iOS sample titles. Category marks are emoji in a teal circle, not the iOS coloured SF-style glyphs; trailing control is a vertical more, not a horizontal ellipsis. Still `close` until a Mac recapture. |
+| archived-intentions | Profile/Settings | spec-written | captured | close | | Archived list. Still `close` until a Mac recapture. |
+| intention-detail | Profile/Settings | spec-written | captured | close | | Detail for a single intention. Still `close` until a Mac recapture. |
+| intention-editor | Profile/Settings | spec-written | captured | close | | Add/edit intention. No icon picker (not in the live iOS editor). Still `close` until a Mac recapture. |
+| papal-intention-detail | Profile/Settings | spec-written | captured | close | | Official Pope Leo wide art. Still `close` until a Mac recapture. |
+| prayer-journey-milestones | Profile/Settings | spec-written | captured | close | | Journey milestones (not on the Profile hub). Still `close` until a Mac recapture. |
+| prayer-journey-history | Profile/Settings | spec-written | captured | close | | Journey history. Still `close` until a Mac recapture. |
+| journey-day-sheet | Profile/Settings | spec-written | captured | close | | Day sheet. Still `close` until a Mac recapture. |
+| settings | Profile/Settings | spec-written | captured | close | | Compact bar, flat `palette.bg`, labels outside grouped cards, System appearance, 11-day guest backup, trailing values, hairline dividers, external-link arrows. Backup headline wraps on Pixel 7’s narrower width. Switch accent is Marian (allowed). Still `close` until a Mac recapture. |
+| settings-rosary | Profile/Settings | spec-written | captured | close | | Customise rosary. Marian accent switches (allowed). “Bible translation” value is now trailing. Still `close` until a Mac recapture. |
+| settings-reset-rosary | Profile/Settings | spec-written | captured | close | | Reset confirm. Dialog actions sit side by side (allowed M3). Still `close` until a Mac recapture. |
+| settings-notifications | Profile/Settings | spec-written | captured | close | | Notifications. Still `close` until a Mac recapture. |
+| settings-app-icon | Profile/Settings | spec-written | captured | close | | Available icons + check. Home-screen phone preview is not on Android yet. Still `close` until a Mac recapture. |
+| settings-legal-terms | Profile/Settings | spec-written | captured | close | | Terms of service. Still `close` until a Mac recapture. |
+| settings-legal-privacy | Profile/Settings | spec-written | captured | close | | Privacy. Still `close` until a Mac recapture. |
+| settings-acknowledgements | Profile/Settings | spec-written | captured | close | | Acknowledgements. Still `close` until a Mac recapture. |
+| settings-license | Profile/Settings | spec-written | captured | close | | First Android license entry (AndroidX Core), not iOS Abseil — the dependency sets differ. Still `close` until a Mac recapture. |
+| settings-report-problem | Profile/Settings | spec-written | captured | close | | Report-a-problem chooser. Still `close` until a Mac recapture. |
+| settings-mail-unavailable | Profile/Settings | spec-written | captured | close | | Mail-unavailable alert; M3 actions side by side (allowed). Still `close` until a Mac recapture. |
+| settings-clear-history | Profile/Settings | spec-written | captured | close | | Clear-history confirm; M3 actions side by side (allowed). Still `close` until a Mac recapture. |
+| delete-intention | Profile/Settings | deferred | | | | iOS ref exists; Android capture not in this pass. |
+| journey-prayer-sheet | Profile/Settings | deferred | | | | iOS ref exists; Android capture not in this pass. |
 
 Pairs: `/workspace/android/shots/v2/pairs/<screen-id>-<light|dark>.png` (iOS left, Android right).
 Sign-off sheets: `/workspace/android/shots/v2/signoff/<screen-id>.png` (iOS \| Android-before \| Android-after; light on top, dark below). Before frames for splash/onboarding/sign-in/today come from the earlier parity pass. Sheets and sign-in-transition are labelled “new screen”.
@@ -142,8 +166,6 @@ The true iOS “Fruit” line is the “Fruit Obedience to God’s Will” row a
 
 **Sheet top** is the one landmark that cannot reach 2% on Pixel 7 without breaking the iOS 760 cap. Both sides cap the detent at 760 (pt/dp). On the Pro Max that is 760/956 ≈ 0.795 of the frame (measured top 0.191). On Pixel 7 it is 760/914.3 ≈ 0.831 of the frame (measured top 0.158). Raising the sheet to match the iOS frame fraction would exceed the 760 cap; lowering it to 0.191 would shrink the body and risk pushing Fruit toward the fold. Fruit and CTA already sit within 2%, so the cap is left as specified.
 
-
-
 ### Harness validation vs approved Mac Pixel 7 captures
 
 Roborazzi now injects statusBars 52.57 dp and navigationBars 24 dp (measured from the Mac today / week-feast frames, not the 24/48 dp guess) and paints a plain 9:41 + 3G strip plus a 108×4 dp gesture pill 10 dp from the bottom. Light onboarding hides the status bar, matching the Mac “demo mode off” capture. Today() in the validation shot uses 17 November 2026 so the mystery set matches the Mac Sorrowful frame.
@@ -184,8 +206,6 @@ Android frames are 1078×2399 with emulated Pixel 7 insets and chrome. iOS refs 
 | rosary-settings-sheet | “Customise rosary” | 0.1126 | 0.1301 | 1.75% | M3 text Done; M3 accent switches |
 | rosary-settings-sheet | last card bottom → Reset top | ~0.061 | 0.0759 | 1.49% | iOS gap is ~6% of the frame (card edge to Reset); Android is 7.6% |
 | pray-replace-dialog | title | 0.4132 | 0.4260 | 1.28% | copy matches; Material vs UIKit chrome |
-
-
 
 ### Pray typography (equal-scale pt/dp, 22 Nov 2026 typography pass)
 
