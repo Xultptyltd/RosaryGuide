@@ -9,6 +9,9 @@ import app.rosaryguide.feature.learn.MysterySetScreen
 import app.rosaryguide.feature.learn.LearnArticleScreen
 import app.rosaryguide.feature.learn.HowToPrayScreen
 import app.rosaryguide.feature.feasts.FeastDetailScreen
+import app.rosaryguide.feature.feasts.FeastPatronagesScreen
+import app.rosaryguide.feature.feasts.FeastRelatedPrayersScreen
+import app.rosaryguide.feature.feasts.FeastScriptureScreen
 import app.rosaryguide.core.model.DatedFeast
 import app.rosaryguide.core.designsystem.component.AppPageBackground
 import app.rosaryguide.core.designsystem.component.GuideDetailTopBar
@@ -406,8 +409,17 @@ class ParityScreenshotTest {
 
     @Test fun learnEmptyLight() = shot("learn-empty", dark = false) { LearnEmpty() }
     @Test fun learnEmptyDark() = shot("learn-empty", dark = true) { LearnEmpty() }
-    @Test fun feastsEmptyLight() = shot("feasts-empty", dark = false) { Feasts(query = "zzzzzx") }
-    @Test fun feastsEmptyDark() = shot("feasts-empty", dark = true) { Feasts(query = "zzzzzx") }
+    @Test fun feastsEmptyLight() = shot("feasts-empty", dark = false) { Feasts(forceEmpty = true) }
+    @Test fun feastsEmptyDark() = shot("feasts-empty", dark = true) { Feasts(forceEmpty = true) }
+
+    @Test fun feastRelatedPrayersLight() = shot("feast-related-prayers", dark = false) { FeastRelatedPrayers() }
+    @Test fun feastRelatedPrayersDark() = shot("feast-related-prayers", dark = true) { FeastRelatedPrayers() }
+
+    @Test fun feastPatronagesLight() = shot("feast-patronages", dark = false) { FeastPatronages() }
+    @Test fun feastPatronagesDark() = shot("feast-patronages", dark = true) { FeastPatronages() }
+
+    @Test fun feastScriptureLight() = shot("feast-scripture", dark = false) { FeastScripture() }
+    @Test fun feastScriptureDark() = shot("feast-scripture", dark = true) { FeastScripture() }
     @Test fun allPrayersEmptyLight() = shot("all-prayers-empty", dark = false) { Pushed("All prayers") { AllPrayersScreen(onPrayer = {}, initialQuery = "zzzzzx") } }
     @Test fun allPrayersEmptyDark() = shot("all-prayers-empty", dark = true) { Pushed("All prayers") { AllPrayersScreen(onPrayer = {}, initialQuery = "zzzzzx") } }
 
@@ -447,7 +459,7 @@ class ParityScreenshotTest {
                     selectedTab = when {
                         stem == "learn" || stem.startsWith("learn-") ||
                             stem in setOf("rosary-prayers", "all-prayers", "prayer-reader") -> AppTab.Learn
-                        stem == "feasts" -> AppTab.Feasts
+                        stem == "feasts" || stem == "feasts-empty" || stem.startsWith("feast-") -> AppTab.Feasts
                         stem == "profile" || stem == "profile-empty" || stem == "profile-backup" ||
                             stem == "all-intentions" || stem.startsWith("archived-intentions") ||
                             stem.startsWith("prayer-journey") || stem == "papal-intention-detail" ||
@@ -536,11 +548,32 @@ class ParityScreenshotTest {
 
     @Composable
     private fun FeastDetail() {
-        val feast = FeastCatalog.all.first { it.id == "annunciation" }
-        val date = feast.dateOn(2026) ?: java.time.LocalDate.of(2026, 3, 25)
-        Pushed(feast.shortTitle) {
-            FeastDetailScreen(item = DatedFeast(feast, date), onPray = {})
-        }
+        FeastDetailScreen(
+            item = presentationMary(),
+            onPray = {},
+            locale = locale,
+        )
+    }
+
+    @Composable
+    private fun FeastRelatedPrayers() {
+        FeastRelatedPrayersScreen(item = presentationMary(), onBack = {})
+    }
+
+    @Composable
+    private fun FeastPatronages() {
+        FeastPatronagesScreen(item = presentationMary(), onBack = {})
+    }
+
+    @Composable
+    private fun FeastScripture() {
+        FeastScriptureScreen(item = presentationMary(), onBack = {})
+    }
+
+    private fun presentationMary(): DatedFeast {
+        val feast = FeastCatalog.all.first { it.id == "presentation-mary" }
+        val date = feast.dateOn(2026) ?: java.time.LocalDate.of(2026, 11, 21)
+        return DatedFeast(feast, date)
     }
 
     @Composable
@@ -686,8 +719,14 @@ class ParityScreenshotTest {
     }
 
     @Composable
-    private fun Feasts(query: String = "") {
-        FeastsScreen(onFeastClick = {}, today = today, initialQuery = query)
+    private fun Feasts(forceEmpty: Boolean = false) {
+        FeastsScreen(
+            onFeastClick = {},
+            today = java.time.LocalDate.of(2026, 11, 17),
+            firstWeekday = firstWeekday,
+            locale = locale,
+            previewForceEmpty = forceEmpty,
+        )
     }
 
     @Composable
@@ -862,7 +901,9 @@ class ParityScreenshotTest {
         private val TAB_ROOTS = setOf(
             "today", "learn", "learn-faq", "learn-search", "learn-search-empty",
             "learn-mystery-detail", "rosary-prayers", "all-prayers", "prayer-reader",
-            "feasts", "profile", "profile-empty", "profile-backup",
+            "feasts", "feasts-empty", "feast-detail", "feast-related-prayers",
+            "feast-patronages", "feast-scripture",
+            "profile", "profile-empty", "profile-backup",
             "all-intentions", "archived-intentions", "archived-intentions-empty",
             "prayer-journey-milestones", "prayer-journey-history",
             "papal-intention-detail", "intention-detail", "delete-intention",
