@@ -108,7 +108,7 @@ class ParityScreenshotTest {
     private val zone: ZoneId = ZoneId.of("Australia/Perth")
     private val locale: Locale = Locale.forLanguageTag("en-AU")
     private val firstWeekday: Int = WeekStart.firstWeekday(locale)
-    private val settings = UserSettings(appearance = AppearancePreference.Light)
+    private val settings = UserSettings(appearance = AppearancePreference.System)
 
     @Before
     fun configurePixel7Display() {
@@ -174,16 +174,19 @@ class ParityScreenshotTest {
     @Test fun feastsLight() = shot("feasts", dark = false) { Feasts() }
     @Test fun feastsDark() = shot("feasts", dark = true) { Feasts() }
 
-    @Test fun profileEmptyLight() = shot("profile-empty", dark = false) { Profile(filled = false) }
-    @Test fun profileEmptyDark() = shot("profile-empty", dark = true) { Profile(filled = false) }
+    @Test fun profileEmptyLight() = shot("profile-empty", dark = false) { Profile(filled = false, signedIn = true) }
+    @Test fun profileEmptyDark() = shot("profile-empty", dark = true) { Profile(filled = false, signedIn = true) }
 
-    @Test fun profileLight() = shot("profile", dark = false) { Profile(filled = true) }
-    @Test fun profileDark() = shot("profile", dark = true) { Profile(filled = true) }
+    @Test fun profileLight() = shot("profile", dark = false) { Profile(filled = false, signedIn = true) }
+    @Test fun profileDark() = shot("profile", dark = true) { Profile(filled = false, signedIn = true) }
 
-    @Test fun intentionsAllLight() = shot("intentions-all", dark = false) {
+    @Test fun profileBackupLight() = shot("profile-backup", dark = false) { Profile(filled = false, signedIn = false, launch = ProfileLaunch(scrollToEnd = true)) }
+    @Test fun profileBackupDark() = shot("profile-backup", dark = true) { Profile(filled = false, signedIn = false, launch = ProfileLaunch(scrollToEnd = true)) }
+
+    @Test fun intentionsAllLight() = shot("all-intentions", dark = false) {
         Profile(filled = true, launch = ProfileLaunch(openAllIntentions = true, sampleIntentions = true))
     }
-    @Test fun intentionsAllDark() = shot("intentions-all", dark = true) {
+    @Test fun intentionsAllDark() = shot("all-intentions", dark = true) {
         Profile(filled = true, launch = ProfileLaunch(openAllIntentions = true, sampleIntentions = true))
     }
 
@@ -194,17 +197,17 @@ class ParityScreenshotTest {
         IntentionEditorScreen(existing = null, onBack = {}, onSave = {})
     }
 
-    @Test fun papalLight() = shot("papal", dark = false) { Papal() }
-    @Test fun papalDark() = shot("papal", dark = true) { Papal() }
+    @Test fun papalLight() = shot("papal-intention-detail", dark = false) { Papal() }
+    @Test fun papalDark() = shot("papal-intention-detail", dark = true) { Papal() }
 
-    @Test fun journeyLight() = shot("journey", dark = false) { Journey(history = false) }
-    @Test fun journeyDark() = shot("journey", dark = true) { Journey(history = false) }
+    @Test fun journeyLight() = shot("prayer-journey-milestones", dark = false) { Journey(history = false) }
+    @Test fun journeyDark() = shot("prayer-journey-milestones", dark = true) { Journey(history = false) }
 
-    @Test fun journeyHistoryLight() = shot("journey-history", dark = false) { Journey(history = true) }
-    @Test fun journeyHistoryDark() = shot("journey-history", dark = true) { Journey(history = true) }
+    @Test fun journeyHistoryLight() = shot("prayer-journey-history", dark = false) { Journey(history = true) }
+    @Test fun journeyHistoryDark() = shot("prayer-journey-history", dark = true) { Journey(history = true) }
 
-    @Test fun historyDayLight() = shot("history-day", dark = false) { Journey(history = true, day = today) }
-    @Test fun historyDayDark() = shot("history-day", dark = true) { Journey(history = true, day = today) }
+    @Test fun historyDayLight() = shot("journey-day-sheet", dark = false) { Journey(history = true, day = today) }
+    @Test fun historyDayDark() = shot("journey-day-sheet", dark = true) { Journey(history = true, day = today) }
 
     @Test fun settingsLight() = shot("settings", dark = false) { Settings(SettingsPage.Root) }
     @Test fun settingsDark() = shot("settings", dark = true) { Settings(SettingsPage.Root) }
@@ -278,17 +281,30 @@ class ParityScreenshotTest {
         Pray(baseLaunch().copy(showReplaceDialog = true))
     }
 
-    @Test fun settingsCustomiseLight() = shot("settings-customise", dark = false) { Settings(SettingsPage.CustomiseRosary) }
-    @Test fun settingsCustomiseDark() = shot("settings-customise", dark = true) { Settings(SettingsPage.CustomiseRosary) }
+    @Test fun settingsCustomiseLight() = shot("settings-rosary", dark = false) { Settings(SettingsPage.CustomiseRosary) }
+    @Test fun settingsCustomiseDark() = shot("settings-rosary", dark = true) { Settings(SettingsPage.CustomiseRosary) }
 
     @Test fun settingsAppIconLight() = shot("settings-app-icon", dark = false) { Settings(SettingsPage.AppIcon) }
     @Test fun settingsAppIconDark() = shot("settings-app-icon", dark = true) { Settings(SettingsPage.AppIcon) }
 
-    @Test fun settingsLegalLight() = shot("settings-legal", dark = false) { Settings(SettingsPage.Privacy) }
-    @Test fun settingsLegalDark() = shot("settings-legal", dark = true) { Settings(SettingsPage.Privacy) }
+    @Test fun settingsLegalLight() = shot("settings-legal-privacy", dark = false) { Settings(SettingsPage.Privacy) }
+    @Test fun settingsLegalDark() = shot("settings-legal-privacy", dark = true) { Settings(SettingsPage.Privacy) }
 
     @Test fun settingsAcknowledgementsLight() = shot("settings-acknowledgements", dark = false) { Settings(SettingsPage.Acknowledgements) }
     @Test fun settingsAcknowledgementsDark() = shot("settings-acknowledgements", dark = true) { Settings(SettingsPage.Acknowledgements) }
+
+    @Test fun settingsLegalTermsLight() = shot("settings-legal-terms", dark = false) { Settings(SettingsPage.Terms) }
+    @Test fun settingsLegalTermsDark() = shot("settings-legal-terms", dark = true) { Settings(SettingsPage.Terms) }
+
+    @Test fun settingsLicenseLight() = shot("settings-license", dark = false) { Settings(SettingsPage.License) }
+    @Test fun settingsLicenseDark() = shot("settings-license", dark = true) { Settings(SettingsPage.License) }
+
+    @Test fun settingsMailUnavailableLight() = shot("settings-mail-unavailable", dark = false) {
+        Settings(SettingsPage.Root, confirm = SettingsConfirmDialog.MailUnavailable)
+    }
+    @Test fun settingsMailUnavailableDark() = shot("settings-mail-unavailable", dark = true) {
+        Settings(SettingsPage.Root, confirm = SettingsConfirmDialog.MailUnavailable)
+    }
 
     @Test fun settingsClearHistoryLight() = shot("settings-clear-history", dark = false) {
         Settings(SettingsPage.Root, signedIn = true, confirm = SettingsConfirmDialog.ClearHistory)
@@ -312,6 +328,19 @@ class ParityScreenshotTest {
 
     @Test fun signinLight() = shot("signin", dark = false) { SignInScreen(onGoogle = {}, onGuest = {}) }
     @Test fun signinDark() = shot("signin", dark = true) { SignInScreen(onGoogle = {}, onGuest = {}) }
+
+    @Test fun replayWelcomeLight() = shot("replay-welcome", dark = false, showStatusBar = false) {
+        OnboardingScreen(onBegin = {}, initialPage = 0)
+    }
+    @Test fun replayWelcomeDark() = shot("replay-welcome", dark = true) {
+        OnboardingScreen(onBegin = {}, initialPage = 0)
+    }
+    @Test fun profileSignInLight() = shot("profile-sign-in", dark = false) {
+        SignInScreen(onGoogle = {}, onGuest = {})
+    }
+    @Test fun profileSignInDark() = shot("profile-sign-in", dark = true) {
+        SignInScreen(onGoogle = {}, onGuest = {})
+    }
 
     @Test fun splashLight() = shot("splash", dark = false) {
         LaunchSplashScreen(onFinished = {}, previewProgress = 1f)
@@ -338,11 +367,11 @@ class ParityScreenshotTest {
     @Test fun intentionDetailLight() = shot("intention-detail", dark = false) { IntentionDetail() }
     @Test fun intentionDetailDark() = shot("intention-detail", dark = true) { IntentionDetail() }
 
-    @Test fun intentionsArchivedLight() = shot("intentions-archived", dark = false) { Archived(empty = false) }
-    @Test fun intentionsArchivedDark() = shot("intentions-archived", dark = true) { Archived(empty = false) }
+    @Test fun intentionsArchivedLight() = shot("archived-intentions", dark = false) { Archived(empty = false) }
+    @Test fun intentionsArchivedDark() = shot("archived-intentions", dark = true) { Archived(empty = false) }
 
-    @Test fun intentionsArchivedEmptyLight() = shot("intentions-archived-empty", dark = false) { Archived(empty = true) }
-    @Test fun intentionsArchivedEmptyDark() = shot("intentions-archived-empty", dark = true) { Archived(empty = true) }
+    @Test fun intentionsArchivedEmptyLight() = shot("archived-intentions-empty", dark = false) { Archived(empty = true) }
+    @Test fun intentionsArchivedEmptyDark() = shot("archived-intentions-empty", dark = true) { Archived(empty = true) }
 
     @Test fun settingsReportProblemLight() = shot("settings-report-problem", dark = false) {
         Settings(SettingsPage.Root, signedIn = true, confirm = SettingsConfirmDialog.ReportProblem)
@@ -407,7 +436,9 @@ class ParityScreenshotTest {
                         stem == "learn" || stem.startsWith("learn-") ||
                             stem in setOf("rosary-prayers", "all-prayers", "prayer-reader") -> AppTab.Learn
                         stem == "feasts" -> AppTab.Feasts
-                        stem == "profile" || stem == "profile-empty" -> AppTab.Profile
+                        stem == "profile" || stem == "profile-empty" || stem == "profile-backup" ||
+                            stem == "all-intentions" || stem.startsWith("archived-intentions") ||
+                            stem.startsWith("prayer-journey") || stem == "papal-intention-detail" -> AppTab.Profile
                         else -> AppTab.Today
                     },
                     content = content,
@@ -621,13 +652,19 @@ class ParityScreenshotTest {
     }
 
     @Composable
-    private fun Profile(filled: Boolean, launch: ProfileLaunch = ProfileLaunch()) {
+    private fun Profile(
+        filled: Boolean,
+        signedIn: Boolean = true,
+        launch: ProfileLaunch = ProfileLaunch(),
+        captureToday: java.time.LocalDate = java.time.LocalDate.of(2026, 11, 17),
+    ) {
         ProfileScreen(
             sessionStore = if (filled) filledStore() else SessionStore(),
-            today = today,
+            today = captureToday,
             zone = zone,
             locale = locale,
             firstWeekday = firstWeekday,
+            isSignedIn = signedIn,
             launch = launch.copy(sampleIntentions = filled, sampleHistory = filled),
         )
     }
@@ -659,6 +696,9 @@ class ParityScreenshotTest {
         signedIn: Boolean = false,
         confirm: SettingsConfirmDialog =
             SettingsConfirmDialog.None,
+        earliestActivityEpochMs: Long? = if (!signedIn) {
+            java.time.LocalDate.of(2026, 11, 6).atStartOfDay(zone).toInstant().toEpochMilli()
+        } else null,
     ) {
         SettingsScreen(
             settings = settings,
@@ -667,6 +707,12 @@ class ParityScreenshotTest {
             initialConfirm = confirm,
             hasAppHistory = true,
             initialPage = page,
+            initialLicense = if (page == SettingsPage.License) {
+                app.rosaryguide.core.data.legal.LegalCatalog.licenses().firstOrNull()
+            } else null,
+            today = java.time.LocalDate.of(2026, 11, 17),
+            zone = zone,
+            earliestActivityEpochMs = earliestActivityEpochMs,
             onAppearance = {},
             onRosaryConfig = {},
             onDailyEnabled = {},
@@ -756,9 +802,9 @@ class ParityScreenshotTest {
             java.time.Instant.ofEpochMilli(it.completedAtEpochMs).atZone(zone).toLocalDate().toString()
         }.toSet()
         val intentions = listOf(
-            OfferIntention(id = "int-mum", title = "For Mum", category = IntentionCategory.Someone, emoji = "💙", isPinned = true),
-            OfferIntention(id = "int-peace", title = "Peace in the world", category = IntentionCategory.World, emoji = "🌍"),
-            OfferIntention(id = "int-family", title = "My family", category = IntentionCategory.Personal, emoji = "🙏"),
+            OfferIntention(id = "int-peace", title = "Peace in the world", category = IntentionCategory.World, emoji = "⛪"),
+            OfferIntention(id = "int-grandma", title = "For Grandma's recovery", category = IntentionCategory.Someone, emoji = "👨‍👩‍👧"),
+            OfferIntention(id = "int-patience", title = "Patience with my family", category = IntentionCategory.Personal, emoji = "💚"),
         )
         return SessionStore(
             prefs = InMemorySessionPreferences(
@@ -775,7 +821,10 @@ class ParityScreenshotTest {
         private val TAB_ROOTS = setOf(
             "today", "learn", "learn-faq", "learn-search", "learn-search-empty",
             "learn-mystery-detail", "rosary-prayers", "all-prayers", "prayer-reader",
-            "feasts", "profile", "profile-empty",
+            "feasts", "profile", "profile-empty", "profile-backup",
+            "all-intentions", "archived-intentions", "archived-intentions-empty",
+            "prayer-journey-milestones", "prayer-journey-history",
+            "papal-intention-detail",
         )
         private val PopeMonthIntentionFallback = app.rosaryguide.core.data.journey.PopeMonthIntention(
             yearMonth = "2026-11",
